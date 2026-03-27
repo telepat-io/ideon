@@ -35,6 +35,8 @@ Expected stages:
 4. Rendering Images
 5. Assembling Markdown
 
+If you run without an `article` target, Ideon skips planning/sections/image stages and generates only requested channel outputs in the output stage.
+
 ## 3. Check Outputs
 
 By default (resolved from current working directory):
@@ -68,3 +70,9 @@ npm run dev -- write --job ./job.json
 ```
 
 See [Job Files](../guides/job-files.md) for full schema and examples.
+
+## Next Steps
+
+- See [Pipeline Stages](../guides/pipeline-stages.md) for resume and checkpoint behavior.
+- See [Local Preview](../guides/local-preview.md) for generation browsing details.
+- See [Troubleshooting](../guides/troubleshooting.md) for recovery paths.

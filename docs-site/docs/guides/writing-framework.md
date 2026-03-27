@@ -41,8 +41,24 @@ You can set one run-level style:
 - `opinionated`: clear stance with strong argumentation.
 - `storytelling`: scene-first narrative with practical takeaways.
 
+## Prompt Composition Model
+
+Ideon composes writing instructions in layers:
+
+1. Base writing framework (shared principles and do/avoid examples)
+2. Style directive (one run-level style)
+3. Content-type directive (article, x-post, newsletter, and so on)
+4. Run context directive (the full set of requested output types)
+
+This layering keeps voice and quality consistent while still adapting structure to each channel format.
+
 ## How This Applies in Multi-Output Runs
 
 - The same framework and style overlay applies to every output in the run.
 - Content-type directives then specialize formatting for each channel.
 - When article output is included, social outputs can use that article as anchor context.
+
+Practical implication:
+
+- Use one style per run for coherence, then vary only targets and counts.
+- If you need very different voices, split into separate runs.

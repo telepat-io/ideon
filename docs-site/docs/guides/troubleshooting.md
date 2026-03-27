@@ -14,6 +14,7 @@ Fix:
 
 - Set `IDEON_OPENROUTER_API_KEY`, or
 - Save key through `npm run dev -- settings`
+- If both are set, env var wins for that run
 
 ## Missing Replicate API Token
 
@@ -25,6 +26,8 @@ Fix:
 
 - Set `IDEON_REPLICATE_API_TOKEN`, or
 - Save token through `npm run dev -- settings`
+
+If your run does not include an `article` target, image stages are skipped and Replicate is not required.
 
 ## No Idea Provided
 
@@ -47,6 +50,29 @@ Fix:
 
 - Validate JSON syntax
 - Ensure field types match documented schema
+- Re-run with a minimal job first (`{ "idea": "..." }`) and add fields incrementally
+
+## No Resumable Session
+
+Error pattern:
+
+- `No resumable write session found in .ideon/write/state.json...`
+
+Fix:
+
+- Start a fresh run first with `ideon write "your idea"`
+- Verify you are in the same workspace and working directory used for the original run
+
+## Interrupted Write Run
+
+Scenario:
+
+- Run was interrupted with `Ctrl+C` or process termination
+
+Recovery:
+
+1. Run `ideon write resume`
+2. If resume fails repeatedly, inspect and remove `.ideon/write/state.json` to start fresh
 
 ## No Generated Content Found
 
@@ -84,6 +110,8 @@ Fix:
 - Lower temperature for determinism
 - Switch model or reduce prompt ambiguity
 
+If this happens repeatedly for one content type, try reducing target count for that type and validating outputs before scaling back up.
+
 ## Structured Output Compatibility Error
 
 Error pattern:
@@ -104,3 +132,17 @@ Notes:
 ## CI/Non-TTY Output
 
 If UI does not render, Ideon automatically falls back to plain stage logs.
+
+## Preview Server Fails to Start
+
+Common causes:
+
+- Port already in use (default `4173`)
+- Invalid `--port` value
+- Missing markdown outputs in configured output directory
+
+Fix:
+
+1. Run `ideon preview --port 8080 --no-open`
+2. Confirm outputs exist or pass a markdown path explicitly
+3. Confirm output directories from `ideon settings` match your active workspace

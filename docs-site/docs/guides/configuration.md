@@ -13,7 +13,18 @@ Lowest to highest priority:
 1. Saved settings file
 2. Job file settings
 3. Environment variables
-4. Direct CLI arguments (idea input)
+4. Direct CLI arguments (`--style`, `--target`, idea input)
+
+Secret precedence:
+
+- `IDEON_OPENROUTER_API_KEY` and `IDEON_REPLICATE_API_TOKEN` from environment variables override keychain-stored secrets.
+- If env vars are not set, Ideon falls back to keychain values saved through `ideon settings`.
+
+Per-field merge behavior:
+
+- `modelSettings` merges by key (`temperature`, `maxTokens`, `topP`) across sources.
+- `contentTargets` is replaced as a full array when provided by a higher-priority source.
+- Scalar settings (for example `model`, `style`, `markdownOutputDir`) are replaced by the highest-priority source.
 
 ## Settings Schema
 
@@ -57,6 +68,8 @@ Saved via OS config path (using `env-paths`), typically:
 
 - macOS: `~/.ideon/settings.json`
 
+To edit saved settings, run `ideon settings` again. The wizard is the supported way to update values and stored credentials.
+
 ## Example Environment Override
 
 ```bash
@@ -68,5 +81,7 @@ npm run dev -- write "An idea"
 ```
 
 Note: content target arrays are not currently configurable through environment variables. Use CLI `--target` flags or job-file `settings.contentTargets`.
+
+`xMode` for `x-post` also cannot be set via environment variables. Set it in `--target` interactions or in `settings.contentTargets` within a job file.
 
 See [Environment Variables](../reference/environment-variables.md) for full list.

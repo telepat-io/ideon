@@ -60,6 +60,13 @@ Defaults:
 - If no targets are provided, Ideon uses `article=1`.
 - If no style is provided, Ideon uses `professional`.
 
+Idea resolution order:
+
+1. `--idea`
+2. positional `[idea]`
+3. `job.idea`
+4. `job.prompt`
+
 Interactive behavior:
 
 - In TTY mode, Ideon asks only for missing write variables.
@@ -68,6 +75,12 @@ Interactive behavior:
 - If `x-post` is selected and `xMode` is missing, it prompts for `single` or `thread` output mode.
 
 When a fresh write starts, Ideon resets `.ideon/write/state.json` and stores new temporary pipeline artifacts for that run.
+
+Dry-run behavior:
+
+- The full stage orchestration still runs.
+- OpenRouter and Replicate network calls are skipped.
+- Ideon still writes generation artifacts (`job.json`, `generation.analytics.json`, and markdown outputs) using dry-run-compatible content.
 
 During execution, each stage transition to `succeeded` includes stage analytics output (duration and cost when available). The final summary includes total duration, retries, and total cost for the run.
 
@@ -88,7 +101,7 @@ ideon write resume
 Notes:
 
 - Resume continues from the latest completed stage snapshot.
-- If the last session already completed, Ideon asks you to start a fresh write instead.
+- If the last session already completed, resume is still allowed so missing/corrupted downstream artifacts can be regenerated.
 - If no session exists, run `ideon write <idea>` first.
 
 ## `ideon delete <slug>`
@@ -105,7 +118,8 @@ Behavior:
 - By default, Ideon shows an interactive confirmation menu you can navigate with the arrow keys before deleting anything.
 - In non-interactive environments, use `--force` to skip confirmation.
 - If the slug does not exist, Ideon fails without deleting anything.
-- In generation directories with multiple markdown outputs, Ideon resolves the best matching markdown path and preserves shared assets when sibling markdown files remain.
+- Slug lookup checks direct output first, then recursively searches nested generation directories for `<slug>.md` and chooses the most recently updated match.
+- In generation directories with multiple markdown outputs, Ideon removes only the selected markdown and analytics sidecar and preserves shared assets while sibling markdown files remain.
 
 ### Options
 
@@ -128,6 +142,10 @@ Behavior:
 - Preview groups outputs by generation directory, then by content type and output index.
 - Generation-local relative asset links are rewritten and served by preview routes.
 - Browser auto-open is enabled by default.
+
+Developer note:
+
+- `npm run preview` is a convenience wrapper for `ideon preview` in this repository.
 
 ### Options
 

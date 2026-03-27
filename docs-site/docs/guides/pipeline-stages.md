@@ -19,6 +19,10 @@ Stage execution is conditional:
 4. Rendering Images
 5. Writing Outputs
 
+Non-article path:
+
+- If `article` is not requested, stages 1-4 are marked succeeded as skipped and stage 5 generates requested channel outputs directly from single-shot prompts.
+
 ## Stage UI Signals
 
 - `pending`: not started
@@ -62,6 +66,18 @@ When a stage fails:
 - Each completed stage checkpoint is persisted to `.ideon/write/state.json`.
 - `ideon write resume` reloads saved artifacts and skips already-completed stages.
 - Resume currently checkpoints at stage boundaries, so in-progress work inside a stage is retried from that stage.
+- Resume is also allowed after a completed session to regenerate missing downstream artifacts from cached state.
+
+## Interrupt Behavior
+
+- `Ctrl+C` (SIGINT) and SIGTERM are recorded as a failed session when a write session exists.
+- Ideon writes an interruption message into session state so `ideon write resume` can continue from the last completed stage.
+
+## Dry-Run Behavior
+
+- Stage orchestration still executes and analytics are emitted.
+- External OpenRouter and Replicate calls are skipped.
+- Output artifacts are still written so directory structure and orchestration can be validated without provider spend.
 
 ## Output Stage Behavior
 

@@ -91,9 +91,40 @@ Each run also emits `job.json` in the generation directory. It captures the reso
 - source job payload when provided (`sourceJob`)
 - run metadata (`generatedAt`, `dryRun`, `runMode`)
 
+Example shape:
+
+```json
+{
+  "idea": "How teams can operationalize content systems",
+  "prompt": "How teams can operationalize content systems",
+  "settings": {
+    "model": "moonshotai/kimi-k2.5",
+    "modelSettings": { "temperature": 0.7, "maxTokens": 4000, "topP": 1 },
+    "modelRequestTimeoutMs": 90000,
+    "t2i": { "modelId": "black-forest-labs/flux-schnell", "inputOverrides": {} },
+    "markdownOutputDir": "/output",
+    "assetOutputDir": "/output/assets",
+    "contentTargets": [{ "contentType": "article", "count": 1 }],
+    "style": "professional"
+  },
+  "sourceJob": null,
+  "generatedAt": "2026-03-27T10:20:00.000Z",
+  "dryRun": false,
+  "runMode": "fresh"
+}
+```
+
 ## Local Session Artifacts
 
 - Session state file: `.ideon/write/state.json`
 - Includes saved stage outputs (plan, section drafts, image metadata, final artifact summary)
 - Fresh runs overwrite previous `.ideon/write` artifacts
 - `ideon write resume` uses this state to continue after failures or interruptions
+
+Key state fields:
+
+- `status`: `running`, `failed`, or `completed`
+- `lastCompletedStage`: last checkpointed stage ID
+- `failedStage` and `errorMessage`: latest failure metadata
+- `plan`, `text`, `imagePrompts`, `imageArtifacts`: cached stage artifacts used by resume
+- `artifact`: final output summary (`markdownPaths`, `generationDir`, `analyticsPath`, and counts)

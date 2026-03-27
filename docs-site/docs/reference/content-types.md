@@ -10,6 +10,7 @@ Ideon supports these generation targets:
 
 - Best for: long-form canonical content.
 - Typical structure: title, intro, sections, conclusion, image embeds.
+- Typical output: long-form draft with reusable narrative context for channel outputs.
 
 ## `blog-post`
 
@@ -23,6 +24,7 @@ Ideon supports these generation targets:
 - Supports `xMode`:
   - `single`: one concise post.
   - `thread`: numbered multi-line thread format.
+- Typical output: short posts that preserve the run style but prioritize hook density and pacing.
 
 ## `reddit-post`
 
@@ -38,11 +40,23 @@ Ideon supports these generation targets:
 
 - Best for: recurring subscriber communication.
 - Typical structure: strong opening, compact sections, clear transitions.
+- Typical output: editorial cadence tuned for recurring audience updates.
 
 ## `landing-page-copy`
 
 - Best for: conversion-oriented pages and product messaging.
 - Typical structure: headline, value proposition, proof, objection handling, CTA.
+
+## Multi-Output Behavior
+
+- In runs that include `article`, channel outputs can use article content as anchor context.
+- In runs without `article`, channel outputs are generated directly from idea + style + target directives.
+
+## Selection Tips
+
+- Use `article` + channels together when you want one canonical narrative and multiple distribution variants.
+- Use channel-only targets for lightweight campaign ideation and iteration.
+- Use `x-post` with `xMode=thread` for explanatory series, and `single` for rapid distribution.
 
 ## Multi-Target Example
 

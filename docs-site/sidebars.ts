@@ -35,6 +35,7 @@ const sidebars: SidebarsConfig = {
         'guides/writing-framework',
         'guides/pipeline-stages',
         'guides/output-structure',
+        'guides/performance-and-costs',
         'guides/local-preview',
         'guides/troubleshooting',
       ],

@@ -32,6 +32,7 @@ npm run dev -- write --job ./job.json
       "maxTokens": 2500,
       "topP": 0.95
     },
+    "modelRequestTimeoutMs": 90000,
     "contentTargets": [
       { "contentType": "article", "count": 1 },
       { "contentType": "x-post", "count": 2, "xMode": "thread" },
@@ -54,8 +55,35 @@ npm run dev -- write --job ./job.json
 
 - If `settings.contentTargets` is omitted, Ideon defaults to one article output.
 - If `settings.style` is omitted, Ideon defaults to `professional`.
-- CLI arguments override job-file settings.
+- CLI arguments override job-file settings for `idea`, `style`, and `contentTargets`.
+- Environment variables override matching job-file fields where supported.
 - After each run, Ideon writes a generated `job.json` inside the generation directory that captures the resolved run definition and metadata for that specific execution.
+
+## Override Matrix
+
+Highest to lowest precedence:
+
+1. CLI flags and direct idea input
+2. Environment variables (`IDEON_*`)
+3. Job file `settings`
+4. Saved settings
+5. Schema defaults
+
+Practical examples:
+
+- `ideon write --job ./job.json --style technical` forces technical style even if the job file says otherwise.
+- `IDEON_MODEL=... ideon write --job ./job.json` uses the env model instead of the job model.
+- `--target` replaces the full job `settings.contentTargets` array for that run.
+
+## Reusing Generated Job Definitions
+
+Every generation directory includes a resolved `job.json`. You can copy that file, adjust only what you need (for example model, style, or targets), and run it again:
+
+```bash
+ideon write --job ./output/20260327-your-slug/job.json
+```
+
+This is the easiest way to reproduce or branch previous runs with minimal drift.
 
 ## Idea Resolution Rule
 

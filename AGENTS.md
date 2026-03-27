@@ -9,7 +9,7 @@ Concise reference for AI agents (and humans) working on this codebase.
 ```bash
 npm run lint        # tsc --noEmit (typecheck, no emit)
 npm run build       # tsup → dist/ideon.js
-npm test            # Jest (currently 100 tests across 8 suites)
+npm test            # Jest suites in src/__tests__/
 npm run docs:build  # Docusaurus static build
 ```
 
@@ -75,7 +75,7 @@ Each stage updates a `StageViewModel[]` array and calls `options.onUpdate()` for
 
 ### LLM client (src/llm/)
 
-`OpenRouterClient` wraps the OpenRouter chat-completions API. Prompts live in `src/llm/prompts/` as plain template functions — one file per prompt type. All LLM responses are validated via Zod schemas from `src/types/articleSchema.ts`.
+`OpenRouterClient` wraps the OpenRouter chat-completions API. Prompt templates live in `src/llm/prompts/` (`articlePlan.ts`, `articleSection.ts`, `channelContent.ts`, `imagePrompt.ts`, `writingFramework.ts`). All LLM responses are validated via Zod schemas from `src/types/articleSchema.ts`.
 
 ### Image rendering (src/images/)
 
@@ -89,9 +89,21 @@ Each stage updates a `StageViewModel[]` array and calls `options.onUpdate()` for
 
 Built with [Ink](https://github.com/vadimdemedes/ink) (React for terminals).
 - `commands/write.tsx` — main write command (launches pipeline + live UI)
+- `commands/delete.ts` — delete generated markdown by slug
+- `commands/serve.ts` — preview server command
 - `commands/settings.tsx` — interactive settings wizard
+- `commands/writeTargetSpecs.ts` — target parsing and validation helpers
+- `flows/` — multi-step terminal flows
+- `logging/` — non-TTY/plain log renderers
 - `cli/app.ts` — root Ink app component
 - `cli/ui/` — presentational components (`pipelinePresenter`, `stageRow`, `finalSummary`)
+
+CLI command surface in `app.ts`:
+- `ideon settings`
+- `ideon write [idea]`
+- `ideon write resume`
+- `ideon delete <slug>`
+- `ideon preview [markdownPath]`
 
 ---
 
@@ -145,10 +157,14 @@ npm run docs:serve    # serve the production build locally
 
 Doc page map:
 - `getting-started/` — overview, installation, quickstart
-- `guides/` — configuration, credentials, job files, pipeline stages, output structure, troubleshooting
-- `reference/` — CLI reference, environment variables, T2I models
+- `guides/` — configuration, credentials, job files, writing framework, pipeline stages, output structure, performance and costs, local preview, troubleshooting
+- `reference/` — CLI reference, content types, environment variables, T2I models
 - `technical/` — architecture, LLM/image pipeline, testing
 - `contributing/` — development setup, releasing and docs deploy
+
+Docs update guardrails:
+- If behavior changes in `src/cli/`, `src/config/`, `src/pipeline/`, or `src/server/preview*`, update the corresponding page under `docs-site/docs/` in the same change.
+- Keep command examples executable as written (`ideon ...` or `npm run dev -- ...`) and avoid mixing styles in one example block.
 
 ---
 
