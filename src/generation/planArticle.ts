@@ -2,6 +2,7 @@ import type { AppSettings } from '../config/schema.js';
 import { buildArticlePlanMessages, articlePlanSchema } from '../llm/prompts/articlePlan.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { resolveUniqueSlug } from '../output/filesystem.js';
+import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { ArticlePlan } from '../types/article.js';
 import { articlePlanSchema as articlePlanResultSchema } from '../types/articleSchema.js';
 
@@ -11,12 +12,14 @@ export async function planArticle({
   markdownOutputDir,
   openRouter,
   dryRun,
+  onLlmMetrics,
 }: {
   idea: string;
   settings: AppSettings;
   markdownOutputDir: string;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
+  onLlmMetrics?: (metrics: LlmCallMetrics) => void;
 }): Promise<ArticlePlan> {
   const basePlan = dryRun || !openRouter
     ? buildDryRunPlan(idea)
@@ -25,6 +28,7 @@ export async function planArticle({
         schema: articlePlanSchema,
         messages: buildArticlePlanMessages(idea),
         settings,
+        onMetrics: onLlmMetrics,
         parse(data) {
           return articlePlanResultSchema.parse(data);
         },

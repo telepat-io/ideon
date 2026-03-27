@@ -4,7 +4,7 @@ title: Output Structure
 
 # Output Structure
 
-Ideon writes one Markdown artifact and a set of image assets.
+Ideon writes one Markdown artifact, a per-run analytics artifact, and a set of image assets.
 
 Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) for resume support.
 
@@ -12,6 +12,7 @@ Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) f
 
 - Markdown directory: `/output`
 - Asset directory: `/output/assets`
+- Analytics file: `<slug>.analytics.json` in the markdown directory
 
 Paths beginning with `/output` are resolved relative to current working directory.
 
@@ -39,6 +40,17 @@ Generated slug is normalized and checked for collisions. If a slug exists, Ideon
 ## Asset Links
 
 Markdown embeds use relative paths from markdown file location to asset files.
+
+## Analytics Artifact
+
+Each write run emits `<slug>.analytics.json` beside the markdown file.
+
+The JSON includes:
+
+- Run summary: total duration, total retries, and total cost (when available)
+- Stage metrics: per-stage duration, retries, and stage-level cost
+- Image prompt calls: per-image prompt expansion timing/cost + token usage (when available)
+- Image render calls: per-image render timing/cost + output byte size
 
 To inspect generated markdown and image embeds in a browser, run `npm run preview`.
 

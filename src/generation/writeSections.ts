@@ -1,6 +1,7 @@
 import type { AppSettings } from '../config/schema.js';
 import { buildIntroMessages, buildOutroMessages, buildSectionMessages } from '../llm/prompts/articleSection.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
+import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { ArticlePlan, GeneratedArticleSection } from '../types/article.js';
 
 export async function writeArticleSections({
@@ -9,21 +10,39 @@ export async function writeArticleSections({
   openRouter,
   dryRun,
   onSectionStart,
+  onLlmMetrics,
 }: {
   plan: ArticlePlan;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onSectionStart?: (label: string) => void;
+  onLlmMetrics?: (phase: 'intro' | 'section' | 'outro', metrics: LlmCallMetrics, sectionIndex?: number) => void;
 }): Promise<{ intro: string; sections: GeneratedArticleSection[]; outro: string }> {
   onSectionStart?.('Writing introduction');
-  const intro = dryRun || !openRouter ? dryRunIntro(plan) : await openRouter.requestText({ messages: buildIntroMessages(plan), settings });
+  const intro = dryRun || !openRouter
+    ? dryRunIntro(plan)
+    : await openRouter.requestText({
+        messages: buildIntroMessages(plan),
+        settings,
+        onMetrics(metrics) {
+          onLlmMetrics?.('intro', metrics);
+        },
+      });
 
   const sections: GeneratedArticleSection[] = [];
   for (let index = 0; index < plan.sections.length; index += 1) {
     const section = plan.sections[index];
     onSectionStart?.(`Writing section ${index + 1}/${plan.sections.length}: ${section.title}`);
-    const body = dryRun || !openRouter ? dryRunSection(section, index) : await openRouter.requestText({ messages: buildSectionMessages(plan, section), settings });
+    const body = dryRun || !openRouter
+      ? dryRunSection(section, index)
+      : await openRouter.requestText({
+          messages: buildSectionMessages(plan, section),
+          settings,
+          onMetrics(metrics) {
+            onLlmMetrics?.('section', metrics, index);
+          },
+        });
     sections.push({
       title: section.title,
       body: normalizeGeneratedSection(body, section.title),
@@ -31,7 +50,15 @@ export async function writeArticleSections({
   }
 
   onSectionStart?.('Writing conclusion');
-  const outro = dryRun || !openRouter ? dryRunOutro(plan) : await openRouter.requestText({ messages: buildOutroMessages(plan), settings });
+  const outro = dryRun || !openRouter
+    ? dryRunOutro(plan)
+    : await openRouter.requestText({
+        messages: buildOutroMessages(plan),
+        settings,
+        onMetrics(metrics) {
+          onLlmMetrics?.('outro', metrics);
+        },
+      });
 
   return {
     intro: normalizeGeneratedSection(intro, 'introduction'),

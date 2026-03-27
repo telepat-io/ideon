@@ -1,4 +1,5 @@
 import { mkdir, stat } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
 import { planArticle } from '../generation/planArticle.js';
@@ -7,8 +8,17 @@ import { ReplicateClient } from '../images/replicateClient.js';
 import { expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
-import { ensureOutputDirectories, resolveOutputPaths, writeUtf8File } from '../output/filesystem.js';
-import type { PipelineRunResult, StageViewModel } from './events.js';
+import { ensureOutputDirectories, resolveAnalyticsPath, resolveOutputPaths, writeJsonFile, writeUtf8File } from '../output/filesystem.js';
+import { estimateLlmCostUsd, sumKnownCosts, type LlmCallMetrics } from './analytics.js';
+import type {
+  CostSource,
+  ImagePromptAnalytics,
+  ImageRenderAnalytics,
+  PipelineRunAnalytics,
+  PipelineRunResult,
+  PipelineStageAnalytics,
+  StageViewModel,
+} from './events.js';
 import {
   loadWriteSession,
   patchWriteSession,
@@ -60,12 +70,25 @@ export function createInitialStages(): StageViewModel[] {
 }
 
 export async function runPipelineShell(input: ResolvedRunInput, options: PipelineRunOptions = {}): Promise<PipelineRunResult> {
+  const runStartedAtMs = Date.now();
+  const runStartedAt = new Date(runStartedAtMs).toISOString();
+  const runId = randomUUID();
   const stages: StageViewModel[] = createInitialStages();
   options.onUpdate?.(cloneStages(stages));
   const dryRun = options.dryRun ?? false;
   const runMode = options.runMode ?? 'fresh';
   const workingDir = options.workingDir ?? process.cwd();
   const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
+  const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
+  stageTracking.set('planning', {
+    startedAtMs: runStartedAtMs,
+    endedAtMs: null,
+    retries: 0,
+    costs: [],
+    costSources: [],
+  });
+  const imagePromptCalls: ImagePromptAnalytics[] = [];
+  const imageRenderCalls: ImageRenderAnalytics[] = [];
   let writeSession: WriteSessionState;
 
   if (runMode === 'fresh') {
@@ -112,6 +135,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
         openRouter,
         dryRun,
+        onLlmMetrics(metrics) {
+          recordLlmMetrics(stageTracking, 'planning', metrics);
+        },
       });
 
       stages[0] = {
@@ -137,6 +163,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       status: 'running',
       detail: 'Writing introduction.',
     };
+    markStageStarted(stageTracking, 'sections');
     options.onUpdate?.(cloneStages(stages));
 
     let text = writeSession.text;
@@ -147,11 +174,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         detail: 'Reused saved section drafts from .ideon/write.',
         summary: `Intro + ${text.sections.length} sections + conclusion`,
       };
+      markStageCompleted(stageTracking, 'sections');
       stages[2] = {
         ...stages[2],
         status: 'running',
         detail: 'Expanding editorial image prompts.',
       };
+      markStageStarted(stageTracking, 'image-prompts');
       options.onUpdate?.(cloneStages(stages));
     } else {
       text = await writeArticleSections({
@@ -159,6 +188,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         openRouter,
         dryRun,
+        onLlmMetrics(_phase, metrics) {
+          recordLlmMetrics(stageTracking, 'sections', metrics);
+        },
         onSectionStart(label) {
           stages[1] = {
             ...stages[1],
@@ -174,11 +206,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         detail: 'Completed intro, sections, and conclusion.',
         summary: `Intro + ${text.sections.length} sections + conclusion`,
       };
+      markStageCompleted(stageTracking, 'sections');
       stages[2] = {
         ...stages[2],
         status: 'running',
         detail: 'Expanding editorial image prompts.',
       };
+      markStageStarted(stageTracking, 'image-prompts');
       options.onUpdate?.(cloneStages(stages));
 
       writeSession = await patchWriteSession(
@@ -226,11 +260,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         detail: 'Reused saved image prompts from .ideon/write.',
         summary: `${imagePrompts.length} prompts ready`,
       };
+      markStageCompleted(stageTracking, 'image-prompts');
       stages[3] = {
         ...stages[3],
         status: 'running',
         detail: 'Rendering expanded image prompts.',
       };
+      markStageStarted(stageTracking, 'images');
       options.onUpdate?.(cloneStages(stages));
     } else {
       imagePrompts = await expandImagePrompts({
@@ -238,6 +274,24 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         openRouter,
         dryRun,
+        onPromptComplete(metrics) {
+          imagePromptCalls.push({
+            imageId: metrics.imageId,
+            kind: metrics.kind,
+            durationMs: metrics.durationMs,
+            attempts: metrics.attempts,
+            retries: metrics.retries,
+            retryBackoffMs: metrics.retryBackoffMs,
+            promptTokens: metrics.promptTokens,
+            completionTokens: metrics.completionTokens,
+            totalTokens: metrics.totalTokens,
+            costUsd: metrics.costUsd,
+            costSource: metrics.costSource,
+            modelId: metrics.modelId,
+          });
+          recordStageCost(stageTracking, 'image-prompts', metrics.costUsd, metrics.costSource);
+          addStageRetries(stageTracking, 'image-prompts', metrics.retries);
+        },
         onProgress(detail) {
           stages[2] = {
             ...stages[2],
@@ -253,11 +307,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         detail: 'Expanded image prompts successfully.',
         summary: `${imagePrompts.length} prompts ready`,
       };
+      markStageCompleted(stageTracking, 'image-prompts');
       stages[3] = {
         ...stages[3],
         status: 'running',
         detail: 'Rendering expanded image prompts.',
       };
+      markStageStarted(stageTracking, 'images');
       options.onUpdate?.(cloneStages(stages));
 
       writeSession = await patchWriteSession(
@@ -279,11 +335,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         detail: 'Reused previously rendered images from .ideon/write.',
         summary: articleAssetDir,
       };
+      markStageCompleted(stageTracking, 'images');
       stages[4] = {
         ...stages[4],
         status: 'running',
         detail: 'Writing Markdown frontmatter, article body, and image embeds.',
       };
+      markStageStarted(stageTracking, 'output');
       options.onUpdate?.(cloneStages(stages));
     } else {
       if (!imagePrompts) {
@@ -297,6 +355,22 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         markdownPath,
         assetDir: articleAssetDir,
         dryRun,
+        onRenderComplete(metrics) {
+          imageRenderCalls.push({
+            imageId: metrics.imageId,
+            kind: metrics.kind,
+            durationMs: metrics.durationMs,
+            attempts: metrics.attempts,
+            retries: metrics.retries,
+            retryBackoffMs: metrics.retryBackoffMs,
+            outputBytes: metrics.outputBytes,
+            costUsd: metrics.costUsd,
+            costSource: metrics.costSource,
+            modelId: metrics.modelId,
+          });
+          recordStageCost(stageTracking, 'images', metrics.costUsd, metrics.costSource);
+          addStageRetries(stageTracking, 'images', metrics.retries);
+        },
         onProgress(detail) {
           stages[3] = {
             ...stages[3],
@@ -318,11 +392,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         detail: 'Rendered and stored article images.',
         summary: articleAssetDir,
       };
+      markStageCompleted(stageTracking, 'images');
       stages[4] = {
         ...stages[4],
         status: 'running',
         detail: 'Writing Markdown frontmatter, article body, and image embeds.',
       };
+      markStageStarted(stageTracking, 'output');
       options.onUpdate?.(cloneStages(stages));
 
       writeSession = await patchWriteSession(
@@ -353,7 +429,21 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       detail: 'Markdown file assembled successfully.',
       summary: markdownPath,
     };
+    markStageCompleted(stageTracking, 'output');
     options.onUpdate?.(cloneStages(stages));
+
+    const analytics = buildRunAnalytics({
+      runId,
+      runMode,
+      dryRun,
+      runStartedAt,
+      runStartedAtMs,
+      stageTracking,
+      imagePromptCalls,
+      imageRenderCalls,
+    });
+    const analyticsPath = resolveAnalyticsPath(markdownPath);
+    await writeJsonFile(analyticsPath, analytics);
 
     const artifact = {
       title: plan.title,
@@ -362,6 +452,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       imageCount: imageArtifacts.renderedImages.length,
       markdownPath,
       assetDir: writeSession.outputPaths.assetOutputDir,
+      analyticsPath,
     };
 
     writeSession = await patchWriteSession(
@@ -383,10 +474,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     return {
       stages,
       artifact: completedArtifact,
+      analytics,
     };
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'Unknown pipeline failure';
     const failedStageId = markRunningStageFailed(stages, detail);
+    if (failedStageId) {
+      markStageCompleted(stageTracking, failedStageId);
+    }
     options.onUpdate?.(cloneStages(stages));
 
     await patchWriteSession(
@@ -400,6 +495,155 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
     throw error;
   }
+}
+
+function markStageStarted(
+  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: WriteStageId,
+): void {
+  const existing = tracking.get(stageId);
+  if (existing) {
+    return;
+  }
+
+  tracking.set(stageId, {
+    startedAtMs: Date.now(),
+    endedAtMs: null,
+    retries: 0,
+    costs: [],
+    costSources: [],
+  });
+}
+
+function markStageCompleted(
+  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: WriteStageId,
+): void {
+  const existing = tracking.get(stageId);
+  if (!existing) {
+    markStageStarted(tracking, stageId);
+    const next = tracking.get(stageId);
+    if (next) {
+      next.endedAtMs = Date.now();
+    }
+    return;
+  }
+
+  existing.endedAtMs = Date.now();
+}
+
+function addStageRetries(
+  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: WriteStageId,
+  retries: number,
+): void {
+  markStageStarted(tracking, stageId);
+  const existing = tracking.get(stageId);
+  if (!existing) {
+    return;
+  }
+
+  existing.retries += retries;
+}
+
+function recordStageCost(
+  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: WriteStageId,
+  costUsd: number | null,
+  source: CostSource,
+): void {
+  markStageStarted(tracking, stageId);
+  const existing = tracking.get(stageId);
+  if (!existing) {
+    return;
+  }
+
+  existing.costs.push(costUsd);
+  existing.costSources.push(source);
+}
+
+function recordLlmMetrics(
+  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: WriteStageId,
+  metrics: LlmCallMetrics,
+): void {
+  addStageRetries(tracking, stageId, metrics.retries);
+  const cost = estimateLlmCostUsd(metrics.modelId, metrics.usage);
+  recordStageCost(tracking, stageId, cost.usd, cost.source);
+}
+
+function buildRunAnalytics({
+  runId,
+  runMode,
+  dryRun,
+  runStartedAt,
+  runStartedAtMs,
+  stageTracking,
+  imagePromptCalls,
+  imageRenderCalls,
+}: {
+  runId: string;
+  runMode: 'fresh' | 'resume';
+  dryRun: boolean;
+  runStartedAt: string;
+  runStartedAtMs: number;
+  stageTracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>;
+  imagePromptCalls: ImagePromptAnalytics[];
+  imageRenderCalls: ImageRenderAnalytics[];
+}): PipelineRunAnalytics {
+  const runEndedAtMs = Date.now();
+  const orderedStageIds: WriteStageId[] = ['planning', 'sections', 'image-prompts', 'images', 'output'];
+  const stages: PipelineStageAnalytics[] = orderedStageIds.map((stageId) => {
+    const tracked = stageTracking.get(stageId);
+    const startedAtMs = tracked?.startedAtMs ?? runEndedAtMs;
+    const endedAtMs = tracked?.endedAtMs ?? runEndedAtMs;
+    const knownCost = sumKnownCosts(tracked?.costs ?? []);
+    return {
+      stageId,
+      durationMs: Math.max(0, endedAtMs - startedAtMs),
+      startedAt: new Date(startedAtMs).toISOString(),
+      endedAt: new Date(endedAtMs).toISOString(),
+      retries: tracked?.retries ?? 0,
+      costUsd: knownCost.usd,
+      costSource: chooseStageCostSource(tracked?.costSources ?? [], knownCost.source),
+    };
+  });
+
+  const totalCost = sumKnownCosts(stages.map((stage) => stage.costUsd));
+  const totalRetries = stages.reduce((sum, stage) => sum + stage.retries, 0);
+
+  return {
+    runId,
+    runMode,
+    dryRun,
+    startedAt: runStartedAt,
+    endedAt: new Date(runEndedAtMs).toISOString(),
+    summary: {
+      totalDurationMs: runEndedAtMs - runStartedAtMs,
+      totalRetries,
+      totalCostUsd: totalCost.usd,
+      totalCostSource: totalCost.source,
+    },
+    stages,
+    imagePromptCalls,
+    imageRenderCalls,
+  };
+}
+
+function chooseStageCostSource(costSources: CostSource[], aggregateSource: CostSource): CostSource {
+  if (costSources.length === 0) {
+    return 'estimated';
+  }
+
+  if (costSources.every((source) => source === 'provider')) {
+    return 'provider';
+  }
+
+  if (costSources.every((source) => source === 'estimated')) {
+    return 'estimated';
+  }
+
+  return aggregateSource;
 }
 
 function cloneStages(stages: StageViewModel[]): StageViewModel[] {

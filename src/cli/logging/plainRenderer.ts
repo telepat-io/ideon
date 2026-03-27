@@ -8,6 +8,14 @@ function formatStage(stage: StageViewModel): string {
   return `[${stage.status}] ${stage.title}\n    ${stage.detail}${summary}`;
 }
 
+function formatCost(costUsd: number | null): string {
+  if (costUsd === null) {
+    return 'unavailable';
+  }
+
+  return `$${costUsd.toFixed(4)}`;
+}
+
 export async function renderPlainPipeline(
   input: ResolvedRunInput,
   dryRun: boolean,
@@ -37,6 +45,10 @@ export async function renderPlainPipeline(
     console.log(`  images: ${result.artifact.imageCount}`);
     console.log(`  markdown: ${result.artifact.markdownPath}`);
     console.log(`  assets: ${result.artifact.assetDir}`);
+    console.log(`  analytics: ${result.artifact.analyticsPath}`);
+    console.log(`  duration_ms: ${result.analytics.summary.totalDurationMs}`);
+    console.log(`  retries: ${result.analytics.summary.totalRetries}`);
+    console.log(`  cost: ${formatCost(result.analytics.summary.totalCostUsd)}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Pipeline failed.';
     console.error(`Pipeline failed: ${message}`);

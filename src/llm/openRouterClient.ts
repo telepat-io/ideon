@@ -1,4 +1,5 @@
 import type { AppSettings } from '../config/schema.js';
+import type { LlmCallMetrics } from '../pipeline/analytics.js';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -12,11 +13,13 @@ export interface StructuredRequest<T> {
   settings: AppSettings;
   parse?: (data: unknown) => T;
   fallbackFactory?: () => T;
+  onMetrics?: (metrics: LlmCallMetrics) => void;
 }
 
 export interface TextRequest {
   messages: ChatMessage[];
   settings: AppSettings;
+  onMetrics?: (metrics: LlmCallMetrics) => void;
 }
 
 interface OpenRouterResponse {
@@ -28,18 +31,26 @@ interface OpenRouterResponse {
   error?: {
     message?: string;
   };
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    total_cost?: number | string;
+    cost?: number | string;
+  };
 }
 
 export class OpenRouterClient {
   constructor(private readonly apiKey: string) {}
 
   async requestText(request: TextRequest): Promise<string> {
-    const response = await this.sendCompletion({
+    const completion = await this.sendCompletion({
       messages: request.messages,
       settings: request.settings,
     });
+    request.onMetrics?.(completion.metrics);
 
-    return normalizeGeneratedText(extractText(response));
+    return normalizeGeneratedText(extractText(completion.response));
   }
 
   async requestStructured<T>(request: StructuredRequest<T>): Promise<T> {
@@ -57,8 +68,9 @@ export class OpenRouterClient {
         },
         requireStructuredOutputs: true,
       });
+      request.onMetrics?.(response.metrics);
 
-      const parsed = JSON.parse(extractJson(extractText(response))) as unknown;
+      const parsed = JSON.parse(extractJson(extractText(response.response))) as unknown;
       return request.parse ? request.parse(parsed) : (parsed as T);
     } catch (error) {
       if (request.fallbackFactory) {
@@ -79,10 +91,15 @@ export class OpenRouterClient {
     settings: AppSettings;
     responseFormat?: Record<string, unknown>;
     requireStructuredOutputs?: boolean;
-  }): Promise<OpenRouterResponse> {
+  }): Promise<{ response: OpenRouterResponse; metrics: LlmCallMetrics }> {
     let lastError: Error | null = null;
+    const startedAtMs = Date.now();
+    let attempts = 0;
+    let retries = 0;
+    let retryBackoffMs = 0;
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
+      attempts = attempt + 1;
       const controller = new AbortController();
       const timeoutMs = settings.modelRequestTimeoutMs;
       const timeout = setTimeout(() => {
@@ -124,7 +141,10 @@ export class OpenRouterClient {
         if (!response.ok) {
           const message = json?.error?.message ?? `OpenRouter request failed with status ${response.status}`;
           if (shouldRetryStatus(response.status) && attempt < 2) {
-            await wait(backoffMs(attempt));
+            const backoff = backoffMs(attempt);
+            retries += 1;
+            retryBackoffMs += backoff;
+            await wait(backoff);
             continue;
           }
 
@@ -133,17 +153,38 @@ export class OpenRouterClient {
 
         const content = json.choices?.[0]?.message?.content;
         if (!content && attempt < 2) {
-          await wait(backoffMs(attempt));
+          const backoff = backoffMs(attempt);
+          retries += 1;
+          retryBackoffMs += backoff;
+          await wait(backoff);
           continue;
         }
 
         clearTimeout(timeout);
-        return json;
+        return {
+          response: json,
+          metrics: {
+            durationMs: Date.now() - startedAtMs,
+            attempts,
+            retries,
+            retryBackoffMs,
+            modelId: settings.model,
+            usage: {
+              promptTokens: json.usage?.prompt_tokens ?? null,
+              completionTokens: json.usage?.completion_tokens ?? null,
+              totalTokens: json.usage?.total_tokens ?? null,
+              providerTotalCostUsd: parseOptionalNumber(json.usage?.total_cost) ?? parseOptionalNumber(json.usage?.cost),
+            },
+          },
+        };
       } catch (error) {
         clearTimeout(timeout);
         lastError = normalizeClientError(error, timeoutMs);
         if (attempt < 2 && shouldRetryError(lastError)) {
-          await wait(backoffMs(attempt));
+          const backoff = backoffMs(attempt);
+          retries += 1;
+          retryBackoffMs += backoff;
+          await wait(backoff);
           continue;
         }
       }
@@ -252,4 +293,17 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function parseOptionalNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
 }

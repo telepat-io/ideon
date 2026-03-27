@@ -108,6 +108,7 @@ npm run typecheck
 npm test
 npm run build
 npm run preview
+npm run pricing:refresh
 ```
 
 ## Documentation

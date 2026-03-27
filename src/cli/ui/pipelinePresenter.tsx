@@ -33,7 +33,7 @@ export function PipelinePresenter({
       ) : null}
       {result ? (
         <Box marginTop={1}>
-          <FinalSummary artifact={result.artifact} />
+          <FinalSummary artifact={result.artifact} analytics={result.analytics} />
         </Box>
       ) : null}
     </Box>

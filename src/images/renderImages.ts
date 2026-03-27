@@ -7,10 +7,40 @@ import { buildImagePromptMessages, imagePromptSchema } from '../llm/prompts/imag
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { coerceT2IFieldValue, getT2IFieldDefault, sanitizeT2IOverrides } from '../models/t2i/options.js';
 import { relativeAssetPath } from '../output/filesystem.js';
+import { estimateImageCostUsd, estimateLlmCostUsd, type LlmCallMetrics } from '../pipeline/analytics.js';
+import type { CostSource } from '../pipeline/events.js';
 import { getT2IModel } from '../models/t2i/registry.js';
 import type { ArticleImagePrompt, ArticlePlan, GeneratedArticle, RenderedArticleImage } from '../types/article.js';
 import { imagePromptResultSchema } from '../types/articleSchema.js';
 import type { ReplicateClient } from './replicateClient.js';
+
+export interface ImagePromptCallMetrics {
+  imageId: string;
+  kind: 'cover' | 'inline';
+  modelId: string;
+  durationMs: number;
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  costUsd: number | null;
+  costSource: CostSource;
+}
+
+export interface ImageRenderCallMetrics {
+  imageId: string;
+  kind: 'cover' | 'inline';
+  modelId: string;
+  durationMs: number;
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  outputBytes: number;
+  costUsd: number | null;
+  costSource: CostSource;
+}
 
 export async function expandImagePrompts({
   plan,
@@ -18,12 +48,14 @@ export async function expandImagePrompts({
   openRouter,
   dryRun,
   onProgress,
+  onPromptComplete,
 }: {
   plan: ArticlePlan;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onProgress?: (detail: string) => void;
+  onPromptComplete?: (metrics: ImagePromptCallMetrics) => void;
 }): Promise<ArticleImagePrompt[]> {
   const imageSlots = buildImageSlots(plan);
   const prompts: ArticleImagePrompt[] = [];
@@ -32,18 +64,38 @@ export async function expandImagePrompts({
     const image = imageSlots[index];
     onProgress?.(`Expanding prompt ${index + 1}/${imageSlots.length}: ${image.kind === 'cover' ? 'cover image' : image.description}`);
     if (dryRun || !openRouter) {
+      const dryRunStartMs = Date.now();
       prompts.push({
         ...image,
         prompt: `${image.description}, editorial illustration, detailed lighting, modern magazine art direction`,
       });
+      onPromptComplete?.({
+        imageId: image.id,
+        kind: image.kind,
+        modelId: settings.model,
+        durationMs: Date.now() - dryRunStartMs,
+        attempts: 1,
+        retries: 0,
+        retryBackoffMs: 0,
+        promptTokens: null,
+        completionTokens: null,
+        totalTokens: null,
+        costUsd: 0,
+        costSource: 'estimated',
+      });
       continue;
     }
+
+    let observedMetrics: LlmCallMetrics | undefined;
 
     const response = await openRouter.requestStructured<{ prompt: string }>({
       schemaName: 'image_prompt',
       schema: imagePromptSchema,
       messages: buildImagePromptMessages(plan, image),
       settings,
+      onMetrics(metrics) {
+        observedMetrics = observedMetrics ? mergeLlmMetrics(observedMetrics, metrics) : { ...metrics };
+      },
       parse(data) {
         return imagePromptResultSchema.parse(data);
       },
@@ -52,6 +104,28 @@ export async function expandImagePrompts({
     prompts.push({
       ...image,
       prompt: response.prompt,
+    });
+
+    const usage = observedMetrics?.usage ?? {
+      promptTokens: null,
+      completionTokens: null,
+      totalTokens: null,
+      providerTotalCostUsd: null,
+    };
+    const cost = estimateLlmCostUsd(settings.model, usage);
+    onPromptComplete?.({
+      imageId: image.id,
+      kind: image.kind,
+      modelId: settings.model,
+      durationMs: observedMetrics?.durationMs ?? 0,
+      attempts: observedMetrics?.attempts ?? 1,
+      retries: observedMetrics?.retries ?? 0,
+      retryBackoffMs: observedMetrics?.retryBackoffMs ?? 0,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      costUsd: cost.usd,
+      costSource: cost.source,
     });
   }
 
@@ -66,6 +140,7 @@ export async function renderExpandedImages({
   assetDir,
   dryRun,
   onProgress,
+  onRenderComplete,
 }: {
   prompts: ArticleImagePrompt[];
   settings: AppSettings;
@@ -74,6 +149,7 @@ export async function renderExpandedImages({
   assetDir: string;
   dryRun: boolean;
   onProgress?: (detail: string) => void;
+  onRenderComplete?: (metrics: ImageRenderCallMetrics) => void;
 }): Promise<RenderedArticleImage[]> {
 
   const renderedImages: RenderedArticleImage[] = [];
@@ -84,17 +160,44 @@ export async function renderExpandedImages({
     const outputPath = path.join(assetDir, fileName);
 
     if (dryRun || !replicate) {
+      const dryRunStartMs = Date.now();
       await writeFile(outputPath, `Placeholder image for: ${prompt.prompt}\n`, 'utf8');
+      const outputBytes = Buffer.byteLength(`Placeholder image for: ${prompt.prompt}\n`, 'utf8');
+      const dryRunInput = createReplicateInput(settings, prompt.prompt, prompt.kind);
+      const dryRunCost = estimateImageCostUsd(settings.t2i.modelId, dryRunInput, 1);
       renderedImages.push({
         ...prompt,
         outputPath,
         relativePath: relativeAssetPath(markdownPath, outputPath),
       });
+      onRenderComplete?.({
+        imageId: prompt.id,
+        kind: prompt.kind,
+        modelId: settings.t2i.modelId,
+        durationMs: Date.now() - dryRunStartMs,
+        attempts: 1,
+        retries: 0,
+        retryBackoffMs: 0,
+        outputBytes,
+        costUsd: dryRunCost.usd,
+        costSource: dryRunCost.source,
+      });
       continue;
     }
 
     const input = createReplicateInput(settings, prompt.prompt, prompt.kind);
-    const output = await replicate.runModel(settings.t2i.modelId, input);
+    let runDurationMs = 0;
+    let runAttempts = 1;
+    let runRetries = 0;
+    let runRetryBackoffMs = 0;
+    const output = await replicate.runModel(settings.t2i.modelId, input, {
+      onMetrics(metrics) {
+        runDurationMs = metrics.durationMs;
+        runAttempts = metrics.attempts;
+        runRetries = metrics.retries;
+        runRetryBackoffMs = metrics.retryBackoffMs;
+      },
+    });
     const bytes = await normalizeReplicateOutput(output);
     if (bytes.byteLength < MIN_IMAGE_BYTES) {
       throw new Error(
@@ -107,6 +210,20 @@ export async function renderExpandedImages({
       ...prompt,
       outputPath,
       relativePath: relativeAssetPath(markdownPath, outputPath),
+    });
+
+    const estimatedCost = estimateImageCostUsd(settings.t2i.modelId, input, 1);
+    onRenderComplete?.({
+      imageId: prompt.id,
+      kind: prompt.kind,
+      modelId: settings.t2i.modelId,
+      durationMs: runDurationMs,
+      attempts: runAttempts,
+      retries: runRetries,
+      retryBackoffMs: runRetryBackoffMs,
+      outputBytes: bytes.byteLength,
+      costUsd: estimatedCost.usd,
+      costSource: estimatedCost.source,
     });
   }
 
@@ -153,6 +270,33 @@ export async function buildAndRenderImages({
   return {
     imagePrompts,
     renderedImages,
+  };
+}
+
+function sumNullable(left: number | null, right: number | null): number | null {
+  const a = left ?? 0;
+  const b = right ?? 0;
+  if (left === null && right === null) {
+    return null;
+  }
+
+  return a + b;
+}
+
+function mergeLlmMetrics(left: LlmCallMetrics, right: LlmCallMetrics): LlmCallMetrics {
+  const usageTotal = (left.usage.totalTokens ?? 0) + (right.usage.totalTokens ?? 0);
+  return {
+    ...left,
+    durationMs: left.durationMs + right.durationMs,
+    attempts: left.attempts + right.attempts,
+    retries: left.retries + right.retries,
+    retryBackoffMs: left.retryBackoffMs + right.retryBackoffMs,
+    usage: {
+      promptTokens: sumNullable(left.usage.promptTokens, right.usage.promptTokens),
+      completionTokens: sumNullable(left.usage.completionTokens, right.usage.completionTokens),
+      totalTokens: usageTotal > 0 ? usageTotal : null,
+      providerTotalCostUsd: sumNullable(left.usage.providerTotalCostUsd, right.usage.providerTotalCostUsd),
+    },
   };
 }
 

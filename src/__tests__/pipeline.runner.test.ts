@@ -51,11 +51,24 @@ describe('pipeline runner', () => {
       expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
       expect(result.artifact.sectionCount).toBeGreaterThanOrEqual(4);
       expect(result.artifact.imageCount).toBe(3);
+      expect(result.artifact.analyticsPath).toContain('.analytics.json');
+      expect(result.analytics.summary.totalDurationMs).toBeGreaterThanOrEqual(0);
+      expect(result.analytics.stages).toHaveLength(5);
+      expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(3);
+      expect(result.analytics.imageRenderCalls.length).toBeGreaterThanOrEqual(3);
 
       const markdown = await readFile(result.artifact.markdownPath, 'utf8');
+      const analyticsRaw = await readFile(result.artifact.analyticsPath, 'utf8');
+      const analytics = JSON.parse(analyticsRaw) as {
+        runId: string;
+        stages: Array<{ stageId: string; durationMs: number }>;
+      };
       expect(markdown).toContain('# How Editorial Teams Can Productionize Ai Writing');
       expect(markdown).toContain('## Conclusion');
       expect(markdown).toContain('![How Editorial Teams Can Productionize Ai Writing]');
+      expect(analytics.runId.length).toBeGreaterThan(0);
+      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['planning', 'sections', 'image-prompts', 'images', 'output']);
+      expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);
 
       const terminalUpdate = updates.at(-1);
       expect(terminalUpdate).toBeDefined();

@@ -22,6 +22,7 @@ npm run dev -- --help
 npm run typecheck
 npm test
 npm run build
+npm run pricing:refresh
 ```
 
 Docs:

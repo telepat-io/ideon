@@ -4,7 +4,7 @@ title: Pipeline Stages
 
 # Pipeline Stages
 
-Ideon runs a five-stage pipeline with live status updates.
+Ideon runs a five-stage pipeline with live status updates and per-stage analytics.
 
 ## Stage Flow
 
@@ -27,6 +27,18 @@ Ideon runs a five-stage pipeline with live status updates.
 - Image-prompt stage reports current prompt expansion
 - Image-render stage reports current rendering progress
 - Output stage reports markdown assembly and final path
+
+## Analytics Captured
+
+For each write operation, Ideon records:
+
+- Stage duration (ms) for all five stages
+- Stage retry counts for external API calls
+- Stage cost totals when pricing data is available
+- Per-image prompt expansion call metrics (duration, retries, token usage, cost)
+- Per-image render call metrics (duration, retries, output bytes, cost)
+
+Analytics are written to `<slug>.analytics.json` in the markdown output directory.
 
 ## Failure Semantics
 
