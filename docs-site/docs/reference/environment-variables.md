@@ -15,6 +15,7 @@ title: Environment Variables
 - `IDEON_TEMPERATURE`
 - `IDEON_MAX_TOKENS`
 - `IDEON_TOP_P`
+- `IDEON_MODEL_REQUEST_TIMEOUT_MS`
 
 ## Output Paths
 
@@ -30,6 +31,7 @@ IDEON_MODEL=moonshotai/kimi-k2.5 \
 IDEON_TEMPERATURE=0.7 \
 IDEON_MAX_TOKENS=2000 \
 IDEON_TOP_P=1 \
+IDEON_MODEL_REQUEST_TIMEOUT_MS=90000 \
 IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
 npm run dev -- write "How teams scale editorial pipelines"

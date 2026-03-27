@@ -55,6 +55,7 @@ export class OpenRouterClient {
             schema: request.schema,
           },
         },
+        requireStructuredOutputs: true,
       });
 
       const parsed = JSON.parse(extractJson(extractText(response))) as unknown;
@@ -64,18 +65,7 @@ export class OpenRouterClient {
         return request.fallbackFactory();
       }
 
-      const fallbackResponse = await this.sendCompletion({
-        messages: request.messages,
-        settings: request.settings,
-        responseFormat: { type: 'json_object' },
-      });
-
-      try {
-        const parsed = JSON.parse(extractJson(extractText(fallbackResponse))) as unknown;
-        return request.parse ? request.parse(parsed) : (parsed as T);
-      } catch {
-        throw error;
-      }
+      throw toStructuredOutputError(error, request.settings.model);
     }
   }
 
@@ -83,20 +73,41 @@ export class OpenRouterClient {
     messages,
     settings,
     responseFormat,
+    requireStructuredOutputs,
   }: {
     messages: ChatMessage[];
     settings: AppSettings;
     responseFormat?: Record<string, unknown>;
+    requireStructuredOutputs?: boolean;
   }): Promise<OpenRouterResponse> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const controller = new AbortController();
+      const timeoutMs = settings.modelRequestTimeoutMs;
       const timeout = setTimeout(() => {
         controller.abort();
-      }, 45000);
+      }, timeoutMs);
 
       try {
+        const requestBody: Record<string, unknown> = {
+          model: settings.model,
+          messages,
+          temperature: settings.modelSettings.temperature,
+          max_tokens: settings.modelSettings.maxTokens,
+          top_p: settings.modelSettings.topP,
+        };
+
+        if (responseFormat) {
+          requestBody.response_format = responseFormat;
+        }
+
+        if (requireStructuredOutputs) {
+          requestBody.provider = {
+            require_parameters: true,
+          };
+        }
+
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -104,14 +115,7 @@ export class OpenRouterClient {
             'Content-Type': 'application/json',
             'X-OpenRouter-Title': 'ideon',
           },
-          body: JSON.stringify({
-            model: settings.model,
-            messages,
-            temperature: settings.modelSettings.temperature,
-            max_tokens: settings.modelSettings.maxTokens,
-            top_p: settings.modelSettings.topP,
-            response_format: responseFormat,
-          }),
+          body: JSON.stringify(requestBody),
           signal: controller.signal,
         });
 
@@ -131,7 +135,7 @@ export class OpenRouterClient {
         return json;
       } catch (error) {
         clearTimeout(timeout);
-        lastError = normalizeClientError(error);
+        lastError = normalizeClientError(error, timeoutMs);
         if (attempt < 2 && shouldRetryError(lastError)) {
           await wait(backoffMs(attempt));
           continue;
@@ -172,16 +176,46 @@ function normalizeGeneratedText(text: string): string {
 function extractJson(content: string): string {
   const fencedMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fencedMatch?.[1]) {
-    return fencedMatch[1].trim();
+    const candidate = fencedMatch[1].trim();
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch {
+      // Fall through to brace extraction.
+    }
   }
 
   const firstBrace = content.indexOf('{');
   const lastBrace = content.lastIndexOf('}');
   if (firstBrace >= 0 && lastBrace > firstBrace) {
-    return content.slice(firstBrace, lastBrace + 1);
+    const candidate = content.slice(firstBrace, lastBrace + 1);
+    try {
+      JSON.parse(candidate);
+      return candidate;
+    } catch {
+      throw new Error('Expected valid JSON in the model response but extraction failed.');
+    }
   }
 
   throw new Error('Expected JSON in the model response but none was found.');
+}
+
+function toStructuredOutputError(error: unknown, model: string): Error {
+  if (!(error instanceof Error)) {
+    return new Error(`Structured output request failed for model \"${model}\".`);
+  }
+
+  if (isStructuredOutputCompatibilityError(error.message)) {
+    return new Error(
+      `Model \"${model}\" or its routed provider does not support strict structured outputs. Choose a model with structured outputs support and retry.`,
+    );
+  }
+
+  return error;
+}
+
+function isStructuredOutputCompatibilityError(message: string): boolean {
+  return /response_format|json_schema|structured output|structured outputs|require_parameters|unsupported/i.test(message);
 }
 
 function shouldRetryStatus(status: number): boolean {
@@ -192,10 +226,10 @@ function shouldRetryError(error: Error): boolean {
   return /timeout|network|fetch|temporarily|aborted/i.test(error.message);
 }
 
-function normalizeClientError(error: unknown): Error {
+function normalizeClientError(error: unknown, timeoutMs: number): Error {
   if (error instanceof Error) {
     if (error.name === 'AbortError') {
-      return new Error('OpenRouter request timed out after 45 seconds.');
+      return new Error(`OpenRouter request timed out after ${Math.round(timeoutMs / 1000)} seconds.`);
     }
 
     return error;

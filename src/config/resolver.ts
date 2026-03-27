@@ -24,6 +24,9 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ...savedSettings,
     ...(job?.settings ?? {}),
     ...(envSettings.model ? { model: envSettings.model } : {}),
+    ...(envSettings.modelRequestTimeoutMs !== undefined
+      ? { modelRequestTimeoutMs: envSettings.modelRequestTimeoutMs }
+      : {}),
     ...(envSettings.temperature !== undefined || envSettings.maxTokens !== undefined || envSettings.topP !== undefined
       ? {
           modelSettings: {

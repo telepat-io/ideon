@@ -23,6 +23,7 @@ Core settings include:
 - `modelSettings.temperature`: 0..2
 - `modelSettings.maxTokens`: positive integer
 - `modelSettings.topP`: 0..1
+- `modelRequestTimeoutMs`: positive integer request timeout in milliseconds (default `90000`)
 - `t2i.modelId`: selected text-to-image model
 - `t2i.inputOverrides`: model-specific user overrides
 - `markdownOutputDir`

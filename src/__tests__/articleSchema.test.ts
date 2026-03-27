@@ -240,6 +240,28 @@ describe('articlePlanSchema', () => {
     expect(result.success).toBe(false);
   });
 
+  it('should reject each missing required top-level field', () => {
+    const requiredFields = [
+      'title',
+      'subtitle',
+      'keywords',
+      'slug',
+      'description',
+      'introBrief',
+      'outroBrief',
+      'sections',
+      'coverImageDescription',
+      'inlineImages',
+    ] as const;
+
+    for (const field of requiredFields) {
+      const candidate = { ...validArticlePlan } as Record<string, unknown>;
+      delete candidate[field];
+      const result = articlePlanSchema.safeParse(candidate);
+      expect(result.success).toBe(false);
+    }
+  });
+
   it('should reject empty string fields', () => {
     const plan = {
       ...validArticlePlan,

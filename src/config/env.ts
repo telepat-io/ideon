@@ -17,6 +17,7 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     temperature: parseNumber(env.IDEON_TEMPERATURE),
     maxTokens: parseNumber(env.IDEON_MAX_TOKENS),
     topP: parseNumber(env.IDEON_TOP_P),
+    modelRequestTimeoutMs: parseNumber(env.IDEON_MODEL_REQUEST_TIMEOUT_MS),
     markdownOutputDir: env.IDEON_MARKDOWN_OUTPUT_DIR,
     assetOutputDir: env.IDEON_ASSET_OUTPUT_DIR,
   });

@@ -29,6 +29,7 @@ describe('resolveRunInput', () => {
     loadSavedSettingsMock.mockResolvedValue({
       model: 'saved/model',
       modelSettings: { temperature: 0.5, maxTokens: 1500, topP: 0.9 },
+      modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
       markdownOutputDir: '/saved-out',
       assetOutputDir: '/saved-out/assets',
@@ -63,6 +64,7 @@ describe('resolveRunInput', () => {
           idea: 'job file idea',
           settings: {
             model: 'job/model',
+            modelRequestTimeoutMs: 120000,
             modelSettings: { maxTokens: 2200, topP: 0.7 },
             markdownOutputDir: '/job-out',
             assetOutputDir: '/job-out/assets',
@@ -74,6 +76,7 @@ describe('resolveRunInput', () => {
       readEnvSettingsMock.mockReturnValue({
         model: 'env/model',
         temperature: 1.1,
+        modelRequestTimeoutMs: 150000,
         markdownOutputDir: '/env-out',
         assetOutputDir: '/env-out/assets',
       });
@@ -82,6 +85,7 @@ describe('resolveRunInput', () => {
 
       expect(result.idea).toBe('job file idea');
       expect(result.config.settings.model).toBe('env/model');
+      expect(result.config.settings.modelRequestTimeoutMs).toBe(150000);
       expect(result.config.settings.modelSettings.temperature).toBe(1.1);
       expect(result.config.settings.modelSettings.maxTokens).toBe(2200);
       expect(result.config.settings.modelSettings.topP).toBe(0.7);
@@ -147,6 +151,29 @@ describe('resolveRunInput', () => {
 
     expect(result.config.secrets.openRouterApiKey).toBe('env-openrouter-key');
     expect(result.config.secrets.replicateApiToken).toBe('env-replicate-token');
+  });
+
+  it('uses job timeout when env timeout is absent', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-timeout-job-'));
+
+    try {
+      const jobPath = path.join(tempDir, 'job.json');
+      await writeFile(
+        jobPath,
+        JSON.stringify({
+          idea: 'job timeout test',
+          settings: {
+            modelRequestTimeoutMs: 120000,
+          },
+        }),
+        'utf8',
+      );
+
+      const result = await resolveRunInput({ jobPath });
+      expect(result.config.settings.modelRequestTimeoutMs).toBe(120000);
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('throws when no idea is provided in CLI or job', async () => {

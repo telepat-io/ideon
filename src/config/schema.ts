@@ -14,6 +14,7 @@ export const baseT2ISettingsSchema = z.object({
 export const appSettingsSchema = z.object({
   model: z.string().default('moonshotai/kimi-k2.5'),
   modelSettings: modelSettingsSchema.default(modelSettingsSchema.parse({})),
+  modelRequestTimeoutMs: z.number().int().positive().default(90000),
   t2i: baseT2ISettingsSchema.default(baseT2ISettingsSchema.parse({})),
   markdownOutputDir: z.string().default('/output'),
   assetOutputDir: z.string().default('/output/assets'),
@@ -26,6 +27,7 @@ export const envSettingsSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   maxTokens: z.number().int().positive().optional(),
   topP: z.number().min(0).max(1).optional(),
+  modelRequestTimeoutMs: z.number().int().positive().optional(),
   markdownOutputDir: z.string().optional(),
   assetOutputDir: z.string().optional(),
 });

@@ -21,11 +21,12 @@ export async function runCli(argv: string[]): Promise<void> {
     .command('write')
     .description('Generate an article from a prompt or job file.')
     .argument('[idea]', 'Natural-language idea for the article')
+    .option('-i, --idea <idea>', 'Natural-language idea for the article')
     .option('-j, --job <path>', 'Path to a JSON job definition')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
-    .action(async (idea: string | undefined, options: { job?: string; dryRun: boolean }) => {
+    .action(async (ideaArg: string | undefined, options: { idea?: string; job?: string; dryRun: boolean }) => {
       await runWriteCommand({
-        idea,
+        idea: options.idea ?? ideaArg,
         jobPath: options.job,
         dryRun: options.dryRun,
       });
