@@ -27,6 +27,7 @@ Ideon runs a five-stage pipeline with live status updates and per-stage analytic
 - Image-prompt stage reports current prompt expansion
 - Image-render stage reports current rendering progress
 - Output stage reports markdown assembly and final path
+- When a stage reaches `succeeded`, the CLI prints stage analytics (duration and cost when available)
 
 ## Analytics Captured
 
@@ -39,6 +40,8 @@ For each write operation, Ideon records:
 - Per-image render call metrics (duration, retries, output bytes, cost)
 
 Analytics are written to `<slug>.analytics.json` in the markdown output directory.
+
+At pipeline completion, the CLI also shows aggregated totals for run duration, retry count, and total cost.
 
 ## Failure Semantics
 

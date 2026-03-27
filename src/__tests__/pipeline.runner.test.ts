@@ -73,6 +73,8 @@ describe('pipeline runner', () => {
       const terminalUpdate = updates.at(-1);
       expect(terminalUpdate).toBeDefined();
       expect(terminalUpdate?.every((stage) => stage.status === 'succeeded')).toBe(true);
+      expect(terminalUpdate?.every((stage) => stage.stageAnalytics !== undefined)).toBe(true);
+      expect(terminalUpdate?.every((stage) => (stage.stageAnalytics?.durationMs ?? -1) >= 0)).toBe(true);
       expect(updates.length).toBeGreaterThanOrEqual(5);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
@@ -119,6 +121,7 @@ describe('pipeline runner', () => {
       const planning = latest?.find((stage) => stage.id === 'planning');
       expect(planning?.status).toBe('failed');
       expect(planning?.detail).toContain('Missing OpenRouter API key');
+      expect(planning?.stageAnalytics).toBeUndefined();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -207,6 +210,7 @@ describe('pipeline runner', () => {
       );
 
       expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
+      expect(result.stages.every((stage) => stage.stageAnalytics !== undefined)).toBe(true);
       expect(result.artifact.slug).toBe('resume-checkpoint-flow');
 
       const planningSummarySeen = updates.some((batch) =>
@@ -458,6 +462,7 @@ describe('pipeline runner', () => {
 
       // Pipeline must complete successfully and re-render the images.
       expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
+      expect(result.stages.every((stage) => stage.stageAnalytics !== undefined)).toBe(true);
 
       // The images stage must have run (not been skipped from cache).
       const imageRenderingRan = updates.some((batch) =>

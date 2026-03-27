@@ -44,6 +44,8 @@ ideon write --dry-run "How to productionize editorial AI"
 
 When a fresh write starts, Ideon resets `.ideon/write/state.json` and stores new temporary pipeline artifacts for that run.
 
+During execution, each stage transition to `succeeded` includes stage analytics output (duration and cost when available). The final summary includes total duration, retries, and total cost for the run.
+
 ## `ideon write resume`
 
 Retries the most recent failed or interrupted write session from saved `.ideon/write` artifacts.

@@ -3,9 +3,30 @@ import { runPipelineShell, type PipelineRunOptions } from '../../pipeline/runner
 import { ReportedError } from '../reportedError.js';
 import type { StageViewModel } from '../../pipeline/events.js';
 
+function formatDuration(durationMs: number): string {
+  if (durationMs >= 1000) {
+    return `${(durationMs / 1000).toFixed(1)}s`;
+  }
+
+  return `${durationMs}ms`;
+}
+
+function formatStageCost(stage: StageViewModel): string {
+  const analytics = stage.stageAnalytics;
+  if (!analytics) {
+    return 'unavailable';
+  }
+
+  const cost = formatCost(analytics.costUsd);
+  return analytics.costSource === 'estimated' && analytics.costUsd !== null ? `~${cost}` : cost;
+}
+
 function formatStage(stage: StageViewModel): string {
   const summary = stage.summary ? `\n    ${stage.summary}` : '';
-  return `[${stage.status}] ${stage.title}\n    ${stage.detail}${summary}`;
+  const analytics = stage.status === 'succeeded' && stage.stageAnalytics
+    ? `\n    analytics: ${formatDuration(stage.stageAnalytics.durationMs)} • cost: ${formatStageCost(stage)}`
+    : '';
+  return `[${stage.status}] ${stage.title}\n    ${stage.detail}${summary}${analytics}`;
 }
 
 function formatCost(costUsd: number | null): string {

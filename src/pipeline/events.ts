@@ -6,6 +6,11 @@ export interface StageViewModel {
   status: StageStatus;
   detail: string;
   summary?: string;
+  stageAnalytics?: {
+    durationMs: number;
+    costUsd: number | null;
+    costSource: CostSource;
+  };
 }
 
 export interface PipelineArtifactSummary {

@@ -18,6 +18,24 @@ const statusColor: Record<StageViewModel['status'], string> = {
   failed: 'red',
 };
 
+function formatDuration(durationMs: number): string {
+  if (durationMs >= 1000) {
+    return `${(durationMs / 1000).toFixed(1)}s`;
+  }
+
+  return `${durationMs}ms`;
+}
+
+function formatStageCost(stage: StageViewModel): string {
+  const analytics = stage.stageAnalytics;
+  if (!analytics || analytics.costUsd === null) {
+    return 'no cost data';
+  }
+
+  const formatted = `$${analytics.costUsd.toFixed(4)}`;
+  return analytics.costSource === 'estimated' ? `~${formatted}` : formatted;
+}
+
 export function StageRow({ stage, isActive }: { stage: StageViewModel; isActive: boolean }): React.JSX.Element {
   const [frameIndex, setFrameIndex] = useState(0);
 
@@ -49,6 +67,11 @@ export function StageRow({ stage, isActive }: { stage: StageViewModel; isActive:
       {stage.summary ? (
         <Box marginLeft={2}>
           <Text color="green">{stage.summary}</Text>
+        </Box>
+      ) : null}
+      {stage.status === 'succeeded' && stage.stageAnalytics ? (
+        <Box marginLeft={2}>
+          <Text color="gray">analytics: {formatDuration(stage.stageAnalytics.durationMs)} • cost: {formatStageCost(stage)}</Text>
         </Box>
       ) : null}
     </Box>

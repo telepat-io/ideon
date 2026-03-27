@@ -122,11 +122,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const replicate = dryRun ? null : new ReplicateClient(requireSecret(input.config.secrets.replicateApiToken, 'Replicate API token'));
     let plan = writeSession.plan;
     if (plan) {
+      markStageCompleted(stageTracking, 'planning');
       stages[0] = {
         ...stages[0],
         status: 'succeeded',
         detail: 'Reused saved plan from .ideon/write.',
         summary: `${plan.title} • ${plan.slug} • ${plan.sections.length} sections • ${plan.inlineImages.length + 1} images`,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
       };
     } else {
       plan = await planArticle({
@@ -140,11 +142,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         },
       });
 
+      markStageCompleted(stageTracking, 'planning');
+
       stages[0] = {
         ...stages[0],
         status: 'succeeded',
         detail: 'Plan generated successfully.',
         summary: `${plan.title} • ${plan.slug} • ${plan.sections.length} sections • ${plan.inlineImages.length + 1} images`,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
       };
       writeSession = await patchWriteSession(
         {
@@ -168,13 +173,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
     let text = writeSession.text;
     if (text) {
+      markStageCompleted(stageTracking, 'sections');
       stages[1] = {
         ...stages[1],
         status: 'succeeded',
         detail: 'Reused saved section drafts from .ideon/write.',
         summary: `Intro + ${text.sections.length} sections + conclusion`,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
       };
-      markStageCompleted(stageTracking, 'sections');
       stages[2] = {
         ...stages[2],
         status: 'running',
@@ -200,13 +206,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         },
       });
 
+      markStageCompleted(stageTracking, 'sections');
       stages[1] = {
         ...stages[1],
         status: 'succeeded',
         detail: 'Completed intro, sections, and conclusion.',
         summary: `Intro + ${text.sections.length} sections + conclusion`,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
       };
-      markStageCompleted(stageTracking, 'sections');
       stages[2] = {
         ...stages[2],
         status: 'running',
@@ -254,13 +261,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       }
     }
     if (imagePrompts) {
+      markStageCompleted(stageTracking, 'image-prompts');
       stages[2] = {
         ...stages[2],
         status: 'succeeded',
         detail: 'Reused saved image prompts from .ideon/write.',
         summary: `${imagePrompts.length} prompts ready`,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
       };
-      markStageCompleted(stageTracking, 'image-prompts');
       stages[3] = {
         ...stages[3],
         status: 'running',
@@ -301,13 +309,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         },
       });
 
+      markStageCompleted(stageTracking, 'image-prompts');
       stages[2] = {
         ...stages[2],
         status: 'succeeded',
         detail: 'Expanded image prompts successfully.',
         summary: `${imagePrompts.length} prompts ready`,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
       };
-      markStageCompleted(stageTracking, 'image-prompts');
       stages[3] = {
         ...stages[3],
         status: 'running',
@@ -329,13 +338,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
 
     if (imageArtifacts) {
+      markStageCompleted(stageTracking, 'images');
       stages[3] = {
         ...stages[3],
         status: 'succeeded',
         detail: 'Reused previously rendered images from .ideon/write.',
         summary: articleAssetDir,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'images'),
       };
-      markStageCompleted(stageTracking, 'images');
       stages[4] = {
         ...stages[4],
         status: 'running',
@@ -386,13 +396,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         renderedImages,
       };
 
+      markStageCompleted(stageTracking, 'images');
       stages[3] = {
         ...stages[3],
         status: 'succeeded',
         detail: 'Rendered and stored article images.',
         summary: articleAssetDir,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'images'),
       };
-      markStageCompleted(stageTracking, 'images');
       stages[4] = {
         ...stages[4],
         status: 'running',
@@ -423,13 +434,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     };
     await writeUtf8File(markdownPath, renderMarkdownDocument(article));
 
+    markStageCompleted(stageTracking, 'output');
     stages[4] = {
       ...stages[4],
       status: 'succeeded',
       detail: 'Markdown file assembled successfully.',
       summary: markdownPath,
+      stageAnalytics: snapshotStageAnalytics(stageTracking, 'output'),
     };
-    markStageCompleted(stageTracking, 'output');
     options.onUpdate?.(cloneStages(stages));
 
     const analytics = buildRunAnalytics({
@@ -644,6 +656,24 @@ function chooseStageCostSource(costSources: CostSource[], aggregateSource: CostS
   }
 
   return aggregateSource;
+}
+
+function snapshotStageAnalytics(
+  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: WriteStageId,
+): StageViewModel['stageAnalytics'] {
+  const tracked = tracking.get(stageId);
+  if (!tracked) {
+    return undefined;
+  }
+
+  const endedAtMs = tracked.endedAtMs ?? Date.now();
+  const knownCost = sumKnownCosts(tracked.costs);
+  return {
+    durationMs: Math.max(0, endedAtMs - tracked.startedAtMs),
+    costUsd: knownCost.usd,
+    costSource: chooseStageCostSource(tracked.costSources, knownCost.source),
+  };
 }
 
 function cloneStages(stages: StageViewModel[]): StageViewModel[] {
