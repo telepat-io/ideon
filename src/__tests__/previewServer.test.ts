@@ -315,4 +315,43 @@ describe('preview server resilience', () => {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
+
+  it('renders OS-default dark mode support and persisted theme toggle controls', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-theme-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const markdownPath = path.join(markdownOutputDir, 'theme-check.md');
+      await writeFile(markdownPath, '# Theme Check\n\nBody\n', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath,
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const response = await fetch(`${server.url}/`);
+        const html = await response.text();
+
+        expect(response.status).toBe(200);
+        expect(html).toContain("@media (prefers-color-scheme: dark)");
+        expect(html).toContain("html[data-theme='light']");
+        expect(html).toContain("html[data-theme='dark']");
+        expect(html).toContain("const THEME_STORAGE_KEY = 'ideon-preview-theme';");
+        expect(html).toContain("localStorage.getItem(storageKey)");
+        expect(html).toContain('id="themeToggle"');
+        expect(html).toContain("themeToggleButton.addEventListener('click'");
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
 });

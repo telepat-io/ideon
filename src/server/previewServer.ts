@@ -354,6 +354,19 @@ function renderShell({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(title)} | Ideon Preview</title>
+    <script>
+      (() => {
+        const storageKey = 'ideon-preview-theme';
+        try {
+          const storedTheme = localStorage.getItem(storageKey);
+          if (storedTheme === 'light' || storedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', storedTheme);
+          }
+        } catch {
+          // Ignore storage access errors and fall back to OS-level preference.
+        }
+      })();
+    </script>
     <style>
       :root {
         --bg: #f4efe6;
@@ -362,6 +375,167 @@ function renderShell({
         --muted: #6c6257;
         --accent: #0b6e4f;
         --border: #d9cfbf;
+        --elevated: #f9f4ed;
+        --hover: #f0e9de;
+        --tab-bg: #f7f0e4;
+        --variant-bg: #fff8ef;
+        --variant-border: #b9ad9c;
+        --variant-text: #695f54;
+        --variant-active-border: #244f75;
+        --variant-active-bg: #eef4fb;
+        --variant-active-text: #244f75;
+        --blockquote-border: #c4b299;
+        --blockquote-bg: #faf5ed;
+        --slug-bg: #f0ebe2;
+        --copy-disabled-bg: #e4f0ea;
+        --copy-disabled-border: #b8d9c8;
+        --status-error: #b42318;
+        --x-bg: #000;
+        --x-text: #e7e9ea;
+        --x-border: #2f3336;
+        --x-link: #6cb8ff;
+        --linkedin-bg: #ffffff;
+        --linkedin-header-bg: #f0f7ff;
+        --linkedin-border: #0a66c2;
+        --reddit-bg: #fff8f3;
+        --reddit-header-bg: #fff1e7;
+        --reddit-border: #ff4500;
+        --newsletter-bg: #fffdf4;
+        --newsletter-header-bg: #fff5cc;
+        --newsletter-border: #cfb95a;
+        --landing-bg: linear-gradient(155deg, #10395c 0%, #3d7fa0 100%);
+        --landing-text: #f8fdff;
+        --landing-link: #d7f0ff;
+        --landing-border: rgba(255, 255, 255, 0.3);
+        color-scheme: light;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1a1712;
+          --paper: #241f18;
+          --text: #efe7dc;
+          --muted: #b8aa98;
+          --accent: #c9973c;
+          --border: #504336;
+          --elevated: #211c15;
+          --hover: #2d271f;
+          --tab-bg: #32291f;
+          --variant-bg: #2a231b;
+          --variant-border: #6d5d4b;
+          --variant-text: #c7b7a5;
+          --variant-active-border: #7db9f1;
+          --variant-active-bg: #1f3040;
+          --variant-active-text: #bfe1ff;
+          --blockquote-border: #8e7454;
+          --blockquote-bg: #2d2418;
+          --slug-bg: #2b241b;
+          --copy-disabled-bg: #1f3830;
+          --copy-disabled-border: #2c6450;
+          --status-error: #ff8a80;
+          --x-bg: #0d1116;
+          --x-text: #e9edf2;
+          --x-border: #33404a;
+          --x-link: #8bc6ff;
+          --linkedin-bg: #1b252f;
+          --linkedin-header-bg: #1f313f;
+          --linkedin-border: #4f96da;
+          --reddit-bg: #2a221b;
+          --reddit-header-bg: #34271d;
+          --reddit-border: #ff7d45;
+          --newsletter-bg: #2e291b;
+          --newsletter-header-bg: #3b331e;
+          --newsletter-border: #d6b25f;
+          --landing-bg: linear-gradient(155deg, #0f2236 0%, #245d7e 100%);
+          --landing-text: #e7f4ff;
+          --landing-link: #b8e4ff;
+          --landing-border: rgba(220, 239, 255, 0.35);
+          color-scheme: dark;
+        }
+      }
+
+      html[data-theme='light'] {
+        --bg: #f4efe6;
+        --paper: #fffdf9;
+        --text: #1f1c18;
+        --muted: #6c6257;
+        --accent: #0b6e4f;
+        --border: #d9cfbf;
+        --elevated: #f9f4ed;
+        --hover: #f0e9de;
+        --tab-bg: #f7f0e4;
+        --variant-bg: #fff8ef;
+        --variant-border: #b9ad9c;
+        --variant-text: #695f54;
+        --variant-active-border: #244f75;
+        --variant-active-bg: #eef4fb;
+        --variant-active-text: #244f75;
+        --blockquote-border: #c4b299;
+        --blockquote-bg: #faf5ed;
+        --slug-bg: #f0ebe2;
+        --copy-disabled-bg: #e4f0ea;
+        --copy-disabled-border: #b8d9c8;
+        --status-error: #b42318;
+        --x-bg: #000;
+        --x-text: #e7e9ea;
+        --x-border: #2f3336;
+        --x-link: #6cb8ff;
+        --linkedin-bg: #ffffff;
+        --linkedin-header-bg: #f0f7ff;
+        --linkedin-border: #0a66c2;
+        --reddit-bg: #fff8f3;
+        --reddit-header-bg: #fff1e7;
+        --reddit-border: #ff4500;
+        --newsletter-bg: #fffdf4;
+        --newsletter-header-bg: #fff5cc;
+        --newsletter-border: #cfb95a;
+        --landing-bg: linear-gradient(155deg, #10395c 0%, #3d7fa0 100%);
+        --landing-text: #f8fdff;
+        --landing-link: #d7f0ff;
+        --landing-border: rgba(255, 255, 255, 0.3);
+        color-scheme: light;
+      }
+
+      html[data-theme='dark'] {
+        --bg: #1a1712;
+        --paper: #241f18;
+        --text: #efe7dc;
+        --muted: #b8aa98;
+        --accent: #c9973c;
+        --border: #504336;
+        --elevated: #211c15;
+        --hover: #2d271f;
+        --tab-bg: #32291f;
+        --variant-bg: #2a231b;
+        --variant-border: #6d5d4b;
+        --variant-text: #c7b7a5;
+        --variant-active-border: #7db9f1;
+        --variant-active-bg: #1f3040;
+        --variant-active-text: #bfe1ff;
+        --blockquote-border: #8e7454;
+        --blockquote-bg: #2d2418;
+        --slug-bg: #2b241b;
+        --copy-disabled-bg: #1f3830;
+        --copy-disabled-border: #2c6450;
+        --status-error: #ff8a80;
+        --x-bg: #0d1116;
+        --x-text: #e9edf2;
+        --x-border: #33404a;
+        --x-link: #8bc6ff;
+        --linkedin-bg: #1b252f;
+        --linkedin-header-bg: #1f313f;
+        --linkedin-border: #4f96da;
+        --reddit-bg: #2a221b;
+        --reddit-header-bg: #34271d;
+        --reddit-border: #ff7d45;
+        --newsletter-bg: #2e291b;
+        --newsletter-header-bg: #3b331e;
+        --newsletter-border: #d6b25f;
+        --landing-bg: linear-gradient(155deg, #0f2236 0%, #245d7e 100%);
+        --landing-text: #e7f4ff;
+        --landing-link: #b8e4ff;
+        --landing-border: rgba(220, 239, 255, 0.35);
+        color-scheme: dark;
       }
 
       * { box-sizing: border-box; }
@@ -370,9 +544,10 @@ function renderShell({
         margin: 0;
         color: var(--text);
         background:
-          radial-gradient(circle at 0% 0%, #efe3cf 0%, transparent 45%),
+          radial-gradient(circle at 0% 0%, #7a5838 0%, transparent 45%),
           radial-gradient(circle at 100% 0%, #dceadf 0%, transparent 35%),
           var(--bg);
+        background-attachment: fixed;
         font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
         line-height: 1.65;
       }
@@ -384,7 +559,7 @@ function renderShell({
 
       aside {
         width: 320px;
-        background: #f9f4ed;
+        background: var(--elevated);
         border-right: 1px solid var(--border);
         overflow-y: auto;
         padding: 1.5rem 0;
@@ -417,12 +592,39 @@ function renderShell({
 
       .sidebar-header {
         padding: 0 1.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         font-size: 0.9rem;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         font-weight: 600;
+      }
+
+      .sidebar-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0 1.5rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .theme-toggle-btn {
+        font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+        font-size: 0.72rem;
+        letter-spacing: 0.25px;
+        text-transform: uppercase;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--paper);
+        color: var(--muted);
+        padding: 0.22rem 0.6rem;
+        cursor: pointer;
+      }
+
+      .theme-toggle-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
       }
 
       .article-list {
@@ -439,7 +641,7 @@ function renderShell({
       }
 
       .article-item:hover {
-        background: #f0e9de;
+        background: var(--hover);
       }
 
       .article-item.active {
@@ -564,7 +766,7 @@ function renderShell({
       .type-tab-btn {
         border: 1px solid var(--border);
         border-radius: 999px;
-        background: #f7f0e4;
+        background: var(--tab-bg);
         color: var(--muted);
         font-size: 0.82rem;
         font-weight: 600;
@@ -587,10 +789,10 @@ function renderShell({
       }
 
       .variant-tab-btn {
-        border: 1px dashed #b9ad9c;
+        border: 1px dashed var(--variant-border);
         border-radius: 8px;
-        background: #fff8ef;
-        color: #695f54;
+        background: var(--variant-bg);
+        color: var(--variant-text);
         font-size: 0.78rem;
         padding: 0.3rem 0.55rem;
         cursor: pointer;
@@ -598,9 +800,9 @@ function renderShell({
 
       .variant-tab-btn.active {
         border-style: solid;
-        border-color: #244f75;
-        color: #244f75;
-        background: #eef4fb;
+        border-color: var(--variant-active-border);
+        color: var(--variant-active-text);
+        background: var(--variant-active-bg);
       }
 
       .channel-shell {
@@ -634,65 +836,65 @@ function renderShell({
       }
 
       .channel-x-post {
-        background: #000;
-        color: #e7e9ea;
-        border-color: #2f3336;
+        background: var(--x-bg);
+        color: var(--x-text);
+        border-color: var(--x-border);
       }
 
       .channel-x-post .channel-header {
-        border-bottom-color: #2f3336;
+        border-bottom-color: var(--x-border);
       }
 
       .channel-x-post .channel-meta,
       .channel-x-post a {
-        color: #6cb8ff;
+        color: var(--x-link);
       }
 
       .channel-linkedin-post {
-        background: #ffffff;
-        border-color: #0a66c2;
+        background: var(--linkedin-bg);
+        border-color: var(--linkedin-border);
       }
 
       .channel-linkedin-post .channel-header {
-        background: #f0f7ff;
+        background: var(--linkedin-header-bg);
       }
 
       .channel-reddit-post {
-        background: #fff8f3;
-        border-color: #ff4500;
+        background: var(--reddit-bg);
+        border-color: var(--reddit-border);
       }
 
       .channel-reddit-post .channel-header {
-        background: #fff1e7;
+        background: var(--reddit-header-bg);
       }
 
       .channel-newsletter {
-        background: #fffdf4;
-        border-color: #cfb95a;
+        background: var(--newsletter-bg);
+        border-color: var(--newsletter-border);
       }
 
       .channel-newsletter .channel-header {
-        background: #fff5cc;
+        background: var(--newsletter-header-bg);
       }
 
       .channel-landing-page-copy {
-        background: linear-gradient(155deg, #10395c 0%, #3d7fa0 100%);
-        color: #f8fdff;
+        background: var(--landing-bg);
+        color: var(--landing-text);
         border: none;
       }
 
       .channel-landing-page-copy .channel-header {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        border-bottom: 1px solid var(--landing-border);
       }
 
       .channel-landing-page-copy .channel-meta,
       .channel-landing-page-copy a {
-        color: #d7f0ff;
+        color: var(--landing-link);
       }
 
       .channel-article,
       .channel-blog-post {
-        background: #fffdf9;
+        background: var(--paper);
       }
 
       article h1,
@@ -734,8 +936,8 @@ function renderShell({
       article blockquote {
         margin: 1.2rem 0;
         padding: 0.5rem 1rem;
-        border-left: 4px solid #c4b299;
-        background: #faf5ed;
+        border-left: 4px solid var(--blockquote-border);
+        background: var(--blockquote-bg);
       }
 
       .slug-row {
@@ -749,7 +951,7 @@ function renderShell({
       .slug-text {
         font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
         font-size: 0.82rem;
-        background: #f0ebe2;
+        background: var(--slug-bg);
         color: var(--muted);
         padding: 0.25rem 0.6rem;
         border-radius: 6px;
@@ -777,9 +979,24 @@ function renderShell({
 
       .copy-btn:disabled {
         cursor: default;
-        background: #e4f0ea;
+        background: var(--copy-disabled-bg);
         color: var(--accent);
-        border-color: #b8d9c8;
+        border-color: var(--copy-disabled-border);
+      }
+
+      .list-status {
+        padding: 1rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .error-text {
+        color: var(--status-error);
+      }
+
+      .empty-message {
+        padding: 2rem;
+        color: var(--muted);
       }
 
       .loading {
@@ -826,9 +1043,12 @@ function renderShell({
   <body>
     <main>
       <aside id="sidebar">
-        <div class="sidebar-header">Generations</div>
+        <div class="sidebar-header-row">
+          <div class="sidebar-header">Generations</div>
+          <button id="themeToggle" type="button" class="theme-toggle-btn" aria-label="Toggle theme"></button>
+        </div>
         <ul class="article-list" id="articleList">
-          <li style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">Loading...</li>
+          <li class="list-status">Loading...</li>
         </ul>
       </aside>
       <div class="content-wrapper">
@@ -844,14 +1064,83 @@ function renderShell({
     </main>
 
     <script>
+      const THEME_STORAGE_KEY = 'ideon-preview-theme';
       const currentSlug = '${escapeHtml(currentSlug)}';
       const articleElement = document.getElementById('article');
       const articleListElement = document.getElementById('articleList');
+      const themeToggleButton = document.getElementById('themeToggle');
       const typeOrder = ['article', 'blog-post', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
 
       let currentGeneration = null;
       let activeType = '';
       let activeOutputId = '';
+
+      function getStoredTheme() {
+        try {
+          const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+          return storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function setStoredTheme(theme) {
+        try {
+          localStorage.setItem(THEME_STORAGE_KEY, theme);
+        } catch {
+          // Ignore storage access errors.
+        }
+      }
+
+      function systemPrefersDarkMode() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+
+      function getEffectiveTheme() {
+        const explicitTheme = document.documentElement.getAttribute('data-theme');
+        if (explicitTheme === 'light' || explicitTheme === 'dark') {
+          return explicitTheme;
+        }
+
+        return systemPrefersDarkMode() ? 'dark' : 'light';
+      }
+
+      function updateThemeToggleLabel(theme) {
+        if (!(themeToggleButton instanceof HTMLButtonElement)) {
+          return;
+        }
+
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        themeToggleButton.textContent = 'Theme: ' + theme;
+        themeToggleButton.setAttribute('aria-label', 'Switch to ' + nextTheme + ' theme');
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        updateThemeToggleLabel(theme);
+      }
+
+      function initializeThemeControls() {
+        const initialTheme = getEffectiveTheme();
+        updateThemeToggleLabel(initialTheme);
+
+        if (!(themeToggleButton instanceof HTMLButtonElement)) {
+          return;
+        }
+
+        themeToggleButton.addEventListener('click', () => {
+          const nextTheme = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+          applyTheme(nextTheme);
+          setStoredTheme(nextTheme);
+        });
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.addEventListener('change', () => {
+          if (!getStoredTheme()) {
+            updateThemeToggleLabel(mediaQuery.matches ? 'dark' : 'light');
+          }
+        });
+      }
 
       async function loadArticles() {
         try {
@@ -860,7 +1149,7 @@ function renderShell({
           const articles = await response.json();
 
           if (articles.length === 0) {
-            articleListElement.innerHTML = '<li style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">No generations yet</li>';
+            articleListElement.innerHTML = '<li class="list-status">No generations yet</li>';
             return;
           }
 
@@ -881,7 +1170,7 @@ function renderShell({
             .join('');
         } catch (error) {
           console.error('Error loading articles:', error);
-          articleListElement.innerHTML = '<li style="padding: 1rem; color: red;">Error loading articles</li>';
+          articleListElement.innerHTML = '<li class="list-status error-text">Error loading articles</li>';
         }
       }
 
@@ -916,7 +1205,7 @@ function renderShell({
           window.scrollTo(0, 0);
         } catch (error) {
           console.error('Error loading article:', error);
-          articleElement.innerHTML = '<div style="color: red; padding: 2rem;">Error loading article</div>';
+          articleElement.innerHTML = '<div class="empty-message error-text">Error loading article</div>';
           articleElement.classList.remove('loading');
         }
       }
@@ -924,7 +1213,7 @@ function renderShell({
       function renderGeneration() {
         if (!currentGeneration || !Array.isArray(currentGeneration.outputs) || currentGeneration.outputs.length === 0) {
           articleElement.classList.add('preview-empty');
-          articleElement.innerHTML = '<div style="padding: 2rem; color: var(--muted);">No content outputs found for this generation.</div>';
+          articleElement.innerHTML = '<div class="empty-message">No content outputs found for this generation.</div>';
           return;
         }
 
@@ -971,7 +1260,7 @@ function renderShell({
           '<div class="variant-tabs">',
           variantTabs,
           '</div>',
-          activeOutput ? renderOutputShell(activeOutput) : '<div style="color: red;">Missing output payload.</div>',
+          activeOutput ? renderOutputShell(activeOutput) : '<div class="error-text">Missing output payload.</div>',
         ].join('');
       }
 
@@ -1070,6 +1359,7 @@ function renderShell({
       });
 
       // Load articles and initial content
+      initializeThemeControls();
       loadArticles();
       if (currentSlug) {
         loadArticle(currentSlug);

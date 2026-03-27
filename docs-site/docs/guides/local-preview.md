@@ -33,6 +33,12 @@ Preview selection behavior:
 - If you pass a markdown path, preview uses its generation as the initial selection when available.
 - Generation asset links in markdown are rewritten to generation-scoped preview routes so relative image paths continue to work.
 
+Theme behavior:
+
+- Preview defaults to your OS-level color scheme (`prefers-color-scheme`) on first load.
+- Use the theme button in the sidebar to switch between light and dark modes.
+- Your manual choice is persisted in local storage and reused on later visits.
+
 If the generation currently open in preview is deleted while the server is running, refreshing the page safely falls back to the newest remaining generation. If no markdown files remain, preview shows a friendly empty state instead of a crash.
 
 ## Preview a Specific Article
