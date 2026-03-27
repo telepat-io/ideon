@@ -1,10 +1,13 @@
 {
-  "name": "ideon",
+  "name": "@cozymantis/ideon",
   "version": "0.1.0",
   "description": "CLI for generating rich articles and images from ideas.",
   "type": "module",
   "bin": {
     "ideon": "dist/ideon.js"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
     "dist"
@@ -13,6 +16,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "prepublishOnly": "npm run lint && npm test && npm run build",
     "build": "tsup src/bin/ideon.ts --format esm --dts --clean --out-dir dist",
     "dev": "tsx src/bin/ideon.ts",
     "preview": "tsx src/bin/ideon.ts preview",

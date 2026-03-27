@@ -14,6 +14,38 @@ npm test
 npm run build
 ```
 
+Ensure `package.json` is set to the scoped public package:
+
+- name: `@cozymantis/ideon`
+- publish access: `public`
+
+## npm Release Automation
+
+Publishing to npm is automated through GitHub Actions for repository `cozymantis/ideon`.
+
+Trigger rules:
+
+- Push a tag in the format `vX.Y.Z` (example: `v1.2.3`)
+- The tagged commit must be reachable from `main`
+- The tag version must exactly match `package.json` version
+
+Workflow behavior:
+
+1. verifies tag format and commit ancestry
+2. verifies package name is `@cozymantis/ideon`
+3. runs release quality gates (`lint`, `test`, `build`, `docs:build`)
+4. publishes to npm with provenance
+
+### Trusted Publishing Prerequisite
+
+This repository uses npm Trusted Publishing (OIDC), not `NPM_TOKEN`.
+
+In npm package settings for `@cozymantis/ideon`, configure a trusted publisher for:
+
+- provider: GitHub Actions
+- repository: `cozymantis/ideon`
+- workflow: `.github/workflows/npm-publish.yml`
+
 ## Docs Deployment Target
 
 Docs are configured for GitHub Pages:
