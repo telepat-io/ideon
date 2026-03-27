@@ -2,6 +2,7 @@ import type { ResolvedRunInput } from '../../config/resolver.js';
 import { runPipelineShell, type PipelineRunOptions } from '../../pipeline/runner.js';
 import { ReportedError } from '../reportedError.js';
 import type { StageViewModel } from '../../pipeline/events.js';
+import { withWriteResumeHint } from '../commands/writeErrorHint.js';
 
 function formatDuration(durationMs: number): string {
   if (durationMs >= 1000) {
@@ -73,7 +74,7 @@ export async function renderPlainPipeline(
     console.log(`  retries: ${result.analytics.summary.totalRetries}`);
     console.log(`  cost: ${formatCost(result.analytics.summary.totalCostUsd)}`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Pipeline failed.';
+    const message = error instanceof Error ? withWriteResumeHint(error.message) : withWriteResumeHint('Pipeline failed.');
     console.error(`Pipeline failed: ${message}`);
     throw new ReportedError(message);
   }

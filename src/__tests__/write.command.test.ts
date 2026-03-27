@@ -1,4 +1,5 @@
 import { parseTargetSpec, parseTargetSpecs } from '../cli/commands/writeTargetSpecs.js';
+import { withWriteResumeHint } from '../cli/commands/writeErrorHint.js';
 
 describe('write target parsing', () => {
   it('parses valid target spec', () => {
@@ -27,5 +28,19 @@ describe('write target parsing', () => {
       { contentType: 'article', count: 1 },
       { contentType: 'x-post', count: 5 },
     ]);
+  });
+});
+
+describe('write failure hint', () => {
+  it('appends resume hint when missing', () => {
+    expect(withWriteResumeHint('Pipeline failed.')).toBe(
+      'Pipeline failed. Run `ideon write resume` to retry the latest job.',
+    );
+  });
+
+  it('does not append duplicate resume hint', () => {
+    expect(withWriteResumeHint('Pipeline failed. Run `ideon write resume` to continue.')).toBe(
+      'Pipeline failed. Run `ideon write resume` to continue.',
+    );
   });
 });

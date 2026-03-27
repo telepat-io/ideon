@@ -11,6 +11,7 @@ import type { PipelineRunResult, StageViewModel } from '../../pipeline/events.js
 import { loadWriteSession, patchWriteSession } from '../../pipeline/sessionStore.js';
 import { WriteOptionsFlow } from '../flows/writeOptionsFlow.js';
 import { hasXPostWithoutMode, parseTargetSpecs } from './writeTargetSpecs.js';
+import { withWriteResumeHint } from './writeErrorHint.js';
 
 interface WriteCommandOptions {
   idea?: string;
@@ -66,8 +67,9 @@ function WriteApp({
         }
 
         const normalizedError = error instanceof Error ? error : new Error('Unknown pipeline error');
-        setErrorMessage(normalizedError.message);
-        onError(normalizedError);
+        const messageWithResumeHint = withWriteResumeHint(normalizedError.message);
+        setErrorMessage(messageWithResumeHint);
+        onError(new Error(messageWithResumeHint));
       }
     })();
 
@@ -183,7 +185,7 @@ async function runWritePipeline(
     const finalError = commandError as Error | null;
 
     if (finalError) {
-      throw new ReportedError(finalError.message);
+      throw new ReportedError(withWriteResumeHint(finalError.message));
     }
   } finally {
     cleanupSignalHandlers();
