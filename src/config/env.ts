@@ -20,5 +20,6 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     modelRequestTimeoutMs: parseNumber(env.IDEON_MODEL_REQUEST_TIMEOUT_MS),
     markdownOutputDir: env.IDEON_MARKDOWN_OUTPUT_DIR,
     assetOutputDir: env.IDEON_ASSET_OUTPUT_DIR,
+    style: env.IDEON_STYLE,
   });
 }

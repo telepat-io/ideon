@@ -11,6 +11,51 @@ export interface ArticleMetadata {
   coverImageUrl: string | null;
 }
 
+export interface GenerationOutputMetadata {
+  id: string;
+  generationId: string;
+  sourcePath: string;
+  slug: string;
+  title: string;
+  previewSnippet: string;
+  coverImageUrl: string | null;
+  mtime: number;
+  contentType: string;
+  contentTypeLabel: string;
+  index: number;
+}
+
+export interface GenerationMetadata {
+  id: string;
+  title: string;
+  mtime: number;
+  previewSnippet: string;
+  coverImageUrl: string | null;
+  outputs: GenerationOutputMetadata[];
+}
+
+const CONTENT_TYPE_ORDER = ['article', 'blog-post', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
+
+const FILE_PREFIX_TO_CONTENT_TYPE: Record<string, string> = {
+  article: 'article',
+  blog: 'blog-post',
+  x: 'x-post',
+  reddit: 'reddit-post',
+  linkedin: 'linkedin-post',
+  newsletter: 'newsletter',
+  landing: 'landing-page-copy',
+};
+
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  article: 'Article',
+  'blog-post': 'Blog Post',
+  'x-post': 'X Post',
+  'reddit-post': 'Reddit Post',
+  'linkedin-post': 'LinkedIn Post',
+  newsletter: 'Newsletter',
+  'landing-page-copy': 'Landing Page Copy',
+};
+
 export function parsePort(portOption: string | undefined): number {
   if (!portOption) {
     return DEFAULT_PORT;
@@ -57,10 +102,7 @@ export async function resolveMarkdownPath(
 }
 
 export async function resolveLatestMarkdown(markdownOutputDir: string): Promise<string> {
-  const entries = await readdir(markdownOutputDir, { withFileTypes: true });
-  const markdownCandidates = entries
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
-    .map((entry) => path.join(markdownOutputDir, entry.name));
+  const markdownCandidates = await findMarkdownFiles(markdownOutputDir);
 
   if (markdownCandidates.length === 0) {
     throw new Error(
@@ -118,10 +160,7 @@ export async function extractArticleMetadata(markdownPath: string): Promise<Arti
 }
 
 export async function listAllArticles(markdownOutputDir: string): Promise<ArticleMetadata[]> {
-  const entries = await readdir(markdownOutputDir, { withFileTypes: true });
-  const markdownFiles = entries
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
-    .map((entry) => path.join(markdownOutputDir, entry.name));
+  const markdownFiles = await findMarkdownFiles(markdownOutputDir);
 
   const articles: ArticleMetadata[] = [];
 
@@ -138,4 +177,158 @@ export async function listAllArticles(markdownOutputDir: string): Promise<Articl
   articles.sort((a, b) => b.mtime - a.mtime);
 
   return articles;
+}
+
+export async function listAllGenerations(markdownOutputDir: string): Promise<GenerationMetadata[]> {
+  const markdownFiles = await findMarkdownFiles(markdownOutputDir);
+  const grouped = new Map<string, GenerationOutputMetadata[]>();
+
+  for (const filePath of markdownFiles) {
+    try {
+      const metadata = await extractArticleMetadata(filePath);
+      const identity = deriveOutputIdentity(filePath, markdownOutputDir);
+      const output: GenerationOutputMetadata = {
+        id: `${identity.generationId}:${identity.contentType}:${identity.index}`,
+        generationId: identity.generationId,
+        sourcePath: filePath,
+        slug: metadata.slug,
+        title: metadata.title,
+        previewSnippet: metadata.previewSnippet,
+        coverImageUrl: metadata.coverImageUrl,
+        mtime: metadata.mtime,
+        contentType: identity.contentType,
+        contentTypeLabel: toContentTypeLabel(identity.contentType),
+        index: identity.index,
+      };
+
+      const existing = grouped.get(identity.generationId);
+      if (existing) {
+        existing.push(output);
+      } else {
+        grouped.set(identity.generationId, [output]);
+      }
+    } catch {
+      // Skip files that fail to parse
+    }
+  }
+
+  const generations: GenerationMetadata[] = [];
+  for (const [id, outputs] of grouped.entries()) {
+    outputs.sort((a, b) => compareContentTypes(a.contentType, b.contentType) || a.index - b.index || b.mtime - a.mtime);
+    const primary = outputs.find((output) => output.contentType === 'article') ?? outputs[0];
+    if (!primary) {
+      continue;
+    }
+
+    const newestMtime = outputs.reduce((latest, output) => Math.max(latest, output.mtime), 0);
+    generations.push({
+      id,
+      title: primary.title,
+      mtime: newestMtime,
+      previewSnippet: primary.previewSnippet,
+      coverImageUrl: primary.coverImageUrl ?? outputs.find((output) => Boolean(output.coverImageUrl))?.coverImageUrl ?? null,
+      outputs,
+    });
+  }
+
+  generations.sort((a, b) => b.mtime - a.mtime);
+  return generations;
+}
+
+export function deriveGenerationId(markdownPath: string, markdownOutputDir: string): string {
+  const relative = path.relative(markdownOutputDir, markdownPath);
+  const normalized = relative.split(path.sep).join('/');
+  if (!normalized || normalized.startsWith('../')) {
+    return path.basename(markdownPath, '.md');
+  }
+
+  const segments = normalized.split('/').filter(Boolean);
+  if (segments.length <= 1) {
+    return path.basename(markdownPath, '.md');
+  }
+
+  return segments[0] ?? path.basename(markdownPath, '.md');
+}
+
+async function findMarkdownFiles(markdownOutputDir: string): Promise<string[]> {
+  const files: string[] = [];
+  const stack = [markdownOutputDir];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) {
+      continue;
+    }
+
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  return files;
+}
+
+function deriveOutputIdentity(markdownPath: string, markdownOutputDir: string): {
+  generationId: string;
+  contentType: string;
+  index: number;
+} {
+  const generationId = deriveGenerationId(markdownPath, markdownOutputDir);
+  const fileBase = path.basename(markdownPath, '.md');
+  const parsed = fileBase.match(/^([a-z0-9-]+)-(\d+)$/i);
+
+  if (!parsed || !parsed[1] || !parsed[2]) {
+    return {
+      generationId,
+      contentType: 'article',
+      index: 1,
+    };
+  }
+
+  const prefix = parsed[1].toLowerCase();
+  const index = Number.parseInt(parsed[2], 10);
+  return {
+    generationId,
+    contentType: FILE_PREFIX_TO_CONTENT_TYPE[prefix] ?? prefix,
+    index: Number.isFinite(index) && index > 0 ? index : 1,
+  };
+}
+
+function compareContentTypes(left: string, right: string): number {
+  const leftIndex = CONTENT_TYPE_ORDER.indexOf(left);
+  const rightIndex = CONTENT_TYPE_ORDER.indexOf(right);
+  const normalizedLeft = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+  const normalizedRight = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+  if (normalizedLeft !== normalizedRight) {
+    return normalizedLeft - normalizedRight;
+  }
+
+  return left.localeCompare(right);
+}
+
+function toContentTypeLabel(contentType: string): string {
+  const knownLabel = CONTENT_TYPE_LABELS[contentType];
+  if (knownLabel) {
+    return knownLabel;
+  }
+
+  return contentType
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }

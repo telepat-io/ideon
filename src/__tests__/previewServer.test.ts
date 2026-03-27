@@ -105,13 +105,113 @@ describe('preview server resilience', () => {
         const html = await rootResponse.text();
 
         expect(rootResponse.status).toBe(200);
-        expect(html).toContain('No generated articles found in');
+        expect(html).toContain('No generated content found in');
         expect(html).toContain("const currentSlug = '';");
 
         const listResponse = await fetch(`${server.url}/api/articles`);
         const listPayload = (await listResponse.json()) as Array<{ slug: string }>;
         expect(listResponse.status).toBe(200);
         expect(listPayload).toHaveLength(0);
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('groups generation outputs by content type for a single generation id', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-grouped-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-120000-sample-topic');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Sample Article\n\nLongform body\n', 'utf8');
+      await writeFile(path.join(generationDir, 'x-1.md'), '# X Variant 1\n\nShort post one\n', 'utf8');
+      await writeFile(path.join(generationDir, 'x-2.md'), '# X Variant 2\n\nShort post two\n', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const listResponse = await fetch(`${server.url}/api/articles`);
+        const listPayload = (await listResponse.json()) as Array<{ slug: string; title: string }>;
+        expect(listResponse.status).toBe(200);
+        expect(listPayload).toHaveLength(1);
+        expect(listPayload[0]?.slug).toBe('20260327-120000-sample-topic');
+
+        const detailResponse = await fetch(`${server.url}/api/articles/20260327-120000-sample-topic`);
+        const detailPayload = (await detailResponse.json()) as {
+          generationId: string;
+          outputs: Array<{ contentType: string; index: number }>;
+        };
+        expect(detailResponse.status).toBe(200);
+        expect(detailPayload.generationId).toBe('20260327-120000-sample-topic');
+        expect(detailPayload.outputs).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ contentType: 'article', index: 1 }),
+            expect.objectContaining({ contentType: 'x-post', index: 1 }),
+            expect.objectContaining({ contentType: 'x-post', index: 2 }),
+          ]),
+        );
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('serves generation-local assets referenced by relative markdown paths', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-assets-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-130000-asset-test');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(
+        path.join(generationDir, 'article-1.md'),
+        '# Asset Test\n\n![Cover](article-cover.webp)\n',
+        'utf8',
+      );
+      await writeFile(path.join(generationDir, 'article-cover.webp'), 'fake-image-content', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const detailResponse = await fetch(`${server.url}/api/articles/20260327-130000-asset-test`);
+        const detailPayload = (await detailResponse.json()) as {
+          outputs: Array<{ htmlBody: string }>;
+        };
+
+        expect(detailResponse.status).toBe(200);
+        const htmlBody = detailPayload.outputs[0]?.htmlBody ?? '';
+        expect(htmlBody).toContain('/api/generations/20260327-130000-asset-test/assets/article-cover.webp');
+
+        const assetResponse = await fetch(
+          `${server.url}/api/generations/20260327-130000-asset-test/assets/article-cover.webp`,
+        );
+        const assetContent = await assetResponse.text();
+        expect(assetResponse.status).toBe(200);
+        expect(assetContent).toContain('fake-image-content');
       } finally {
         await server.close();
       }

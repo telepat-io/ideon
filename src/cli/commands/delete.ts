@@ -48,10 +48,12 @@ export async function runDeleteCommand(
 
   try {
     await rm(targets.markdownPath);
-    await Promise.all([
-      rm(targets.analyticsPath, { force: true }),
-      rm(targets.assetDir, { recursive: true, force: true }),
-    ]);
+    await rm(targets.analyticsPath, { force: true });
+
+    const hasMoreMarkdown = await directoryContainsMarkdown(targets.assetDir);
+    if (!hasMoreMarkdown) {
+      await rm(targets.assetDir, { recursive: true, force: true });
+    }
   } catch (error) {
     throw toReportedDeleteError(error, slug);
   }
@@ -71,7 +73,7 @@ async function resolveDeleteTargets(slug: string, cwd: string): Promise<DeleteTa
   });
 
   const outputPaths = resolveOutputPaths(mergedSettings, cwd);
-  const markdownPath = path.join(outputPaths.markdownOutputDir, `${slug}.md`);
+  const markdownPath = await resolveMarkdownPathForSlug(outputPaths.markdownOutputDir, slug);
 
   await assertMarkdownExists(markdownPath, slug);
 
@@ -79,8 +81,66 @@ async function resolveDeleteTargets(slug: string, cwd: string): Promise<DeleteTa
     slug,
     markdownPath,
     analyticsPath: resolveAnalyticsPath(markdownPath),
-    assetDir: path.join(outputPaths.assetOutputDir, slug),
+    assetDir: path.dirname(markdownPath),
   };
+}
+
+async function resolveMarkdownPathForSlug(markdownOutputDir: string, slug: string): Promise<string> {
+  const directPath = path.join(markdownOutputDir, `${slug}.md`);
+  if (await pathExists(directPath)) {
+    return directPath;
+  }
+
+  const candidates = await findMarkdownCandidates(markdownOutputDir, `${slug}.md`);
+  if (candidates.length === 0) {
+    return directPath;
+  }
+
+  let latest = candidates[0] as string;
+  let latestMtime = 0;
+  for (const candidate of candidates) {
+    const fileStat = await stat(candidate);
+    if (fileStat.mtimeMs >= latestMtime) {
+      latestMtime = fileStat.mtimeMs;
+      latest = candidate;
+    }
+  }
+
+  return latest;
+}
+
+async function findMarkdownCandidates(rootDir: string, fileName: string): Promise<string[]> {
+  const { readdir } = await import('node:fs/promises');
+  const stack = [rootDir];
+  const matches: string[] = [];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) {
+      continue;
+    }
+
+    let entries;
+    try {
+      entries = await readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+
+      if (entry.isFile() && entry.name === fileName) {
+        matches.push(fullPath);
+      }
+    }
+  }
+
+  return matches;
 }
 
 function normalizeSlug(rawSlug: string): string {
@@ -109,6 +169,15 @@ async function assertMarkdownExists(markdownPath: string, slug: string): Promise
     }
   } catch {
     throw new ReportedError(`Could not find article "${slug}". Expected markdown at ${markdownPath}.`);
+  }
+}
+
+async function pathExists(targetPath: string): Promise<boolean> {
+  try {
+    const fileStat = await stat(targetPath);
+    return fileStat.isFile();
+  } catch {
+    return false;
   }
 }
 
@@ -159,4 +228,14 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 function formatRelativePath(cwd: string, targetPath: string): string {
   const relativePath = path.relative(cwd, targetPath);
   return relativePath.length > 0 ? relativePath : targetPath;
+}
+
+async function directoryContainsMarkdown(dirPath: string): Promise<boolean> {
+  const { readdir } = await import('node:fs/promises');
+  try {
+    const entries = await readdir(dirPath, { withFileTypes: true });
+    return entries.some((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'));
+  } catch {
+    return false;
+  }
 }

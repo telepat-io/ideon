@@ -2,11 +2,19 @@ import { readFile } from 'node:fs/promises';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
-import { appSettingsSchema, jobInputSchema, type JobInput, type ResolvedConfig } from './schema.js';
+import { appSettingsSchema, contentTypeValues, jobInputSchema, xModeValues, writingStyleValues, type JobInput, type ResolvedConfig } from './schema.js';
+
+export interface ContentTargetInput {
+  contentType: (typeof contentTypeValues)[number] | string;
+  count: number;
+  xMode?: (typeof xModeValues)[number] | string;
+}
 
 export interface ResolveConfigInput {
   idea?: string;
   jobPath?: string;
+  style?: (typeof writingStyleValues)[number] | string;
+  contentTargets?: ContentTargetInput[];
 }
 
 export interface ResolvedRunInput {
@@ -40,6 +48,9 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
       : {}),
     ...(envSettings.markdownOutputDir ? { markdownOutputDir: envSettings.markdownOutputDir } : {}),
     ...(envSettings.assetOutputDir ? { assetOutputDir: envSettings.assetOutputDir } : {}),
+    ...(envSettings.style ? { style: envSettings.style } : {}),
+    ...(input.style ? { style: input.style } : {}),
+    ...(input.contentTargets ? { contentTargets: input.contentTargets } : {}),
   });
 
   const idea = input.idea ?? job?.idea ?? job?.prompt;

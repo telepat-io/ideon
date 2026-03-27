@@ -48,6 +48,30 @@ Fix:
 - Validate JSON syntax
 - Ensure field types match documented schema
 
+## No Generated Content Found
+
+Error pattern:
+
+- `No generated content found in ...`
+
+Fix:
+
+- Run a generation command first (`ideon write "your idea"`)
+- Check configured output directories in settings
+- Pass an explicit markdown path to `ideon preview`
+
+## Preview Loads but Images Are Missing
+
+Error pattern:
+
+- preview page renders markdown but image placeholders are broken
+
+Fix:
+
+- Verify images exist in the generation directory shown by CLI output
+- Ensure preview was started against the same workspace/output root used for generation
+- Re-run generation if assets were manually deleted
+
 ## Empty Model Output
 
 Error pattern:

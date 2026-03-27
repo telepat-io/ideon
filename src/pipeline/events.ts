@@ -18,6 +18,9 @@ export interface PipelineArtifactSummary {
   slug: string;
   sectionCount: number;
   imageCount: number;
+  outputCount: number;
+  generationDir: string;
+  markdownPaths: string[];
   markdownPath: string;
   assetDir: string;
   analyticsPath: string;

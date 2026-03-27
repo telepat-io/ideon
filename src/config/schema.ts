@@ -1,5 +1,25 @@
 import { z } from 'zod';
 
+export const contentTypeValues = [
+  'article',
+  'blog-post',
+  'x-post',
+  'reddit-post',
+  'linkedin-post',
+  'newsletter',
+  'landing-page-copy',
+] as const;
+
+export const writingStyleValues = ['professional', 'friendly', 'technical', 'academic', 'opinionated', 'storytelling'] as const;
+
+export const xModeValues = ['single', 'thread'] as const;
+
+const contentTargetSchema = z.object({
+  contentType: z.enum(contentTypeValues),
+  count: z.number().int().positive().default(1),
+  xMode: z.enum(xModeValues).optional(),
+});
+
 export const modelSettingsSchema = z.object({
   temperature: z.number().min(0).max(2).default(0.7),
   maxTokens: z.number().int().positive().default(4000),
@@ -18,6 +38,8 @@ export const appSettingsSchema = z.object({
   t2i: baseT2ISettingsSchema.default(baseT2ISettingsSchema.parse({})),
   markdownOutputDir: z.string().default('/output'),
   assetOutputDir: z.string().default('/output/assets'),
+  contentTargets: z.array(contentTargetSchema).min(1).default([{ contentType: 'article', count: 1 }]),
+  style: z.enum(writingStyleValues).default('professional'),
 });
 
 export const envSettingsSchema = z.object({
@@ -30,6 +52,7 @@ export const envSettingsSchema = z.object({
   modelRequestTimeoutMs: z.number().int().positive().optional(),
   markdownOutputDir: z.string().optional(),
   assetOutputDir: z.string().optional(),
+  style: z.enum(writingStyleValues).optional(),
 });
 
 export const jobInputSchema = z.object({

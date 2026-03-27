@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { runPipelineShell, createInitialStages } from '../pipeline/runner.js';
@@ -76,6 +77,130 @@ describe('pipeline runner', () => {
       expect(terminalUpdate?.every((stage) => stage.stageAnalytics !== undefined)).toBe(true);
       expect(terminalUpdate?.every((stage) => (stage.stageAnalytics?.durationMs ?? -1) >= 0)).toBe(true);
       expect(updates.length).toBeGreaterThanOrEqual(5);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('writes multiple outputs into one generation directory with shared assets', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-multi-output-'));
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      const result = await runPipelineShell(
+        {
+          idea: 'multi target generation test',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [
+                { contentType: 'article', count: 1 },
+                { contentType: 'x-post', count: 2 },
+              ],
+              style: 'professional',
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          workingDir: tempRoot,
+        },
+      );
+
+      expect(result.artifact.outputCount).toBe(3);
+      expect(result.artifact.markdownPaths).toHaveLength(3);
+
+      const fileNames = result.artifact.markdownPaths.map((filePath) => path.basename(filePath)).sort();
+      expect(fileNames).toEqual(['article-1.md', 'x-1.md', 'x-2.md']);
+
+      const xMarkdownPaths = result.artifact.markdownPaths.filter((filePath) => path.basename(filePath).startsWith('x-'));
+      expect(xMarkdownPaths).toHaveLength(2);
+
+      const xContents = await Promise.all(xMarkdownPaths.map(async (filePath) => readFile(filePath, 'utf8')));
+      for (const content of xContents) {
+        expect(content).toContain('Anchored to generated article context from this run.');
+      }
+
+      const generationEntries = await readdir(result.artifact.generationDir);
+      expect(generationEntries.some((entry) => entry.endsWith('.md'))).toBe(true);
+      expect(generationEntries.some((entry) => entry.endsWith('.jpg') || entry.endsWith('.png') || entry.endsWith('.webp'))).toBe(true);
+      expect(generationEntries).toContain('job.json');
+
+      const jobRaw = await readFile(path.join(result.artifact.generationDir, 'job.json'), 'utf8');
+      const job = JSON.parse(jobRaw) as {
+        prompt: string;
+        contentTargets: Array<{ contentType: string; count: number }>;
+        style: string;
+        settings: {
+          markdownOutputDir: string;
+          assetOutputDir: string;
+        };
+      };
+      expect(job.prompt).toBe('multi target generation test');
+      expect(job.contentTargets).toEqual([
+        { contentType: 'article', count: 1 },
+        { contentType: 'x-post', count: 2 },
+      ]);
+      expect(job.style).toBe('professional');
+      expect(job.settings.markdownOutputDir).toBe(markdownDir);
+      expect(job.settings.assetOutputDir).toBe(assetDir);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('skips article section flow when article target is absent', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-non-article-only-'));
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      const result = await runPipelineShell(
+        {
+          idea: 'launch update for workflow automation',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [
+                { contentType: 'x-post', count: 2 },
+                { contentType: 'linkedin-post', count: 1 },
+              ],
+              style: 'professional',
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          workingDir: tempRoot,
+        },
+      );
+
+      expect(result.artifact.outputCount).toBe(3);
+      expect(result.artifact.imageCount).toBe(0);
+      expect(result.artifact.sectionCount).toBe(0);
+
+      const planningStage = result.stages.find((stage) => stage.id === 'planning');
+      expect(planningStage?.detail).toContain('Skipped article planning');
+
+      const firstOutput = await readFile(result.artifact.markdownPaths[0]!, 'utf8');
+      expect(firstOutput).toContain('dry-run placeholder for single-prompt channel generation');
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

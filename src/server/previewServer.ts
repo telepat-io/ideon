@@ -1,10 +1,10 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import express from 'express';
 import { marked } from 'marked';
-import { stripFrontmatter, extractHeadingTitle, listAllArticles, extractArticleMetadata } from './previewHelpers.js';
+import { stripFrontmatter, listAllGenerations, deriveGenerationId } from './previewHelpers.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -23,7 +23,16 @@ export interface StartedPreviewServer {
 
 interface ArticleContent {
   title: string;
-  htmlBody: string;
+  generationId: string;
+  outputs: Array<{
+    id: string;
+    contentType: string;
+    contentTypeLabel: string;
+    index: number;
+    slug: string;
+    title: string;
+    htmlBody: string;
+  }>;
 }
 
 interface ResolvedPreviewArticle {
@@ -44,10 +53,31 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   app.disable('x-powered-by');
   app.use('/assets', express.static(options.assetDir));
 
+  app.get('/api/generations/:generationId/assets/*assetPath', async (req, res) => {
+    try {
+      const generationId = req.params.generationId;
+      const assetPathParam = req.params.assetPath;
+      const rawAssetPath = Array.isArray(assetPathParam) ? assetPathParam.join('/') : (assetPathParam ?? '');
+      const resolvedAssetPath = await resolveGenerationAssetPath(generationId, rawAssetPath, options.markdownOutputDir);
+      res.sendFile(resolvedAssetPath);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error loading generation asset';
+      const status = error instanceof MissingArticleError ? 404 : 400;
+      res.status(status).type('application/json').json({ error: message });
+    }
+  });
+
   // API endpoints
   app.get('/api/articles', async (_req, res) => {
     try {
-      const articles = await listAllArticles(options.markdownOutputDir);
+      const generations = await listAllGenerations(options.markdownOutputDir);
+      const articles = generations.map((generation) => ({
+        slug: generation.id,
+        title: generation.title,
+        mtime: generation.mtime,
+        previewSnippet: generation.previewSnippet,
+        coverImageUrl: generation.coverImageUrl,
+      }));
       res.status(200).type('application/json').json(articles);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error listing articles';
@@ -58,8 +88,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   app.get('/api/articles/:slug', async (req, res) => {
     try {
       const slug = req.params.slug;
-      const markdownPath = path.join(options.markdownOutputDir, `${slug}.md`);
-      const content = await getArticleContent(markdownPath);
+      const content = await getArticleContent(slug, options.markdownOutputDir);
       res.status(200).type('application/json').json(content);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error loading article';
@@ -74,7 +103,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       const activeArticle = await resolveActivePreviewArticle(options.markdownPath, options.markdownOutputDir);
       const emptyStateMessage = activeArticle
         ? null
-        : `No generated articles found in ${options.markdownOutputDir}. Run ideon write "your idea" first.`;
+        : `No generated content found in ${options.markdownOutputDir}. Run ideon write "your idea" first.`;
       const html = renderShell({
         title: activeArticle?.title ?? 'Ideon Preview',
         sourcePath: activeArticle?.sourcePath ?? options.markdownOutputDir,
@@ -123,44 +152,67 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   };
 }
 
-async function getArticleContent(markdownPath: string): Promise<ArticleContent> {
-  let markdown = '';
-  try {
-    markdown = await readFile(markdownPath, 'utf8');
-  } catch (error) {
-    if (isMissingFileError(error)) {
-      const slug = path.basename(markdownPath, '.md');
-      throw new MissingArticleError(`Article "${slug}" no longer exists.`);
-    }
+async function getArticleContent(generationId: string, markdownOutputDir: string): Promise<ArticleContent> {
+  const generations = await listAllGenerations(markdownOutputDir);
+  const generation = generations.find((item) => item.id === generationId);
 
-    throw error;
+  if (!generation) {
+    throw new MissingArticleError(`Generation "${generationId}" no longer exists.`);
   }
 
-  const htmlBody = await renderArticleHtml(markdown);
-  const title = extractHeadingTitle(stripFrontmatter(markdown)) ?? path.basename(markdownPath, '.md');
+  const outputs = await Promise.all(
+    generation.outputs.map(async (output) => {
+      let markdown = '';
+      try {
+        markdown = await readFile(output.sourcePath, 'utf8');
+      } catch (error) {
+        if (isMissingFileError(error)) {
+          throw new MissingArticleError(`Generation "${generationId}" no longer exists.`);
+        }
 
-  return { title, htmlBody };
+        throw error;
+      }
+
+      return {
+        id: output.id,
+        contentType: output.contentType,
+        contentTypeLabel: output.contentTypeLabel,
+        index: output.index,
+        slug: output.slug,
+        title: output.title,
+        htmlBody: await renderArticleHtml(markdown, generationId),
+      };
+    }),
+  );
+
+  return {
+    title: generation.title,
+    generationId: generation.id,
+    outputs,
+  };
 }
 
 async function resolveActivePreviewArticle(
   preferredMarkdownPath: string,
   markdownOutputDir: string,
 ): Promise<ResolvedPreviewArticle | null> {
-  const articles = await listAllArticles(markdownOutputDir);
-  if (articles.length === 0) {
+  const generations = await listAllGenerations(markdownOutputDir);
+  if (generations.length === 0) {
     return null;
   }
 
-  const preferredSlug = path.basename(preferredMarkdownPath, '.md');
-  const activeArticle = articles.find((article) => article.slug === preferredSlug) ?? articles[0];
+  const preferredSlug = deriveGenerationId(preferredMarkdownPath, markdownOutputDir);
+  const activeArticle = generations.find((article) => article.id === preferredSlug) ?? generations[0];
   if (!activeArticle) {
     return null;
   }
 
+  const sourcePath = activeArticle.outputs[0]?.sourcePath ?? path.join(markdownOutputDir, activeArticle.id);
+
   return {
-    slug: activeArticle.slug,
+    slug: activeArticle.id,
     title: activeArticle.title,
-    sourcePath: path.join(markdownOutputDir, `${activeArticle.slug}.md`),
+    sourcePath,
   };
 }
 
@@ -168,9 +220,110 @@ function isMissingFileError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
 }
 
-async function renderArticleHtml(markdown: string): Promise<string> {
+async function renderArticleHtml(markdown: string, generationId: string): Promise<string> {
   const content = stripFrontmatter(markdown);
-  return await marked.parse(content);
+  const html = await marked.parse(content);
+  return rewriteRelativeAssetUrls(html, generationId);
+}
+
+function rewriteRelativeAssetUrls(html: string, generationId: string): string {
+  const replaceAttribute = (source: string, attribute: 'src' | 'href'): string => {
+    const doubleQuotePattern = new RegExp(`${attribute}="([^"]+)"`, 'gi');
+    const singleQuotePattern = new RegExp(`${attribute}='([^']+)'`, 'gi');
+
+    let updated = source.replace(doubleQuotePattern, (_match, rawValue: string) => {
+      const rewritten = toGenerationAssetUrl(rawValue, generationId);
+      return `${attribute}="${rewritten}"`;
+    });
+
+    updated = updated.replace(singleQuotePattern, (_match, rawValue: string) => {
+      const rewritten = toGenerationAssetUrl(rawValue, generationId);
+      return `${attribute}='${rewritten}'`;
+    });
+
+    return updated;
+  };
+
+  return replaceAttribute(replaceAttribute(html, 'src'), 'href');
+}
+
+function toGenerationAssetUrl(rawValue: string, generationId: string): string {
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  if (
+    trimmed.startsWith('http://')
+    || trimmed.startsWith('https://')
+    || trimmed.startsWith('/')
+    || trimmed.startsWith('#')
+    || trimmed.startsWith('data:')
+    || trimmed.startsWith('mailto:')
+    || trimmed.startsWith('tel:')
+  ) {
+    return trimmed;
+  }
+
+  const [pathPart, hashPart = ''] = trimmed.split('#', 2);
+  const [basePath, queryPart = ''] = pathPart.split('?', 2);
+  const normalizedPath = basePath
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((segment) => segment.length > 0 && segment !== '.')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+
+  const prefix = `/api/generations/${encodeURIComponent(generationId)}/assets/${normalizedPath}`;
+  const querySuffix = queryPart.length > 0 ? `?${queryPart}` : '';
+  const hashSuffix = hashPart.length > 0 ? `#${hashPart}` : '';
+  return `${prefix}${querySuffix}${hashSuffix}`;
+}
+
+async function resolveGenerationAssetPath(
+  generationId: string,
+  rawAssetPath: string,
+  markdownOutputDir: string,
+): Promise<string> {
+  const generations = await listAllGenerations(markdownOutputDir);
+  const generation = generations.find((item) => item.id === generationId);
+  if (!generation) {
+    throw new MissingArticleError(`Generation "${generationId}" no longer exists.`);
+  }
+
+  const decodedAssetPath = decodeURIComponent(rawAssetPath);
+  const normalizedRelative = path.posix.normalize(decodedAssetPath.replace(/\\/g, '/'));
+  if (
+    normalizedRelative.length === 0
+    || normalizedRelative === '.'
+    || normalizedRelative.startsWith('../')
+    || normalizedRelative.includes('/../')
+    || path.posix.isAbsolute(normalizedRelative)
+  ) {
+    throw new Error('Invalid generation asset path.');
+  }
+
+  const generationDir = path.dirname(generation.outputs[0]?.sourcePath ?? '');
+  if (!generationDir) {
+    throw new MissingArticleError(`Generation "${generationId}" has no source directory.`);
+  }
+
+  const resolvedPath = path.resolve(generationDir, normalizedRelative);
+  const relativeToGeneration = path.relative(generationDir, resolvedPath);
+  if (relativeToGeneration.startsWith('..') || path.isAbsolute(relativeToGeneration)) {
+    throw new Error('Invalid generation asset path.');
+  }
+
+  try {
+    const fileStat = await stat(resolvedPath);
+    if (!fileStat.isFile()) {
+      throw new Error('Invalid generation asset path.');
+    }
+  } catch {
+    throw new MissingArticleError(`Asset "${normalizedRelative}" no longer exists.`);
+  }
+
+  return resolvedPath;
 }
 
 function renderShell({
@@ -184,10 +337,10 @@ function renderShell({
   currentSlug: string;
   emptyStateMessage?: string | null;
 }): string {
-  const initialArticleClass = emptyStateMessage ? '' : 'loading';
+  const initialArticleClass = emptyStateMessage ? '' : 'loading preview-empty';
   const initialArticleMarkup = emptyStateMessage
     ? `<div style="padding: 2rem; color: var(--muted);">${escapeHtml(emptyStateMessage)}</div>`
-    : 'Loading article...';
+    : 'Loading generation...';
 
   return `<!doctype html>
 <html lang="en">
@@ -366,6 +519,10 @@ function renderShell({
         overflow-y: auto;
       }
 
+      .preview-empty {
+        min-height: 240px;
+      }
+
       .container {
         max-width: 860px;
         margin: 2.5rem auto;
@@ -389,6 +546,147 @@ function renderShell({
 
       article {
         padding: 1.75rem 1.5rem 2rem;
+      }
+
+      .type-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0 0 0.9rem;
+      }
+
+      .type-tab-btn {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: #f7f0e4;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.15px;
+        padding: 0.35rem 0.7rem;
+        cursor: pointer;
+      }
+
+      .type-tab-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .variant-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin: 0 0 1.25rem;
+      }
+
+      .variant-tab-btn {
+        border: 1px dashed #b9ad9c;
+        border-radius: 8px;
+        background: #fff8ef;
+        color: #695f54;
+        font-size: 0.78rem;
+        padding: 0.3rem 0.55rem;
+        cursor: pointer;
+      }
+
+      .variant-tab-btn.active {
+        border-style: solid;
+        border-color: #244f75;
+        color: #244f75;
+        background: #eef4fb;
+      }
+
+      .channel-shell {
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+
+      .channel-header {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .channel-title {
+        font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+        font-size: 0.92rem;
+        font-weight: 700;
+      }
+
+      .channel-meta {
+        font-size: 0.76rem;
+        color: var(--muted);
+      }
+
+      .channel-body {
+        padding: 1rem 1rem 1.2rem;
+      }
+
+      .channel-x-post {
+        background: #000;
+        color: #e7e9ea;
+        border-color: #2f3336;
+      }
+
+      .channel-x-post .channel-header {
+        border-bottom-color: #2f3336;
+      }
+
+      .channel-x-post .channel-meta,
+      .channel-x-post a {
+        color: #6cb8ff;
+      }
+
+      .channel-linkedin-post {
+        background: #ffffff;
+        border-color: #0a66c2;
+      }
+
+      .channel-linkedin-post .channel-header {
+        background: #f0f7ff;
+      }
+
+      .channel-reddit-post {
+        background: #fff8f3;
+        border-color: #ff4500;
+      }
+
+      .channel-reddit-post .channel-header {
+        background: #fff1e7;
+      }
+
+      .channel-newsletter {
+        background: #fffdf4;
+        border-color: #cfb95a;
+      }
+
+      .channel-newsletter .channel-header {
+        background: #fff5cc;
+      }
+
+      .channel-landing-page-copy {
+        background: linear-gradient(155deg, #10395c 0%, #3d7fa0 100%);
+        color: #f8fdff;
+        border: none;
+      }
+
+      .channel-landing-page-copy .channel-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .channel-landing-page-copy .channel-meta,
+      .channel-landing-page-copy a {
+        color: #d7f0ff;
+      }
+
+      .channel-article,
+      .channel-blog-post {
+        background: #fffdf9;
       }
 
       article h1,
@@ -438,7 +736,8 @@ function renderShell({
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin: 0.75rem 0 1.25rem;
+        margin: 0 0 1rem;
+        justify-content: flex-end;
       }
 
       .slug-text {
@@ -510,13 +809,18 @@ function renderShell({
         article {
           padding: 1.2rem 1rem 1.5rem;
         }
+
+        .type-tabs,
+        .variant-tabs {
+          gap: 0.35rem;
+        }
       }
     </style>
   </head>
   <body>
     <main>
       <aside id="sidebar">
-        <div class="sidebar-header">Articles</div>
+        <div class="sidebar-header">Generations</div>
         <ul class="article-list" id="articleList">
           <li style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">Loading...</li>
         </ul>
@@ -537,6 +841,11 @@ function renderShell({
       const currentSlug = '${escapeHtml(currentSlug)}';
       const articleElement = document.getElementById('article');
       const articleListElement = document.getElementById('articleList');
+      const typeOrder = ['article', 'blog-post', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
+
+      let currentGeneration = null;
+      let activeType = '';
+      let activeOutputId = '';
 
       async function loadArticles() {
         try {
@@ -545,14 +854,14 @@ function renderShell({
           const articles = await response.json();
 
           if (articles.length === 0) {
-            articleListElement.innerHTML = '<li style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">No articles yet</li>';
+            articleListElement.innerHTML = '<li style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">No generations yet</li>';
             return;
           }
 
           articleListElement.innerHTML = articles
             .map(
               (article) =>
-                \`<li class="article-item\${article.slug === currentSlug ? ' active' : ''}" data-slug="\${article.slug}">
+                \`<li class="article-item\${article.slug === currentSlug ? ' active' : ''}" data-slug="\${escapeHtml(article.slug)}">
               <button onclick="loadArticle(this.parentElement.dataset.slug); return false;">
                 \${article.coverImageUrl ? \`<img class="article-thumb" src="\${article.coverImageUrl}" alt="" loading="lazy">\` : ''}
                 <div class="article-text">
@@ -571,25 +880,19 @@ function renderShell({
       }
 
       async function loadArticle(slug) {
-        articleElement.innerHTML = '<div class="loading">Loading article...</div>';
+        articleElement.innerHTML = '<div class="loading">Loading generation...</div>';
 
         try {
-          const response = await fetch(\`/api/articles/\${slug}\`);
-          if (!response.ok) throw new Error('Article not found');
-          const { title, htmlBody } = await response.json();
+          const response = await fetch(\`/api/articles/\${encodeURIComponent(slug)}\`);
+          if (!response.ok) throw new Error('Generation not found');
+          const payload = await response.json();
 
-          articleElement.innerHTML = htmlBody;
-          articleElement.classList.remove('loading');
-
-          // Inject slug badge after the subtitle (first <p> after <h1>)
-          const h1 = articleElement.querySelector('h1');
-          if (h1) {
-            const anchor = h1.nextElementSibling?.tagName === 'P' ? h1.nextElementSibling : h1;
-            const badge = document.createElement('div');
-            badge.className = 'slug-row';
-            badge.innerHTML = \`<code class="slug-text">\${escapeHtml(slug)}</code><button class="copy-btn" onclick="copySlug(this, '\${escapeHtml(slug)}')" type="button">Copy slug</button>\`;
-            anchor.insertAdjacentElement('afterend', badge);
-          }
+          currentGeneration = payload;
+          const firstOutput = currentGeneration.outputs?.[0];
+          activeType = firstOutput?.contentType ?? '';
+          activeOutputId = firstOutput?.id ?? '';
+          renderGeneration();
+          articleElement.classList.remove('loading', 'preview-empty');
 
           // Update active state in sidebar by matching data-slug attribute
           document.querySelectorAll('.article-item').forEach((item) => {
@@ -601,7 +904,7 @@ function renderShell({
           });
 
           // Update document title
-          document.title = \`\${title} | Ideon Preview\`;
+          document.title = \`\${payload.title} | Ideon Preview\`;
 
           // Scroll to top
           window.scrollTo(0, 0);
@@ -610,6 +913,92 @@ function renderShell({
           articleElement.innerHTML = '<div style="color: red; padding: 2rem;">Error loading article</div>';
           articleElement.classList.remove('loading');
         }
+      }
+
+      function renderGeneration() {
+        if (!currentGeneration || !Array.isArray(currentGeneration.outputs) || currentGeneration.outputs.length === 0) {
+          articleElement.classList.add('preview-empty');
+          articleElement.innerHTML = '<div style="padding: 2rem; color: var(--muted);">No content outputs found for this generation.</div>';
+          return;
+        }
+
+        const grouped = groupOutputsByType(currentGeneration.outputs);
+        const availableTypes = Object.keys(grouped).sort((left, right) => {
+          const leftIndex = typeOrder.indexOf(left);
+          const rightIndex = typeOrder.indexOf(right);
+          const normalizedLeft = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+          const normalizedRight = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+          if (normalizedLeft !== normalizedRight) return normalizedLeft - normalizedRight;
+          return left.localeCompare(right);
+        });
+
+        if (!grouped[activeType]) {
+          activeType = availableTypes[0] || '';
+        }
+
+        const variants = grouped[activeType] || [];
+        if (!variants.some((item) => item.id === activeOutputId)) {
+          activeOutputId = variants[0]?.id || '';
+        }
+
+        const activeOutput = variants.find((item) => item.id === activeOutputId) || variants[0];
+
+        const typeTabs = availableTypes
+          .map((type) => {
+            const label = grouped[type]?.[0]?.contentTypeLabel || type;
+            const className = type === activeType ? 'type-tab-btn active' : 'type-tab-btn';
+            return \`<button type="button" class="\${className}" data-type-tab="\${escapeHtml(type)}">\${escapeHtml(label)}</button>\`;
+          })
+          .join('');
+
+        const variantTabs = variants
+          .map((item) => {
+            const className = item.id === activeOutputId ? 'variant-tab-btn active' : 'variant-tab-btn';
+            return \`<button type="button" class="\${className}" data-output-id="\${escapeHtml(item.id)}">\${escapeHtml(item.contentTypeLabel)} \${item.index}</button>\`;
+          })
+          .join('');
+
+        articleElement.innerHTML = [
+          '<div class="type-tabs">',
+          typeTabs,
+          '</div>',
+          '<div class="variant-tabs">',
+          variantTabs,
+          '</div>',
+          activeOutput ? renderOutputShell(activeOutput) : '<div style="color: red;">Missing output payload.</div>',
+        ].join('');
+      }
+
+      function renderOutputShell(output) {
+        const channelClass = \`channel-shell channel-\${sanitizeClassName(output.contentType)}\`;
+        return [
+          \`<div class="\${channelClass}">\`,
+          '<div class="channel-header">',
+          '<div>',
+          \`<div class="channel-title">\${escapeHtml(output.title || output.contentTypeLabel)}</div>\`,
+          \`<div class="channel-meta">\${escapeHtml(output.contentTypeLabel)} • Variant \${output.index}</div>\`,
+          '</div>',
+          '<div class="slug-row">',
+          \`<code class="slug-text">\${escapeHtml(output.slug)}</code>\`,
+          \`<button class="copy-btn" data-copy-slug="\${escapeHtml(output.slug)}" type="button">Copy slug</button>\`,
+          '</div>',
+          '</div>',
+          \`<div class="channel-body">\${output.htmlBody}</div>\`,
+          '</div>',
+        ].join('');
+      }
+
+      function groupOutputsByType(outputs) {
+        return outputs.reduce((acc, output) => {
+          const key = output.contentType || 'article';
+          if (!acc[key]) {
+            acc[key] = [];
+          }
+
+          acc[key].push(output);
+          acc[key].sort((left, right) => (left.index || 1) - (right.index || 1));
+          return acc;
+        }, {});
       }
 
       function copySlug(btn, slug) {
@@ -630,6 +1019,49 @@ function renderShell({
       function formatDate(date) {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       }
+
+      function sanitizeClassName(value) {
+        return String(value || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9-]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      }
+
+      articleElement.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+
+        const typeButton = target.closest('[data-type-tab]');
+        if (typeButton instanceof HTMLElement) {
+          const nextType = typeButton.dataset.typeTab;
+          if (nextType) {
+            activeType = nextType;
+            const grouped = currentGeneration ? groupOutputsByType(currentGeneration.outputs || []) : {};
+            activeOutputId = grouped[activeType]?.[0]?.id || '';
+            renderGeneration();
+          }
+
+          return;
+        }
+
+        const outputButton = target.closest('[data-output-id]');
+        if (outputButton instanceof HTMLElement) {
+          const nextOutputId = outputButton.dataset.outputId;
+          if (nextOutputId) {
+            activeOutputId = nextOutputId;
+            renderGeneration();
+          }
+
+          return;
+        }
+
+        const copyButton = target.closest('[data-copy-slug]');
+        if (copyButton instanceof HTMLElement && copyButton.dataset.copySlug) {
+          copySlug(copyButton, copyButton.dataset.copySlug);
+        }
+      });
 
       // Load articles and initial content
       loadArticles();

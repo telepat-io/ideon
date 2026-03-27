@@ -4,7 +4,7 @@ title: Output Structure
 
 # Output Structure
 
-Ideon writes one Markdown artifact, a per-run analytics artifact, and a set of image assets.
+Ideon writes one generation directory per run. Each generation directory contains one or more markdown outputs, a run-definition `job.json`, a per-run analytics artifact, and shared image assets.
 
 Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) for resume support.
 
@@ -12,11 +12,38 @@ Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) f
 
 - Markdown directory: `/output`
 - Asset directory: `/output/assets`
-- Analytics file: `<slug>.analytics.json` in the markdown directory
+- Analytics file: `generation.analytics.json` inside each generation directory
 
 Paths beginning with `/output` are resolved relative to current working directory.
 
-## Markdown Contents
+## Generation Directory Layout
+
+Example:
+
+```text
+output/
+  20260327-practical-ai-workflows/
+    article-1.md
+    x-1.md
+    x-2.md
+    linkedin-1.md
+    job.json
+    generation.analytics.json
+    practical-ai-workflows-cover.webp
+    practical-ai-workflows-inline-1.webp
+```
+
+Markdown files are numbered by content type prefix:
+
+- `article-1.md`
+- `blog-1.md`
+- `x-1.md`
+- `reddit-1.md`
+- `linkedin-1.md`
+- `newsletter-1.md`
+- `landing-1.md`
+
+## Article Markdown Contents
 
 Generated Markdown includes:
 
@@ -35,7 +62,7 @@ Generated Markdown includes:
 
 ## Slug Behavior
 
-Generated slug is normalized and checked for collisions. If a slug exists, Ideon appends incrementing suffixes (`-1`, `-2`, ...).
+Article slugs are normalized during planning. Generation directory names are timestamped and unique per run.
 
 ## Asset Links
 
@@ -43,7 +70,7 @@ Markdown embeds use relative paths from markdown file location to asset files.
 
 ## Analytics Artifact
 
-Each write run emits `<slug>.analytics.json` beside the markdown file.
+Each generation run emits `generation.analytics.json` inside the generation directory.
 
 The JSON includes:
 
@@ -53,6 +80,16 @@ The JSON includes:
 - Image render calls: per-image render timing/cost + output byte size
 
 To inspect generated markdown and image embeds in a browser, run `npm run preview`.
+
+## Job Definition Artifact
+
+Each run also emits `job.json` in the generation directory. It captures the resolved run definition:
+
+- `idea` and `prompt` used for the run
+- resolved `contentTargets` and `style`
+- full resolved `settings` object (including current and future settings fields)
+- source job payload when provided (`sourceJob`)
+- run metadata (`generatedAt`, `dryRun`, `runMode`)
 
 ## Local Session Artifacts
 

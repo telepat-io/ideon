@@ -5,15 +5,16 @@ title: Overview
 
 # Ideon Documentation
 
-Ideon helps you convert a raw idea into a polished Markdown article with generated imagery and frontmatter metadata.
+Ideon helps you convert a raw idea into a complete generation run with channel-specific outputs and optional generated imagery.
 
 ## What Ideon Does
 
-- Plans article structure and editorial angle
-- Drafts intro, sections, and conclusion
-- Expands image descriptions into render-ready prompts
-- Renders cover and inline images using selected T2I models
-- Writes final Markdown with relative asset embeds
+- Plans article structure and editorial angle when article output is requested
+- Drafts intro, sections, and conclusion for article outputs
+- Generates non-article outputs (X/LinkedIn/Reddit/newsletter/landing/blog) via channel-native prompts
+- Applies a run-level writing style overlay across all outputs
+- Expands image descriptions and renders cover/inline images for article-enabled generation runs
+- Writes generation artifacts (markdown files, `job.json`, `generation.analytics.json`, shared assets)
 
 ## Who This Documentation Is For
 

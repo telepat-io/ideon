@@ -29,22 +29,53 @@ Capabilities:
 
 ## `ideon write [idea]`
 
-Generates an article from direct idea input or a job file.
+Generates one or more content outputs from direct idea input or a job file.
 
 ```bash
 ideon write "How to productionize editorial AI"
 ideon write --job ./job.json
 ideon write --dry-run "How to productionize editorial AI"
+ideon write "How to productionize editorial AI" --target article=1 --target x-post=3 --style technical
 ```
 
 ### Options
 
 - `-j, --job <path>`: path to JSON job file
+- `-t, --target <type=count>`: generation target, repeatable (for example `article=1`, `x-post=10`)
+- `--style <style>`: writing style (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
 - `--dry-run`: run full orchestration without external provider calls
+
+Supported target types:
+
+- `article`
+- `blog-post`
+- `x-post`
+- `reddit-post`
+- `linkedin-post`
+- `newsletter`
+- `landing-page-copy`
+
+Defaults:
+
+- If no targets are provided, Ideon uses `article=1`.
+- If no style is provided, Ideon uses `professional`.
+
+Interactive behavior:
+
+- In TTY mode, Ideon asks only for missing write variables.
+- If style is missing, it prompts for style.
+- If targets are missing, it prompts for content types and per-type counts.
+- If `x-post` is selected and `xMode` is missing, it prompts for `single` or `thread` output mode.
 
 When a fresh write starts, Ideon resets `.ideon/write/state.json` and stores new temporary pipeline artifacts for that run.
 
 During execution, each stage transition to `succeeded` includes stage analytics output (duration and cost when available). The final summary includes total duration, retries, and total cost for the run.
+
+Write outputs are stored in one generation directory per run and include:
+
+- numbered markdown outputs by content type
+- `job.json` with resolved run definition metadata
+- `generation.analytics.json` with run analytics
 
 ## `ideon write resume`
 
@@ -62,7 +93,7 @@ Notes:
 
 ## `ideon delete <slug>`
 
-Deletes a generated article by slug, including its markdown file, matching asset directory, and analytics sidecar.
+Deletes a generated markdown output by slug, including its analytics sidecar and generation assets when safe to remove.
 
 ```bash
 ideon delete my-article-slug
@@ -74,6 +105,7 @@ Behavior:
 - By default, Ideon shows an interactive confirmation menu you can navigate with the arrow keys before deleting anything.
 - In non-interactive environments, use `--force` to skip confirmation.
 - If the slug does not exist, Ideon fails without deleting anything.
+- In generation directories with multiple markdown outputs, Ideon resolves the best matching markdown path and preserves shared assets when sibling markdown files remain.
 
 ### Options
 
@@ -81,7 +113,7 @@ Behavior:
 
 ## `ideon preview [markdownPath]`
 
-Starts a local preview server for generated article markdown and images.
+Starts a local preview server for generated content batches, including generation-local assets.
 
 ```bash
 ideon preview
@@ -92,8 +124,9 @@ npm run preview
 
 Behavior:
 
-- If `markdownPath` is omitted, Ideon previews the newest `.md` file in the configured markdown output directory.
-- Image assets are served from the configured asset output directory (default `/output/assets`).
+- If `markdownPath` is omitted, Ideon previews the newest `.md` file recursively in the configured markdown output directory.
+- Preview groups outputs by generation directory, then by content type and output index.
+- Generation-local relative asset links are rewritten and served by preview routes.
 - Browser auto-open is enabled by default.
 
 ### Options

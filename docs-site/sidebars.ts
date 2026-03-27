@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
         'guides/configuration',
         'guides/credentials-and-secrets',
         'guides/job-files',
+        'guides/writing-framework',
         'guides/pipeline-stages',
         'guides/output-structure',
         'guides/local-preview',
@@ -43,6 +44,7 @@ const sidebars: SidebarsConfig = {
       label: 'Reference',
       items: [
         'reference/cli-reference',
+        'reference/content-types',
         'reference/environment-variables',
         'reference/t2i-models',
       ],

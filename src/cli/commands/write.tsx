@@ -1,17 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { render, useApp } from 'ink';
 import { createInterface } from 'node:readline/promises';
-import { resolveRunInput } from '../../config/resolver.js';
+import { resolveRunInput, type ContentTargetInput } from '../../config/resolver.js';
+import { appSettingsSchema, writingStyleValues } from '../../config/schema.js';
 import { ReportedError } from '../reportedError.js';
 import { PipelinePresenter } from '../ui/pipelinePresenter.js';
 import { createInitialStages, runPipelineShell } from '../../pipeline/runner.js';
 import { renderPlainPipeline } from '../logging/plainRenderer.js';
 import type { PipelineRunResult, StageViewModel } from '../../pipeline/events.js';
 import { loadWriteSession, patchWriteSession } from '../../pipeline/sessionStore.js';
+import { WriteOptionsFlow } from '../flows/writeOptionsFlow.js';
+import { hasXPostWithoutMode, parseTargetSpecs } from './writeTargetSpecs.js';
 
 interface WriteCommandOptions {
   idea?: string;
   jobPath?: string;
+  targetSpecs?: string[];
+  style?: string;
   dryRun: boolean;
 }
 
@@ -198,22 +203,107 @@ async function recordInterruptedWrite(signal: NodeJS.Signals): Promise<void> {
 }
 
 async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOptions) {
+  const parsedTargets = parseTargetSpecs(options.targetSpecs);
+
   try {
-    return await resolveRunInput({
+    const resolved = await resolveRunInput({
       idea: options.idea,
       jobPath: options.jobPath,
+      style: options.style,
+      contentTargets: parsedTargets,
     });
+
+    return await applyInteractiveWriteOptionsIfNeeded(resolved, options, parsedTargets);
   } catch (error) {
     if (!shouldPromptForIdea(options, error)) {
       throw error;
     }
 
     const interactiveIdea = await promptForIdea();
-    return await resolveRunInput({
+    const resolved = await resolveRunInput({
       idea: interactiveIdea,
       jobPath: options.jobPath,
+      style: options.style,
+      contentTargets: parsedTargets,
     });
+
+    return await applyInteractiveWriteOptionsIfNeeded(resolved, { ...options, idea: interactiveIdea }, parsedTargets);
   }
+}
+
+async function applyInteractiveWriteOptionsIfNeeded(
+  resolved: Awaited<ReturnType<typeof resolveRunInput>>,
+  options: WriteCommandOptions,
+  parsedTargets: ContentTargetInput[] | undefined,
+): Promise<Awaited<ReturnType<typeof resolveRunInput>>> {
+  if (!process.stdout.isTTY || !process.stdin.isTTY) {
+    return resolved;
+  }
+
+  const styleProvided = Boolean(options.style ?? resolved.job?.settings?.style);
+  const providedTargets = (parsedTargets && parsedTargets.length > 0)
+    ? parsedTargets
+    : (resolved.job?.settings?.contentTargets ?? resolved.config.settings.contentTargets);
+  const targetsProvided = Boolean((parsedTargets && parsedTargets.length > 0) || resolved.job?.settings?.contentTargets?.length);
+  const askXMode = hasXPostWithoutMode(providedTargets);
+
+  if (styleProvided && targetsProvided && !askXMode) {
+    return resolved;
+  }
+
+  const prompted = await promptForMissingWriteOptions({
+    askStyle: !styleProvided,
+    askTargets: !targetsProvided,
+    askXMode,
+    style: resolved.config.settings.style,
+    targets: providedTargets,
+  });
+
+  return {
+    ...resolved,
+    config: {
+      ...resolved.config,
+      settings: appSettingsSchema.parse({
+        ...resolved.config.settings,
+        ...(prompted.style ? { style: prompted.style } : {}),
+        ...(prompted.contentTargets ? { contentTargets: prompted.contentTargets } : {}),
+      }),
+    },
+  };
+}
+
+async function promptForMissingWriteOptions(params: {
+  askStyle: boolean;
+  askTargets: boolean;
+  askXMode: boolean;
+  style: string;
+  targets: ContentTargetInput[];
+}): Promise<{ style?: string; contentTargets?: ContentTargetInput[] }> {
+  let flowResult: { style?: string; contentTargets?: ContentTargetInput[] } | null = null;
+
+  const app = render(
+    React.createElement(WriteOptionsFlow, {
+      askStyle: params.askStyle,
+      askTargets: params.askTargets,
+      askXMode: params.askXMode,
+      initialStyle: (writingStyleValues as readonly string[]).includes(params.style)
+        ? params.style
+        : 'professional',
+      initialTargets: params.targets,
+      onDone: (result: { style?: string; contentTargets?: ContentTargetInput[] } | null) => {
+        flowResult = result;
+      },
+    }),
+  );
+
+  await app.waitUntilExit();
+  process.stdout.write('\n');
+
+  if (!flowResult) {
+    throw new ReportedError('Write cancelled.');
+  }
+
+  return flowResult;
 }
 
 function shouldPromptForIdea(options: WriteCommandOptions, error: unknown): boolean {

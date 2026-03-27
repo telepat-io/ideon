@@ -64,6 +64,8 @@ export async function renderPlainPipeline(
     console.log(`  slug: ${result.artifact.slug}`);
     console.log(`  sections: ${result.artifact.sectionCount}`);
     console.log(`  images: ${result.artifact.imageCount}`);
+    console.log(`  outputs: ${result.artifact.outputCount}`);
+    console.log(`  generation_dir: ${result.artifact.generationDir}`);
     console.log(`  markdown: ${result.artifact.markdownPath}`);
     console.log(`  assets: ${result.artifact.assetDir}`);
     console.log(`  analytics: ${result.artifact.analyticsPath}`);

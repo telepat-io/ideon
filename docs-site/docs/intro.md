@@ -1,47 +1,28 @@
 ---
 sidebar_position: 1
+title: Documentation Intro
 ---
 
-# Tutorial Intro
+# Documentation Intro
 
-Let's discover **Docusaurus in less than 5 minutes**.
+This documentation covers running, configuring, and extending Ideon as a multi-output content generation CLI.
 
-## Getting Started
+## Start Here
 
-Get started by **creating a new site**.
+- New user setup: [Getting Started](./getting-started/installation.md)
+- First run walkthrough: [Quickstart](./getting-started/quickstart.md)
+- CLI options and flags: [CLI Reference](./reference/cli-reference.md)
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+## Core Concepts
 
-### What you'll need
+- Content targets: choose one or more output types per run (`article`, `x-post`, `linkedin-post`, and others)
+- Style overlay: apply one run-level style to all outputs
+- Generation directory: each run writes markdown outputs, shared assets, `job.json`, and `generation.analytics.json`
+- Conditional stages: article-enabled runs execute full pipeline; non-article runs skip article/image stages
 
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+## Common Workflows
 
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
-```
-
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+- Configure settings and credentials: `npm run dev -- settings`
+- Generate content: `npm run dev -- write "your idea" --target article=1 --target x-post=2 --style technical`
+- Preview outputs: `npm run preview`
+- Resume failed/interrupted runs: `npm run dev -- write resume`

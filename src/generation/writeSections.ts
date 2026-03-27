@@ -23,7 +23,11 @@ export async function writeArticleSections({
   const intro = dryRun || !openRouter
     ? dryRunIntro(plan)
     : await openRouter.requestText({
-        messages: buildIntroMessages(plan),
+        messages: buildIntroMessages(
+          plan,
+          settings.style,
+          settings.contentTargets.map((target) => target.contentType),
+        ),
         settings,
         onMetrics(metrics) {
           onLlmMetrics?.('intro', metrics);
@@ -37,7 +41,12 @@ export async function writeArticleSections({
     const body = dryRun || !openRouter
       ? dryRunSection(section, index)
       : await openRouter.requestText({
-          messages: buildSectionMessages(plan, section),
+          messages: buildSectionMessages(
+            plan,
+            section,
+            settings.style,
+            settings.contentTargets.map((target) => target.contentType),
+          ),
           settings,
           onMetrics(metrics) {
             onLlmMetrics?.('section', metrics, index);
@@ -53,7 +62,11 @@ export async function writeArticleSections({
   const outro = dryRun || !openRouter
     ? dryRunOutro(plan)
     : await openRouter.requestText({
-        messages: buildOutroMessages(plan),
+        messages: buildOutroMessages(
+          plan,
+          settings.style,
+          settings.contentTargets.map((target) => target.contentType),
+        ),
         settings,
         onMetrics(metrics) {
           onLlmMetrics?.('outro', metrics);

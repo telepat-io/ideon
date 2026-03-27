@@ -4,7 +4,7 @@ title: Job Files
 
 # Job Files
 
-Job files allow repeatable and shareable article runs.
+Job files allow repeatable and shareable generation runs across one or more content types.
 
 ## Minimal Example
 
@@ -32,6 +32,12 @@ npm run dev -- write --job ./job.json
       "maxTokens": 2500,
       "topP": 0.95
     },
+    "contentTargets": [
+      { "contentType": "article", "count": 1 },
+      { "contentType": "x-post", "count": 2, "xMode": "thread" },
+      { "contentType": "linkedin-post", "count": 1 }
+    ],
+    "style": "friendly",
     "t2i": {
       "modelId": "black-forest-labs/flux-schnell",
       "inputOverrides": {
@@ -43,6 +49,13 @@ npm run dev -- write --job ./job.json
   }
 }
 ```
+
+## Notes
+
+- If `settings.contentTargets` is omitted, Ideon defaults to one article output.
+- If `settings.style` is omitted, Ideon defaults to `professional`.
+- CLI arguments override job-file settings.
+- After each run, Ideon writes a generated `job.json` inside the generation directory that captures the resolved run definition and metadata for that specific execution.
 
 ## Idea Resolution Rule
 

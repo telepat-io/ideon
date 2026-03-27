@@ -5,7 +5,7 @@ title: Quickstart
 
 # Quickstart
 
-This guide gets you from zero to your first generated article.
+This guide gets you from zero to your first multi-output generation run.
 
 ## 1. Configure Settings and Secrets
 
@@ -21,10 +21,10 @@ Inside settings, configure:
 - OpenRouter API key
 - Replicate API token
 
-## 2. Generate an Article
+## 2. Generate Content Outputs
 
 ```bash
-npm run dev -- write "How small editorial teams can productionize AI writing"
+npm run dev -- write "How small editorial teams can productionize AI writing" --target article=1 --target x-post=2 --style professional
 ```
 
 Expected stages:
@@ -39,8 +39,19 @@ Expected stages:
 
 By default (resolved from current working directory):
 
-- Markdown: `output/<slug>.md`
-- Assets: `output/assets/`
+- Generation directories: `output/<timestamp>-<slug>/`
+- Markdown files: `article-1.md`, `x-1.md`, `x-2.md`, ...
+- Run metadata: `job.json`
+- Run analytics: `generation.analytics.json`
+- Shared generation assets: image files in the same generation directory
+
+You can open the latest generation in browser preview:
+
+```bash
+npm run preview
+```
+
+Preview includes generation-level browsing, content-type tabs, and per-variant subtabs.
 
 ## 4. Run a Safe Dry Run
 
@@ -48,7 +59,7 @@ By default (resolved from current working directory):
 npm run dev -- write --dry-run "How AI changes developer docs workflows"
 ```
 
-Dry run keeps the full pipeline flow but skips OpenRouter and Replicate API calls.
+Dry run keeps the full pipeline flow but skips OpenRouter and Replicate API calls while still producing generation artifacts.
 
 ## 5. Run with a Job File
 

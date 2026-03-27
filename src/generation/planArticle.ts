@@ -26,7 +26,10 @@ export async function planArticle({
     : await openRouter.requestStructured<ArticlePlan>({
         schemaName: 'article_plan',
         schema: articlePlanSchema,
-        messages: buildArticlePlanMessages(idea),
+        messages: buildArticlePlanMessages(idea, {
+          style: settings.style,
+          contentTypes: settings.contentTargets.map((target) => target.contentType),
+        }),
         settings,
         onMetrics: onLlmMetrics,
         parse(data) {

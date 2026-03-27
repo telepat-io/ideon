@@ -21,6 +21,7 @@ Ideon validates:
 
 - article plans (`articleSchema` constraints)
 - image prompt payloads (`prompt` required)
+- run configuration via Zod schema defaults and constraints
 
 Invalid provider output fails fast with actionable errors.
 
@@ -31,6 +32,22 @@ Generated text is normalized by:
 - trimming whitespace
 - removing markdown fences when present
 - rejecting empty output sections
+
+## Prompt System Composition
+
+Prompt composition now includes layered directives:
+
+- shared writing framework (structure, specificity, rhythm, storytelling discipline)
+- style overlay (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
+- content-type/channel directives (`article`, `x-post`, `linkedin-post`, etc.)
+
+For multi-target runs, article outputs may be used as anchor context for social/channel outputs.
+
+## Non-Article Output Path
+
+- Non-article content types are generated in single-shot prompts.
+- This path runs in the output stage and does not require section-based generation.
+- For no-article runs, planning/sections/image stages are skipped.
 
 ## Image Rendering Path
 

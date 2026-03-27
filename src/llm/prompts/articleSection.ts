@@ -1,5 +1,19 @@
 import type { ArticlePlan, ArticleSectionPlan } from '../../types/article.js';
 import type { ChatMessage } from '../openRouterClient.js';
+import {
+  buildRunContextDirective,
+  buildStyleDirective,
+  buildWritingFrameworkInstruction,
+} from './writingFramework.js';
+
+function buildSystemInstruction(base: string, style: string, contentTypes: string[]): string {
+  return [
+    base,
+    buildWritingFrameworkInstruction(),
+    buildStyleDirective(style),
+    buildRunContextDirective(contentTypes),
+  ].join(' ');
+}
 
 function sharedPlanContext(plan: ArticlePlan): string {
   const sectionOutline = plan.sections
@@ -16,11 +30,17 @@ function sharedPlanContext(plan: ArticlePlan): string {
   ].join('\n');
 }
 
-export function buildIntroMessages(plan: ArticlePlan): ChatMessage[] {
+export function buildIntroMessages(plan: ArticlePlan, style: string, contentTypes: string[]): ChatMessage[] {
+  const baseSystemInstruction = buildSystemInstruction(
+    'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
+    style,
+    contentTypes,
+  );
+
   return [
     {
       role: 'system',
-      content: 'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
+      content: baseSystemInstruction,
     },
     {
       role: 'user',
@@ -37,11 +57,22 @@ export function buildIntroMessages(plan: ArticlePlan): ChatMessage[] {
   ];
 }
 
-export function buildSectionMessages(plan: ArticlePlan, section: ArticleSectionPlan): ChatMessage[] {
+export function buildSectionMessages(
+  plan: ArticlePlan,
+  section: ArticleSectionPlan,
+  style: string,
+  contentTypes: string[],
+): ChatMessage[] {
+  const baseSystemInstruction = buildSystemInstruction(
+    'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
+    style,
+    contentTypes,
+  );
+
   return [
     {
       role: 'system',
-      content: 'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
+      content: baseSystemInstruction,
     },
     {
       role: 'user',
@@ -59,11 +90,17 @@ export function buildSectionMessages(plan: ArticlePlan, section: ArticleSectionP
   ];
 }
 
-export function buildOutroMessages(plan: ArticlePlan): ChatMessage[] {
+export function buildOutroMessages(plan: ArticlePlan, style: string, contentTypes: string[]): ChatMessage[] {
+  const baseSystemInstruction = buildSystemInstruction(
+    'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
+    style,
+    contentTypes,
+  );
+
   return [
     {
       role: 'system',
-      content: 'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
+      content: baseSystemInstruction,
     },
     {
       role: 'user',

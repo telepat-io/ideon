@@ -33,6 +33,8 @@ describe('resolveRunInput', () => {
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
       markdownOutputDir: '/saved-out',
       assetOutputDir: '/saved-out/assets',
+      contentTargets: [{ contentType: 'article', count: 1 }],
+      style: 'professional',
     });
 
     loadSecretsMock.mockResolvedValue({
@@ -178,5 +180,40 @@ describe('resolveRunInput', () => {
 
   it('throws when no idea is provided in CLI or job', async () => {
     await expect(resolveRunInput({})).rejects.toThrow('No idea provided');
+  });
+
+  it('uses professional style and one article target by default', async () => {
+    loadSavedSettingsMock.mockResolvedValue({
+      model: 'saved/model',
+      modelSettings: { temperature: 0.5, maxTokens: 1500, topP: 0.9 },
+      modelRequestTimeoutMs: 90000,
+      t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
+      markdownOutputDir: '/saved-out',
+      assetOutputDir: '/saved-out/assets',
+      style: 'professional',
+      contentTargets: [{ contentType: 'article', count: 1 }],
+    });
+
+    const result = await resolveRunInput({ idea: 'defaults test' });
+
+    expect(result.config.settings.style).toBe('professional');
+    expect(result.config.settings.contentTargets).toEqual([{ contentType: 'article', count: 1 }]);
+  });
+
+  it('applies direct style and target overrides', async () => {
+    const result = await resolveRunInput({
+      idea: 'override test',
+      style: 'technical',
+      contentTargets: [
+        { contentType: 'article', count: 1 },
+        { contentType: 'x-post', count: 3 },
+      ],
+    });
+
+    expect(result.config.settings.style).toBe('technical');
+    expect(result.config.settings.contentTargets).toEqual([
+      { contentType: 'article', count: 1 },
+      { contentType: 'x-post', count: 3 },
+    ]);
   });
 });

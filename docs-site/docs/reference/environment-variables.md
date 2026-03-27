@@ -22,6 +22,10 @@ title: Environment Variables
 - `IDEON_MARKDOWN_OUTPUT_DIR`
 - `IDEON_ASSET_OUTPUT_DIR`
 
+## Generation Style
+
+- `IDEON_STYLE`
+
 ## Example
 
 ```bash
@@ -34,6 +38,7 @@ IDEON_TOP_P=1 \
 IDEON_MODEL_REQUEST_TIMEOUT_MS=90000 \
 IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
+IDEON_STYLE=professional \
 npm run dev -- write "How teams scale editorial pipelines"
 ```
 

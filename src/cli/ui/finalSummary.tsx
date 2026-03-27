@@ -24,7 +24,8 @@ export function FinalSummary({
       </Text>
       <Text>{artifact.title}</Text>
       <Text color="gray">slug: {artifact.slug}</Text>
-      <Text color="gray">sections: {artifact.sectionCount} • images: {artifact.imageCount}</Text>
+      <Text color="gray">sections: {artifact.sectionCount} • images: {artifact.imageCount} • outputs: {artifact.outputCount}</Text>
+      <Text color="gray">generation: {artifact.generationDir}</Text>
       <Text color="gray">markdown: {artifact.markdownPath}</Text>
       <Text color="gray">assets: {artifact.assetDir}</Text>
       <Text color="gray">analytics: {artifact.analyticsPath}</Text>

@@ -1,4 +1,9 @@
 import type { ChatMessage } from '../openRouterClient.js';
+import {
+  buildRunContextDirective,
+  buildStyleDirective,
+  buildWritingFrameworkInstruction,
+} from './writingFramework.js';
 
 export const articlePlanSchema = {
   type: 'object',
@@ -60,12 +65,25 @@ export const articlePlanSchema = {
   },
 } as const;
 
-export function buildArticlePlanMessages(idea: string): ChatMessage[] {
+export function buildArticlePlanMessages(
+  idea: string,
+  options: {
+    style: string;
+    contentTypes: string[];
+  },
+): ChatMessage[] {
+  const systemInstruction = [
+    'You are an editorial strategist. Produce a rigorous article plan for a polished long-form Markdown article.',
+    buildWritingFrameworkInstruction(),
+    buildStyleDirective(options.style),
+    buildRunContextDirective(options.contentTypes),
+    'Return only the requested JSON.',
+  ].join(' ');
+
   return [
     {
       role: 'system',
-      content:
-        'You are an editorial strategist. Produce a rigorous article plan for a polished long-form Markdown article. Be specific, concrete, and avoid generic filler. Return only the requested JSON.',
+      content: systemInstruction,
     },
     {
       role: 'user',
