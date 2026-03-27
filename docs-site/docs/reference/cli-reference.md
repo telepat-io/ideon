@@ -58,6 +58,25 @@ Notes:
 - If the last session already completed, Ideon asks you to start a fresh write instead.
 - If no session exists, run `ideon write <idea>` first.
 
+## `ideon delete <slug>`
+
+Deletes a generated article by slug, including its markdown file, matching asset directory, and analytics sidecar.
+
+```bash
+ideon delete my-article-slug
+ideon delete my-article-slug --force
+```
+
+Behavior:
+
+- By default, Ideon shows an interactive confirmation menu you can navigate with the arrow keys before deleting anything.
+- In non-interactive environments, use `--force` to skip confirmation.
+- If the slug does not exist, Ideon fails without deleting anything.
+
+### Options
+
+- `-f, --force`: skip the confirmation prompt
+
 ## `ideon preview [markdownPath]`
 
 Starts a local preview server for generated article markdown and images.

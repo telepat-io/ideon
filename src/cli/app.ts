@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { runDeleteCommand } from './commands/delete.js';
 import { openSettings } from './commands/settings.js';
 import { runServeCommand } from './commands/serve.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
@@ -16,6 +17,18 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Show the current Ideon settings and storage state.')
     .action(async () => {
       await openSettings();
+    });
+
+  program
+    .command('delete')
+    .description('Delete a generated article by slug, including its assets and analytics sidecar.')
+    .argument('<slug>', 'Slug of the generated article to delete')
+    .option('-f, --force', 'Skip the confirmation prompt', false)
+    .action(async (slug: string, options: { force: boolean }) => {
+      await runDeleteCommand({
+        slug,
+        force: options.force,
+      });
     });
 
   program
