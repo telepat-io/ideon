@@ -26,6 +26,19 @@ interface ArticleContent {
   htmlBody: string;
 }
 
+interface ResolvedPreviewArticle {
+  slug: string;
+  title: string;
+  sourcePath: string;
+}
+
+class MissingArticleError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MissingArticleError';
+  }
+}
+
 export async function startPreviewServer(options: PreviewServerOptions): Promise<StartedPreviewServer> {
   const app = express();
   app.disable('x-powered-by');
@@ -50,20 +63,23 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       res.status(200).type('application/json').json(content);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error loading article';
-      res.status(404).type('application/json').json({ error: message });
+      const status = error instanceof MissingArticleError ? 404 : 500;
+      res.status(status).type('application/json').json({ error: message });
     }
   });
 
   // Main preview page
   app.get('/', async (_req, res) => {
     try {
-      const markdown = await readFile(options.markdownPath, 'utf8');
-      const title = extractHeadingTitle(stripFrontmatter(markdown)) ?? path.basename(options.markdownPath, '.md');
-      const currentSlug = path.basename(options.markdownPath, '.md');
+      const activeArticle = await resolveActivePreviewArticle(options.markdownPath, options.markdownOutputDir);
+      const emptyStateMessage = activeArticle
+        ? null
+        : `No generated articles found in ${options.markdownOutputDir}. Run ideon write "your idea" first.`;
       const html = renderShell({
-        title,
-        sourcePath: options.markdownPath,
-        currentSlug,
+        title: activeArticle?.title ?? 'Ideon Preview',
+        sourcePath: activeArticle?.sourcePath ?? options.markdownOutputDir,
+        currentSlug: activeArticle?.slug ?? '',
+        emptyStateMessage,
       });
 
       res.status(200).type('html').send(html);
@@ -83,7 +99,9 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
     });
   });
 
-  const url = `http://localhost:${options.port}`;
+  const serverAddress = server.address();
+  const boundPort = typeof serverAddress === 'object' && serverAddress ? serverAddress.port : options.port;
+  const url = `http://localhost:${boundPort}`;
   if (options.openBrowser) {
     void tryOpenBrowser(url);
   }
@@ -106,11 +124,48 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
 }
 
 async function getArticleContent(markdownPath: string): Promise<ArticleContent> {
-  const markdown = await readFile(markdownPath, 'utf8');
+  let markdown = '';
+  try {
+    markdown = await readFile(markdownPath, 'utf8');
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      const slug = path.basename(markdownPath, '.md');
+      throw new MissingArticleError(`Article "${slug}" no longer exists.`);
+    }
+
+    throw error;
+  }
+
   const htmlBody = await renderArticleHtml(markdown);
   const title = extractHeadingTitle(stripFrontmatter(markdown)) ?? path.basename(markdownPath, '.md');
 
   return { title, htmlBody };
+}
+
+async function resolveActivePreviewArticle(
+  preferredMarkdownPath: string,
+  markdownOutputDir: string,
+): Promise<ResolvedPreviewArticle | null> {
+  const articles = await listAllArticles(markdownOutputDir);
+  if (articles.length === 0) {
+    return null;
+  }
+
+  const preferredSlug = path.basename(preferredMarkdownPath, '.md');
+  const activeArticle = articles.find((article) => article.slug === preferredSlug) ?? articles[0];
+  if (!activeArticle) {
+    return null;
+  }
+
+  return {
+    slug: activeArticle.slug,
+    title: activeArticle.title,
+    sourcePath: path.join(markdownOutputDir, `${activeArticle.slug}.md`),
+  };
+}
+
+function isMissingFileError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
 }
 
 async function renderArticleHtml(markdown: string): Promise<string> {
@@ -118,7 +173,22 @@ async function renderArticleHtml(markdown: string): Promise<string> {
   return await marked.parse(content);
 }
 
-function renderShell({ title, sourcePath, currentSlug }: { title: string; sourcePath: string; currentSlug: string }): string {
+function renderShell({
+  title,
+  sourcePath,
+  currentSlug,
+  emptyStateMessage,
+}: {
+  title: string;
+  sourcePath: string;
+  currentSlug: string;
+  emptyStateMessage?: string | null;
+}): string {
+  const initialArticleClass = emptyStateMessage ? '' : 'loading';
+  const initialArticleMarkup = emptyStateMessage
+    ? `<div style="padding: 2rem; color: var(--muted);">${escapeHtml(emptyStateMessage)}</div>`
+    : 'Loading article...';
+
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -455,8 +525,8 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
         <div class="container">
           <section class="card">
             <div class="meta">Source: ${escapeHtml(sourcePath)}</div>
-            <article id="article" class="loading">
-              Loading article...
+            <article id="article" class="${initialArticleClass}">
+              ${initialArticleMarkup}
             </article>
           </section>
         </div>
@@ -473,6 +543,11 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
           const response = await fetch('/api/articles');
           if (!response.ok) throw new Error('Failed to load articles');
           const articles = await response.json();
+
+          if (articles.length === 0) {
+            articleListElement.innerHTML = '<li style="padding: 1rem; color: var(--muted); font-size: 0.9rem;">No articles yet</li>';
+            return;
+          }
 
           articleListElement.innerHTML = articles
             .map(

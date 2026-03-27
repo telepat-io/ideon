@@ -160,7 +160,6 @@ export class OpenRouterClient {
           continue;
         }
 
-        clearTimeout(timeout);
         return {
           response: json,
           metrics: {
@@ -178,7 +177,6 @@ export class OpenRouterClient {
           },
         };
       } catch (error) {
-        clearTimeout(timeout);
         lastError = normalizeClientError(error, timeoutMs);
         if (attempt < 2 && shouldRetryError(lastError)) {
           const backoff = backoffMs(attempt);
@@ -187,6 +185,8 @@ export class OpenRouterClient {
           await wait(backoff);
           continue;
         }
+      } finally {
+        clearTimeout(timeout);
       }
     }
 

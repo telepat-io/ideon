@@ -21,6 +21,8 @@ This command:
 - serves images from your configured asset output directory
 - opens your default browser automatically
 
+If the article currently open in preview is deleted while the server is running, refreshing the page now safely falls back to the newest remaining article. If no markdown files remain, preview shows a friendly empty state instead of a crash.
+
 ## Preview a Specific Article
 
 ```bash
