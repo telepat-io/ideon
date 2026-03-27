@@ -8,6 +8,10 @@ ooooo oooooooooo.   oooooooooooo   .oooooo.   ooooo      ooo
 o888o o888bood8P'   o888ooooood8  `Y8bood8P'  o8o        `8
 ```
 
+<p align="center">
+	<img src="docs-site/static/img/logo.svg" alt="Ideon logo" width="88" />
+</p>
+
 # Ideon
 
 Ideon is a TypeScript CLI that turns an idea into one or more Markdown outputs, with optional generated images for article runs.
