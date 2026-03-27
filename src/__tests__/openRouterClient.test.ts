@@ -96,7 +96,64 @@ describe('OpenRouterClient requestStructured', () => {
       }),
     ).rejects.toThrow('Expected valid JSON in the model response but extraction failed.');
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries and succeeds when JSON extraction fails transiently', async () => {
+    let callCount = 0;
+    const fetchMock = jest.fn(async () => {
+      callCount += 1;
+      const content = callCount === 1
+        ? 'not-json {"value": } trailing'
+        : '{"value":"ok"}';
+
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ choices: [{ message: { content } }] }),
+      };
+    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestStructured<{ value: string }>({
+      schemaName: 'structured_test',
+      schema,
+      messages: [{ role: 'user', content: 'test' }],
+      settings: defaultAppSettings,
+    });
+
+    expect(result.value).toBe('ok');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries and succeeds when schema parsing fails transiently', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{ message: { content: '{"value":"ok"}' } }] }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const parseMock = jest
+      .fn<(data: unknown) => { value: string }>()
+      .mockImplementationOnce(() => {
+        throw new Error('Schema validation failed');
+      })
+      .mockImplementation((data) => data as { value: string });
+
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestStructured<{ value: string }>({
+      schemaName: 'structured_test',
+      schema,
+      messages: [{ role: 'user', content: 'test' }],
+      settings: defaultAppSettings,
+      parse: parseMock,
+    });
+
+    expect(result.value).toBe('ok');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(parseMock).toHaveBeenCalledTimes(2);
   });
 
   it('retries and succeeds when empty content is returned transiently', async () => {

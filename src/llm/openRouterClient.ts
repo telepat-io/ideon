@@ -54,27 +54,54 @@ export class OpenRouterClient {
   }
 
   async requestStructured<T>(request: StructuredRequest<T>): Promise<T> {
-    try {
-      const response = await this.sendCompletion({
-        messages: request.messages,
-        settings: request.settings,
-        responseFormat: {
-          type: 'json_schema',
-          json_schema: {
-            name: request.schemaName,
-            strict: true,
-            schema: request.schema,
-          },
-        },
-        requireStructuredOutputs: true,
-      });
-      request.onMetrics?.(response.metrics);
+    let aggregatedMetrics: LlmCallMetrics | null = null;
 
-      const parsed = JSON.parse(extractJson(extractText(response.response))) as unknown;
-      return request.parse ? request.parse(parsed) : (parsed as T);
+    try {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const response = await this.sendCompletion({
+          messages: request.messages,
+          settings: request.settings,
+          responseFormat: {
+            type: 'json_schema',
+            json_schema: {
+              name: request.schemaName,
+              strict: true,
+              schema: request.schema,
+            },
+          },
+          requireStructuredOutputs: true,
+        });
+
+        aggregatedMetrics = aggregateLlmMetrics(aggregatedMetrics, response.metrics);
+
+        try {
+          const parsed = JSON.parse(extractJson(extractText(response.response))) as unknown;
+          const structured = request.parse ? request.parse(parsed) : (parsed as T);
+          request.onMetrics?.(aggregatedMetrics);
+          return structured;
+        } catch (parseError) {
+          if (attempt < 2 && shouldRetryStructuredParseError(parseError)) {
+            const backoff = backoffMs(attempt);
+            aggregatedMetrics = recordParseRetryMetrics(aggregatedMetrics, backoff);
+            await wait(backoff);
+            continue;
+          }
+
+          throw parseError;
+        }
+      }
+
+      throw new Error('Structured output request failed after exhausting parse retries.');
     } catch (error) {
       if (request.fallbackFactory) {
+        if (aggregatedMetrics) {
+          request.onMetrics?.(aggregatedMetrics);
+        }
         return request.fallbackFactory();
+      }
+
+      if (aggregatedMetrics) {
+        request.onMetrics?.(aggregatedMetrics);
       }
 
       throw toStructuredOutputError(error, request.settings.model);
@@ -273,6 +300,22 @@ function shouldRetryError(error: Error): boolean {
   return /timeout|network|fetch|temporarily|aborted/i.test(error.message);
 }
 
+function shouldRetryStructuredParseError(error: unknown): boolean {
+  if (error instanceof Error) {
+    if (isStructuredOutputCompatibilityError(error.message)) {
+      return false;
+    }
+
+    if (/OpenRouter returned an empty response\./i.test(error.message)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
 function normalizeClientError(error: unknown, timeoutMs: number): Error {
   if (error instanceof Error) {
     if (error.name === 'AbortError') {
@@ -287,6 +330,42 @@ function normalizeClientError(error: unknown, timeoutMs: number): Error {
 
 function backoffMs(attempt: number): number {
   return 500 * (attempt + 1);
+}
+
+function aggregateLlmMetrics(total: LlmCallMetrics | null, next: LlmCallMetrics): LlmCallMetrics {
+  if (!total) {
+    return { ...next };
+  }
+
+  return {
+    durationMs: total.durationMs + next.durationMs,
+    attempts: total.attempts + next.attempts,
+    retries: total.retries + next.retries,
+    retryBackoffMs: total.retryBackoffMs + next.retryBackoffMs,
+    modelId: next.modelId,
+    usage: {
+      promptTokens: sumNullableNumber(total.usage.promptTokens, next.usage.promptTokens),
+      completionTokens: sumNullableNumber(total.usage.completionTokens, next.usage.completionTokens),
+      totalTokens: sumNullableNumber(total.usage.totalTokens, next.usage.totalTokens),
+      providerTotalCostUsd: sumNullableNumber(total.usage.providerTotalCostUsd, next.usage.providerTotalCostUsd),
+    },
+  };
+}
+
+function recordParseRetryMetrics(metrics: LlmCallMetrics, backoff: number): LlmCallMetrics {
+  return {
+    ...metrics,
+    retries: metrics.retries + 1,
+    retryBackoffMs: metrics.retryBackoffMs + backoff,
+  };
+}
+
+function sumNullableNumber(left: number | null, right: number | null): number | null {
+  if (left === null || right === null) {
+    return null;
+  }
+
+  return left + right;
 }
 
 function wait(ms: number): Promise<void> {
