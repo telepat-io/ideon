@@ -61,6 +61,7 @@ const writeSessionStateSchema = z.object({
       outro: z.string().min(1),
     })
     .nullable(),
+  imagePrompts: z.array(imagePromptSchema).nullable().default(null),
   imageArtifacts: z
     .object({
       imagePrompts: z.array(imagePromptSchema),
@@ -87,6 +88,7 @@ export interface WriteSessionPatch {
   errorMessage?: string | null;
   plan?: WriteSessionState['plan'] | null;
   text?: WriteSessionState['text'] | null;
+  imagePrompts?: WriteSessionState['imagePrompts'] | null;
   imageArtifacts?: WriteSessionState['imageArtifacts'] | null;
   artifact?: PipelineArtifactSummary | null;
 }
@@ -100,6 +102,7 @@ export interface WriteSessionState extends WriteSessionStateSchema {
     sections: GeneratedArticleSection[];
     outro: string;
   } | null;
+  imagePrompts: ArticleImagePrompt[] | null;
   imageArtifacts: {
     imagePrompts: ArticleImagePrompt[];
     renderedImages: RenderedArticleImage[];
@@ -136,6 +139,7 @@ export async function startFreshWriteSession(seed: WriteSessionSeed, workingDir:
     errorMessage: null,
     plan: null,
     text: null,
+    imagePrompts: null,
     imageArtifacts: null,
     artifact: null,
   };
@@ -188,6 +192,7 @@ export async function patchWriteSession(patch: WriteSessionPatch, workingDir: st
     errorMessage: has('errorMessage') ? patch.errorMessage ?? null : existing.errorMessage,
     plan: has('plan') ? patch.plan ?? null : existing.plan,
     text: has('text') ? patch.text ?? null : existing.text,
+    imagePrompts: has('imagePrompts') ? patch.imagePrompts ?? null : existing.imagePrompts,
     imageArtifacts: has('imageArtifacts') ? patch.imageArtifacts ?? null : existing.imageArtifacts,
     artifact: has('artifact') ? patch.artifact ?? null : existing.artifact,
   };

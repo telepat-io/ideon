@@ -10,25 +10,19 @@ import type { ArticleImagePrompt, ArticlePlan, GeneratedArticle, RenderedArticle
 import { imagePromptResultSchema } from '../types/articleSchema.js';
 import type { ReplicateClient } from './replicateClient.js';
 
-export async function buildAndRenderImages({
+export async function expandImagePrompts({
   plan,
   settings,
   openRouter,
-  replicate,
-  markdownPath,
-  assetDir,
   dryRun,
   onProgress,
 }: {
   plan: ArticlePlan;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
-  replicate: ReplicateClient | null;
-  markdownPath: string;
-  assetDir: string;
   dryRun: boolean;
   onProgress?: (detail: string) => void;
-}): Promise<Pick<GeneratedArticle, 'imagePrompts' | 'renderedImages'>> {
+}): Promise<ArticleImagePrompt[]> {
   const imageSlots = buildImageSlots(plan);
   const prompts: ArticleImagePrompt[] = [];
 
@@ -59,6 +53,27 @@ export async function buildAndRenderImages({
     });
   }
 
+  return prompts;
+}
+
+export async function renderExpandedImages({
+  prompts,
+  settings,
+  replicate,
+  markdownPath,
+  assetDir,
+  dryRun,
+  onProgress,
+}: {
+  prompts: ArticleImagePrompt[];
+  settings: AppSettings;
+  replicate: ReplicateClient | null;
+  markdownPath: string;
+  assetDir: string;
+  dryRun: boolean;
+  onProgress?: (detail: string) => void;
+}): Promise<RenderedArticleImage[]> {
+
   const renderedImages: RenderedArticleImage[] = [];
   for (let index = 0; index < prompts.length; index += 1) {
     const prompt = prompts[index];
@@ -88,8 +103,48 @@ export async function buildAndRenderImages({
     });
   }
 
+  return renderedImages;
+}
+
+export async function buildAndRenderImages({
+  plan,
+  settings,
+  openRouter,
+  replicate,
+  markdownPath,
+  assetDir,
+  dryRun,
+  onProgress,
+}: {
+  plan: ArticlePlan;
+  settings: AppSettings;
+  openRouter: OpenRouterClient | null;
+  replicate: ReplicateClient | null;
+  markdownPath: string;
+  assetDir: string;
+  dryRun: boolean;
+  onProgress?: (detail: string) => void;
+}): Promise<Pick<GeneratedArticle, 'imagePrompts' | 'renderedImages'>> {
+  const imagePrompts = await expandImagePrompts({
+    plan,
+    settings,
+    openRouter,
+    dryRun,
+    onProgress,
+  });
+
+  const renderedImages = await renderExpandedImages({
+    prompts: imagePrompts,
+    settings,
+    replicate,
+    markdownPath,
+    assetDir,
+    dryRun,
+    onProgress,
+  });
+
   return {
-    imagePrompts: prompts,
+    imagePrompts,
     renderedImages,
   };
 }

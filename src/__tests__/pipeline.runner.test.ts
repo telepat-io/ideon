@@ -204,4 +204,142 @@ describe('pipeline runner', () => {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
+
+  it('resumes from saved image prompts without regenerating them', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-resume-prompts-test-'));
+    const updates: StageViewModel[][] = [];
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      await startFreshWriteSession(
+        {
+          idea: 'resume with saved prompts',
+          job: null,
+          settings: {
+            ...defaultAppSettings,
+            markdownOutputDir: markdownDir,
+            assetOutputDir: assetDir,
+          },
+          dryRun: true,
+          outputPaths: {
+            markdownOutputDir: markdownDir,
+            assetOutputDir: assetDir,
+          },
+        },
+        tempRoot,
+      );
+
+      await patchWriteSession(
+        {
+          status: 'failed',
+          lastCompletedStage: 'image-prompts',
+          failedStage: 'images',
+          errorMessage: 'simulated interruption after prompt expansion',
+          plan: {
+            title: 'Resume With Saved Prompts',
+            subtitle: 'Persisted prompt checkpoint',
+            keywords: ['resume', 'prompts', 'checkpoint'],
+            slug: 'resume-with-saved-prompts',
+            description: 'Persisted image prompt checkpoint for resume testing.',
+            introBrief: 'Persist intro brief',
+            outroBrief: 'Persist outro brief',
+            sections: [
+              { title: 'First', description: 'First section' },
+              { title: 'Second', description: 'Second section' },
+              { title: 'Third', description: 'Third section' },
+              { title: 'Fourth', description: 'Fourth section' },
+            ],
+            coverImageDescription: 'Cover description',
+            inlineImages: [
+              { anchorAfterSection: 1, description: 'Inline one' },
+              { anchorAfterSection: 3, description: 'Inline two' },
+            ],
+          },
+          text: {
+            intro: 'Persisted intro',
+            sections: [
+              { title: 'First', body: 'First body' },
+              { title: 'Second', body: 'Second body' },
+              { title: 'Third', body: 'Third body' },
+              { title: 'Fourth', body: 'Fourth body' },
+            ],
+            outro: 'Persisted outro',
+          },
+          imagePrompts: [
+            {
+              id: 'cover',
+              kind: 'cover',
+              prompt: 'DO-NOT-REGENERATE-COVER-PROMPT',
+              description: 'Cover description',
+              anchorAfterSection: null,
+            },
+            {
+              id: 'inline-1',
+              kind: 'inline',
+              prompt: 'DO-NOT-REGENERATE-INLINE-1',
+              description: 'Inline one',
+              anchorAfterSection: 1,
+            },
+            {
+              id: 'inline-2',
+              kind: 'inline',
+              prompt: 'DO-NOT-REGENERATE-INLINE-2',
+              description: 'Inline two',
+              anchorAfterSection: 3,
+            },
+          ],
+          imageArtifacts: null,
+        },
+        tempRoot,
+      );
+
+      await runPipelineShell(
+        {
+          idea: 'resume with saved prompts',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          runMode: 'resume',
+          workingDir: tempRoot,
+          onUpdate(stages) {
+            updates.push(stages);
+          },
+        },
+      );
+
+      const reusedPromptsSeen = updates.some((batch) =>
+        batch.some((stage) => stage.id === 'image-prompts' && stage.detail.includes('Reused saved image prompts')),
+      );
+      expect(reusedPromptsSeen).toBe(true);
+
+      const imageRenderingRan = updates.some((batch) =>
+        batch.some((stage) => stage.id === 'images' && stage.detail.includes('Rendering image')),
+      );
+      expect(imageRenderingRan).toBe(true);
+
+      const savedStateRaw = await readFile(path.join(tempRoot, '.ideon', 'write', 'state.json'), 'utf8');
+      const savedState = JSON.parse(savedStateRaw) as {
+        imageArtifacts: { imagePrompts: Array<{ id: string; prompt: string }> } | null;
+      };
+
+      const coverPrompt = savedState.imageArtifacts?.imagePrompts.find((prompt) => prompt.id === 'cover')?.prompt;
+      expect(coverPrompt).toBe('DO-NOT-REGENERATE-COVER-PROMPT');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
 });

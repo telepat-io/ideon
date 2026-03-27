@@ -2,7 +2,7 @@ import type { ResolvedRunInput } from '../config/resolver.js';
 import { planArticle } from '../generation/planArticle.js';
 import { writeArticleSections } from '../generation/writeSections.js';
 import { ReplicateClient } from '../images/replicateClient.js';
-import { buildAndRenderImages } from '../images/renderImages.js';
+import { expandImagePrompts, renderExpandedImages } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
 import { ensureOutputDirectories, resolveOutputPaths, writeUtf8File } from '../output/filesystem.js';
@@ -191,14 +191,62 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
 
     const markdownPath = `${writeSession.outputPaths.markdownOutputDir}/${plan.slug}.md`;
+    let imagePrompts = writeSession.imagePrompts ?? writeSession.imageArtifacts?.imagePrompts ?? null;
     let imageArtifacts = writeSession.imageArtifacts;
-    if (imageArtifacts) {
+    if (imagePrompts) {
       stages[2] = {
         ...stages[2],
         status: 'succeeded',
         detail: 'Reused saved image prompts from .ideon/write.',
-        summary: `${imageArtifacts.imagePrompts.length} prompts ready`,
+        summary: `${imagePrompts.length} prompts ready`,
       };
+      stages[3] = {
+        ...stages[3],
+        status: 'running',
+        detail: 'Rendering expanded image prompts.',
+      };
+      options.onUpdate?.(cloneStages(stages));
+    } else {
+      imagePrompts = await expandImagePrompts({
+        plan,
+        settings: input.config.settings,
+        openRouter,
+        dryRun,
+        onProgress(detail) {
+          stages[2] = {
+            ...stages[2],
+            detail,
+          };
+          options.onUpdate?.(cloneStages(stages));
+        },
+      });
+
+      stages[2] = {
+        ...stages[2],
+        status: 'succeeded',
+        detail: 'Expanded image prompts successfully.',
+        summary: `${imagePrompts.length} prompts ready`,
+      };
+      stages[3] = {
+        ...stages[3],
+        status: 'running',
+        detail: 'Rendering expanded image prompts.',
+      };
+      options.onUpdate?.(cloneStages(stages));
+
+      writeSession = await patchWriteSession(
+        {
+          status: 'running',
+          lastCompletedStage: 'image-prompts',
+          failedStage: null,
+          errorMessage: null,
+          imagePrompts,
+        },
+        workingDir,
+      );
+    }
+
+    if (imageArtifacts) {
       stages[3] = {
         ...stages[3],
         status: 'succeeded',
@@ -212,37 +260,32 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       };
       options.onUpdate?.(cloneStages(stages));
     } else {
-      imageArtifacts = await buildAndRenderImages({
-        plan,
+      if (!imagePrompts) {
+        throw new Error('Expanded image prompts are missing for image rendering stage.');
+      }
+
+      const renderedImages = await renderExpandedImages({
+        prompts: imagePrompts,
         settings: input.config.settings,
-        openRouter,
         replicate,
         markdownPath,
         assetDir: writeSession.outputPaths.assetOutputDir,
         dryRun,
         onProgress(detail) {
-          if (detail.startsWith('Expanding prompt')) {
-            stages[2] = {
-              ...stages[2],
-              detail,
-            };
-          } else {
-            stages[3] = {
-              ...stages[3],
-              status: 'running',
-              detail,
-            };
-          }
+          stages[3] = {
+            ...stages[3],
+            status: 'running',
+            detail,
+          };
           options.onUpdate?.(cloneStages(stages));
         },
       });
 
-      stages[2] = {
-        ...stages[2],
-        status: 'succeeded',
-        detail: 'Expanded image prompts successfully.',
-        summary: `${imageArtifacts.imagePrompts.length} prompts ready`,
+      imageArtifacts = {
+        imagePrompts,
+        renderedImages,
       };
+
       stages[3] = {
         ...stages[3],
         status: 'succeeded',
