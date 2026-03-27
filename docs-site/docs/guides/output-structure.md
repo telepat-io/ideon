@@ -40,6 +40,8 @@ Generated slug is normalized and checked for collisions. If a slug exists, Ideon
 
 Markdown embeds use relative paths from markdown file location to asset files.
 
+To inspect generated markdown and image embeds in a browser, run `npm run preview`.
+
 ## Local Session Artifacts
 
 - Session state file: `.ideon/write/state.json`

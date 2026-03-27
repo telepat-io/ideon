@@ -1,6 +1,8 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { AppSettings } from '../config/schema.js';
+
+export const MIN_IMAGE_BYTES = 1024;
 import { buildImagePromptMessages, imagePromptSchema } from '../llm/prompts/imagePrompt.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { coerceT2IFieldValue, getT2IFieldDefault, sanitizeT2IOverrides } from '../models/t2i/options.js';
@@ -94,6 +96,11 @@ export async function renderExpandedImages({
     const input = createReplicateInput(settings, prompt.prompt, prompt.kind);
     const output = await replicate.runModel(settings.t2i.modelId, input);
     const bytes = await normalizeReplicateOutput(output);
+    if (bytes.byteLength < MIN_IMAGE_BYTES) {
+      throw new Error(
+        `Image ${index + 1} download appears corrupted: only ${bytes.byteLength} bytes received.`,
+      );
+    }
     await writeFile(outputPath, bytes);
 
     renderedImages.push({
@@ -310,10 +317,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function fetchBytes(url: string): Promise<Uint8Array> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download generated asset from ${url}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+  timer.unref();
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`Failed to download generated asset from ${url}`);
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  } finally {
+    clearTimeout(timer);
   }
-
-  return new Uint8Array(await response.arrayBuffer());
 }

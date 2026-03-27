@@ -58,6 +58,28 @@ Notes:
 - If the last session already completed, Ideon asks you to start a fresh write instead.
 - If no session exists, run `ideon write <idea>` first.
 
+## `ideon preview [markdownPath]`
+
+Starts a local preview server for generated article markdown and images.
+
+```bash
+ideon preview
+ideon preview ./output/my-article.md
+ideon preview --port 4173 --no-open
+npm run preview
+```
+
+Behavior:
+
+- If `markdownPath` is omitted, Ideon previews the newest `.md` file in the configured markdown output directory.
+- Image assets are served from the configured asset output directory (default `/output/assets`).
+- Browser auto-open is enabled by default.
+
+### Options
+
+- `-p, --port <port>`: preview server port (default: `4173`)
+- `--no-open`: start server without opening a browser
+
 ## Exit Behavior
 
 - Success: exit code `0`

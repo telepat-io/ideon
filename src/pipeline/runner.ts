@@ -1,8 +1,10 @@
+import { mkdir, stat } from 'node:fs/promises';
+import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
 import { planArticle } from '../generation/planArticle.js';
 import { writeArticleSections } from '../generation/writeSections.js';
 import { ReplicateClient } from '../images/replicateClient.js';
-import { expandImagePrompts, renderExpandedImages } from '../images/renderImages.js';
+import { expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
 import { ensureOutputDirectories, resolveOutputPaths, writeUtf8File } from '../output/filesystem.js';
@@ -84,7 +86,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
 
     if (existing.status === 'completed') {
-      throw new Error('The last write session already completed. Start a new write with ideon write <idea>.');
+      // Allow resume from completed sessions so corrupted or missing assets
+      // can be regenerated. Stage caching in the pipeline is idempotent.
     }
 
     writeSession = existing;
@@ -191,8 +194,31 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
 
     const markdownPath = `${writeSession.outputPaths.markdownOutputDir}/${plan.slug}.md`;
+    const articleAssetDir = path.join(writeSession.outputPaths.assetOutputDir, plan.slug);
+    await mkdir(articleAssetDir, { recursive: true });
     let imagePrompts = writeSession.imagePrompts ?? writeSession.imageArtifacts?.imagePrompts ?? null;
     let imageArtifacts = writeSession.imageArtifacts;
+    if (imageArtifacts) {
+      // Validate that every cached image file still exists and is intact.
+      // If any file is missing or suspiciously small, discard the cache and
+      // let the pipeline re-render all images.
+      let cacheValid = true;
+      for (const img of imageArtifacts.renderedImages) {
+        try {
+          const info = await stat(img.outputPath);
+          if (info.size < MIN_IMAGE_BYTES) {
+            cacheValid = false;
+            break;
+          }
+        } catch {
+          cacheValid = false;
+          break;
+        }
+      }
+      if (!cacheValid) {
+        imageArtifacts = null;
+      }
+    }
     if (imagePrompts) {
       stages[2] = {
         ...stages[2],
@@ -251,7 +277,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         ...stages[3],
         status: 'succeeded',
         detail: 'Reused previously rendered images from .ideon/write.',
-        summary: writeSession.outputPaths.assetOutputDir,
+        summary: articleAssetDir,
       };
       stages[4] = {
         ...stages[4],
@@ -269,7 +295,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         replicate,
         markdownPath,
-        assetDir: writeSession.outputPaths.assetOutputDir,
+        assetDir: articleAssetDir,
         dryRun,
         onProgress(detail) {
           stages[3] = {
@@ -290,7 +316,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         ...stages[3],
         status: 'succeeded',
         detail: 'Rendered and stored article images.',
-        summary: writeSession.outputPaths.assetOutputDir,
+        summary: articleAssetDir,
       };
       stages[4] = {
         ...stages[4],

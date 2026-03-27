@@ -37,7 +37,6 @@ function WriteApp({
 
   useEffect(() => {
     let mounted = true;
-    let exitTimer: ReturnType<typeof setTimeout> | null = null;
 
     void (async () => {
       try {
@@ -56,9 +55,6 @@ function WriteApp({
         }
 
         setResult(runResult);
-        exitTimer = setTimeout(() => {
-          exit();
-        }, 120);
       } catch (error) {
         if (!mounted) {
           return;
@@ -67,19 +63,27 @@ function WriteApp({
         const normalizedError = error instanceof Error ? error : new Error('Unknown pipeline error');
         setErrorMessage(normalizedError.message);
         onError(normalizedError);
-        exitTimer = setTimeout(() => {
-          exit();
-        }, 250);
       }
     })();
 
     return () => {
       mounted = false;
-      if (exitTimer) {
-        clearTimeout(exitTimer);
-      }
     };
-  }, [dryRun, exit, input, onError, runMode]);
+  }, [dryRun, input, onError, runMode]);
+
+  useEffect(() => {
+    if (!result && !errorMessage) {
+      return;
+    }
+
+    const exitTimer = setTimeout(() => {
+      exit();
+    }, 250);
+
+    return () => {
+      clearTimeout(exitTimer);
+    };
+  }, [errorMessage, exit, result]);
 
   return <PipelinePresenter prompt={input.idea} stages={stages} result={result} errorMessage={errorMessage} />;
 }
@@ -170,6 +174,7 @@ async function runWritePipeline(
       />,
     );
     await app.waitUntilExit();
+    process.stdout.write('\n');
     const finalError = commandError as Error | null;
 
     if (finalError) {

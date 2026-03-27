@@ -9,11 +9,19 @@ Concise reference for AI agents (and humans) working on this codebase.
 ```bash
 npm run lint        # tsc --noEmit (typecheck, no emit)
 npm run build       # tsup → dist/ideon.js
-npm test            # Jest (81 tests across 5 suites)
+npm test            # Jest (currently 100 tests across 8 suites)
 npm run docs:build  # Docusaurus static build
 ```
 
 All four must pass clean. If you change a feature, update the relevant doc page(s) under `docs-site/docs/` and confirm `docs:build` still succeeds.
+
+If changes touch the local preview server (`ideon preview`, `src/server/preview*`, preview docs), also run:
+
+```bash
+npm run preview -- --no-open
+```
+
+Confirm the command starts successfully and serves the latest generated markdown from `output/`.
 
 ---
 

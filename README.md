@@ -68,6 +68,21 @@ ideon settings
 ideon write "An article idea"
 ideon write --job ./job.json
 ideon write --dry-run "An article idea"
+ideon preview
+```
+
+### Preview Generated Articles
+
+Serve the latest generated article locally with assets and open it in your browser:
+
+```bash
+npm run preview
+```
+
+You can also preview a specific article and choose a port:
+
+```bash
+npm run dev -- preview ./output/my-article.md --port 4173
 ```
 
 ## Credentials
@@ -92,6 +107,7 @@ By default, Ideon writes:
 npm run typecheck
 npm test
 npm run build
+npm run preview
 ```
 
 ## Documentation

@@ -34,6 +34,7 @@ const sidebars: SidebarsConfig = {
         'guides/job-files',
         'guides/pipeline-stages',
         'guides/output-structure',
+        'guides/local-preview',
         'guides/troubleshooting',
       ],
     },

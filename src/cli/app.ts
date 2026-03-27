@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { openSettings } from './commands/settings.js';
+import { runServeCommand } from './commands/serve.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
 
 export async function runCli(argv: string[]): Promise<void> {
@@ -15,6 +16,20 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Show the current Ideon settings and storage state.')
     .action(async () => {
       await openSettings();
+    });
+
+  program
+    .command('preview')
+    .description('Preview a generated article in a local browser with linked assets.')
+    .argument('[markdownPath]', 'Path to the markdown file to preview')
+    .option('-p, --port <port>', 'Port for the local preview server (default: 4173)')
+    .option('--no-open', 'Do not auto-open browser after server startup')
+    .action(async (markdownPath: string | undefined, options: { port?: string; open: boolean }) => {
+      await runServeCommand({
+        markdownPath,
+        port: options.port,
+        openBrowser: options.open,
+      });
     });
 
   const writeCommand = program

@@ -342,4 +342,117 @@ describe('pipeline runner', () => {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
+
+  it('re-renders images when resumed session has corrupted or missing image files', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-bad-assets-'));
+    const updates: StageViewModel[][] = [];
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      // Bootstrap a completed session with imageArtifacts pointing to files that
+      // are either missing or under MIN_IMAGE_BYTES.
+      await startFreshWriteSession(
+        {
+          idea: 'bad assets resume flow',
+          job: null,
+          settings: {
+            ...defaultAppSettings,
+            markdownOutputDir: markdownDir,
+            assetOutputDir: assetDir,
+          },
+          dryRun: true,
+          outputPaths: { markdownOutputDir: markdownDir, assetOutputDir: assetDir },
+        },
+        tempRoot,
+      );
+
+      const fakePlan = {
+        title: 'Bad Assets Resume Flow',
+        subtitle: 'subtitle',
+        keywords: ['test', 'resume', 'assets'],
+        slug: 'bad-assets-resume-flow',
+        description: 'desc',
+        introBrief: 'intro',
+        outroBrief: 'outro',
+        sections: [
+          { title: 'One', description: 'section one' },
+          { title: 'Two', description: 'section two' },
+          { title: 'Three', description: 'section three' },
+          { title: 'Four', description: 'section four' },
+        ],
+        coverImageDescription: 'cover',
+        inlineImages: [
+          { anchorAfterSection: 1, description: 'inline one' },
+          { anchorAfterSection: 2, description: 'inline two' },
+        ],
+      };
+
+      const corruptedPath = path.join(assetDir, 'cover-1.webp');
+      const missingPath = path.join(assetDir, 'inline-1-2.webp');
+
+      // Write a tiny (corrupted) file for cover; leave inline missing entirely.
+      const { mkdir: mkdirFn, writeFile: writeFileFn } = await import('node:fs/promises');
+      await mkdirFn(assetDir, { recursive: true });
+      await writeFileFn(corruptedPath, new Uint8Array(10));
+
+      await patchWriteSession(
+        {
+          status: 'completed',
+          lastCompletedStage: 'output',
+          failedStage: null,
+          errorMessage: null,
+          plan: fakePlan,
+          imageArtifacts: {
+            imagePrompts: [
+              { id: 'cover', kind: 'cover', prompt: 'cover prompt', description: 'cover', anchorAfterSection: null },
+              { id: 'inline-1', kind: 'inline', prompt: 'inline prompt', description: 'inline one', anchorAfterSection: 1 },
+              { id: 'inline-2', kind: 'inline', prompt: 'inline prompt 2', description: 'inline two', anchorAfterSection: 2 },
+            ],
+            renderedImages: [
+              { id: 'cover', kind: 'cover', prompt: 'cover prompt', description: 'cover', anchorAfterSection: null, outputPath: corruptedPath, relativePath: 'assets/cover-1.webp' },
+              { id: 'inline-1', kind: 'inline', prompt: 'inline prompt', description: 'inline one', anchorAfterSection: 1, outputPath: missingPath, relativePath: 'assets/inline-1-2.webp' },
+              { id: 'inline-2', kind: 'inline', prompt: 'inline prompt 2', description: 'inline two', anchorAfterSection: 2, outputPath: missingPath + '-2', relativePath: 'assets/inline-2-3.webp' },
+            ],
+          },
+        },
+        tempRoot,
+      );
+
+      const result = await runPipelineShell(
+        {
+          idea: 'bad assets resume flow',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+            },
+            secrets: { openRouterApiKey: null, replicateApiToken: null },
+          },
+        },
+        {
+          dryRun: true,
+          runMode: 'resume',
+          workingDir: tempRoot,
+          onUpdate(stages) {
+            updates.push(stages);
+          },
+        },
+      );
+
+      // Pipeline must complete successfully and re-render the images.
+      expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
+
+      // The images stage must have run (not been skipped from cache).
+      const imageRenderingRan = updates.some((batch) =>
+        batch.some((stage) => stage.id === 'images' && stage.detail.includes('Rendering image')),
+      );
+      expect(imageRenderingRan).toBe(true);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
 });

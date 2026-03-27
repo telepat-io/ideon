@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsup src/bin/ideon.ts --format esm --dts --clean --out-dir dist",
     "dev": "tsx src/bin/ideon.ts",
+    "preview": "tsx src/bin/ideon.ts preview",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
@@ -36,10 +37,12 @@
   "dependencies": {
     "commander": "^14.0.1",
     "env-paths": "^3.0.0",
+    "express": "^5.2.1",
     "ink": "^6.8.0",
     "ink-select-input": "^6.2.0",
     "ink-text-input": "^6.0.0",
     "keytar": "^7.9.0",
+    "marked": "^17.0.5",
     "react": "^19.1.1",
     "replicate": "^1.1.0",
     "zod": "^4.1.11"
@@ -47,6 +50,7 @@
   "devDependencies": {
     "@babel/preset-env": "^7.29.2",
     "@babel/preset-typescript": "^7.28.5",
+    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.13",
