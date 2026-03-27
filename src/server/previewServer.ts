@@ -154,7 +154,7 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
       }
 
       aside {
-        width: 280px;
+        width: 320px;
         background: #f9f4ed;
         border-right: 1px solid var(--border);
         overflow-y: auto;
@@ -164,7 +164,7 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
 
       @media (min-width: 1200px) {
         aside {
-          width: 350px;
+          width: 400px;
         }
 
         .sidebar-header {
@@ -177,6 +177,12 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
 
         .article-item button {
           padding: 1rem 1.25rem;
+        }
+      }
+
+      @media (min-width: 1600px) {
+        aside {
+          width: 460px;
         }
       }
 
@@ -220,10 +226,33 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
         cursor: pointer;
         color: inherit;
         font: inherit;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
       }
 
       .article-item.active button {
         color: white;
+      }
+
+      .article-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+        border: 1px solid var(--border);
+        background: var(--border);
+        display: block;
+      }
+
+      .article-item.active .article-thumb {
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .article-text {
+        flex: 1;
+        min-width: 0;
       }
 
       .article-title {
@@ -335,6 +364,49 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
         background: #faf5ed;
       }
 
+      .slug-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.75rem 0 1.25rem;
+      }
+
+      .slug-text {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 0.82rem;
+        background: #f0ebe2;
+        color: var(--muted);
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        user-select: all;
+      }
+
+      .copy-btn {
+        font-family: inherit;
+        font-size: 0.8rem;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.25rem 0.6rem;
+        cursor: pointer;
+        color: var(--muted);
+        transition: background 0.15s, color 0.15s;
+      }
+
+      .copy-btn:hover {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+
+      .copy-btn:disabled {
+        cursor: default;
+        background: #e4f0ea;
+        color: var(--accent);
+        border-color: #b8d9c8;
+      }
+
       .loading {
         display: flex;
         align-items: center;
@@ -407,9 +479,12 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
               (article) =>
                 \`<li class="article-item\${article.slug === currentSlug ? ' active' : ''}" data-slug="\${article.slug}">
               <button onclick="loadArticle(this.parentElement.dataset.slug); return false;">
-                <span class="article-title">\${escapeHtml(article.title)}</span>
-                <span class="article-meta">\${formatDate(new Date(article.mtime))}</span>
-                <span class="article-snippet">\${escapeHtml(article.previewSnippet)}</span>
+                \${article.coverImageUrl ? \`<img class="article-thumb" src="\${article.coverImageUrl}" alt="" loading="lazy">\` : ''}
+                <div class="article-text">
+                  <span class="article-title">\${escapeHtml(article.title)}</span>
+                  <span class="article-meta">\${formatDate(new Date(article.mtime))}</span>
+                  <span class="article-snippet">\${escapeHtml(article.previewSnippet)}</span>
+                </div>
               </button>
             </li>\`
             )
@@ -431,6 +506,16 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
           articleElement.innerHTML = htmlBody;
           articleElement.classList.remove('loading');
 
+          // Inject slug badge after the subtitle (first <p> after <h1>)
+          const h1 = articleElement.querySelector('h1');
+          if (h1) {
+            const anchor = h1.nextElementSibling?.tagName === 'P' ? h1.nextElementSibling : h1;
+            const badge = document.createElement('div');
+            badge.className = 'slug-row';
+            badge.innerHTML = \`<code class="slug-text">\${escapeHtml(slug)}</code><button class="copy-btn" onclick="copySlug(this, '\${escapeHtml(slug)}')" type="button">Copy slug</button>\`;
+            anchor.insertAdjacentElement('afterend', badge);
+          }
+
           // Update active state in sidebar by matching data-slug attribute
           document.querySelectorAll('.article-item').forEach((item) => {
             if (item.dataset.slug === slug) {
@@ -450,6 +535,15 @@ function renderShell({ title, sourcePath, currentSlug }: { title: string; source
           articleElement.innerHTML = '<div style="color: red; padding: 2rem;">Error loading article</div>';
           articleElement.classList.remove('loading');
         }
+      }
+
+      function copySlug(btn, slug) {
+        navigator.clipboard.writeText(slug).then(() => {
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          btn.disabled = true;
+          setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1500);
+        });
       }
 
       function escapeHtml(text) {

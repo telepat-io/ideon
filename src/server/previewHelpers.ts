@@ -8,6 +8,7 @@ export interface ArticleMetadata {
   title: string;
   mtime: number;
   previewSnippet: string;
+  coverImageUrl: string | null;
 }
 
 export function parsePort(portOption: string | undefined): number {
@@ -92,6 +93,12 @@ async function assertFileExists(filePath: string, errorPrefix: string): Promise<
   }
 }
 
+export function extractCoverImageUrl(markdown: string): string | null {
+  const body = stripFrontmatter(markdown);
+  const match = body.match(/!\[[^\]]*\]\(([^)]+)\)/);
+  return match?.[1] ?? null;
+}
+
 export async function extractArticleMetadata(markdownPath: string): Promise<ArticleMetadata> {
   const markdown = await readFile(markdownPath, 'utf8');
   const fileStat = await stat(markdownPath);
@@ -99,12 +106,14 @@ export async function extractArticleMetadata(markdownPath: string): Promise<Arti
   const title = extractHeadingTitle(stripFrontmatter(markdown)) ?? slug;
   const body = stripFrontmatter(markdown);
   const previewSnippet = body.replace(/[#\[\]()!\-*_`]/g, '').trim().substring(0, 150);
+  const coverImageUrl = extractCoverImageUrl(markdown);
 
   return {
     slug,
     title,
     mtime: fileStat.mtimeMs,
     previewSnippet,
+    coverImageUrl,
   };
 }
 
