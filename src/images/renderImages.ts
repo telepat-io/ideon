@@ -240,7 +240,73 @@ async function normalizeReplicateOutput(output: unknown): Promise<Uint8Array> {
     return new Uint8Array(await first.arrayBuffer());
   }
 
+  if (typeof ReadableStream !== 'undefined' && first instanceof ReadableStream) {
+    return new Uint8Array(await new Response(first).arrayBuffer());
+  }
+
+  const fromBlobMethod = await maybeBytesFromBlobMethod(first);
+  if (fromBlobMethod) {
+    return fromBlobMethod;
+  }
+
+  const fromUrlMethod = await maybeBytesFromUrlMethod(first);
+  if (fromUrlMethod) {
+    return fromUrlMethod;
+  }
+
+  const fromArrayBufferMethod = await maybeBytesFromArrayBufferMethod(first);
+  if (fromArrayBufferMethod) {
+    return fromArrayBufferMethod;
+  }
+
   throw new Error('Unsupported Replicate output format.');
+}
+
+async function maybeBytesFromBlobMethod(value: unknown): Promise<Uint8Array | null> {
+  if (!isRecord(value) || typeof value.blob !== 'function') {
+    return null;
+  }
+
+  const blobLike = await value.blob();
+  if (typeof Blob === 'undefined' || !(blobLike instanceof Blob)) {
+    return null;
+  }
+
+  return new Uint8Array(await blobLike.arrayBuffer());
+}
+
+async function maybeBytesFromUrlMethod(value: unknown): Promise<Uint8Array | null> {
+  if (!isRecord(value) || typeof value.url !== 'function') {
+    return null;
+  }
+
+  const urlLike = value.url();
+  if (typeof urlLike === 'string') {
+    return fetchBytes(urlLike);
+  }
+
+  if (urlLike instanceof URL) {
+    return fetchBytes(urlLike.toString());
+  }
+
+  return null;
+}
+
+async function maybeBytesFromArrayBufferMethod(value: unknown): Promise<Uint8Array | null> {
+  if (!isRecord(value) || typeof value.arrayBuffer !== 'function') {
+    return null;
+  }
+
+  const data = await value.arrayBuffer();
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data);
+  }
+
+  return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 async function fetchBytes(url: string): Promise<Uint8Array> {

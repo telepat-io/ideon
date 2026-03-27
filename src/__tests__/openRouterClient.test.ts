@@ -99,6 +99,53 @@ describe('OpenRouterClient requestStructured', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('retries and succeeds when empty content is returned transiently', async () => {
+    let callCount = 0;
+    const fetchMock = jest.fn(async () => {
+      callCount += 1;
+      const content = callCount < 3 ? null : '{"value":"ok"}';
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ choices: [{ message: { content } }] }),
+      };
+    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestStructured<{ value: string }>({
+      schemaName: 'structured_test',
+      schema,
+      messages: [{ role: 'user', content: 'test' }],
+      settings: defaultAppSettings,
+    });
+
+    expect(result.value).toBe('ok');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('fails with empty response error after exhausting retries on persistent empty content', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{ message: { content: null } }] }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+
+    await expect(
+      client.requestStructured<{ value: string }>({
+        schemaName: 'structured_test',
+        schema,
+        messages: [{ role: 'user', content: 'test' }],
+        settings: defaultAppSettings,
+      }),
+    ).rejects.toThrow('OpenRouter returned an empty response.');
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   it('uses configured timeout duration in timeout error message', async () => {
     const fetchMock = jest.fn(async () => {
       const abortError = new Error('The operation was aborted');

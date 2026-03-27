@@ -131,6 +131,12 @@ export class OpenRouterClient {
           throw new Error(message);
         }
 
+        const content = json.choices?.[0]?.message?.content;
+        if (!content && attempt < 2) {
+          await wait(backoffMs(attempt));
+          continue;
+        }
+
         clearTimeout(timeout);
         return json;
       } catch (error) {
