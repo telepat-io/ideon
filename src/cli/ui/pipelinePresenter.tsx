@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { FinalSummary } from './finalSummary.js';
 import { StageRow } from './stageRow.js';
 import type { PipelineRunResult, StageViewModel } from '../../pipeline/events.js';
+import { computeMaxVisibleItemsPerStage, getVisibleStages } from './progressVisibility.js';
 
 export function PipelinePresenter({
   prompt,
@@ -15,6 +16,14 @@ export function PipelinePresenter({
   result: PipelineRunResult | null;
   errorMessage?: string | null;
 }): React.JSX.Element {
+  const visibleStages = getVisibleStages(stages);
+  const maxVisibleItems = computeMaxVisibleItemsPerStage({
+    terminalRows: process.stdout.rows,
+    visibleStageCount: visibleStages.length,
+    hasError: Boolean(errorMessage),
+    hasResult: Boolean(result),
+  });
+
   return (
     <Box flexDirection="column" paddingX={1}>
       <Text bold color="cyanBright">
@@ -22,8 +31,14 @@ export function PipelinePresenter({
       </Text>
       <Text color="gray">{prompt}</Text>
       <Box marginTop={1} flexDirection="column">
-        {stages.map((stage) => (
-          <StageRow key={stage.id} stage={stage} isActive={stage.status === 'running'} />
+        {visibleStages.map((stage) => (
+          <StageRow
+            key={stage.id}
+            stage={stage}
+            isActive={stage.status === 'running'}
+            showPendingItems={false}
+            maxVisibleItems={maxVisibleItems}
+          />
         ))}
       </Box>
       {errorMessage ? (

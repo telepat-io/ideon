@@ -84,6 +84,7 @@ describe('pipeline runner', () => {
 
   it('writes multiple outputs into one generation directory with shared assets', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-multi-output-'));
+    const updates: StageViewModel[][] = [];
 
     try {
       const markdownDir = path.join(tempRoot, 'out');
@@ -113,17 +114,28 @@ describe('pipeline runner', () => {
         {
           dryRun: true,
           workingDir: tempRoot,
+          onUpdate(stages) {
+            updates.push(stages);
+          },
         },
       );
 
       expect(result.artifact.outputCount).toBe(3);
       expect(result.artifact.markdownPaths).toHaveLength(3);
+      expect(result.analytics.outputItemCalls).toHaveLength(3);
+      expect(result.analytics.outputItemCalls.every((item) => item.durationMs >= 0)).toBe(true);
 
       const fileNames = result.artifact.markdownPaths.map((filePath) => path.basename(filePath)).sort();
       expect(fileNames).toEqual(['article-1.md', 'x-1.md', 'x-2.md']);
 
       const xMarkdownPaths = result.artifact.markdownPaths.filter((filePath) => path.basename(filePath).startsWith('x-'));
       expect(xMarkdownPaths).toHaveLength(2);
+
+      const outputUpdates = updates
+        .map((snapshot) => snapshot.find((stage) => stage.id === 'output'))
+        .filter((stage): stage is StageViewModel => Boolean(stage));
+      expect(outputUpdates.some((stage) => (stage.items ?? []).some((item) => item.status === 'running'))).toBe(true);
+      expect(outputUpdates.some((stage) => (stage.items ?? []).some((item) => item.status === 'succeeded'))).toBe(true);
 
       const xContents = await Promise.all(xMarkdownPaths.map(async (filePath) => readFile(filePath, 'utf8')));
       for (const content of xContents) {
@@ -160,6 +172,7 @@ describe('pipeline runner', () => {
 
   it('skips article section flow when article target is absent', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-non-article-only-'));
+    const updates: StageViewModel[][] = [];
 
     try {
       const markdownDir = path.join(tempRoot, 'out');
@@ -189,12 +202,16 @@ describe('pipeline runner', () => {
         {
           dryRun: true,
           workingDir: tempRoot,
+          onUpdate(stages) {
+            updates.push(stages);
+          },
         },
       );
 
       expect(result.artifact.outputCount).toBe(3);
       expect(result.artifact.imageCount).toBe(0);
       expect(result.artifact.sectionCount).toBe(0);
+      expect(result.analytics.outputItemCalls).toHaveLength(3);
 
       const planningStage = result.stages.find((stage) => stage.id === 'planning');
       expect(planningStage?.detail).toContain('Skipped article planning');
@@ -204,6 +221,12 @@ describe('pipeline runner', () => {
 
       const firstOutput = await readFile(result.artifact.markdownPaths[0]!, 'utf8');
       expect(firstOutput).toContain('dry-run placeholder for single-prompt channel generation');
+
+      const outputStageSnapshots = updates
+        .map((snapshot) => snapshot.find((stage) => stage.id === 'output'))
+        .filter((stage): stage is StageViewModel => Boolean(stage));
+      expect(outputStageSnapshots.some((stage) => (stage.items ?? []).length === 3)).toBe(true);
+      expect(outputStageSnapshots.some((stage) => (stage.items ?? []).every((item) => item.status !== 'pending'))).toBe(true);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

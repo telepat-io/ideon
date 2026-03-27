@@ -22,9 +22,11 @@ import type {
   CostSource,
   ImagePromptAnalytics,
   ImageRenderAnalytics,
+  OutputItemAnalytics,
   PipelineRunAnalytics,
   PipelineRunResult,
   PipelineStageAnalytics,
+  StageItemViewModel,
   StageViewModel,
 } from './events.js';
 import {
@@ -104,6 +106,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   });
   const imagePromptCalls: ImagePromptAnalytics[] = [];
   const imageRenderCalls: ImageRenderAnalytics[] = [];
+  const outputItemCalls: OutputItemAnalytics[] = [];
   let writeSession: WriteSessionState;
 
   if (runMode === 'fresh') {
@@ -243,6 +246,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         ...stages[2],
         status: 'running',
         detail: 'Writing introduction.',
+        items: buildSectionItems(plan.sections.map((section) => section.title)),
       };
       markStageStarted(stageTracking, 'sections');
       options.onUpdate?.(cloneStages(stages));
@@ -254,6 +258,11 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           status: 'succeeded',
           detail: 'Reused saved section drafts from .ideon/write.',
           summary: `Intro + ${text.sections.length} sections + conclusion`,
+          items: (stages[2].items ?? []).map((item) => ({
+            ...item,
+            status: 'succeeded',
+            detail: 'Reused saved section draft from .ideon/write.',
+          })),
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
         };
         stages[3] = {
@@ -264,15 +273,40 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         markStageStarted(stageTracking, 'image-prompts');
         options.onUpdate?.(cloneStages(stages));
       } else {
+        const sectionItemTracking = new Map<string, {
+          startedAtMs: number;
+          endedAtMs: number | null;
+          retries: number;
+          costs: Array<number | null>;
+          costSources: CostSource[];
+        }>();
+
         text = await writeArticleSections({
           plan,
           settings: input.config.settings,
           openRouter,
           dryRun,
-          onLlmMetrics(_phase, metrics) {
+          onLlmMetrics(phase, metrics, sectionIndex) {
             recordLlmMetrics(stageTracking, 'sections', metrics);
+            const sectionItemId = toSectionItemId(phase, sectionIndex);
+            if (!sectionItemId) {
+              return;
+            }
+
+            markStageStarted(sectionItemTracking, sectionItemId);
+            addStageRetries(sectionItemTracking, sectionItemId, metrics.retries);
+            const itemCost = estimateLlmCostUsd(metrics.modelId, metrics.usage);
+            recordStageCost(sectionItemTracking, sectionItemId, itemCost.usd, itemCost.source);
           },
           onSectionStart(label) {
+            const nextSectionItemId = toSectionItemIdFromLabel(label);
+            if (nextSectionItemId) {
+              stages[2] = {
+                ...stages[2],
+                items: applySectionItemTransition(stages[2].items ?? [], nextSectionItemId, sectionItemTracking),
+              };
+            }
+
             stages[2] = {
               ...stages[2],
               detail: label,
@@ -280,6 +314,26 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             options.onUpdate?.(cloneStages(stages));
           },
         });
+
+        const runningSectionItem = (stages[2].items ?? []).find((item) => item.status === 'running');
+        if (runningSectionItem) {
+          markStageCompleted(sectionItemTracking, runningSectionItem.id);
+          stages[2] = {
+            ...stages[2],
+            items: (stages[2].items ?? []).map((item) => {
+              if (item.id !== runningSectionItem.id) {
+                return item;
+              }
+
+              return {
+                ...item,
+                status: 'succeeded',
+                detail: 'Completed',
+                analytics: snapshotStageAnalytics(sectionItemTracking, item.id),
+              };
+            }),
+          };
+        }
 
         markStageCompleted(stageTracking, 'sections');
         stages[2] = {
@@ -560,6 +614,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       detail: hasArticleTarget
         ? 'Writing article and channel outputs.'
         : 'Generating channel outputs from single prompts.',
+      items: requestedOutputs.map((output) => ({
+        id: toOutputItemId(output.filePrefix, output.index),
+        label: formatOutputItemLabel(output.contentType, output.index, output.outputCountForType),
+        status: 'pending',
+        detail: 'Waiting to start.',
+      })),
     };
     markStageStarted(stageTracking, 'output');
     options.onUpdate?.(cloneStages(stages));
@@ -569,36 +629,122 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
 
     for (const output of requestedOutputs) {
+      const itemId = toOutputItemId(output.filePrefix, output.index);
+      const itemStartedAtMs = Date.now();
+      const itemTracking = {
+        retries: 0,
+        costs: [] as Array<number | null>,
+        costSources: [] as CostSource[],
+      };
+
+      stages[5] = {
+        ...stages[5],
+        detail: `Generating ${formatOutputItemLabel(output.contentType, output.index, output.outputCountForType)}.`,
+        items: (stages[5].items ?? []).map((item) => {
+          if (item.id !== itemId) {
+            return item;
+          }
+
+          return {
+            ...item,
+            status: 'running',
+            detail: 'Generating content.',
+          };
+        }),
+      };
+      options.onUpdate?.(cloneStages(stages));
+
       const markdownPath = path.join(generationDir, `${output.filePrefix}-${output.index}.md`);
-      const content = output.contentType === 'article'
-        ? articleMarkdownTemplate
-        : await writeSingleShotContent({
-            idea: input.idea,
-            contentType: output.contentType,
-            style: input.config.settings.style,
-            outputIndex: output.index,
-            outputCountForType: output.outputCountForType,
-            xMode: output.xMode,
-            articleReferenceMarkdown: articleMarkdownTemplate ?? undefined,
-            contentBrief,
-            settings: input.config.settings,
-            openRouter,
-            dryRun,
-            onLlmMetrics(metrics) {
-              recordLlmMetrics(stageTracking, 'output', metrics);
-            },
-          });
+      try {
+        const content = output.contentType === 'article'
+          ? articleMarkdownTemplate
+          : await writeSingleShotContent({
+              idea: input.idea,
+              contentType: output.contentType,
+              style: input.config.settings.style,
+              outputIndex: output.index,
+              outputCountForType: output.outputCountForType,
+              xMode: output.xMode,
+              articleReferenceMarkdown: articleMarkdownTemplate ?? undefined,
+              contentBrief,
+              settings: input.config.settings,
+              openRouter,
+              dryRun,
+              onLlmMetrics(metrics) {
+                recordLlmMetrics(stageTracking, 'output', metrics);
+                itemTracking.retries += metrics.retries;
+                const cost = estimateLlmCostUsd(metrics.modelId, metrics.usage);
+                itemTracking.costs.push(cost.usd);
+                itemTracking.costSources.push(cost.source);
+              },
+            });
 
-      if (output.contentType === 'article' && !content) {
-        throw new Error('Article output requested but article section-generation result is missing.');
+        if (output.contentType === 'article' && !content) {
+          throw new Error('Article output requested but article section-generation result is missing.');
+        }
+
+        if (!content) {
+          throw new Error(`Generated empty content for ${output.contentType} output ${output.index}.`);
+        }
+
+        markdownPaths.push(markdownPath);
+        await writeUtf8File(markdownPath, content);
+
+        const itemDurationMs = Date.now() - itemStartedAtMs;
+        const knownItemCost = sumKnownCosts(itemTracking.costs);
+        const itemCostSource = chooseStageCostSource(itemTracking.costSources, knownItemCost.source);
+        outputItemCalls.push({
+          itemId,
+          contentType: output.contentType,
+          filePrefix: output.filePrefix,
+          index: output.index,
+          outputCountForType: output.outputCountForType,
+          durationMs: itemDurationMs,
+          retries: itemTracking.retries,
+          costUsd: knownItemCost.usd,
+          costSource: itemCostSource,
+        });
+
+        stages[5] = {
+          ...stages[5],
+          detail: `Completed ${formatOutputItemLabel(output.contentType, output.index, output.outputCountForType)}.`,
+          items: (stages[5].items ?? []).map((item) => {
+            if (item.id !== itemId) {
+              return item;
+            }
+
+            return {
+              ...item,
+              status: 'succeeded',
+              detail: 'Saved markdown output.',
+              summary: path.basename(markdownPath),
+              analytics: {
+                durationMs: itemDurationMs,
+                costUsd: knownItemCost.usd,
+                costSource: itemCostSource,
+              },
+            };
+          }),
+        };
+        options.onUpdate?.(cloneStages(stages));
+      } catch (error) {
+        stages[5] = {
+          ...stages[5],
+          items: (stages[5].items ?? []).map((item) => {
+            if (item.id !== itemId) {
+              return item;
+            }
+
+            return {
+              ...item,
+              status: 'failed',
+              detail: error instanceof Error ? error.message : 'Unknown item failure.',
+            };
+          }),
+        };
+        options.onUpdate?.(cloneStages(stages));
+        throw error;
       }
-
-      if (!content) {
-        throw new Error(`Generated empty content for ${output.contentType} output ${output.index}.`);
-      }
-
-      markdownPaths.push(markdownPath);
-      await writeUtf8File(markdownPath, content);
     }
 
     markStageCompleted(stageTracking, 'output');
@@ -620,6 +766,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       stageTracking,
       imagePromptCalls,
       imageRenderCalls,
+      outputItemCalls,
     });
     const analyticsPath = path.join(generationDir, 'generation.analytics.json');
     await writeJsonFile(analyticsPath, analytics);
@@ -680,9 +827,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   }
 }
 
-function markStageStarted(
-  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
-  stageId: WriteStageId,
+function markStageStarted<TKey extends string>(
+  tracking: Map<TKey, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: TKey,
 ): void {
   const existing = tracking.get(stageId);
   if (existing) {
@@ -698,9 +845,9 @@ function markStageStarted(
   });
 }
 
-function markStageCompleted(
-  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
-  stageId: WriteStageId,
+function markStageCompleted<TKey extends string>(
+  tracking: Map<TKey, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: TKey,
 ): void {
   const existing = tracking.get(stageId);
   if (!existing) {
@@ -715,9 +862,9 @@ function markStageCompleted(
   existing.endedAtMs = Date.now();
 }
 
-function addStageRetries(
-  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
-  stageId: WriteStageId,
+function addStageRetries<TKey extends string>(
+  tracking: Map<TKey, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: TKey,
   retries: number,
 ): void {
   markStageStarted(tracking, stageId);
@@ -729,9 +876,9 @@ function addStageRetries(
   existing.retries += retries;
 }
 
-function recordStageCost(
-  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
-  stageId: WriteStageId,
+function recordStageCost<TKey extends string>(
+  tracking: Map<TKey, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: TKey,
   costUsd: number | null,
   source: CostSource,
 ): void {
@@ -745,9 +892,9 @@ function recordStageCost(
   existing.costSources.push(source);
 }
 
-function recordLlmMetrics(
-  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
-  stageId: WriteStageId,
+function recordLlmMetrics<TKey extends string>(
+  tracking: Map<TKey, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: TKey,
   metrics: LlmCallMetrics,
 ): void {
   addStageRetries(tracking, stageId, metrics.retries);
@@ -764,6 +911,7 @@ function buildRunAnalytics({
   stageTracking,
   imagePromptCalls,
   imageRenderCalls,
+  outputItemCalls,
 }: {
   runId: string;
   runMode: 'fresh' | 'resume';
@@ -773,6 +921,7 @@ function buildRunAnalytics({
   stageTracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>;
   imagePromptCalls: ImagePromptAnalytics[];
   imageRenderCalls: ImageRenderAnalytics[];
+  outputItemCalls: OutputItemAnalytics[];
 }): PipelineRunAnalytics {
   const runEndedAtMs = Date.now();
   const orderedStageIds: WriteStageId[] = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output'];
@@ -810,6 +959,7 @@ function buildRunAnalytics({
     stages,
     imagePromptCalls,
     imageRenderCalls,
+    outputItemCalls,
   };
 }
 
@@ -829,9 +979,9 @@ function chooseStageCostSource(costSources: CostSource[], aggregateSource: CostS
   return aggregateSource;
 }
 
-function snapshotStageAnalytics(
-  tracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
-  stageId: WriteStageId,
+function snapshotStageAnalytics<TKey extends string>(
+  tracking: Map<TKey, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+  stageId: TKey,
 ): StageViewModel['stageAnalytics'] {
   const tracked = tracking.get(stageId);
   if (!tracked) {
@@ -848,7 +998,110 @@ function snapshotStageAnalytics(
 }
 
 function cloneStages(stages: StageViewModel[]): StageViewModel[] {
-  return stages.map((stage) => ({ ...stage }));
+  return stages.map((stage) => ({
+    ...stage,
+    items: stage.items?.map((item) => ({ ...item })),
+  }));
+}
+
+function buildSectionItems(sectionTitles: string[]): StageItemViewModel[] {
+  return [
+    {
+      id: 'sections:intro',
+      label: 'Introduction',
+      status: 'pending',
+      detail: 'Waiting to start.',
+    },
+    ...sectionTitles.map((title, index) => ({
+      id: `sections:section-${index + 1}`,
+      label: `Section ${index + 1}: ${title}`,
+      status: 'pending' as const,
+      detail: 'Waiting to start.',
+    })),
+    {
+      id: 'sections:outro',
+      label: 'Conclusion',
+      status: 'pending',
+      detail: 'Waiting to start.',
+    },
+  ];
+}
+
+function toSectionItemId(phase: 'intro' | 'section' | 'outro', sectionIndex?: number): string | null {
+  if (phase === 'intro') {
+    return 'sections:intro';
+  }
+
+  if (phase === 'outro') {
+    return 'sections:outro';
+  }
+
+  if (phase === 'section' && typeof sectionIndex === 'number') {
+    return `sections:section-${sectionIndex + 1}`;
+  }
+
+  return null;
+}
+
+function toSectionItemIdFromLabel(label: string): string | null {
+  if (label === 'Writing introduction') {
+    return 'sections:intro';
+  }
+
+  if (label === 'Writing conclusion') {
+    return 'sections:outro';
+  }
+
+  const sectionMatch = /^Writing section (\d+)\/\d+:/.exec(label);
+  if (!sectionMatch) {
+    return null;
+  }
+
+  return `sections:section-${Number(sectionMatch[1])}`;
+}
+
+function applySectionItemTransition(
+  items: StageItemViewModel[],
+  nextItemId: string,
+  tracking: Map<string, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>,
+): StageItemViewModel[] {
+  const now = Date.now();
+  return items.map((item) => {
+    if (item.id === nextItemId) {
+      if (item.status !== 'running') {
+        markStageStarted(tracking, item.id);
+      }
+      return {
+        ...item,
+        status: 'running',
+        detail: 'Generating content.',
+      };
+    }
+
+    if (item.status === 'running') {
+      const tracked = tracking.get(item.id);
+      if (tracked && tracked.endedAtMs === null) {
+        tracked.endedAtMs = now;
+      }
+      return {
+        ...item,
+        status: 'succeeded',
+        detail: 'Completed',
+        analytics: snapshotStageAnalytics(tracking, item.id),
+      };
+    }
+
+    return item;
+  });
+}
+
+function toOutputItemId(filePrefix: string, index: number): string {
+  return `${filePrefix}-${index}`;
+}
+
+function formatOutputItemLabel(contentType: string, index: number, total: number): string {
+  const readableType = contentType.replace(/-/g, ' ');
+  return `${readableType} ${index}/${total}`;
 }
 
 function requireSecret(value: string | null, label: string): string {

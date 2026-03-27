@@ -30,6 +30,23 @@ function formatStage(stage: StageViewModel): string {
   return `[${stage.status}] ${stage.title}\n    ${stage.detail}${summary}${analytics}`;
 }
 
+function formatItem(stage: StageViewModel, item: NonNullable<StageViewModel['items']>[number]): string {
+  const summary = item.summary ? `\n      ${item.summary}` : '';
+  const analytics = item.status === 'succeeded' && item.analytics
+    ? `\n      analytics: ${formatDuration(item.analytics.durationMs)} • cost: ${formatItemCost(item)}`
+    : '';
+  return `  [${item.status}] ${stage.title} :: ${item.label}\n      ${item.detail}${summary}${analytics}`;
+}
+
+function formatItemCost(item: NonNullable<StageViewModel['items']>[number]): string {
+  if (!item.analytics) {
+    return 'unavailable';
+  }
+
+  const cost = formatCost(item.analytics.costUsd);
+  return item.analytics.costSource === 'estimated' && item.analytics.costUsd !== null ? `~${cost}` : cost;
+}
+
 function formatCost(costUsd: number | null): string {
   if (costUsd === null) {
     return 'unavailable';
@@ -44,6 +61,7 @@ export async function renderPlainPipeline(
   runMode: NonNullable<PipelineRunOptions['runMode']>,
 ): Promise<void> {
   let previousStatuses = new Map<string, string>();
+  let previousItemStatuses = new Map<string, string>();
 
   try {
     const result = await runPipelineShell(input, {
@@ -55,6 +73,15 @@ export async function renderPlainPipeline(
           if (previous !== stage.status) {
             console.log(formatStage(stage));
             previousStatuses.set(stage.id, stage.status);
+          }
+
+          for (const item of stage.items ?? []) {
+            const itemKey = `${stage.id}:${item.id}`;
+            const previousItemStatus = previousItemStatuses.get(itemKey);
+            if (previousItemStatus !== item.status) {
+              console.log(formatItem(stage, item));
+              previousItemStatuses.set(itemKey, item.status);
+            }
           }
         }
       },

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from 'ink';
-import type { StageViewModel } from '../../pipeline/events.js';
+import type { StageItemViewModel, StageViewModel } from '../../pipeline/events.js';
+import { getVisibleItems } from './progressVisibility.js';
 
 const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
@@ -36,7 +37,17 @@ function formatStageCost(stage: StageViewModel): string {
   return analytics.costSource === 'estimated' ? `~${formatted}` : formatted;
 }
 
-export function StageRow({ stage, isActive }: { stage: StageViewModel; isActive: boolean }): React.JSX.Element {
+export function StageRow({
+  stage,
+  isActive,
+  showPendingItems = false,
+  maxVisibleItems = 12,
+}: {
+  stage: StageViewModel;
+  isActive: boolean;
+  showPendingItems?: boolean;
+  maxVisibleItems?: number;
+}): React.JSX.Element {
   const [frameIndex, setFrameIndex] = useState(0);
 
   useEffect(() => {
@@ -64,6 +75,12 @@ export function StageRow({ stage, isActive }: { stage: StageViewModel; isActive:
       <Box marginLeft={2}>
         <Text color="gray">{stage.detail}</Text>
       </Box>
+      <ItemRows
+        items={stage.items ?? []}
+        showPendingItems={showPendingItems}
+        maxVisibleItems={maxVisibleItems}
+        isStageActive={isActive}
+      />
       {stage.summary ? (
         <Box marginLeft={2}>
           <Text color="green">{stage.summary}</Text>
@@ -76,4 +93,81 @@ export function StageRow({ stage, isActive }: { stage: StageViewModel; isActive:
       ) : null}
     </Box>
   );
+}
+
+function ItemRows({
+  items,
+  showPendingItems,
+  maxVisibleItems,
+  isStageActive,
+}: {
+  items: StageItemViewModel[];
+  showPendingItems: boolean;
+  maxVisibleItems: number;
+  isStageActive: boolean;
+}): React.JSX.Element | null {
+  const { visibleItems, overflow } = getVisibleItems(items, showPendingItems, maxVisibleItems);
+  if (visibleItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <Box marginLeft={2} flexDirection="column">
+      {overflow > 0 ? (
+        <Text color="gray">... {overflow} earlier items</Text>
+      ) : null}
+      {visibleItems.map((item) => (
+        <ItemRow key={item.id} item={item} isActive={isStageActive && item.status === 'running'} />
+      ))}
+    </Box>
+  );
+}
+
+function ItemRow({ item, isActive }: { item: StageItemViewModel; isActive: boolean }): React.JSX.Element {
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  useEffect(() => {
+    if (!isActive || item.status !== 'running') {
+      setFrameIndex(0);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setFrameIndex((current) => (current + 1) % spinnerFrames.length);
+    }, 80);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [isActive, item.status]);
+
+  return (
+    <Box flexDirection="column">
+      <Box>
+        <Text color={statusColor[item.status]}>{isActive && item.status === 'running' ? spinnerFrames[frameIndex] : statusGlyph[item.status]}</Text>
+        <Text> </Text>
+        <Text bold={item.status === 'running'}>{item.label}</Text>
+        <Text color="gray"> - {item.detail}</Text>
+      </Box>
+      {item.summary ? (
+        <Box marginLeft={2}>
+          <Text color="green">{item.summary}</Text>
+        </Box>
+      ) : null}
+      {item.status === 'succeeded' && item.analytics ? (
+        <Box marginLeft={2}>
+          <Text color="gray">analytics: {formatDuration(item.analytics.durationMs)} • cost: {formatItemCost(item)}</Text>
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
+function formatItemCost(item: StageItemViewModel): string {
+  if (!item.analytics || item.analytics.costUsd === null) {
+    return 'no cost data';
+  }
+
+  const formatted = `$${item.analytics.costUsd.toFixed(4)}`;
+  return item.analytics.costSource === 'estimated' ? `~${formatted}` : formatted;
 }

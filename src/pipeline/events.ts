@@ -1,11 +1,25 @@
 export type StageStatus = 'pending' | 'running' | 'succeeded' | 'failed';
 
+export interface StageItemViewModel {
+  id: string;
+  label: string;
+  status: StageStatus;
+  detail: string;
+  summary?: string;
+  analytics?: {
+    durationMs: number;
+    costUsd: number | null;
+    costSource: CostSource;
+  };
+}
+
 export interface StageViewModel {
   id: string;
   title: string;
   status: StageStatus;
   detail: string;
   summary?: string;
+  items?: StageItemViewModel[];
   stageAnalytics?: {
     durationMs: number;
     costUsd: number | null;
@@ -66,6 +80,18 @@ export interface ImageRenderAnalytics {
   modelId: string;
 }
 
+export interface OutputItemAnalytics {
+  itemId: string;
+  contentType: string;
+  filePrefix: string;
+  index: number;
+  outputCountForType: number;
+  durationMs: number;
+  retries: number;
+  costUsd: number | null;
+  costSource: CostSource;
+}
+
 export interface PipelineAnalyticsSummary {
   totalDurationMs: number;
   totalRetries: number;
@@ -83,6 +109,7 @@ export interface PipelineRunAnalytics {
   stages: PipelineStageAnalytics[];
   imagePromptCalls: ImagePromptAnalytics[];
   imageRenderCalls: ImageRenderAnalytics[];
+  outputItemCalls: OutputItemAnalytics[];
 }
 
 export interface PipelineRunResult {
