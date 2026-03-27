@@ -11,6 +11,21 @@ import {
   buildWritingFrameworkInstruction,
 } from '../llm/prompts/writingFramework.js';
 import type { ArticlePlan } from '../types/article.js';
+import type { ContentBrief } from '../types/contentBrief.js';
+
+function mockBrief(): ContentBrief {
+  return {
+    description: 'A practical cross-channel content body about shipping AI-assisted workflows with clear operational guidance.',
+    targetAudience: 'Content and product teams running repeatable publishing workflows.',
+    corePromise: 'Readers leave with a concrete plan they can run in the next production cycle.',
+    keyPoints: [
+      'Define boundaries between human review and model generation.',
+      'Use consistent prompt contracts across channels.',
+      'Adapt format per channel while preserving core message.',
+    ],
+    voiceNotes: 'Direct, practical, and specific tone. Avoid hype and vague statements.',
+  };
+}
 
 function mockPlan(): ArticlePlan {
   return {
@@ -59,6 +74,7 @@ describe('article prompt builders', () => {
     const messages = buildArticlePlanMessages('Ship better docs with AI', {
       style: 'friendly',
       contentTypes: ['article', 'x-post'],
+      contentBrief: mockBrief(),
     });
 
     expect(messages).toHaveLength(2);
@@ -94,12 +110,14 @@ describe('channel prompt builder', () => {
       style: 'opinionated',
       outputIndex: 1,
       outputCountForType: 1,
+      contentBrief: mockBrief(),
       articleReferenceMarkdown: '# Anchor\n\nReference body',
     });
 
     expect(messages[0]?.content).toContain('Writing framework:');
     expect(messages[0]?.content).toContain('Style directive (opinionated)');
     expect(messages[0]?.content).toContain('LinkedIn-native post');
+    expect(messages[1]?.content).toContain('Shared content brief');
     expect(messages[1]?.content).toContain('Reference article context');
   });
 
@@ -110,6 +128,7 @@ describe('channel prompt builder', () => {
       style: 'professional',
       outputIndex: 2,
       outputCountForType: 3,
+      contentBrief: mockBrief(),
       xMode: 'thread',
     });
 

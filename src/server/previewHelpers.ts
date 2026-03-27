@@ -73,6 +73,23 @@ export function stripFrontmatter(markdown: string): string {
   return markdown.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '');
 }
 
+function extractFrontmatterSlug(markdown: string): string | null {
+  const frontmatterMatch = markdown.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+  const frontmatter = frontmatterMatch?.[1];
+  if (!frontmatter) {
+    return null;
+  }
+
+  const slugMatch = frontmatter.match(/^slug:\s*(.+)$/m);
+  const rawSlug = slugMatch?.[1]?.trim();
+  if (!rawSlug) {
+    return null;
+  }
+
+  const unquoted = rawSlug.replace(/^['\"]|['\"]$/g, '').trim();
+  return unquoted.length > 0 ? unquoted : null;
+}
+
 export function extractHeadingTitle(markdown: string): string | null {
   const headingMatch = markdown.match(/^#\s+(.+)$/m);
   if (!headingMatch || !headingMatch[1]) {
@@ -144,7 +161,7 @@ export function extractCoverImageUrl(markdown: string): string | null {
 export async function extractArticleMetadata(markdownPath: string): Promise<ArticleMetadata> {
   const markdown = await readFile(markdownPath, 'utf8');
   const fileStat = await stat(markdownPath);
-  const slug = path.basename(markdownPath, '.md');
+  const slug = extractFrontmatterSlug(markdown) ?? path.basename(markdownPath, '.md');
   const title = extractHeadingTitle(stripFrontmatter(markdown)) ?? slug;
   const body = stripFrontmatter(markdown);
   const previewSnippet = body.replace(/[#\[\]()!\-*_`]/g, '').trim().substring(0, 150);

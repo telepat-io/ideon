@@ -4,10 +4,12 @@ import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { resolveUniqueSlug } from '../output/filesystem.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { ArticlePlan } from '../types/article.js';
+import type { ContentBrief } from '../types/contentBrief.js';
 import { articlePlanSchema as articlePlanResultSchema } from '../types/articleSchema.js';
 
 export async function planArticle({
   idea,
+  contentBrief,
   settings,
   markdownOutputDir,
   openRouter,
@@ -15,6 +17,7 @@ export async function planArticle({
   onLlmMetrics,
 }: {
   idea: string;
+  contentBrief: ContentBrief;
   settings: AppSettings;
   markdownOutputDir: string;
   openRouter: OpenRouterClient | null;
@@ -22,13 +25,14 @@ export async function planArticle({
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
 }): Promise<ArticlePlan> {
   const basePlan = dryRun || !openRouter
-    ? buildDryRunPlan(idea)
+    ? buildDryRunPlan(idea, contentBrief)
     : await openRouter.requestStructured<ArticlePlan>({
         schemaName: 'article_plan',
         schema: articlePlanSchema,
         messages: buildArticlePlanMessages(idea, {
           style: settings.style,
           contentTypes: settings.contentTargets.map((target) => target.contentType),
+          contentBrief,
         }),
         settings,
         onMetrics: onLlmMetrics,
@@ -50,7 +54,7 @@ export async function planArticle({
   };
 }
 
-function buildDryRunPlan(idea: string): ArticlePlan {
+function buildDryRunPlan(idea: string, contentBrief: ContentBrief): ArticlePlan {
   const title = idea
     .trim()
     .split(/\s+/)
@@ -63,7 +67,7 @@ function buildDryRunPlan(idea: string): ArticlePlan {
     subtitle: 'A practical editorial blueprint for turning a good idea into a strong article',
     keywords: ['writing', 'editorial workflow', 'ai tools', 'content strategy'],
     slug: slugify(title),
-    description: `A detailed article exploring ${idea.trim()}.`,
+    description: contentBrief.description,
     introBrief: 'Frame the tension between having ideas and actually shaping them into useful published work.',
     outroBrief: 'End by emphasizing disciplined workflows, taste, and iteration.',
     sections: [

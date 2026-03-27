@@ -44,5 +44,5 @@ export function buildStyleDirective(style: string): string {
 
 export function buildRunContextDirective(contentTypes: string[]): string {
   const normalizedTypes = contentTypes.length > 0 ? contentTypes.join(', ') : 'article';
-  return `Run context: requested content types are ${normalizedTypes}. Keep the output aligned with this distribution plan.`;
+  return `Run context: requested content types are ${normalizedTypes}. Keep the output aligned with this distribution plan and consistent with one shared content brief.`;
 }

@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../openRouterClient.js';
+import type { ContentBrief } from '../../types/contentBrief.js';
 import {
   buildStyleDirective,
   buildWritingFrameworkInstruction,
@@ -40,6 +41,7 @@ export function buildSingleShotContentMessages(options: {
   outputIndex: number;
   outputCountForType: number;
   xMode?: string;
+  contentBrief: ContentBrief;
   articleReferenceMarkdown?: string;
 }): ChatMessage[] {
   const channelRule = CHANNEL_RULES[options.contentType] ?? 'Write channel-native Markdown content.';
@@ -68,6 +70,13 @@ export function buildSingleShotContentMessages(options: {
         `Content type: ${options.contentType}`,
         `Output index: ${options.outputIndex} of ${options.outputCountForType}`,
         options.xMode ? `X mode: ${options.xMode}` : '',
+        '',
+        'Shared content brief (must guide this output):',
+        `- description: ${options.contentBrief.description}`,
+        `- targetAudience: ${options.contentBrief.targetAudience}`,
+        `- corePromise: ${options.contentBrief.corePromise}`,
+        `- keyPoints: ${options.contentBrief.keyPoints.join(' | ')}`,
+        `- voiceNotes: ${options.contentBrief.voiceNotes}`,
         '',
         articleContext,
         '',

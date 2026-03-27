@@ -2,6 +2,7 @@ import type { AppSettings } from '../config/schema.js';
 import { buildSingleShotContentMessages } from '../llm/prompts/channelContent.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
+import type { ContentBrief } from '../types/contentBrief.js';
 
 export async function writeSingleShotContent({
   idea,
@@ -11,6 +12,7 @@ export async function writeSingleShotContent({
   outputCountForType,
   xMode,
   articleReferenceMarkdown,
+  contentBrief,
   settings,
   openRouter,
   dryRun,
@@ -23,6 +25,7 @@ export async function writeSingleShotContent({
   outputCountForType: number;
   xMode?: string;
   articleReferenceMarkdown?: string;
+  contentBrief: ContentBrief;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
@@ -34,6 +37,7 @@ export async function writeSingleShotContent({
       contentType,
       outputIndex,
       outputCountForType,
+      contentBrief,
       articleReferenceMarkdown,
     });
   }
@@ -46,6 +50,7 @@ export async function writeSingleShotContent({
       outputIndex,
       outputCountForType,
       xMode,
+      contentBrief,
       articleReferenceMarkdown,
     }),
     settings,
@@ -58,6 +63,7 @@ function buildDryRunContent(options: {
   contentType: string;
   outputIndex: number;
   outputCountForType: number;
+  contentBrief: ContentBrief;
   articleReferenceMarkdown?: string;
 }): string {
   const anchorNote = options.articleReferenceMarkdown
@@ -69,6 +75,7 @@ function buildDryRunContent(options: {
     '',
     `Idea: ${options.idea}`,
     `Variant: ${options.outputIndex}/${options.outputCountForType}`,
+    `Shared brief: ${options.contentBrief.description}`,
     anchorNote,
     '',
     'This is a dry-run placeholder for single-prompt channel generation.',

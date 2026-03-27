@@ -11,7 +11,7 @@ describe('pipeline runner', () => {
   it('creates initial stages with expected order and states', () => {
     const stages = createInitialStages();
 
-    expect(stages.map((stage) => stage.id)).toEqual(['planning', 'sections', 'image-prompts', 'images', 'output']);
+    expect(stages.map((stage) => stage.id)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output']);
     expect(stages[0]?.status).toBe('running');
     expect(stages.slice(1).every((stage) => stage.status === 'pending')).toBe(true);
   });
@@ -54,7 +54,7 @@ describe('pipeline runner', () => {
       expect(result.artifact.imageCount).toBe(3);
       expect(result.artifact.analyticsPath).toContain('.analytics.json');
       expect(result.analytics.summary.totalDurationMs).toBeGreaterThanOrEqual(0);
-      expect(result.analytics.stages).toHaveLength(5);
+      expect(result.analytics.stages).toHaveLength(6);
       expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(3);
       expect(result.analytics.imageRenderCalls.length).toBeGreaterThanOrEqual(3);
 
@@ -68,7 +68,7 @@ describe('pipeline runner', () => {
       expect(markdown).toContain('## Conclusion');
       expect(markdown).toContain('![How Editorial Teams Can Productionize Ai Writing]');
       expect(analytics.runId.length).toBeGreaterThan(0);
-      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['planning', 'sections', 'image-prompts', 'images', 'output']);
+      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output']);
       expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);
 
       const terminalUpdate = updates.at(-1);
@@ -199,6 +199,9 @@ describe('pipeline runner', () => {
       const planningStage = result.stages.find((stage) => stage.id === 'planning');
       expect(planningStage?.detail).toContain('Skipped article planning');
 
+      const sharedBriefStage = result.stages.find((stage) => stage.id === 'shared-brief');
+      expect(sharedBriefStage?.detail).toContain('Shared brief generated successfully');
+
       const firstOutput = await readFile(result.artifact.markdownPaths[0]!, 'utf8');
       expect(firstOutput).toContain('dry-run placeholder for single-prompt channel generation');
     } finally {
@@ -243,10 +246,10 @@ describe('pipeline runner', () => {
 
       const latest = updates.at(-1);
       expect(latest).toBeDefined();
-      const planning = latest?.find((stage) => stage.id === 'planning');
-      expect(planning?.status).toBe('failed');
-      expect(planning?.detail).toContain('Missing OpenRouter API key');
-      expect(planning?.stageAnalytics).toBeUndefined();
+      const sharedBrief = latest?.find((stage) => stage.id === 'shared-brief');
+      expect(sharedBrief?.status).toBe('failed');
+      expect(sharedBrief?.detail).toContain('Missing OpenRouter API key');
+      expect(sharedBrief?.stageAnalytics).toBeUndefined();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

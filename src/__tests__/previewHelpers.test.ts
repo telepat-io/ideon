@@ -89,6 +89,21 @@ describe('preview helpers', () => {
     }
   });
 
+  it('prefers frontmatter slug over markdown filename', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-metadata-frontmatter-slug-'));
+
+    try {
+      const markdown = ['---', 'slug: custom-content-slug', '---', '# Article Title', '', 'Body'].join('\n');
+      const markdownPath = path.join(tempRoot, 'article-1.md');
+      await writeFile(markdownPath, markdown, 'utf8');
+
+      const metadata = await extractArticleMetadata(markdownPath);
+      expect(metadata.slug).toBe('custom-content-slug');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('lists all articles sorted by mtime descending', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-list-articles-'));
 

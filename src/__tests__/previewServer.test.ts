@@ -197,6 +197,14 @@ describe('preview server resilience', () => {
       });
 
       try {
+        const listResponse = await fetch(`${server.url}/api/articles`);
+        const listPayload = (await listResponse.json()) as Array<{ coverImageUrl: string | null }>;
+
+        expect(listResponse.status).toBe(200);
+        expect(listPayload[0]?.coverImageUrl).toBe(
+          '/api/generations/20260327-130000-asset-test/assets/article-cover.webp',
+        );
+
         const detailResponse = await fetch(`${server.url}/api/articles/20260327-130000-asset-test`);
         const detailPayload = (await detailResponse.json()) as {
           outputs: Array<{ htmlBody: string }>;
@@ -212,6 +220,94 @@ describe('preview server resilience', () => {
         const assetContent = await assetResponse.text();
         expect(assetResponse.status).toBe(200);
         expect(assetContent).toContain('fake-image-content');
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('exposes frontmatter slug for each generation output item', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-output-slug-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-140000-slug-test');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(
+        path.join(generationDir, 'article-1.md'),
+        ['---', 'slug: real-content-slug', '---', '# Slug Test', '', 'Body'].join('\n'),
+        'utf8',
+      );
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const detailResponse = await fetch(`${server.url}/api/articles/20260327-140000-slug-test`);
+        const detailPayload = (await detailResponse.json()) as {
+          outputs: Array<{ slug: string }>;
+        };
+
+        expect(detailResponse.status).toBe(200);
+        expect(detailPayload.outputs[0]?.slug).toBe('real-content-slug');
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('uses canonical article slug for all output content types in a generation', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-canonical-slug-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-150000-canonical-slug');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(
+        path.join(generationDir, 'article-1.md'),
+        ['---', 'slug: canonical-content-slug', '---', '# Canonical Slug Test', '', 'Body'].join('\n'),
+        'utf8',
+      );
+      await writeFile(path.join(generationDir, 'x-1.md'), '# X Variant\n\nPost body', 'utf8');
+      await writeFile(path.join(generationDir, 'linkedin-1.md'), '# LinkedIn Variant\n\nPost body', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const detailResponse = await fetch(`${server.url}/api/articles/20260327-150000-canonical-slug`);
+        const detailPayload = (await detailResponse.json()) as {
+          outputs: Array<{ contentType: string; slug: string }>;
+        };
+
+        expect(detailResponse.status).toBe(200);
+        expect(detailPayload.outputs).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ contentType: 'article', slug: 'canonical-content-slug' }),
+            expect.objectContaining({ contentType: 'x-post', slug: 'canonical-content-slug' }),
+            expect.objectContaining({ contentType: 'linkedin-post', slug: 'canonical-content-slug' }),
+          ]),
+        );
       } finally {
         await server.close();
       }

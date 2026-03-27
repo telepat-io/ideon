@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../openRouterClient.js';
+import type { ContentBrief } from '../../types/contentBrief.js';
 import {
   buildRunContextDirective,
   buildStyleDirective,
@@ -70,6 +71,7 @@ export function buildArticlePlanMessages(
   options: {
     style: string;
     contentTypes: string[];
+    contentBrief: ContentBrief;
   },
 ): ChatMessage[] {
   const systemInstruction = [
@@ -95,10 +97,18 @@ export function buildArticlePlanMessages(
         '- The article should feel authoritative, practical, and well structured.',
         '- Generate a memorable title and a sharp subtitle.',
         '- The slug must be lowercase kebab-case and publication-ready.',
-        '- The description should work as a short summary or meta description.',
+        '- The description should work as a short summary or meta description and stay aligned with the shared content brief.',
         '- Plan 4 to 6 strong sections with distinct focus areas.',
+        '- Sections are article-only structure and must not be treated as requirements for non-article channels.',
         '- Include a cover image description and 2 to 3 inline image descriptions.',
         '- Inline images should be anchored after specific sections using 1-based indexes.',
+        '',
+        'Shared content brief context:',
+        `- description: ${options.contentBrief.description}`,
+        `- targetAudience: ${options.contentBrief.targetAudience}`,
+        `- corePromise: ${options.contentBrief.corePromise}`,
+        `- keyPoints: ${options.contentBrief.keyPoints.join(' | ')}`,
+        `- voiceNotes: ${options.contentBrief.voiceNotes}`,
         '',
         'Return JSON with all required fields:',
         '- title: string',

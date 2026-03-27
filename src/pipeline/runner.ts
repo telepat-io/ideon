@@ -2,6 +2,7 @@ import { mkdir, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
+import { planContentBrief } from '../generation/planContentBrief.js';
 import { planArticle } from '../generation/planArticle.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 import { writeArticleSections } from '../generation/writeSections.js';
@@ -44,9 +45,15 @@ export interface PipelineRunOptions {
 export function createInitialStages(): StageViewModel[] {
   return [
     {
+      id: 'shared-brief',
+      title: 'Planning Shared Brief',
+      status: 'running',
+      detail: 'Generating explicit cross-channel content guidance.',
+    },
+    {
       id: 'planning',
       title: 'Planning Article',
-      status: 'running',
+      status: 'pending',
       detail: 'Generating title, slug, section plan, and image slots.',
     },
     {
@@ -88,7 +95,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
   const hasArticleTarget = input.config.settings.contentTargets.some((target) => target.contentType === 'article');
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
-  stageTracking.set('planning', {
+  stageTracking.set('shared-brief', {
     startedAtMs: runStartedAtMs,
     endedAtMs: null,
     retries: 0,
@@ -128,25 +135,79 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     await ensureOutputDirectories(writeSession.outputPaths);
     const openRouter = dryRun ? null : new OpenRouterClient(requireSecret(input.config.secrets.openRouterApiKey, 'OpenRouter API key'));
     const replicate = dryRun || !hasArticleTarget ? null : new ReplicateClient(requireSecret(input.config.secrets.replicateApiToken, 'Replicate API token'));
+    let contentBrief = writeSession.contentBrief;
     let plan = writeSession.plan;
     let text = writeSession.text;
     let imagePrompts = writeSession.imagePrompts ?? writeSession.imageArtifacts?.imagePrompts ?? null;
     let imageArtifacts = writeSession.imageArtifacts;
     let articleMarkdownTemplate: string | null = null;
 
+    if (contentBrief) {
+      markStageCompleted(stageTracking, 'shared-brief');
+      stages[0] = {
+        ...stages[0],
+        status: 'succeeded',
+        detail: 'Reused saved shared brief from .ideon/write.',
+        summary: contentBrief.description,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-brief'),
+      };
+    } else {
+      contentBrief = await planContentBrief({
+        idea: input.idea,
+        settings: input.config.settings,
+        openRouter,
+        dryRun,
+        onLlmMetrics(metrics) {
+          recordLlmMetrics(stageTracking, 'shared-brief', metrics);
+        },
+      });
+
+      markStageCompleted(stageTracking, 'shared-brief');
+      stages[0] = {
+        ...stages[0],
+        status: 'succeeded',
+        detail: 'Shared brief generated successfully.',
+        summary: contentBrief.description,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-brief'),
+      };
+      writeSession = await patchWriteSession(
+        {
+          status: 'running',
+          lastCompletedStage: 'shared-brief',
+          failedStage: null,
+          errorMessage: null,
+          contentBrief,
+        },
+        workingDir,
+      );
+    }
+
     if (hasArticleTarget) {
+      stages[1] = {
+        ...stages[1],
+        status: 'running',
+        detail: 'Generating title, slug, section plan, and image slots.',
+      };
+      markStageStarted(stageTracking, 'planning');
+      options.onUpdate?.(cloneStages(stages));
+
       if (plan) {
         markStageCompleted(stageTracking, 'planning');
-        stages[0] = {
-          ...stages[0],
+        stages[1] = {
+          ...stages[1],
           status: 'succeeded',
           detail: 'Reused saved plan from .ideon/write.',
           summary: `${plan.title} • ${plan.slug} • ${plan.sections.length} sections • ${plan.inlineImages.length + 1} images`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
         };
       } else {
+        if (!contentBrief) {
+          throw new Error('Shared content brief is missing for article planning stage.');
+        }
+
         plan = await planArticle({
           idea: input.idea,
+          contentBrief,
           settings: input.config.settings,
           markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
           openRouter,
@@ -158,8 +219,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
         markStageCompleted(stageTracking, 'planning');
 
-        stages[0] = {
-          ...stages[0],
+        stages[1] = {
+          ...stages[1],
           status: 'succeeded',
           detail: 'Plan generated successfully.',
           summary: `${plan.title} • ${plan.slug} • ${plan.sections.length} sections • ${plan.inlineImages.length + 1} images`,
@@ -171,14 +232,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             lastCompletedStage: 'planning',
             failedStage: null,
             errorMessage: null,
+            contentBrief,
             plan,
           },
           workingDir,
         );
       }
 
-      stages[1] = {
-        ...stages[1],
+      stages[2] = {
+        ...stages[2],
         status: 'running',
         detail: 'Writing introduction.',
       };
@@ -187,15 +249,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       if (text) {
         markStageCompleted(stageTracking, 'sections');
-        stages[1] = {
-          ...stages[1],
+        stages[2] = {
+          ...stages[2],
           status: 'succeeded',
           detail: 'Reused saved section drafts from .ideon/write.',
           summary: `Intro + ${text.sections.length} sections + conclusion`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
         };
-        stages[2] = {
-          ...stages[2],
+        stages[3] = {
+          ...stages[3],
           status: 'running',
           detail: 'Expanding editorial image prompts.',
         };
@@ -211,8 +273,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             recordLlmMetrics(stageTracking, 'sections', metrics);
           },
           onSectionStart(label) {
-            stages[1] = {
-              ...stages[1],
+            stages[2] = {
+              ...stages[2],
               detail: label,
             };
             options.onUpdate?.(cloneStages(stages));
@@ -220,15 +282,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         });
 
         markStageCompleted(stageTracking, 'sections');
-        stages[1] = {
-          ...stages[1],
+        stages[2] = {
+          ...stages[2],
           status: 'succeeded',
           detail: 'Completed intro, sections, and conclusion.',
           summary: `Intro + ${text.sections.length} sections + conclusion`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
         };
-        stages[2] = {
-          ...stages[2],
+        stages[3] = {
+          ...stages[3],
           status: 'running',
           detail: 'Expanding editorial image prompts.',
         };
@@ -268,15 +330,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       if (imagePrompts) {
         markStageCompleted(stageTracking, 'image-prompts');
-        stages[2] = {
-          ...stages[2],
+        stages[3] = {
+          ...stages[3],
           status: 'succeeded',
           detail: 'Reused saved image prompts from .ideon/write.',
           summary: `${imagePrompts.length} prompts ready`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
         };
-        stages[3] = {
-          ...stages[3],
+        stages[4] = {
+          ...stages[4],
           status: 'running',
           detail: 'Rendering expanded image prompts.',
         };
@@ -307,8 +369,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             addStageRetries(stageTracking, 'image-prompts', metrics.retries);
           },
           onProgress(detail) {
-            stages[2] = {
-              ...stages[2],
+            stages[3] = {
+              ...stages[3],
               detail,
             };
             options.onUpdate?.(cloneStages(stages));
@@ -316,15 +378,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         });
 
         markStageCompleted(stageTracking, 'image-prompts');
-        stages[2] = {
-          ...stages[2],
+        stages[3] = {
+          ...stages[3],
           status: 'succeeded',
           detail: 'Expanded image prompts successfully.',
           summary: `${imagePrompts.length} prompts ready`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
         };
-        stages[3] = {
-          ...stages[3],
+        stages[4] = {
+          ...stages[4],
           status: 'running',
           detail: 'Rendering expanded image prompts.',
         };
@@ -344,8 +406,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       }
     } else {
       markStageCompleted(stageTracking, 'planning');
-      stages[0] = {
-        ...stages[0],
+      stages[1] = {
+        ...stages[1],
         status: 'succeeded',
         detail: 'Skipped article planning (no article target).',
         summary: 'No article requested',
@@ -353,8 +415,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       };
 
       markStageCompleted(stageTracking, 'sections');
-      stages[1] = {
-        ...stages[1],
+      stages[2] = {
+        ...stages[2],
         status: 'succeeded',
         detail: 'Skipped section writing (no article target).',
         summary: 'No article requested',
@@ -362,8 +424,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       };
 
       markStageCompleted(stageTracking, 'image-prompts');
-      stages[2] = {
-        ...stages[2],
+      stages[3] = {
+        ...stages[3],
         status: 'succeeded',
         detail: 'Skipped image prompt expansion (no article target).',
         summary: 'No article requested',
@@ -371,8 +433,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       };
 
       markStageCompleted(stageTracking, 'images');
-      stages[3] = {
-        ...stages[3],
+      stages[4] = {
+        ...stages[4],
         status: 'succeeded',
         detail: 'Skipped image rendering (no article target).',
         summary: 'No article requested',
@@ -404,8 +466,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     if (hasArticleTarget) {
       if (imageArtifacts) {
         markStageCompleted(stageTracking, 'images');
-        stages[3] = {
-          ...stages[3],
+        stages[4] = {
+          ...stages[4],
           status: 'succeeded',
           detail: 'Reused previously rendered images from .ideon/write.',
           summary: sharedAssetDir,
@@ -440,8 +502,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             addStageRetries(stageTracking, 'images', metrics.retries);
           },
           onProgress(detail) {
-            stages[3] = {
-              ...stages[3],
+            stages[4] = {
+              ...stages[4],
               status: 'running',
               detail,
             };
@@ -455,8 +517,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         };
 
         markStageCompleted(stageTracking, 'images');
-        stages[3] = {
-          ...stages[3],
+        stages[4] = {
+          ...stages[4],
           status: 'succeeded',
           detail: 'Rendered and stored article images.',
           summary: sharedAssetDir,
@@ -492,8 +554,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const requestedOutputs = expandRequestedOutputs(input.config.settings.contentTargets);
     const markdownPaths: string[] = [];
 
-    stages[4] = {
-      ...stages[4],
+    stages[5] = {
+      ...stages[5],
       status: 'running',
       detail: hasArticleTarget
         ? 'Writing article and channel outputs.'
@@ -501,6 +563,10 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     };
     markStageStarted(stageTracking, 'output');
     options.onUpdate?.(cloneStages(stages));
+
+    if (!contentBrief) {
+      throw new Error('Shared content brief is missing for output generation stage.');
+    }
 
     for (const output of requestedOutputs) {
       const markdownPath = path.join(generationDir, `${output.filePrefix}-${output.index}.md`);
@@ -514,6 +580,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             outputCountForType: output.outputCountForType,
             xMode: output.xMode,
             articleReferenceMarkdown: articleMarkdownTemplate ?? undefined,
+            contentBrief,
             settings: input.config.settings,
             openRouter,
             dryRun,
@@ -535,8 +602,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
 
     markStageCompleted(stageTracking, 'output');
-    stages[4] = {
-      ...stages[4],
+    stages[5] = {
+      ...stages[5],
       status: 'succeeded',
       detail: 'Markdown file assembled successfully.',
       summary: `${markdownPaths.length} files in ${generationDir}`,
@@ -708,7 +775,7 @@ function buildRunAnalytics({
   imageRenderCalls: ImageRenderAnalytics[];
 }): PipelineRunAnalytics {
   const runEndedAtMs = Date.now();
-  const orderedStageIds: WriteStageId[] = ['planning', 'sections', 'image-prompts', 'images', 'output'];
+  const orderedStageIds: WriteStageId[] = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output'];
   const stages: PipelineStageAnalytics[] = orderedStageIds.map((stageId) => {
     const tracked = stageTracking.get(stageId);
     const startedAtMs = tracked?.startedAtMs ?? runEndedAtMs;
@@ -897,7 +964,14 @@ function buildRunJobDefinition(input: {
 }
 
 function asWriteStageId(stageId: string): WriteStageId | null {
-  if (stageId === 'planning' || stageId === 'sections' || stageId === 'image-prompts' || stageId === 'images' || stageId === 'output') {
+  if (
+    stageId === 'shared-brief' ||
+    stageId === 'planning' ||
+    stageId === 'sections' ||
+    stageId === 'image-prompts' ||
+    stageId === 'images' ||
+    stageId === 'output'
+  ) {
     return stageId;
   }
 

@@ -76,7 +76,9 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
         title: generation.title,
         mtime: generation.mtime,
         previewSnippet: generation.previewSnippet,
-        coverImageUrl: generation.coverImageUrl,
+        coverImageUrl: generation.coverImageUrl
+          ? toGenerationAssetUrl(generation.coverImageUrl, generation.id)
+          : null,
       }));
       res.status(200).type('application/json').json(articles);
     } catch (error) {
@@ -160,6 +162,10 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
     throw new MissingArticleError(`Generation "${generationId}" no longer exists.`);
   }
 
+  const canonicalSlug = generation.outputs.find((output) => output.contentType === 'article')?.slug
+    ?? generation.outputs[0]?.slug
+    ?? generation.id;
+
   const outputs = await Promise.all(
     generation.outputs.map(async (output) => {
       let markdown = '';
@@ -178,7 +184,7 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
         contentType: output.contentType,
         contentTypeLabel: output.contentTypeLabel,
         index: output.index,
-        slug: output.slug,
+        slug: canonicalSlug,
         title: output.title,
         htmlBody: await renderArticleHtml(markdown, generationId),
       };
@@ -736,8 +742,8 @@ function renderShell({
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin: 0 0 1rem;
-        justify-content: flex-end;
+        margin: 0.35rem 0 0.45rem;
+        justify-content: flex-start;
       }
 
       .slug-text {
@@ -976,11 +982,11 @@ function renderShell({
           '<div class="channel-header">',
           '<div>',
           \`<div class="channel-title">\${escapeHtml(output.title || output.contentTypeLabel)}</div>\`,
-          \`<div class="channel-meta">\${escapeHtml(output.contentTypeLabel)} • Variant \${output.index}</div>\`,
-          '</div>',
           '<div class="slug-row">',
           \`<code class="slug-text">\${escapeHtml(output.slug)}</code>\`,
           \`<button class="copy-btn" data-copy-slug="\${escapeHtml(output.slug)}" type="button">Copy slug</button>\`,
+          '</div>',
+          \`<div class="channel-meta">\${escapeHtml(output.contentTypeLabel)} • Variant \${output.index}</div>\`,
           '</div>',
           '</div>',
           \`<div class="channel-body">\${output.htmlBody}</div>\`,
