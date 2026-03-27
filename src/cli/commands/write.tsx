@@ -7,6 +7,7 @@ import { PipelinePresenter } from '../ui/pipelinePresenter.js';
 import { createInitialStages, runPipelineShell } from '../../pipeline/runner.js';
 import { renderPlainPipeline } from '../logging/plainRenderer.js';
 import type { PipelineRunResult, StageViewModel } from '../../pipeline/events.js';
+import { loadWriteSession, patchWriteSession } from '../../pipeline/sessionStore.js';
 
 interface WriteCommandOptions {
   idea?: string;
@@ -14,13 +15,19 @@ interface WriteCommandOptions {
   dryRun: boolean;
 }
 
+type WriteRunMode = 'fresh' | 'resume';
+
+const USER_INTERRUPTED_MESSAGE = 'Write interrupted by user. Run `ideon write resume` to continue from the last checkpoint.';
+
 function WriteApp({
   input,
   dryRun,
+  runMode,
   onError,
 }: {
   input: Awaited<ReturnType<typeof resolveRunInput>>;
   dryRun: boolean;
+  runMode: WriteRunMode;
   onError: (error: Error) => void;
 }): React.JSX.Element {
   const { exit } = useApp();
@@ -36,6 +43,7 @@ function WriteApp({
       try {
         const runResult = await runPipelineShell(input, {
           dryRun,
+          runMode,
           onUpdate(nextStages) {
             if (mounted) {
               setStages(nextStages);
@@ -71,36 +79,117 @@ function WriteApp({
         clearTimeout(exitTimer);
       }
     };
-  }, [dryRun, exit, input, onError]);
+  }, [dryRun, exit, input, onError, runMode]);
 
   return <PipelinePresenter prompt={input.idea} stages={stages} result={result} errorMessage={errorMessage} />;
 }
 
 export async function runWriteCommand(options: WriteCommandOptions): Promise<void> {
   const input = await resolveInputWithInteractiveIdeaFallback(options);
+  await runWritePipeline(input, options.dryRun, 'fresh');
+}
 
-  if (!process.stdout.isTTY) {
-    await renderPlainPipeline(input, options.dryRun);
+export async function runWriteResumeCommand(): Promise<void> {
+  const session = await loadWriteSession();
+  if (!session) {
+    throw new ReportedError('No resumable write session found in .ideon/write/state.json. Run ideon write <idea> first.');
+  }
+
+  if (session.status === 'completed') {
+    throw new ReportedError('The last write session already completed. Run ideon write <idea> to start fresh.');
+  }
+
+  const resolved = await resolveRunInput({ idea: session.idea });
+  const input = {
+    ...resolved,
+    job: session.job,
+    config: {
+      settings: session.settings,
+      secrets: resolved.config.secrets,
+    },
+  };
+  await runWritePipeline(input, session.dryRun, 'resume');
+}
+
+async function runWritePipeline(
+  input: Awaited<ReturnType<typeof resolveRunInput>>,
+  dryRun: boolean,
+  runMode: WriteRunMode,
+): Promise<void> {
+  let interruptHandled = false;
+
+  const handleSignal = (signal: NodeJS.Signals): void => {
+    if (interruptHandled) {
+      return;
+    }
+
+    interruptHandled = true;
+    void (async () => {
+      try {
+        await recordInterruptedWrite(signal);
+      } finally {
+        cleanupSignalHandlers();
+        process.exit(130);
+      }
+    })();
+  };
+
+  const onSigint = (): void => {
+    handleSignal('SIGINT');
+  };
+
+  const onSigterm = (): void => {
+    handleSignal('SIGTERM');
+  };
+
+  const cleanupSignalHandlers = (): void => {
+    process.off('SIGINT', onSigint);
+    process.off('SIGTERM', onSigterm);
+  };
+
+  process.on('SIGINT', onSigint);
+  process.on('SIGTERM', onSigterm);
+
+  try {
+
+    if (!process.stdout.isTTY) {
+      await renderPlainPipeline(input, dryRun, runMode);
+      return;
+    }
+
+    let commandError: Error | null = null;
+
+    const app = render(
+      <WriteApp
+        input={input}
+        dryRun={dryRun}
+        runMode={runMode}
+        onError={(error) => {
+          commandError = error;
+        }}
+      />,
+    );
+    await app.waitUntilExit();
+    const finalError = commandError as Error | null;
+
+    if (finalError) {
+      throw new ReportedError(finalError.message);
+    }
+  } finally {
+    cleanupSignalHandlers();
+  }
+}
+
+async function recordInterruptedWrite(signal: NodeJS.Signals): Promise<void> {
+  const session = await loadWriteSession();
+  if (!session || session.status === 'completed') {
     return;
   }
 
-  let commandError: Error | null = null;
-
-  const app = render(
-    <WriteApp
-      input={input}
-      dryRun={options.dryRun}
-      onError={(error) => {
-        commandError = error;
-      }}
-    />,
-  );
-  await app.waitUntilExit();
-  const finalError = commandError as Error | null;
-
-  if (finalError) {
-    throw new ReportedError(finalError.message);
-  }
+  await patchWriteSession({
+    status: 'failed',
+    errorMessage: `${USER_INTERRUPTED_MESSAGE} (${signal})`,
+  });
 }
 
 async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOptions) {

@@ -1,5 +1,5 @@
 import type { ResolvedRunInput } from '../../config/resolver.js';
-import { runPipelineShell } from '../../pipeline/runner.js';
+import { runPipelineShell, type PipelineRunOptions } from '../../pipeline/runner.js';
 import { ReportedError } from '../reportedError.js';
 import type { StageViewModel } from '../../pipeline/events.js';
 
@@ -8,12 +8,17 @@ function formatStage(stage: StageViewModel): string {
   return `[${stage.status}] ${stage.title}\n    ${stage.detail}${summary}`;
 }
 
-export async function renderPlainPipeline(input: ResolvedRunInput, dryRun: boolean): Promise<void> {
+export async function renderPlainPipeline(
+  input: ResolvedRunInput,
+  dryRun: boolean,
+  runMode: NonNullable<PipelineRunOptions['runMode']>,
+): Promise<void> {
   let previousStatuses = new Map<string, string>();
 
   try {
     const result = await runPipelineShell(input, {
       dryRun,
+      runMode,
       onUpdate(stages) {
         for (const stage of stages) {
           const previous = previousStatuses.get(stage.id);

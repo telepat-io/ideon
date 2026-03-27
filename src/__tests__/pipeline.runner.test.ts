@@ -4,6 +4,7 @@ import os from 'node:os';
 import { runPipelineShell, createInitialStages } from '../pipeline/runner.js';
 import { defaultAppSettings, type ResolvedConfig } from '../config/schema.js';
 import type { StageViewModel } from '../pipeline/events.js';
+import { patchWriteSession, startFreshWriteSession } from '../pipeline/sessionStore.js';
 
 describe('pipeline runner', () => {
   it('creates initial stages with expected order and states', () => {
@@ -40,6 +41,7 @@ describe('pipeline runner', () => {
         },
         {
           dryRun: true,
+          workingDir: tempRoot,
           onUpdate(stages) {
             updates.push(stages);
           },
@@ -91,6 +93,7 @@ describe('pipeline runner', () => {
           },
           {
             dryRun: false,
+            workingDir: tempRoot,
             onUpdate(stages) {
               updates.push(stages);
             },
@@ -103,6 +106,100 @@ describe('pipeline runner', () => {
       const planning = latest?.find((stage) => stage.id === 'planning');
       expect(planning?.status).toBe('failed');
       expect(planning?.detail).toContain('Missing OpenRouter API key');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('resumes from saved artifacts and skips completed stages', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-resume-test-'));
+    const updates: StageViewModel[][] = [];
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      await startFreshWriteSession(
+        {
+          idea: 'resume checkpoint flow',
+          job: null,
+          settings: {
+            ...defaultAppSettings,
+            markdownOutputDir: markdownDir,
+            assetOutputDir: assetDir,
+          },
+          dryRun: true,
+          outputPaths: {
+            markdownOutputDir: markdownDir,
+            assetOutputDir: assetDir,
+          },
+        },
+        tempRoot,
+      );
+
+      await patchWriteSession(
+        {
+          status: 'failed',
+          lastCompletedStage: 'planning',
+          failedStage: 'sections',
+          errorMessage: 'simulated interruption',
+          plan: {
+            title: 'Resume Checkpoint Flow',
+            subtitle: 'Persisted plan',
+            keywords: ['resume', 'checkpoint', 'pipeline'],
+            slug: 'resume-checkpoint-flow',
+            description: 'Persisted plan for resume testing.',
+            introBrief: 'Persist intro brief',
+            outroBrief: 'Persist outro brief',
+            sections: [
+              { title: 'First', description: 'First section' },
+              { title: 'Second', description: 'Second section' },
+              { title: 'Third', description: 'Third section' },
+              { title: 'Fourth', description: 'Fourth section' },
+            ],
+            coverImageDescription: 'Cover description',
+            inlineImages: [
+              { anchorAfterSection: 1, description: 'Inline one' },
+              { anchorAfterSection: 3, description: 'Inline two' },
+            ],
+          },
+        },
+        tempRoot,
+      );
+
+      const result = await runPipelineShell(
+        {
+          idea: 'resume checkpoint flow',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          runMode: 'resume',
+          workingDir: tempRoot,
+          onUpdate(stages) {
+            updates.push(stages);
+          },
+        },
+      );
+
+      expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
+      expect(result.artifact.slug).toBe('resume-checkpoint-flow');
+
+      const planningSummarySeen = updates.some((batch) =>
+        batch.some((stage) => stage.id === 'planning' && stage.detail.includes('Reused saved plan')),
+      );
+      expect(planningSummarySeen).toBe(true);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

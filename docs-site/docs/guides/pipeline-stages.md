@@ -36,3 +36,9 @@ When a stage fails:
 - Completed stages remain succeeded
 - Remaining stages stay pending
 - Error bubbles to CLI with clean user-facing handling
+
+## Resume Semantics
+
+- Each completed stage checkpoint is persisted to `.ideon/write/state.json`.
+- `ideon write resume` reloads saved artifacts and skips already-completed stages.
+- Resume currently checkpoints at stage boundaries, so in-progress work inside a stage is retried from that stage.

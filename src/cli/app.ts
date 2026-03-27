@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { openSettings } from './commands/settings.js';
-import { runWriteCommand } from './commands/write.js';
+import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -17,7 +17,7 @@ export async function runCli(argv: string[]): Promise<void> {
       await openSettings();
     });
 
-  program
+  const writeCommand = program
     .command('write')
     .description('Generate an article from a prompt or job file.')
     .argument('[idea]', 'Natural-language idea for the article')
@@ -30,6 +30,13 @@ export async function runCli(argv: string[]): Promise<void> {
         jobPath: options.job,
         dryRun: options.dryRun,
       });
+    });
+
+  writeCommand
+    .command('resume')
+    .description('Resume the last failed or interrupted write session from .ideon/write.')
+    .action(async () => {
+      await runWriteResumeCommand();
     });
 
   await program.parseAsync(argv);

@@ -6,6 +6,8 @@ title: Output Structure
 
 Ideon writes one Markdown artifact and a set of image assets.
 
+Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) for resume support.
+
 ## Default Paths
 
 - Markdown directory: `/output`
@@ -37,3 +39,10 @@ Generated slug is normalized and checked for collisions. If a slug exists, Ideon
 ## Asset Links
 
 Markdown embeds use relative paths from markdown file location to asset files.
+
+## Local Session Artifacts
+
+- Session state file: `.ideon/write/state.json`
+- Includes saved stage outputs (plan, section drafts, image metadata, final artifact summary)
+- Fresh runs overwrite previous `.ideon/write` artifacts
+- `ideon write resume` uses this state to continue after failures or interruptions

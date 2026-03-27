@@ -42,6 +42,22 @@ ideon write --dry-run "How to productionize editorial AI"
 - `-j, --job <path>`: path to JSON job file
 - `--dry-run`: run full orchestration without external provider calls
 
+When a fresh write starts, Ideon resets `.ideon/write/state.json` and stores new temporary pipeline artifacts for that run.
+
+## `ideon write resume`
+
+Retries the most recent failed or interrupted write session from saved `.ideon/write` artifacts.
+
+```bash
+ideon write resume
+```
+
+Notes:
+
+- Resume continues from the latest completed stage snapshot.
+- If the last session already completed, Ideon asks you to start a fresh write instead.
+- If no session exists, run `ideon write <idea>` first.
+
 ## Exit Behavior
 
 - Success: exit code `0`
