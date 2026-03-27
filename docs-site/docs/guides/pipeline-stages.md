@@ -1,0 +1,38 @@
+---
+title: Pipeline Stages
+---
+
+# Pipeline Stages
+
+Ideon runs a five-stage pipeline with live status updates.
+
+## Stage Flow
+
+1. Planning Article
+2. Writing Sections
+3. Expanding Image Prompts
+4. Rendering Images
+5. Assembling Markdown
+
+## Stage UI Signals
+
+- `pending`: not started
+- `running`: currently executing
+- `succeeded`: completed successfully
+- `failed`: errored with detail
+
+## Updates During Execution
+
+- Section stage reports active section index/title
+- Image-prompt stage reports current prompt expansion
+- Image-render stage reports current rendering progress
+- Output stage reports markdown assembly and final path
+
+## Failure Semantics
+
+When a stage fails:
+
+- Current running stage is marked failed with detail
+- Completed stages remain succeeded
+- Remaining stages stay pending
+- Error bubbles to CLI with clean user-facing handling

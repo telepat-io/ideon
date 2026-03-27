@@ -1,0 +1,60 @@
+{
+  "name": "ideon",
+  "version": "0.1.0",
+  "description": "CLI for generating rich articles and images from ideas.",
+  "type": "module",
+  "bin": {
+    "ideon": "dist/ideon.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup src/bin/ideon.ts --format esm --dts --clean --out-dir dist",
+    "dev": "tsx src/bin/ideon.ts",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "docs:start": "npm --prefix docs-site run start",
+    "docs:build": "npm --prefix docs-site run build",
+    "docs:serve": "npm --prefix docs-site run serve",
+    "docs:typecheck": "npm --prefix docs-site run typecheck"
+  },
+  "keywords": [
+    "cli",
+    "ink",
+    "openrouter",
+    "replicate",
+    "writing"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^14.0.1",
+    "env-paths": "^3.0.0",
+    "ink": "^6.8.0",
+    "ink-select-input": "^6.2.0",
+    "ink-text-input": "^6.0.0",
+    "keytar": "^7.9.0",
+    "react": "^19.1.1",
+    "replicate": "^1.1.0",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-typescript": "^7.28.5",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.1.13",
+    "babel-jest": "^30.3.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
