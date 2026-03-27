@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { render, useApp } from 'ink';
+import { createInterface } from 'node:readline/promises';
 import { resolveRunInput } from '../../config/resolver.js';
 import { ReportedError } from '../reportedError.js';
 import { PipelinePresenter } from '../ui/pipelinePresenter.js';
@@ -76,10 +77,7 @@ function WriteApp({
 }
 
 export async function runWriteCommand(options: WriteCommandOptions): Promise<void> {
-  const input = await resolveRunInput({
-    idea: options.idea,
-    jobPath: options.jobPath,
-  });
+  const input = await resolveInputWithInteractiveIdeaFallback(options);
 
   if (!process.stdout.isTTY) {
     await renderPlainPipeline(input, options.dryRun);
@@ -102,5 +100,56 @@ export async function runWriteCommand(options: WriteCommandOptions): Promise<voi
 
   if (finalError) {
     throw new ReportedError(finalError.message);
+  }
+}
+
+async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOptions) {
+  try {
+    return await resolveRunInput({
+      idea: options.idea,
+      jobPath: options.jobPath,
+    });
+  } catch (error) {
+    if (!shouldPromptForIdea(options, error)) {
+      throw error;
+    }
+
+    const interactiveIdea = await promptForIdea();
+    return await resolveRunInput({
+      idea: interactiveIdea,
+      jobPath: options.jobPath,
+    });
+  }
+}
+
+function shouldPromptForIdea(options: WriteCommandOptions, error: unknown): boolean {
+  return !options.idea && process.stdout.isTTY && process.stdin.isTTY && isMissingIdeaError(error);
+}
+
+function isMissingIdeaError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return error.message.startsWith('No idea provided.');
+}
+
+async function promptForIdea(): Promise<string> {
+  const readline = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    while (true) {
+      const idea = (await readline.question('Enter article prompt: ')).trim();
+      if (idea.length > 0) {
+        return idea;
+      }
+
+      console.error('Prompt cannot be empty.');
+    }
+  } finally {
+    readline.close();
   }
 }
