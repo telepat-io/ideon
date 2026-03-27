@@ -9,11 +9,6 @@ const config: Config = {
   tagline: 'Turn ideas into rich Markdown articles with generated imagery.',
   favicon: 'img/favicon.ico',
 
-  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
-  future: {
-    v4: true, // Improve compatibility with the upcoming Docusaurus v4
-  },
-
   // Set the production url of your site here
   url: 'https://cozymantis.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
@@ -25,6 +20,7 @@ const config: Config = {
   organizationName: 'cozymantis',
   projectName: 'ideon',
 
+  trailingSlash: false,
   onBrokenLinks: 'throw',
   markdown: {
     hooks: {
@@ -46,6 +42,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
+          routeBasePath: '/',
           editUrl: 'https://github.com/cozymantis/ideon/tree/main/docs-site/',
         },
         blog: false,
@@ -77,12 +74,12 @@ const config: Config = {
           label: 'Docs',
         },
         {
-          to: '/docs/reference/cli-reference',
+          to: '/reference/cli-reference',
           label: 'CLI Reference',
           position: 'left',
         },
         {
-          to: '/docs/technical/architecture',
+          to: '/technical/architecture',
           label: 'Technical',
           position: 'left',
         },
@@ -101,11 +98,11 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/getting-started/overview',
+              to: '/getting-started/overview',
             },
             {
               label: 'CLI Reference',
-              to: '/docs/reference/cli-reference',
+              to: '/reference/cli-reference',
             },
           ],
         },
@@ -123,7 +120,7 @@ const config: Config = {
           items: [
             {
               label: 'Contributing',
-              to: '/docs/contributing/development',
+              to: '/contributing/development',
             },
             {
               label: 'GitHub',
@@ -137,6 +134,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['bash', 'json'],
     },
   } satisfies Preset.ThemeConfig,
 };
