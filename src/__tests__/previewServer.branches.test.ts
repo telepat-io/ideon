@@ -190,6 +190,8 @@ describe('preview server branch coverage', () => {
   it('starts successfully when browser auto-open fails', async () => {
     listAllGenerationsMock.mockResolvedValue([]);
     execFileAsyncMock.mockRejectedValueOnce(new Error('open command missing'));
+    const originalJestWorkerId = process.env.JEST_WORKER_ID;
+    delete process.env.JEST_WORKER_ID;
 
     const server = await startPreviewServer({
       markdownPath: '/tmp/out/article-1.md',
@@ -204,6 +206,7 @@ describe('preview server branch coverage', () => {
       expect(execFileAsyncMock).toHaveBeenCalledTimes(1);
     } finally {
       await server.close();
+      process.env.JEST_WORKER_ID = originalJestWorkerId;
     }
   });
 });

@@ -1370,6 +1370,11 @@ function renderShell({
 }
 
 async function tryOpenBrowser(url: string): Promise<void> {
+  // Never launch a real browser while running unit tests.
+  if (process.env.JEST_WORKER_ID) {
+    return;
+  }
+
   try {
     if (process.platform === 'darwin') {
       await execFileAsync('open', [url]);
