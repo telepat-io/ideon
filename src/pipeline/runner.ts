@@ -24,13 +24,16 @@ import type {
   CostSource,
   ImagePromptAnalytics,
   ImageRenderAnalytics,
+  LlmInteractionRecord,
   LinkEnrichmentItemAnalytics,
   OutputItemAnalytics,
   PipelineRunAnalytics,
+  PipelineRunInteractions,
   PipelineRunResult,
   PipelineStageAnalytics,
   StageItemViewModel,
   StageViewModel,
+  T2IInteractionRecord,
 } from './events.js';
 import {
   loadWriteSession,
@@ -119,6 +122,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const imageRenderCalls: ImageRenderAnalytics[] = [];
   const outputItemCalls: OutputItemAnalytics[] = [];
   const linkEnrichmentCalls: LinkEnrichmentItemAnalytics[] = [];
+  const llmInteractions: LlmInteractionRecord[] = [];
+  const t2iInteractions: T2IInteractionRecord[] = [];
   let writeSession: WriteSessionState;
 
   if (runMode === 'fresh') {
@@ -173,6 +178,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         openRouter,
         dryRun,
+        onInteraction(interaction) {
+          llmInteractions.push(interaction);
+        },
         onLlmMetrics(metrics) {
           recordLlmMetrics(stageTracking, 'shared-brief', metrics);
         },
@@ -228,6 +236,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
           openRouter,
           dryRun,
+          onInteraction(interaction) {
+            llmInteractions.push(interaction);
+          },
           onLlmMetrics(metrics) {
             recordLlmMetrics(stageTracking, 'planning', metrics);
           },
@@ -299,6 +310,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           settings: input.config.settings,
           openRouter,
           dryRun,
+          onInteraction(interaction) {
+            llmInteractions.push(interaction);
+          },
           onLlmMetrics(phase, metrics, sectionIndex) {
             recordLlmMetrics(stageTracking, 'sections', metrics);
             const sectionItemId = toSectionItemId(phase, sectionIndex);
@@ -417,6 +431,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           settings: input.config.settings,
           openRouter,
           dryRun,
+          onInteraction(interaction) {
+            llmInteractions.push(interaction);
+          },
           onPromptComplete(metrics) {
             imagePromptCalls.push({
               imageId: metrics.imageId,
@@ -552,6 +569,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           markdownPath: primaryMarkdownPath,
           assetDir: sharedAssetDir,
           dryRun,
+          onInteraction(interaction) {
+            t2iInteractions.push(interaction);
+          },
           onRenderComplete(metrics) {
             imageRenderCalls.push({
               imageId: metrics.imageId,
@@ -683,6 +703,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
               settings: input.config.settings,
               openRouter,
               dryRun,
+              onInteraction(interaction) {
+                llmInteractions.push(interaction);
+              },
               onLlmMetrics(metrics) {
                 recordLlmMetrics(stageTracking, 'output', metrics);
                 itemTracking.retries += metrics.retries;
@@ -856,6 +879,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         openRouter,
         settings: input.config.settings,
         dryRun,
+        onInteraction(interaction) {
+          llmInteractions.push(interaction);
+        },
         onLlmMetrics(fileId, metrics) {
           recordLlmMetrics(stageTracking, 'links', metrics);
           addStageRetries(itemTracking, fileId, metrics.retries);
@@ -952,8 +978,19 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       outputItemCalls,
       linkEnrichmentCalls,
     });
+    const interactions: PipelineRunInteractions = {
+      runId,
+      runMode,
+      dryRun,
+      startedAt: runStartedAt,
+      endedAt: new Date().toISOString(),
+      llmCalls: llmInteractions,
+      t2iCalls: t2iInteractions,
+    };
     const analyticsPath = path.join(generationDir, 'generation.analytics.json');
+    const interactionsPath = path.join(generationDir, 'model.interactions.json');
     await writeJsonFile(analyticsPath, analytics);
+    await writeJsonFile(interactionsPath, interactions);
     const primaryMarkdownPathForArtifact = markdownPaths[0] ?? primaryMarkdownPath;
 
     const artifact = {
@@ -967,6 +1004,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       markdownPath: primaryMarkdownPathForArtifact,
       assetDir: sharedAssetDir,
       analyticsPath,
+      interactionsPath,
     };
 
     writeSession = await patchWriteSession(

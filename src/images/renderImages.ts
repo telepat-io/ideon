@@ -8,7 +8,7 @@ import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { coerceT2IFieldValue, getT2IFieldDefault, sanitizeT2IOverrides } from '../models/t2i/options.js';
 import { relativeAssetPath } from '../output/filesystem.js';
 import { estimateImageCostUsd, estimateLlmCostUsd, type LlmCallMetrics } from '../pipeline/analytics.js';
-import type { CostSource } from '../pipeline/events.js';
+import type { CostSource, LlmInteractionRecord, T2IInteractionRecord } from '../pipeline/events.js';
 import { getT2IModel } from '../models/t2i/registry.js';
 import type { ArticleImagePrompt, ArticlePlan, GeneratedArticle, RenderedArticleImage } from '../types/article.js';
 import { imagePromptResultSchema } from '../types/articleSchema.js';
@@ -49,6 +49,7 @@ export async function expandImagePrompts({
   dryRun,
   onProgress,
   onPromptComplete,
+  onInteraction,
 }: {
   plan: ArticlePlan;
   settings: AppSettings;
@@ -56,6 +57,7 @@ export async function expandImagePrompts({
   dryRun: boolean;
   onProgress?: (detail: string) => void;
   onPromptComplete?: (metrics: ImagePromptCallMetrics) => void;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<ArticleImagePrompt[]> {
   const imageSlots = buildImageSlots(plan);
   const prompts: ArticleImagePrompt[] = [];
@@ -93,6 +95,11 @@ export async function expandImagePrompts({
       schema: imagePromptSchema,
       messages: buildImagePromptMessages(plan, image),
       settings,
+      interactionContext: {
+        stageId: 'image-prompts',
+        operationId: `image-prompts:${image.id}`,
+      },
+      onInteraction,
       onMetrics(metrics) {
         observedMetrics = observedMetrics ? mergeLlmMetrics(observedMetrics, metrics) : { ...metrics };
       },
@@ -141,6 +148,7 @@ export async function renderExpandedImages({
   dryRun,
   onProgress,
   onRenderComplete,
+  onInteraction,
 }: {
   prompts: ArticleImagePrompt[];
   settings: AppSettings;
@@ -150,6 +158,7 @@ export async function renderExpandedImages({
   dryRun: boolean;
   onProgress?: (detail: string) => void;
   onRenderComplete?: (metrics: ImageRenderCallMetrics) => void;
+  onInteraction?: (interaction: T2IInteractionRecord) => void;
 }): Promise<RenderedArticleImage[]> {
 
   const renderedImages: RenderedArticleImage[] = [];
@@ -182,49 +191,105 @@ export async function renderExpandedImages({
         costUsd: dryRunCost.usd,
         costSource: dryRunCost.source,
       });
+      onInteraction?.({
+        stageId: 'images',
+        operationId: `images:${prompt.id}`,
+        provider: 'replicate-dry-run',
+        modelId: settings.t2i.modelId,
+        kind: prompt.kind,
+        startedAt: new Date(dryRunStartMs).toISOString(),
+        endedAt: new Date().toISOString(),
+        durationMs: Date.now() - dryRunStartMs,
+        attempts: 1,
+        retries: 0,
+        retryBackoffMs: 0,
+        status: 'succeeded',
+        prompt: prompt.prompt,
+        input: dryRunInput,
+        errorMessage: null,
+      });
       continue;
     }
 
     const input = createReplicateInput(settings, prompt.prompt, prompt.kind);
+    const renderStartedAtMs = Date.now();
     let runDurationMs = 0;
     let runAttempts = 1;
     let runRetries = 0;
     let runRetryBackoffMs = 0;
-    const output = await replicate.runModel(settings.t2i.modelId, input, {
-      onMetrics(metrics) {
-        runDurationMs = metrics.durationMs;
-        runAttempts = metrics.attempts;
-        runRetries = metrics.retries;
-        runRetryBackoffMs = metrics.retryBackoffMs;
-      },
-    });
-    const bytes = await normalizeReplicateOutput(output);
-    if (bytes.byteLength < MIN_IMAGE_BYTES) {
-      throw new Error(
-        `Image ${index + 1} download appears corrupted: only ${bytes.byteLength} bytes received.`,
-      );
+    try {
+      const output = await replicate.runModel(settings.t2i.modelId, input, {
+        onMetrics(metrics) {
+          runDurationMs = metrics.durationMs;
+          runAttempts = metrics.attempts;
+          runRetries = metrics.retries;
+          runRetryBackoffMs = metrics.retryBackoffMs;
+        },
+      });
+      const bytes = await normalizeReplicateOutput(output);
+      if (bytes.byteLength < MIN_IMAGE_BYTES) {
+        throw new Error(
+          `Image ${index + 1} download appears corrupted: only ${bytes.byteLength} bytes received.`,
+        );
+      }
+      await writeFile(outputPath, bytes);
+
+      renderedImages.push({
+        ...prompt,
+        outputPath,
+        relativePath: relativeAssetPath(markdownPath, outputPath),
+      });
+
+      const estimatedCost = estimateImageCostUsd(settings.t2i.modelId, input, 1);
+      onRenderComplete?.({
+        imageId: prompt.id,
+        kind: prompt.kind,
+        modelId: settings.t2i.modelId,
+        durationMs: runDurationMs,
+        attempts: runAttempts,
+        retries: runRetries,
+        retryBackoffMs: runRetryBackoffMs,
+        outputBytes: bytes.byteLength,
+        costUsd: estimatedCost.usd,
+        costSource: estimatedCost.source,
+      });
+      onInteraction?.({
+        stageId: 'images',
+        operationId: `images:${prompt.id}`,
+        provider: 'replicate',
+        modelId: settings.t2i.modelId,
+        kind: prompt.kind,
+        startedAt: new Date(renderStartedAtMs).toISOString(),
+        endedAt: new Date().toISOString(),
+        durationMs: runDurationMs || (Date.now() - renderStartedAtMs),
+        attempts: runAttempts,
+        retries: runRetries,
+        retryBackoffMs: runRetryBackoffMs,
+        status: 'succeeded',
+        prompt: prompt.prompt,
+        input,
+        errorMessage: null,
+      });
+    } catch (error) {
+      onInteraction?.({
+        stageId: 'images',
+        operationId: `images:${prompt.id}`,
+        provider: 'replicate',
+        modelId: settings.t2i.modelId,
+        kind: prompt.kind,
+        startedAt: new Date(renderStartedAtMs).toISOString(),
+        endedAt: new Date().toISOString(),
+        durationMs: runDurationMs || (Date.now() - renderStartedAtMs),
+        attempts: runAttempts,
+        retries: runRetries,
+        retryBackoffMs: runRetryBackoffMs,
+        status: 'failed',
+        prompt: prompt.prompt,
+        input,
+        errorMessage: error instanceof Error ? error.message : 'Unknown image render error.',
+      });
+      throw error;
     }
-    await writeFile(outputPath, bytes);
-
-    renderedImages.push({
-      ...prompt,
-      outputPath,
-      relativePath: relativeAssetPath(markdownPath, outputPath),
-    });
-
-    const estimatedCost = estimateImageCostUsd(settings.t2i.modelId, input, 1);
-    onRenderComplete?.({
-      imageId: prompt.id,
-      kind: prompt.kind,
-      modelId: settings.t2i.modelId,
-      durationMs: runDurationMs,
-      attempts: runAttempts,
-      retries: runRetries,
-      retryBackoffMs: runRetryBackoffMs,
-      outputBytes: bytes.byteLength,
-      costUsd: estimatedCost.usd,
-      costSource: estimatedCost.source,
-    });
   }
 
   return renderedImages;

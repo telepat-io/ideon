@@ -24,8 +24,15 @@ This command:
 Each generation appears as one sidebar item. In the content panel, preview now shows:
 
 - top-level tabs for each generated content type in that generation (`article`, `x-thread`, `x-post`, `linkedin-post`, etc.)
+- a distinct `Logs` pill on the right side of the content-type tab row
 - sub-tabs for each variant index (for example `X Post 1`, `X Post 2`, `X Post 3`)
 - channel-styled cards so social outputs look closer to their native platform context
+
+In the `Logs` view, preview shows:
+
+- a stage-grouped list of captured model calls (`shared-brief`, `planning`, `sections`, `image-prompts`, `images`, `output`, `links`)
+- click-to-inspect detail pane per interaction
+- a mode toggle for `Prompt/Response` view vs `Full JSON`
 
 Preview selection behavior:
 

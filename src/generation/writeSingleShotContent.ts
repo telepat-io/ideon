@@ -2,6 +2,7 @@ import type { AppSettings } from '../config/schema.js';
 import { buildSingleShotContentMessages } from '../llm/prompts/channelContent.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
+import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ContentBrief } from '../types/contentBrief.js';
 
 export async function writeSingleShotContent({
@@ -16,6 +17,7 @@ export async function writeSingleShotContent({
   openRouter,
   dryRun,
   onLlmMetrics,
+  onInteraction,
 }: {
   idea: string;
   contentType: string;
@@ -28,6 +30,7 @@ export async function writeSingleShotContent({
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<string> {
   if (dryRun || !openRouter) {
     return buildDryRunContent({
@@ -52,6 +55,11 @@ export async function writeSingleShotContent({
       targetLength: settings.targetLength,
     }),
     settings,
+    interactionContext: {
+      stageId: 'output',
+      operationId: `output:${contentType}:${outputIndex}`,
+    },
+    onInteraction,
     onMetrics: onLlmMetrics,
   });
 }

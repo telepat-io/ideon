@@ -16,6 +16,7 @@ describe('renderExpandedImages', () => {
 
       const expected = new Uint8Array(MIN_IMAGE_BYTES).fill(42); // must be >= MIN_IMAGE_BYTES
       let runModelCalls = 0;
+      const onInteraction = jest.fn();
       const replicate = {
         async runModel() {
           runModelCalls += 1;
@@ -42,10 +43,20 @@ describe('renderExpandedImages', () => {
         markdownPath,
         assetDir,
         dryRun: false,
+        onInteraction,
       });
 
       expect(runModelCalls).toBe(1);
       expect(rendered).toHaveLength(1);
+      expect(onInteraction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stageId: 'images',
+          operationId: 'images:cover',
+          provider: 'replicate',
+          status: 'succeeded',
+          prompt: 'cover prompt',
+        }),
+      );
 
       const file = await readFile(rendered[0]!.outputPath);
       expect(new Uint8Array(file)).toEqual(expected);
@@ -117,6 +128,7 @@ describe('renderExpandedImages', () => {
       await mkdir(assetDir, { recursive: true });
 
       const tinyBytes = new Uint8Array(MIN_IMAGE_BYTES - 1); // one byte under the threshold
+      const onInteraction = jest.fn();
       const replicate = {
         async runModel() {
           return {
@@ -143,8 +155,58 @@ describe('renderExpandedImages', () => {
           markdownPath,
           assetDir,
           dryRun: false,
+          onInteraction,
         }),
       ).rejects.toThrow('corrupted');
+      expect(onInteraction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stageId: 'images',
+          operationId: 'images:cover',
+          provider: 'replicate',
+          status: 'failed',
+        }),
+      );
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('captures dry-run t2i prompt/input interactions', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-images-dryrun-interactions-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article.md');
+      const assetDir = path.join(tempRoot, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const onInteraction = jest.fn();
+      await renderExpandedImages({
+        prompts: [
+          {
+            id: 'cover',
+            kind: 'cover',
+            prompt: 'dry run cover prompt',
+            description: 'cover description',
+            anchorAfterSection: null,
+          },
+        ],
+        settings: defaultAppSettings,
+        replicate: null,
+        markdownPath,
+        assetDir,
+        dryRun: true,
+        onInteraction,
+      });
+
+      expect(onInteraction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stageId: 'images',
+          operationId: 'images:cover',
+          provider: 'replicate-dry-run',
+          status: 'succeeded',
+          prompt: 'dry run cover prompt',
+        }),
+      );
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

@@ -7,6 +7,7 @@ import {
 } from '../llm/prompts/linkEnrichment.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
+import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ContentItemLinks, LinkEntry } from '../types/article.js';
 
 const SHORT_FORM_CONTENT_TYPES = new Set(['x-post', 'x-thread']);
@@ -35,6 +36,7 @@ export async function enrichLinks({
   dryRun,
   onLlmMetrics,
   onItemProgress,
+  onInteraction,
 }: {
   markdownFiles: Array<{ markdownPath: string; fileId: string; contentType: string }>;
   articleTitle: string;
@@ -44,6 +46,7 @@ export async function enrichLinks({
   dryRun: boolean;
   onLlmMetrics?: (fileId: string, metrics: LlmCallMetrics) => void;
   onItemProgress?: (event: LinkEnrichmentProgressEvent) => void;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<ContentItemLinks[]> {
   const results: ContentItemLinks[] = [];
 
@@ -100,6 +103,11 @@ export async function enrichLinks({
       schema: buildLinkCandidatesJsonSchema(),
       messages: buildLinkCandidatesMessages(content, item.contentType),
       settings,
+      interactionContext: {
+        stageId: 'links',
+        operationId: `links:${item.fileId}:select-expressions`,
+      },
+      onInteraction,
       parse(data) {
         const record = data as { expressions?: unknown };
         const expressions = Array.isArray(record.expressions)
@@ -149,6 +157,11 @@ export async function enrichLinks({
           expression,
         }),
         settings,
+        interactionContext: {
+          stageId: 'links',
+          operationId: `links:${item.fileId}:resolve-${index + 1}`,
+        },
+        onInteraction,
         onMetrics(metrics) {
           onLlmMetrics?.(item.fileId, metrics);
         },

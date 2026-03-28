@@ -316,6 +316,139 @@ describe('preview server resilience', () => {
     }
   });
 
+  it('loads interactions sidecar and exposes it in article payload', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-interactions-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-180000-interactions');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Interactions Test\n\nBody\n', 'utf8');
+      await writeFile(
+        path.join(generationDir, 'model.interactions.json'),
+        `${JSON.stringify({
+          runId: 'run-1',
+          runMode: 'fresh',
+          dryRun: false,
+          startedAt: '2026-03-27T18:00:00.000Z',
+          endedAt: '2026-03-27T18:00:10.000Z',
+          llmCalls: [
+            {
+              stageId: 'planning',
+              operationId: 'planning:article-plan',
+              requestType: 'structured',
+              provider: 'openrouter',
+              modelId: 'moonshotai/kimi-k2.5',
+              startedAt: '2026-03-27T18:00:01.000Z',
+              endedAt: '2026-03-27T18:00:02.000Z',
+              durationMs: 1000,
+              attempts: 1,
+              retries: 0,
+              retryBackoffMs: 0,
+              status: 'succeeded',
+              requestBody: '{"messages":[]}',
+              responseBody: '{"choices":[{"message":{"content":"ok"}}]}',
+              errorMessage: null,
+            },
+          ],
+          t2iCalls: [
+            {
+              stageId: 'images',
+              operationId: 'images:cover',
+              provider: 'replicate',
+              modelId: 'black-forest-labs/flux-schnell',
+              kind: 'cover',
+              startedAt: '2026-03-27T18:00:03.000Z',
+              endedAt: '2026-03-27T18:00:04.000Z',
+              durationMs: 1000,
+              attempts: 1,
+              retries: 0,
+              retryBackoffMs: 0,
+              status: 'succeeded',
+              prompt: 'cinematic editorial cover',
+              input: { prompt: 'cinematic editorial cover' },
+              errorMessage: null,
+            },
+          ],
+        })}\n`,
+        'utf8',
+      );
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const response = await fetch(`${server.url}/api/articles/20260327-180000-interactions`);
+        const payload = (await response.json()) as {
+          interactions: {
+            llmCalls: Array<{ stageId: string; requestType: string }>;
+            t2iCalls: Array<{ stageId: string; prompt: string }>;
+          };
+        };
+
+        expect(response.status).toBe(200);
+        expect(payload.interactions.llmCalls).toHaveLength(1);
+        expect(payload.interactions.llmCalls[0]).toEqual(expect.objectContaining({ stageId: 'planning', requestType: 'structured' }));
+        expect(payload.interactions.t2iCalls).toHaveLength(1);
+        expect(payload.interactions.t2iCalls[0]).toEqual(expect.objectContaining({ stageId: 'images', prompt: 'cinematic editorial cover' }));
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('returns empty interactions when model.interactions.json is missing', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-missing-interactions-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-190000-missing-interactions');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Missing Interactions\n\nBody\n', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const response = await fetch(`${server.url}/api/articles/20260327-190000-missing-interactions`);
+        const payload = (await response.json()) as {
+          title: string;
+          interactions: {
+            llmCalls: Array<unknown>;
+            t2iCalls: Array<unknown>;
+          };
+        };
+
+        expect(response.status).toBe(200);
+        expect(payload.title).toContain('Missing Interactions');
+        expect(payload.interactions.llmCalls).toEqual([]);
+        expect(payload.interactions.t2iCalls).toEqual([]);
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('renders OS-default dark mode support and persisted theme toggle controls', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-theme-'));
 

@@ -5,6 +5,7 @@ import {
 } from '../llm/prompts/contentBrief.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
+import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ContentBrief } from '../types/contentBrief.js';
 import { contentBriefSchema as contentBriefResultSchema } from '../types/contentBriefSchema.js';
 
@@ -14,12 +15,14 @@ export async function planContentBrief({
   openRouter,
   dryRun,
   onLlmMetrics,
+  onInteraction,
 }: {
   idea: string;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<ContentBrief> {
   if (dryRun || !openRouter) {
     return buildDryRunContentBrief(idea);
@@ -33,6 +36,11 @@ export async function planContentBrief({
       contentTypes: settings.contentTargets.map((target) => target.contentType),
     }),
     settings,
+    interactionContext: {
+      stageId: 'shared-brief',
+      operationId: 'shared-brief:content-brief',
+    },
+    onInteraction,
     onMetrics: onLlmMetrics,
     parse(data) {
       return contentBriefResultSchema.parse(data);

@@ -1,5 +1,6 @@
 import type { AppSettings } from '../config/schema.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
+import type { LlmInteractionRecord } from '../pipeline/events.js';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -11,6 +12,8 @@ export interface StructuredRequest<T> {
   schema: Record<string, unknown>;
   messages: ChatMessage[];
   settings: AppSettings;
+  interactionContext?: OpenRouterInteractionContext;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
   parse?: (data: unknown) => T;
   fallbackFactory?: () => T;
   onMetrics?: (metrics: LlmCallMetrics) => void;
@@ -19,13 +22,22 @@ export interface StructuredRequest<T> {
 export interface TextRequest {
   messages: ChatMessage[];
   settings: AppSettings;
+  interactionContext?: OpenRouterInteractionContext;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
   onMetrics?: (metrics: LlmCallMetrics) => void;
 }
 
 export interface WebSearchRequest {
   messages: ChatMessage[];
   settings: AppSettings;
+  interactionContext?: OpenRouterInteractionContext;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
   onMetrics?: (metrics: LlmCallMetrics) => void;
+}
+
+export interface OpenRouterInteractionContext {
+  stageId: string;
+  operationId: string;
 }
 
 interface OpenRouterResponse {
@@ -60,6 +72,9 @@ export class OpenRouterClient {
     const completion = await this.sendCompletion({
       messages: request.messages,
       settings: request.settings,
+      requestType: 'text',
+      interactionContext: request.interactionContext,
+      onInteraction: request.onInteraction,
     });
     request.onMetrics?.(completion.metrics);
 
@@ -74,6 +89,9 @@ export class OpenRouterClient {
         const response = await this.sendCompletion({
           messages: request.messages,
           settings: request.settings,
+          requestType: 'structured',
+          interactionContext: request.interactionContext,
+          onInteraction: request.onInteraction,
           responseFormat: {
             type: 'json_schema',
             json_schema: {
@@ -125,6 +143,9 @@ export class OpenRouterClient {
     const completion = await this.sendCompletion({
       messages: request.messages,
       settings: request.settings,
+      requestType: 'web-search',
+      interactionContext: request.interactionContext,
+      onInteraction: request.onInteraction,
       plugins: [{ id: 'web' }],
     });
     request.onMetrics?.(completion.metrics);
@@ -143,12 +164,18 @@ export class OpenRouterClient {
   private async sendCompletion({
     messages,
     settings,
+    requestType,
+    interactionContext,
+    onInteraction,
     responseFormat,
     requireStructuredOutputs,
     plugins,
   }: {
     messages: ChatMessage[];
     settings: AppSettings;
+    requestType: LlmInteractionRecord['requestType'];
+    interactionContext?: OpenRouterInteractionContext;
+    onInteraction?: (interaction: LlmInteractionRecord) => void;
     responseFormat?: Record<string, unknown>;
     requireStructuredOutputs?: boolean;
     plugins?: Array<Record<string, unknown>>;
@@ -161,11 +188,14 @@ export class OpenRouterClient {
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       attempts = attempt + 1;
+      const attemptStartedAtMs = Date.now();
       const controller = new AbortController();
       const timeoutMs = settings.modelRequestTimeoutMs;
       const timeout = setTimeout(() => {
         controller.abort();
       }, timeoutMs);
+      let requestBodyRaw = '';
+      let responseBodyRaw: string | null = null;
 
       try {
         const requestBody: Record<string, unknown> = {
@@ -190,6 +220,8 @@ export class OpenRouterClient {
           requestBody.plugins = plugins;
         }
 
+        requestBodyRaw = JSON.stringify(requestBody);
+
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -197,11 +229,12 @@ export class OpenRouterClient {
             'Content-Type': 'application/json',
             'X-OpenRouter-Title': 'ideon',
           },
-          body: JSON.stringify(requestBody),
+          body: requestBodyRaw,
           signal: controller.signal,
         });
 
         const rawBody = await response.text();
+        responseBodyRaw = rawBody;
         const json = parseOpenRouterResponse(rawBody);
         if (!response.ok) {
           const message = json?.error?.message ?? `OpenRouter request failed with status ${response.status}`;
@@ -209,6 +242,23 @@ export class OpenRouterClient {
             const backoff = backoffMs(attempt);
             retries += 1;
             retryBackoffMs += backoff;
+            onInteraction?.({
+              stageId: interactionContext?.stageId ?? 'unknown',
+              operationId: interactionContext?.operationId ?? 'unknown',
+              requestType,
+              provider: 'openrouter',
+              modelId: settings.model,
+              startedAt: new Date(attemptStartedAtMs).toISOString(),
+              endedAt: new Date().toISOString(),
+              durationMs: Date.now() - attemptStartedAtMs,
+              attempts,
+              retries,
+              retryBackoffMs,
+              status: 'failed',
+              requestBody: requestBodyRaw,
+              responseBody: responseBodyRaw,
+              errorMessage: message,
+            });
             await wait(backoff);
             continue;
           }
@@ -221,9 +271,44 @@ export class OpenRouterClient {
           const backoff = backoffMs(attempt);
           retries += 1;
           retryBackoffMs += backoff;
+          onInteraction?.({
+            stageId: interactionContext?.stageId ?? 'unknown',
+            operationId: interactionContext?.operationId ?? 'unknown',
+            requestType,
+            provider: 'openrouter',
+            modelId: settings.model,
+            startedAt: new Date(attemptStartedAtMs).toISOString(),
+            endedAt: new Date().toISOString(),
+            durationMs: Date.now() - attemptStartedAtMs,
+            attempts,
+            retries,
+            retryBackoffMs,
+            status: 'failed',
+            requestBody: requestBodyRaw,
+            responseBody: responseBodyRaw,
+            errorMessage: 'OpenRouter returned an empty response.',
+          });
           await wait(backoff);
           continue;
         }
+
+        onInteraction?.({
+          stageId: interactionContext?.stageId ?? 'unknown',
+          operationId: interactionContext?.operationId ?? 'unknown',
+          requestType,
+          provider: 'openrouter',
+          modelId: settings.model,
+          startedAt: new Date(attemptStartedAtMs).toISOString(),
+          endedAt: new Date().toISOString(),
+          durationMs: Date.now() - attemptStartedAtMs,
+          attempts,
+          retries,
+          retryBackoffMs,
+          status: 'succeeded',
+          requestBody: requestBodyRaw,
+          responseBody: responseBodyRaw,
+          errorMessage: null,
+        });
 
         return {
           response: json,
@@ -243,6 +328,23 @@ export class OpenRouterClient {
         };
       } catch (error) {
         lastError = normalizeClientError(error, timeoutMs);
+        onInteraction?.({
+          stageId: interactionContext?.stageId ?? 'unknown',
+          operationId: interactionContext?.operationId ?? 'unknown',
+          requestType,
+          provider: 'openrouter',
+          modelId: settings.model,
+          startedAt: new Date(attemptStartedAtMs).toISOString(),
+          endedAt: new Date().toISOString(),
+          durationMs: Date.now() - attemptStartedAtMs,
+          attempts,
+          retries,
+          retryBackoffMs,
+          status: 'failed',
+          requestBody: requestBodyRaw,
+          responseBody: responseBodyRaw,
+          errorMessage: lastError.message,
+        });
         if (attempt < 2 && shouldRetryError(lastError)) {
           const backoff = backoffMs(attempt);
           retries += 1;

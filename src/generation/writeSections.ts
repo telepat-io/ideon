@@ -2,6 +2,7 @@ import type { AppSettings } from '../config/schema.js';
 import { buildIntroMessages, buildOutroMessages, buildSectionMessages } from '../llm/prompts/articleSection.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
+import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ArticlePlan, GeneratedArticleSection } from '../types/article.js';
 
 export async function writeArticleSections({
@@ -11,6 +12,7 @@ export async function writeArticleSections({
   dryRun,
   onSectionStart,
   onLlmMetrics,
+  onInteraction,
 }: {
   plan: ArticlePlan;
   settings: AppSettings;
@@ -18,6 +20,7 @@ export async function writeArticleSections({
   dryRun: boolean;
   onSectionStart?: (label: string) => void;
   onLlmMetrics?: (phase: 'intro' | 'section' | 'outro', metrics: LlmCallMetrics, sectionIndex?: number) => void;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<{ intro: string; sections: GeneratedArticleSection[]; outro: string }> {
   onSectionStart?.('Writing introduction');
   const intro = dryRun || !openRouter
@@ -30,6 +33,11 @@ export async function writeArticleSections({
           settings.targetLength,
         ),
         settings,
+        interactionContext: {
+          stageId: 'sections',
+          operationId: 'sections:intro',
+        },
+        onInteraction,
         onMetrics(metrics) {
           onLlmMetrics?.('intro', metrics);
         },
@@ -50,6 +58,11 @@ export async function writeArticleSections({
             settings.targetLength,
           ),
           settings,
+          interactionContext: {
+            stageId: 'sections',
+            operationId: `sections:section-${index + 1}`,
+          },
+          onInteraction,
           onMetrics(metrics) {
             onLlmMetrics?.('section', metrics, index);
           },
@@ -71,6 +84,11 @@ export async function writeArticleSections({
           settings.targetLength,
         ),
         settings,
+        interactionContext: {
+          stageId: 'sections',
+          operationId: 'sections:outro',
+        },
+        onInteraction,
         onMetrics(metrics) {
           onLlmMetrics?.('outro', metrics);
         },

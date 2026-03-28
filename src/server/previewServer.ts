@@ -26,6 +26,10 @@ export interface StartedPreviewServer {
 interface ArticleContent {
   title: string;
   generationId: string;
+  interactions: {
+    llmCalls: PreviewLlmInteraction[];
+    t2iCalls: PreviewT2IInteraction[];
+  };
   outputs: Array<{
     id: string;
     contentType: string;
@@ -35,6 +39,42 @@ interface ArticleContent {
     title: string;
     htmlBody: string;
   }>;
+}
+
+interface PreviewLlmInteraction {
+  stageId: string;
+  operationId: string;
+  requestType: 'structured' | 'text' | 'web-search';
+  provider: 'openrouter';
+  modelId: string;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  status: 'succeeded' | 'failed';
+  requestBody: string;
+  responseBody: string | null;
+  errorMessage: string | null;
+}
+
+interface PreviewT2IInteraction {
+  stageId: 'images';
+  operationId: string;
+  provider: 'replicate' | 'replicate-dry-run';
+  modelId: string;
+  kind: 'cover' | 'inline';
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  status: 'succeeded' | 'failed';
+  prompt: string;
+  input: Record<string, unknown>;
+  errorMessage: string | null;
 }
 
 interface ResolvedPreviewArticle {
@@ -193,9 +233,13 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
     }),
   );
 
+  const generationDir = path.dirname(generation.outputs[0]?.sourcePath ?? '');
+  const interactions = generationDir ? await loadSavedInteractions(generationDir) : { llmCalls: [], t2iCalls: [] };
+
   return {
     title: generation.title,
     generationId: generation.id,
+    interactions,
     outputs,
   };
 }
@@ -272,6 +316,85 @@ async function loadSavedLinks(markdownPath: string): Promise<LinkEntry[]> {
 
     return [];
   }
+}
+
+async function loadSavedInteractions(generationDir: string): Promise<{
+  llmCalls: PreviewLlmInteraction[];
+  t2iCalls: PreviewT2IInteraction[];
+}> {
+  const interactionsPath = path.join(generationDir, 'model.interactions.json');
+
+  try {
+    const raw = await readFile(interactionsPath, 'utf8');
+    const parsed = JSON.parse(raw) as {
+      llmCalls?: unknown;
+      t2iCalls?: unknown;
+    };
+
+    const llmCalls = Array.isArray(parsed.llmCalls)
+      ? parsed.llmCalls.filter(isPreviewLlmInteraction)
+      : [];
+    const t2iCalls = Array.isArray(parsed.t2iCalls)
+      ? parsed.t2iCalls.filter(isPreviewT2IInteraction)
+      : [];
+
+    return {
+      llmCalls,
+      t2iCalls,
+    };
+  } catch {
+    return {
+      llmCalls: [],
+      t2iCalls: [],
+    };
+  }
+}
+
+function isPreviewLlmInteraction(value: unknown): value is PreviewLlmInteraction {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return typeof record.stageId === 'string'
+    && typeof record.operationId === 'string'
+    && (record.requestType === 'structured' || record.requestType === 'text' || record.requestType === 'web-search')
+    && record.provider === 'openrouter'
+    && typeof record.modelId === 'string'
+    && typeof record.startedAt === 'string'
+    && typeof record.endedAt === 'string'
+    && typeof record.durationMs === 'number'
+    && typeof record.attempts === 'number'
+    && typeof record.retries === 'number'
+    && typeof record.retryBackoffMs === 'number'
+    && (record.status === 'succeeded' || record.status === 'failed')
+    && typeof record.requestBody === 'string'
+    && (record.responseBody === null || typeof record.responseBody === 'string')
+    && (record.errorMessage === null || typeof record.errorMessage === 'string');
+}
+
+function isPreviewT2IInteraction(value: unknown): value is PreviewT2IInteraction {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return record.stageId === 'images'
+    && typeof record.operationId === 'string'
+    && (record.provider === 'replicate' || record.provider === 'replicate-dry-run')
+    && typeof record.modelId === 'string'
+    && (record.kind === 'cover' || record.kind === 'inline')
+    && typeof record.startedAt === 'string'
+    && typeof record.endedAt === 'string'
+    && typeof record.durationMs === 'number'
+    && typeof record.attempts === 'number'
+    && typeof record.retries === 'number'
+    && typeof record.retryBackoffMs === 'number'
+    && (record.status === 'succeeded' || record.status === 'failed')
+    && typeof record.prompt === 'string'
+    && typeof record.input === 'object'
+    && record.input !== null
+    && (record.errorMessage === null || typeof record.errorMessage === 'string');
 }
 
 function applyLinksToMarkdown(content: string, links: LinkEntry[]): string {
@@ -841,6 +964,10 @@ function renderShell({
         margin: 0 0 0.9rem;
       }
 
+      .type-tabs-spacer {
+        flex: 1;
+      }
+
       .type-tab-btn {
         border: 1px solid var(--border);
         border-radius: 999px;
@@ -854,6 +981,24 @@ function renderShell({
       }
 
       .type-tab-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      .logs-tab-btn {
+        border: 1px solid var(--variant-active-border);
+        border-radius: 999px;
+        background: var(--variant-active-bg);
+        color: var(--variant-active-text);
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0.15px;
+        padding: 0.35rem 0.8rem;
+        cursor: pointer;
+      }
+
+      .logs-tab-btn.active {
         background: var(--accent);
         border-color: var(--accent);
         color: #fff;
@@ -881,6 +1026,157 @@ function renderShell({
         border-color: var(--variant-active-border);
         color: var(--variant-active-text);
         background: var(--variant-active-bg);
+      }
+
+      .interactions-layout {
+        display: grid;
+        grid-template-columns: minmax(220px, 280px) 1fr;
+        gap: 0.85rem;
+      }
+
+      .interactions-list {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--elevated);
+        padding: 0.7rem;
+        max-height: 70vh;
+        overflow: auto;
+      }
+
+      .interaction-stage {
+        margin-bottom: 0.8rem;
+      }
+
+      .interaction-stage-title {
+        margin: 0 0 0.35rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.35px;
+      }
+
+      .interaction-items {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .interaction-item-btn {
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--paper);
+        color: var(--text);
+        padding: 0.4rem 0.5rem;
+        cursor: pointer;
+      }
+
+      .interaction-item-btn.active {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+      }
+
+      .interaction-item-line {
+        display: block;
+        font-size: 0.76rem;
+        color: var(--muted);
+      }
+
+      .interaction-item-line.primary {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .interactions-detail {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--paper);
+        overflow: hidden;
+      }
+
+      .interactions-detail-header {
+        border-bottom: 1px solid var(--border);
+        padding: 0.7rem 0.85rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .interactions-detail-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+      }
+
+      .interactions-mode-toggle {
+        display: flex;
+        gap: 0.35rem;
+      }
+
+      .interactions-mode-btn {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--variant-bg);
+        color: var(--muted);
+        font-size: 0.72rem;
+        padding: 0.22rem 0.55rem;
+        cursor: pointer;
+      }
+
+      .interactions-mode-btn.active {
+        border-color: var(--variant-active-border);
+        color: var(--variant-active-text);
+        background: var(--variant-active-bg);
+      }
+
+      .interactions-detail-body {
+        padding: 0.85rem;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .interactions-kv {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+      }
+
+      .interactions-kv dt {
+        color: var(--muted);
+      }
+
+      .interactions-kv dd {
+        margin: 0;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        word-break: break-word;
+      }
+
+      .interaction-block-title {
+        margin: 0 0 0.25rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      .interaction-pre {
+        margin: 0;
+        padding: 0.7rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--elevated);
+        max-height: 46vh;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.78rem;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       }
 
       .channel-shell {
@@ -1119,6 +1415,14 @@ function renderShell({
         .variant-tabs {
           gap: 0.35rem;
         }
+
+        .interactions-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .interactions-list {
+          max-height: 42vh;
+        }
       }
     </style>
   </head>
@@ -1152,10 +1456,14 @@ function renderShell({
       const articleListElement = document.getElementById('articleList');
       const themeToggleButton = document.getElementById('themeToggle');
       const typeOrder = ['article', 'blog-post', 'x-thread', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
+      const stageOrder = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
 
       let currentGeneration = null;
       let activeType = '';
       let activeOutputId = '';
+      let activeTopView = 'content';
+      let selectedInteractionId = '';
+      let interactionViewMode = 'text';
 
       function getStoredTheme() {
         try {
@@ -1268,6 +1576,9 @@ function renderShell({
           const firstOutput = currentGeneration.outputs?.[0];
           activeType = firstOutput?.contentType ?? '';
           activeOutputId = firstOutput?.id ?? '';
+          activeTopView = 'content';
+          selectedInteractionId = '';
+          interactionViewMode = 'text';
           renderGeneration();
           articleElement.classList.remove('loading', 'preview-empty');
 
@@ -1326,7 +1637,9 @@ function renderShell({
             const className = type === activeType ? 'type-tab-btn active' : 'type-tab-btn';
             return \`<button type="button" class="\${className}" data-type-tab="\${escapeHtml(type)}">\${escapeHtml(label)}</button>\`;
           })
-          .join('');
+          .join('')
+          + '<span class="type-tabs-spacer"></span>'
+          + '<button type="button" class="' + (activeTopView === 'logs' ? 'logs-tab-btn active' : 'logs-tab-btn') + '" data-logs-tab="true">Logs</button>';
 
         const variantTabs = variants
           .map((item) => {
@@ -1334,6 +1647,16 @@ function renderShell({
             return \`<button type="button" class="\${className}" data-output-id="\${escapeHtml(item.id)}">\${escapeHtml(item.contentTypeLabel)} \${item.index}</button>\`;
           })
           .join('');
+
+        if (activeTopView === 'logs') {
+          articleElement.innerHTML = [
+            '<div class="type-tabs">',
+            typeTabs,
+            '</div>',
+            renderInteractionsPanel(currentGeneration.interactions),
+          ].join('');
+          return;
+        }
 
         articleElement.innerHTML = [
           '<div class="type-tabs">',
@@ -1344,6 +1667,212 @@ function renderShell({
           '</div>',
           activeOutput ? renderOutputShell(activeOutput) : '<div class="error-text">Missing output payload.</div>',
         ].join('');
+      }
+
+      function renderInteractionsPanel(interactionsPayload) {
+        const interactions = normalizeInteractions(interactionsPayload);
+        if (interactions.length === 0) {
+          return '<div class="empty-message">No interactions captured for this generation.</div>';
+        }
+
+        if (!interactions.some((entry) => entry.id === selectedInteractionId)) {
+          selectedInteractionId = interactions[0]?.id || '';
+        }
+
+        const selected = interactions.find((entry) => entry.id === selectedInteractionId) || interactions[0];
+        if (!selected) {
+          return '<div class="empty-message">No interactions captured for this generation.</div>';
+        }
+
+        const grouped = interactions.reduce((acc, interaction) => {
+          const key = interaction.stageId || 'unknown';
+          if (!acc[key]) {
+            acc[key] = [];
+          }
+
+          acc[key].push(interaction);
+          return acc;
+        }, {});
+
+        const stageNames = Object.keys(grouped).sort((left, right) => {
+          const leftIndex = stageOrder.indexOf(left);
+          const rightIndex = stageOrder.indexOf(right);
+          const normalizedLeft = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+          const normalizedRight = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+          if (normalizedLeft !== normalizedRight) {
+            return normalizedLeft - normalizedRight;
+          }
+
+          return left.localeCompare(right);
+        });
+
+        const stageMarkup = stageNames.map((stageName) => {
+          const items = grouped[stageName] || [];
+          const itemsMarkup = items.map((item, index) => {
+            const itemClass = item.id === selected.id ? 'interaction-item-btn active' : 'interaction-item-btn';
+            const label = item.operationId || (item.source + ' ' + (index + 1));
+            const lineTwo = item.source === 'llm'
+              ? ((item.requestType || 'text') + ' • ' + (item.status || 'unknown'))
+              : ((item.provider || 'replicate') + ' • ' + (item.status || 'unknown'));
+            return [
+              '<li>',
+              '<button type="button" class="' + itemClass + '" data-interaction-id="' + escapeHtml(item.id) + '">',
+              '<span class="interaction-item-line primary">' + escapeHtml(label) + '</span>',
+              '<span class="interaction-item-line">' + escapeHtml(lineTwo) + '</span>',
+              '</button>',
+              '</li>',
+            ].join('');
+          }).join('');
+
+          return [
+            '<section class="interaction-stage">',
+            '<h3 class="interaction-stage-title">' + escapeHtml(stageName) + '</h3>',
+            '<ul class="interaction-items">' + itemsMarkup + '</ul>',
+            '</section>',
+          ].join('');
+        }).join('');
+
+        const metadata = [
+          '<dl class="interactions-kv">',
+          '<dt>Stage</dt><dd>' + escapeHtml(selected.stageId) + '</dd>',
+          '<dt>Operation</dt><dd>' + escapeHtml(selected.operationId || 'unknown') + '</dd>',
+          '<dt>Source</dt><dd>' + escapeHtml(selected.source) + '</dd>',
+          '<dt>Status</dt><dd>' + escapeHtml(selected.status || 'unknown') + '</dd>',
+          '<dt>Model</dt><dd>' + escapeHtml(selected.modelId || 'unknown') + '</dd>',
+          '<dt>Duration</dt><dd>' + escapeHtml(String(selected.durationMs || 0)) + ' ms</dd>',
+          '</dl>',
+        ].join('');
+
+        const modeToggle = [
+          '<div class="interactions-mode-toggle">',
+          '<button type="button" class="' + (interactionViewMode === 'text' ? 'interactions-mode-btn active' : 'interactions-mode-btn') + '" data-interaction-mode="text">Prompt/Response</button>',
+          '<button type="button" class="' + (interactionViewMode === 'json' ? 'interactions-mode-btn active' : 'interactions-mode-btn') + '" data-interaction-mode="json">Full JSON</button>',
+          '</div>',
+        ].join('');
+
+        const detailBody = interactionViewMode === 'json'
+          ? '<pre class="interaction-pre">' + escapeHtml(JSON.stringify(selected.raw, null, 2)) + '</pre>'
+          : renderInteractionTextBlocks(selected);
+
+        return [
+          '<div class="interactions-layout">',
+          '<div class="interactions-list">',
+          stageMarkup,
+          '</div>',
+          '<div class="interactions-detail">',
+          '<div class="interactions-detail-header">',
+          '<h3 class="interactions-detail-title">Interaction Inspector</h3>',
+          modeToggle,
+          '</div>',
+          '<div class="interactions-detail-body">',
+          metadata,
+          detailBody,
+          '</div>',
+          '</div>',
+          '</div>',
+        ].join('');
+      }
+
+      function renderInteractionTextBlocks(interaction) {
+        const textSnapshot = extractInteractionTextSnapshot(interaction);
+
+        const promptBlock = [
+          '<section>',
+          '<h4 class="interaction-block-title">Prompt / Request</h4>',
+          '<pre class="interaction-pre">' + escapeHtml(textSnapshot.promptText || 'No prompt text found.') + '</pre>',
+          '</section>',
+        ].join('');
+
+        const responseBlock = [
+          '<section>',
+          '<h4 class="interaction-block-title">Response</h4>',
+          '<pre class="interaction-pre">' + escapeHtml(textSnapshot.responseText || 'No response text found.') + '</pre>',
+          '</section>',
+        ].join('');
+
+        return promptBlock + responseBlock;
+      }
+
+      function normalizeInteractions(interactionsPayload) {
+        const llmCalls = Array.isArray(interactionsPayload?.llmCalls) ? interactionsPayload.llmCalls : [];
+        const t2iCalls = Array.isArray(interactionsPayload?.t2iCalls) ? interactionsPayload.t2iCalls : [];
+
+        const normalizedLlm = llmCalls.map((call, index) => ({
+          id: 'llm-' + index,
+          source: 'llm',
+          stageId: String(call.stageId || 'unknown'),
+          operationId: String(call.operationId || ''),
+          status: String(call.status || ''),
+          requestType: String(call.requestType || ''),
+          provider: String(call.provider || ''),
+          modelId: String(call.modelId || ''),
+          durationMs: Number(call.durationMs || 0),
+          raw: call,
+        }));
+
+        const normalizedT2I = t2iCalls.map((call, index) => ({
+          id: 't2i-' + index,
+          source: 't2i',
+          stageId: String(call.stageId || 'images'),
+          operationId: String(call.operationId || ''),
+          status: String(call.status || ''),
+          requestType: 't2i',
+          provider: String(call.provider || ''),
+          modelId: String(call.modelId || ''),
+          durationMs: Number(call.durationMs || 0),
+          raw: call,
+        }));
+
+        return normalizedLlm.concat(normalizedT2I).sort((left, right) => {
+          const leftTime = new Date(left.raw?.startedAt || 0).getTime();
+          const rightTime = new Date(right.raw?.startedAt || 0).getTime();
+          if (leftTime !== rightTime) {
+            return leftTime - rightTime;
+          }
+
+          return left.id.localeCompare(right.id);
+        });
+      }
+
+      function extractInteractionTextSnapshot(interaction) {
+        if (interaction.source === 't2i') {
+          return {
+            promptText: String(interaction.raw?.prompt || ''),
+            responseText: interaction.raw?.errorMessage
+              ? ('Error: ' + String(interaction.raw.errorMessage))
+              : 'Image request completed. Inspect Full JSON for resolved input payload.',
+          };
+        }
+
+        const requestBody = parseJsonSafely(interaction.raw?.requestBody);
+        const responseBody = parseJsonSafely(interaction.raw?.responseBody);
+        const promptText = Array.isArray(requestBody?.messages)
+          ? requestBody.messages
+            .map((message) => '[' + String(message.role || 'unknown') + ']\\n' + String(message.content || ''))
+            .join('\\n\\n---\\n\\n')
+          : String(interaction.raw?.requestBody || '');
+        const responseText = typeof responseBody?.choices?.[0]?.message?.content === 'string'
+          ? responseBody.choices[0].message.content
+          : (typeof responseBody?.error?.message === 'string'
+              ? ('Error: ' + responseBody.error.message)
+              : String(interaction.raw?.responseBody || interaction.raw?.errorMessage || ''));
+
+        return {
+          promptText,
+          responseText,
+        };
+      }
+
+      function parseJsonSafely(value) {
+        if (typeof value !== 'string' || value.length === 0) {
+          return null;
+        }
+
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
       }
 
       function renderOutputShell(output) {
@@ -1415,8 +1944,39 @@ function renderShell({
           const nextType = typeButton.dataset.typeTab;
           if (nextType) {
             activeType = nextType;
+            activeTopView = 'content';
             const grouped = currentGeneration ? groupOutputsByType(currentGeneration.outputs || []) : {};
             activeOutputId = grouped[activeType]?.[0]?.id || '';
+            renderGeneration();
+          }
+
+          return;
+        }
+
+        const logsButton = target.closest('[data-logs-tab]');
+        if (logsButton instanceof HTMLElement) {
+          activeTopView = 'logs';
+          renderGeneration();
+
+          return;
+        }
+
+        const interactionButton = target.closest('[data-interaction-id]');
+        if (interactionButton instanceof HTMLElement) {
+          const nextInteractionId = interactionButton.dataset.interactionId;
+          if (nextInteractionId) {
+            selectedInteractionId = nextInteractionId;
+            renderGeneration();
+          }
+
+          return;
+        }
+
+        const modeButton = target.closest('[data-interaction-mode]');
+        if (modeButton instanceof HTMLElement) {
+          const nextMode = modeButton.dataset.interactionMode;
+          if (nextMode === 'text' || nextMode === 'json') {
+            interactionViewMode = nextMode;
             renderGeneration();
           }
 

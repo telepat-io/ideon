@@ -195,6 +195,7 @@ describe('sessionStore', () => {
             markdownPath: '/tmp/output/generated-title/article-1.md',
             assetDir: '/tmp/output/generated-title/assets',
             analyticsPath: '/tmp/output/generated-title/article-1.analytics.json',
+            interactionsPath: '/tmp/output/generated-title/model.interactions.json',
           },
         },
         dir,

@@ -101,6 +101,7 @@ describe('renderPlainPipeline', () => {
           markdownPath: '/tmp/run/x-1.md',
           assetDir: '/tmp/run',
           analyticsPath: '/tmp/run/generation.analytics.json',
+          interactionsPath: '/tmp/run/model.interactions.json',
         },
         analytics: {
           runId: 'run-1',

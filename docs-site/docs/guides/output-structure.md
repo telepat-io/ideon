@@ -4,7 +4,7 @@ title: Output Structure
 
 # Output Structure
 
-Ideon writes one generation directory per run. Each generation directory contains one or more markdown outputs, a run-definition `job.json`, a per-run analytics artifact, and shared image assets.
+Ideon writes one generation directory per run. Each generation directory contains one or more markdown outputs, a run-definition `job.json`, a per-run analytics artifact, a run-level model interaction artifact, and shared image assets.
 
 Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) for resume support.
 
@@ -13,6 +13,7 @@ Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) f
 - Markdown directory: `/output`
 - Asset directory: `/output/assets`
 - Analytics file: `generation.analytics.json` inside each generation directory
+- Model interactions file: `model.interactions.json` inside each generation directory
 
 Paths beginning with `/output` are resolved relative to current working directory.
 
@@ -29,6 +30,7 @@ output/
     linkedin-1.md
     job.json
     generation.analytics.json
+    model.interactions.json
     practical-ai-workflows-cover.webp
     practical-ai-workflows-inline-1.webp
 ```
@@ -82,6 +84,18 @@ The JSON includes:
 
 To inspect generated markdown and image embeds in a browser, run `npm run preview`.
 
+## Model Interaction Artifact
+
+Each generation run also emits `model.interactions.json` inside the generation directory.
+
+The JSON includes:
+
+- Run envelope: `runId`, `runMode`, `dryRun`, `startedAt`, `endedAt`
+- `llmCalls`: one record per OpenRouter attempt with stage/operation IDs, request type, raw serialized request body, raw response body, timing, attempts/retries, and terminal status
+- `t2iCalls`: one record per image render attempt with stage/operation IDs, raw prompt, resolved T2I input payload, timing, retries, and terminal status
+
+This artifact is intended for prompt engineering and failure analysis, so payloads are intentionally kept raw.
+
 ## Job Definition Artifact
 
 Each run also emits `job.json` in the generation directory. It captures the resolved run definition:
@@ -128,4 +142,4 @@ Key state fields:
 - `lastCompletedStage`: last checkpointed stage ID
 - `failedStage` and `errorMessage`: latest failure metadata
 - `plan`, `text`, `imagePrompts`, `imageArtifacts`: cached stage artifacts used by resume
-- `artifact`: final output summary (`markdownPaths`, `generationDir`, `analyticsPath`, and counts)
+- `artifact`: final output summary (`markdownPaths`, `generationDir`, `analyticsPath`, `interactionsPath`, and counts)

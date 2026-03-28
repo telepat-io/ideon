@@ -3,6 +3,7 @@ import { buildArticlePlanMessages, buildArticlePlanJsonSchema } from '../llm/pro
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { resolveUniqueSlug } from '../output/filesystem.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
+import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ArticlePlan } from '../types/article.js';
 import type { ContentBrief } from '../types/contentBrief.js';
 import { articlePlanSchema as articlePlanResultSchema } from '../types/articleSchema.js';
@@ -15,6 +16,7 @@ export async function planArticle({
   openRouter,
   dryRun,
   onLlmMetrics,
+  onInteraction,
 }: {
   idea: string;
   contentBrief: ContentBrief;
@@ -23,6 +25,7 @@ export async function planArticle({
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<ArticlePlan> {
   const basePlan = dryRun || !openRouter
     ? buildDryRunPlan(idea, contentBrief)
@@ -36,6 +39,11 @@ export async function planArticle({
           targetLength: settings.targetLength,
         }),
         settings,
+        interactionContext: {
+          stageId: 'planning',
+          operationId: 'planning:article-plan',
+        },
+        onInteraction,
         onMetrics: onLlmMetrics,
         parse(data) {
           return articlePlanResultSchema.parse(data);

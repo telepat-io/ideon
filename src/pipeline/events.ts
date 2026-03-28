@@ -38,6 +38,53 @@ export interface PipelineArtifactSummary {
   markdownPath: string;
   assetDir: string;
   analyticsPath: string;
+  interactionsPath: string;
+}
+
+export interface LlmInteractionRecord {
+  stageId: string;
+  operationId: string;
+  requestType: 'structured' | 'text' | 'web-search';
+  provider: 'openrouter';
+  modelId: string;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  status: 'succeeded' | 'failed';
+  requestBody: string;
+  responseBody: string | null;
+  errorMessage: string | null;
+}
+
+export interface T2IInteractionRecord {
+  stageId: 'images';
+  operationId: string;
+  provider: 'replicate' | 'replicate-dry-run';
+  modelId: string;
+  kind: 'cover' | 'inline';
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  status: 'succeeded' | 'failed';
+  prompt: string;
+  input: Record<string, unknown>;
+  errorMessage: string | null;
+}
+
+export interface PipelineRunInteractions {
+  runId: string;
+  runMode: 'fresh' | 'resume';
+  dryRun: boolean;
+  startedAt: string;
+  endedAt: string;
+  llmCalls: LlmInteractionRecord[];
+  t2iCalls: T2IInteractionRecord[];
 }
 
 export type CostSource = 'provider' | 'estimated' | 'unavailable';

@@ -385,6 +385,89 @@ describe('OpenRouterClient requestText', () => {
     expect(metrics.usage.providerTotalCostUsd).toBeCloseTo(0.0123, 6);
   });
 
+  it('captures raw request and response bodies for successful text calls', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{ message: { content: 'hello world' } }] }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const onInteraction = jest.fn();
+    const client = new OpenRouterClient(apiKey);
+    await client.requestText({
+      messages: [{ role: 'user', content: 'hello' }],
+      settings: defaultAppSettings,
+      interactionContext: {
+        stageId: 'output',
+        operationId: 'output:x-post:1',
+      },
+      onInteraction,
+    });
+
+    expect(onInteraction).toHaveBeenCalledTimes(1);
+    expect(onInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stageId: 'output',
+        operationId: 'output:x-post:1',
+        requestType: 'text',
+        status: 'succeeded',
+      }),
+    );
+
+    const interaction = onInteraction.mock.calls[0]?.[0] as { requestBody: string; responseBody: string | null };
+    expect(interaction.requestBody).toContain('"messages"');
+    expect(interaction.responseBody).toContain('hello world');
+  });
+
+  it('captures failed and successful attempts during retry flow', async () => {
+    let callCount = 0;
+    const fetchMock = jest.fn(async () => {
+      callCount += 1;
+      if (callCount === 1) {
+        return {
+          ok: false,
+          status: 503,
+          text: async () => JSON.stringify({ error: { message: 'temporary outage' } }),
+        };
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ choices: [{ message: { content: 'after retry' } }] }),
+      };
+    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const onInteraction = jest.fn();
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestText({
+      messages: [{ role: 'user', content: 'retry me' }],
+      settings: defaultAppSettings,
+      interactionContext: {
+        stageId: 'sections',
+        operationId: 'sections:intro',
+      },
+      onInteraction,
+    });
+
+    expect(result).toBe('after retry');
+    expect(onInteraction).toHaveBeenCalledTimes(2);
+    expect(onInteraction.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        status: 'failed',
+        requestType: 'text',
+      }),
+    );
+    expect(onInteraction.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({
+        status: 'succeeded',
+        requestType: 'text',
+      }),
+    );
+  });
+
   it('keeps provider cost null for invalid numeric strings', async () => {
     const fetchMock = jest.fn(async () => ({
       ok: true,

@@ -2,6 +2,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { jest } from '@jest/globals';
 import { runPipelineShell, createInitialStages } from '../pipeline/runner.js';
 import { defaultAppSettings, type ResolvedConfig } from '../config/schema.js';
 import type { StageViewModel } from '../pipeline/events.js';
@@ -55,6 +56,7 @@ describe('pipeline runner', () => {
       expect(result.artifact.sectionCount).toBeGreaterThanOrEqual(4);
       expect(result.artifact.imageCount).toBe(3);
       expect(result.artifact.analyticsPath).toContain('.analytics.json');
+      expect(result.artifact.interactionsPath).toContain('model.interactions.json');
       expect(result.analytics.summary.totalDurationMs).toBeGreaterThanOrEqual(0);
       expect(result.analytics.stages).toHaveLength(7);
       expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(3);
@@ -62,14 +64,23 @@ describe('pipeline runner', () => {
 
       const markdown = await readFile(result.artifact.markdownPath, 'utf8');
       const analyticsRaw = await readFile(result.artifact.analyticsPath, 'utf8');
+      const interactionsRaw = await readFile(result.artifact.interactionsPath, 'utf8');
       const analytics = JSON.parse(analyticsRaw) as {
         runId: string;
         stages: Array<{ stageId: string; durationMs: number }>;
+      };
+      const interactions = JSON.parse(interactionsRaw) as {
+        runId: string;
+        llmCalls: Array<{ stageId: string; requestType: string; status: string }>;
+        t2iCalls: Array<{ stageId: string; provider: string; status: string }>;
       };
       expect(markdown).toContain('# How Editorial Teams Can Productionize Ai Writing');
       expect(markdown).toContain('## Conclusion');
       expect(markdown).toContain('![How Editorial Teams Can Productionize Ai Writing]');
       expect(analytics.runId.length).toBeGreaterThan(0);
+      expect(interactions.runId.length).toBeGreaterThan(0);
+      expect(interactions.llmCalls).toHaveLength(0);
+      expect(interactions.t2iCalls.some((call) => call.stageId === 'images' && call.provider === 'replicate-dry-run')).toBe(true);
       expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
       expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);
 
@@ -87,6 +98,96 @@ describe('pipeline runner', () => {
 
       expect(updates.length).toBeGreaterThanOrEqual(5);
     } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('captures llm interactions in live mode for output and link enrichment', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-live-interactions-'));
+    const originalFetch = globalThis.fetch;
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      globalThis.fetch = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+        const body = typeof init?.body === 'string' ? init.body : '';
+        if (body.includes('"name":"content_brief"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    description: 'A practical shared brief for testing reliable output and links behavior.',
+                    targetAudience: 'Operators and content teams',
+                    corePromise: 'Get reusable process clarity.',
+                    keyPoints: ['Point one', 'Point two', 'Point three'],
+                    voiceNotes: 'Direct and practical.',
+                  }),
+                },
+              }],
+            }),
+          } as Response;
+        }
+
+        if (body.includes('"name":"link_candidates"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{ message: { content: JSON.stringify({ expressions: [] }) } }],
+            }),
+          } as Response;
+        }
+
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({
+            choices: [{ message: { content: 'Generated linkedin post body with practical tips.' } }],
+          }),
+        } as Response;
+      }) as typeof fetch;
+
+      const result = await runPipelineShell(
+        {
+          idea: 'live interaction capture test',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [{ contentType: 'linkedin-post', count: 1 }],
+            },
+            secrets: {
+              openRouterApiKey: 'test-openrouter-key',
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: false,
+          workingDir: tempRoot,
+        },
+      );
+
+      const interactionsRaw = await readFile(result.artifact.interactionsPath, 'utf8');
+      const interactions = JSON.parse(interactionsRaw) as {
+        llmCalls: Array<{ stageId: string; requestType: string; status: string; requestBody: string; responseBody: string | null }>;
+        t2iCalls: Array<unknown>;
+      };
+
+      expect(interactions.llmCalls.length).toBeGreaterThanOrEqual(3);
+      expect(interactions.llmCalls.some((call) => call.stageId === 'shared-brief' && call.requestType === 'structured')).toBe(true);
+      expect(interactions.llmCalls.some((call) => call.stageId === 'output' && call.requestType === 'text')).toBe(true);
+      expect(interactions.llmCalls.some((call) => call.stageId === 'links' && call.requestType === 'structured')).toBe(true);
+      expect(interactions.llmCalls.every((call) => typeof call.requestBody === 'string' && call.requestBody.length > 0)).toBe(true);
+      expect(interactions.t2iCalls).toHaveLength(0);
+    } finally {
+      globalThis.fetch = originalFetch;
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
