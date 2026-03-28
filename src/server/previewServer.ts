@@ -835,18 +835,22 @@ function renderShell({
         padding: 1rem 1rem 1.2rem;
       }
 
-      .channel-x-post {
+      .channel-x-post,
+      .channel-x-thread {
         background: var(--x-bg);
         color: var(--x-text);
         border-color: var(--x-border);
       }
 
-      .channel-x-post .channel-header {
+      .channel-x-post .channel-header,
+      .channel-x-thread .channel-header {
         border-bottom-color: var(--x-border);
       }
 
       .channel-x-post .channel-meta,
-      .channel-x-post a {
+      .channel-x-post a,
+      .channel-x-thread .channel-meta,
+      .channel-x-thread a {
         color: var(--x-link);
       }
 
@@ -1069,7 +1073,7 @@ function renderShell({
       const articleElement = document.getElementById('article');
       const articleListElement = document.getElementById('articleList');
       const themeToggleButton = document.getElementById('themeToggle');
-      const typeOrder = ['article', 'blog-post', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
+      const typeOrder = ['article', 'blog-post', 'x-thread', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
 
       let currentGeneration = null;
       let activeType = '';

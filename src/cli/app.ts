@@ -55,7 +55,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .argument('[idea]', 'Natural-language idea for the article')
     .option('-i, --idea <idea>', 'Natural-language idea for the article')
     .option('-j, --job <path>', 'Path to a JSON job definition')
-    .option('-t, --target <type=count>', 'Generation target, repeatable (for example: article=1, x-post=10)', collectOptionValue)
+    .option('-t, --target <type=count>', 'Generation target, repeatable (for example: article=1, x-thread=3, x-post=10)', collectOptionValue)
     .option('--style <style>', 'Writing style (professional, friendly, technical, academic, opinionated, storytelling)')
     .option('--length <size>', 'Target length: small, medium, or large')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)

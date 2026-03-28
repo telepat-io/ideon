@@ -2,10 +2,6 @@ import type { ContentTargetInput } from '../../config/resolver.js';
 import { contentTypeValues } from '../../config/schema.js';
 import { ReportedError } from '../reportedError.js';
 
-export function hasXPostWithoutMode(targets: ContentTargetInput[]): boolean {
-  return targets.some((target) => target.contentType === 'x-post' && !target.xMode);
-}
-
 export function parseTargetSpecs(targetSpecs: string[] | undefined): ContentTargetInput[] | undefined {
   if (!targetSpecs || targetSpecs.length === 0) {
     return undefined;
@@ -35,7 +31,7 @@ export function parseTargetSpec(spec: string): ContentTargetInput {
 
   const [rawType, rawCount] = trimmed.split('=');
   if (!rawType || !rawCount) {
-    throw new ReportedError(`Invalid target "${spec}". Use format content-type=count, e.g. article=1 or x-post=10.`);
+    throw new ReportedError(`Invalid target "${spec}". Use format content-type=count, e.g. article=1 or x-thread=3.`);
   }
 
   const contentType = rawType.trim();

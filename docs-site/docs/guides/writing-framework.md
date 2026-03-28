@@ -66,7 +66,7 @@ Ideon composes writing instructions in layers:
 
 1. Base writing framework (shared principles and do/avoid examples)
 2. Style directive (one run-level style)
-3. Content-type directive (article, x-post, newsletter, and so on)
+3. Content-type directive (article, x-thread, x-post, newsletter, and so on)
 4. Run context directive (the full set of requested output types)
 
 This layering keeps voice and quality consistent while still adapting structure to each channel format.

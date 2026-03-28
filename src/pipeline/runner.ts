@@ -664,7 +664,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
               style: input.config.settings.style,
               outputIndex: output.index,
               outputCountForType: output.outputCountForType,
-              xMode: output.xMode,
               articleReferenceMarkdown: articleMarkdownTemplate ?? undefined,
               contentBrief,
               settings: input.config.settings,
@@ -1124,9 +1123,9 @@ function markRunningStageFailed(stages: StageViewModel[], detail: string): Write
 }
 
 function expandRequestedOutputs(
-  contentTargets: Array<{ contentType: string; count: number; xMode?: string }>,
-): Array<{ contentType: string; filePrefix: string; index: number; outputCountForType: number; xMode?: string }> {
-  const outputs: Array<{ contentType: string; filePrefix: string; index: number; outputCountForType: number; xMode?: string }> = [];
+  contentTargets: Array<{ contentType: string; count: number }>,
+): Array<{ contentType: string; filePrefix: string; index: number; outputCountForType: number }> {
+  const outputs: Array<{ contentType: string; filePrefix: string; index: number; outputCountForType: number }> = [];
   const seenPerPrefix = new Map<string, number>();
 
   for (const target of contentTargets) {
@@ -1139,7 +1138,6 @@ function expandRequestedOutputs(
         filePrefix: prefix,
         index: nextIndex,
         outputCountForType: target.count,
-        ...(target.xMode ? { xMode: target.xMode } : {}),
       });
     }
   }
@@ -1154,7 +1152,8 @@ function expandRequestedOutputs(
 function toFilePrefix(contentType: string): string {
   if (contentType === 'article') return 'article';
   if (contentType === 'blog-post') return 'blog';
-  if (contentType === 'x-post') return 'x';
+  if (contentType === 'x-thread') return 'x-thread';
+  if (contentType === 'x-post') return 'x-post';
   if (contentType === 'reddit-post') return 'reddit';
   if (contentType === 'linkedin-post') return 'linkedin';
   if (contentType === 'newsletter') return 'newsletter';

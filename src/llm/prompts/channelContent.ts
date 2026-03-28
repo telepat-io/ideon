@@ -11,10 +11,14 @@ const CHANNEL_RULES: Record<string, string> = {
     'Write a complete Markdown blog post with a clear title, short lead, scannable subheadings, and practical takeaways.',
     'Favor concrete examples, compact paragraphs, and actionable guidance over theory.',
   ].join(' '),
+  'x-thread': [
+    'Write native X thread content with short lines, high signal, and a strong hook in the first line.',
+    'Return a numbered thread with one post per line prefixed like "1/7".',
+    'Each thread line must be self-contained but still advance the same core narrative.',
+  ].join(' '),
   'x-post': [
     'Write native X content with short lines, high signal, and a strong hook in the first line.',
-    'If xMode is single, return one concise post. If xMode is thread, return a numbered thread with one post per line prefixed like "1/7".',
-    'Each thread line must be self-contained but still advance the same core narrative.',
+    'Return one concise post only. Do not return numbered thread lines.',
   ].join(' '),
   'reddit-post': [
     'Write a Reddit-native post in plain, authentic voice with practical detail and no marketing gloss.',
@@ -41,7 +45,6 @@ export function buildSingleShotContentMessages(options: {
   style: string;
   outputIndex: number;
   outputCountForType: number;
-  xMode?: string;
   contentBrief: ContentBrief;
   articleReferenceMarkdown?: string;
   targetLength: string;
@@ -71,7 +74,6 @@ export function buildSingleShotContentMessages(options: {
         `Idea: ${options.idea}`,
         `Content type: ${options.contentType}`,
         `Output index: ${options.outputIndex} of ${options.outputCountForType}`,
-        options.xMode ? `X mode: ${options.xMode}` : '',
         '',
         'Shared content brief (must guide this output):',
         `- description: ${options.contentBrief.description}`,

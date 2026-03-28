@@ -39,7 +39,7 @@ Prompt composition now includes layered directives:
 
 - shared writing framework (structure, information density, specificity, rhythm, scannability, active voice, storytelling discipline, authenticity filter)
 - style overlay (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
-- content-type/channel directives (`article`, `x-post`, `linkedin-post`, etc.)
+- content-type/channel directives (`article`, `x-thread`, `x-post`, `linkedin-post`, etc.)
 
 Article planning prompts also include adaptive persuasion guidance so the planner can choose AIDA, PAS, or BAB based on audience and objective fit.
 

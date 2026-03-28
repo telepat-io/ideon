@@ -35,7 +35,8 @@ npm run dev -- write --job ./job.json
     "modelRequestTimeoutMs": 90000,
     "contentTargets": [
       { "contentType": "article", "count": 1 },
-      { "contentType": "x-post", "count": 2, "xMode": "thread" },
+      { "contentType": "x-thread", "count": 2 },
+      { "contentType": "x-post", "count": 1 },
       { "contentType": "linkedin-post", "count": 1 }
     ],
     "style": "friendly",

@@ -34,11 +34,13 @@ export interface GenerationMetadata {
   outputs: GenerationOutputMetadata[];
 }
 
-const CONTENT_TYPE_ORDER = ['article', 'blog-post', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
+const CONTENT_TYPE_ORDER = ['article', 'blog-post', 'x-thread', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
 
 const FILE_PREFIX_TO_CONTENT_TYPE: Record<string, string> = {
   article: 'article',
   blog: 'blog-post',
+  'x-thread': 'x-thread',
+  'x-post': 'x-post',
   x: 'x-post',
   reddit: 'reddit-post',
   linkedin: 'linkedin-post',
@@ -49,6 +51,7 @@ const FILE_PREFIX_TO_CONTENT_TYPE: Record<string, string> = {
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   article: 'Article',
   'blog-post': 'Blog Post',
+  'x-thread': 'X Thread',
   'x-post': 'X Post',
   'reddit-post': 'Reddit Post',
   'linkedin-post': 'LinkedIn Post',

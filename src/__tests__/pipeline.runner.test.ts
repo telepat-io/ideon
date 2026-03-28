@@ -102,7 +102,8 @@ describe('pipeline runner', () => {
               assetOutputDir: assetDir,
               contentTargets: [
                 { contentType: 'article', count: 1 },
-                { contentType: 'x-post', count: 2 },
+                { contentType: 'x-thread', count: 1 },
+                { contentType: 'x-post', count: 1 },
               ],
               style: 'professional',
             },
@@ -127,10 +128,13 @@ describe('pipeline runner', () => {
       expect(result.analytics.outputItemCalls.every((item) => item.durationMs >= 0)).toBe(true);
 
       const fileNames = result.artifact.markdownPaths.map((filePath) => path.basename(filePath)).sort();
-      expect(fileNames).toEqual(['article-1.md', 'x-1.md', 'x-2.md']);
+      expect(fileNames).toEqual(['article-1.md', 'x-post-1.md', 'x-thread-1.md']);
 
-      const xMarkdownPaths = result.artifact.markdownPaths.filter((filePath) => path.basename(filePath).startsWith('x-'));
-      expect(xMarkdownPaths).toHaveLength(2);
+      const xThreadMarkdownPaths = result.artifact.markdownPaths.filter((filePath) => path.basename(filePath).startsWith('x-thread-'));
+      expect(xThreadMarkdownPaths).toHaveLength(1);
+
+      const xPostMarkdownPaths = result.artifact.markdownPaths.filter((filePath) => path.basename(filePath).startsWith('x-post-'));
+      expect(xPostMarkdownPaths).toHaveLength(1);
 
       const outputUpdates = updates
         .map((snapshot) => snapshot.find((stage) => stage.id === 'output'))
@@ -138,7 +142,9 @@ describe('pipeline runner', () => {
       expect(outputUpdates.some((stage) => (stage.items ?? []).some((item) => item.status === 'running'))).toBe(true);
       expect(outputUpdates.some((stage) => (stage.items ?? []).some((item) => item.status === 'succeeded'))).toBe(true);
 
-      const xContents = await Promise.all(xMarkdownPaths.map(async (filePath) => readFile(filePath, 'utf8')));
+      const xContents = await Promise.all(result.artifact.markdownPaths
+        .filter((filePath) => path.basename(filePath).startsWith('x-'))
+        .map(async (filePath) => readFile(filePath, 'utf8')));
       for (const content of xContents) {
         expect(content).toContain('Anchored to generated article context from this run.');
       }
@@ -161,7 +167,8 @@ describe('pipeline runner', () => {
       expect(job.prompt).toBe('multi target generation test');
       expect(job.contentTargets).toEqual([
         { contentType: 'article', count: 1 },
-        { contentType: 'x-post', count: 2 },
+        { contentType: 'x-thread', count: 1 },
+        { contentType: 'x-post', count: 1 },
       ]);
       expect(job.style).toBe('professional');
       expect(job.settings.markdownOutputDir).toBe(markdownDir);
@@ -189,7 +196,7 @@ describe('pipeline runner', () => {
               markdownOutputDir: markdownDir,
               assetOutputDir: assetDir,
               contentTargets: [
-                { contentType: 'x-post', count: 2 },
+                { contentType: 'x-thread', count: 2 },
                 { contentType: 'linkedin-post', count: 1 },
               ],
               style: 'professional',

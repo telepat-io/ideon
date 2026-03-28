@@ -2,12 +2,11 @@ import { readFile } from 'node:fs/promises';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
-import { appSettingsSchema, contentTypeValues, jobInputSchema, xModeValues, writingStyleValues, targetLengthValues, type JobInput, type ResolvedConfig, type TargetLength } from './schema.js';
+import { appSettingsSchema, contentTypeValues, jobInputSchema, writingStyleValues, targetLengthValues, type JobInput, type ResolvedConfig, type TargetLength } from './schema.js';
 
 export interface ContentTargetInput {
   contentType: (typeof contentTypeValues)[number] | string;
   count: number;
-  xMode?: (typeof xModeValues)[number] | string;
 }
 
 export interface ResolveConfigInput {
@@ -28,6 +27,10 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
   const [savedSettings, secrets] = await Promise.all([loadSavedSettings(), loadSecrets()]);
   const envSettings = readEnvSettings();
   const job = input.jobPath ? await loadJobInput(input.jobPath) : null;
+
+  assertNoLegacyXMode(savedSettings.contentTargets, 'saved settings contentTargets');
+  assertNoLegacyXMode(job?.settings?.contentTargets, 'job settings contentTargets');
+  assertNoLegacyXMode(input.contentTargets, 'CLI contentTargets');
 
   const mergedSettings = appSettingsSchema.parse({
     ...savedSettings,
@@ -76,5 +79,30 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
 
 async function loadJobInput(jobPath: string): Promise<JobInput> {
   const raw = await readFile(jobPath, 'utf8');
-  return jobInputSchema.parse(JSON.parse(raw));
+  const parsed = JSON.parse(raw) as {
+    settings?: {
+      contentTargets?: Array<{ contentType?: unknown; count?: unknown; xMode?: unknown }>;
+    };
+  };
+
+  assertNoLegacyXMode(parsed.settings?.contentTargets, 'job settings contentTargets');
+  return jobInputSchema.parse(parsed);
+}
+
+function assertNoLegacyXMode(
+  contentTargets: Array<{ contentType?: unknown; count?: unknown; xMode?: unknown }> | undefined,
+  sourceLabel: string,
+): void {
+  if (!contentTargets) {
+    return;
+  }
+
+  const hasLegacyXMode = contentTargets.some((target) => typeof target.xMode === 'string' && target.xMode.length > 0);
+  if (!hasLegacyXMode) {
+    return;
+  }
+
+  throw new Error(
+    `Unsupported legacy xMode in ${sourceLabel}. Split X outputs into explicit types by using \"x-post\" for single posts and \"x-thread\" for threaded posts.`,
+  );
 }

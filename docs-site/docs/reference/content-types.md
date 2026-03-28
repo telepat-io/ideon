@@ -17,14 +17,17 @@ Ideon supports these generation targets:
 - Best for: educational publishing and SEO-focused explainers.
 - Typical structure: clear lead, subheadings, practical takeaways.
 
+## `x-thread`
+
+- Best for: multi-post explanatory sequences on X.
+- Typical structure: hook-first opener, numbered thread lines, clear narrative progression.
+- Typical output: thread-form content where each line advances one shared story arc.
+
 ## `x-post`
 
 - Best for: short-form distribution.
 - Typical structure: hook-first short lines.
-- Supports `xMode`:
-  - `single`: one concise post.
-  - `thread`: numbered multi-line thread format.
-- Typical output: short posts that preserve the run style but prioritize hook density and pacing.
+- Typical output: one concise post that preserves the run style but prioritizes hook density and pacing.
 
 ## `reddit-post`
 
@@ -56,14 +59,15 @@ Ideon supports these generation targets:
 
 - Use `article` + channels together when you want one canonical narrative and multiple distribution variants.
 - Use channel-only targets for lightweight campaign ideation and iteration.
-- Use `x-post` with `xMode=thread` for explanatory series, and `single` for rapid distribution.
+- Use `x-thread` for explanatory series, and `x-post` for rapid single-post distribution.
 
 ## Multi-Target Example
 
 ```bash
 npm run dev -- write "AI workflow launch" \
   --target article=1 \
-  --target x-post=3 \
+  --target x-thread=2 \
+  --target x-post=1 \
   --target linkedin-post=1 \
   --style technical
 ```

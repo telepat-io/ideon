@@ -43,7 +43,7 @@ This contract drives both Ink UI and plain text renderer output.
 
 Each run writes a generation directory:
 
-- numbered markdown outputs (`article-1.md`, `x-1.md`, etc.)
+- numbered markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` with resolved run definition metadata
 - `generation.analytics.json`
 - shared assets for that generation

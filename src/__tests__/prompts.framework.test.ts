@@ -82,7 +82,7 @@ describe('article prompt builders', () => {
   it('builds article plan prompt with framework, style, and run context', () => {
     const messages = buildArticlePlanMessages('Ship better docs with AI', {
       style: 'friendly',
-      contentTypes: ['article', 'x-post'],
+      contentTypes: ['article', 'x-thread'],
       contentBrief: mockBrief(),
       targetLength: 'medium',
     });
@@ -91,7 +91,7 @@ describe('article prompt builders', () => {
     expect(messages[0]?.role).toBe('system');
     expect(messages[0]?.content).toContain('Writing framework:');
     expect(messages[0]?.content).toContain('Style directive (friendly)');
-    expect(messages[0]?.content).toContain('requested content types are article, x-post');
+    expect(messages[0]?.content).toContain('requested content types are article, x-thread');
     expect(messages[0]?.content).toContain('Target length (medium article)');
     expect(messages[0]?.content).toContain('adaptive persuasion structure');
     expect(messages[1]?.content).toContain('Avoid AI giveaway phrasing');
@@ -179,20 +179,48 @@ describe('channel prompt builder', () => {
     expect(messages[1]?.content).toContain('Target length (large linkedin post)');
   });
 
-  it('adds explicit x thread guidance when xMode is thread', () => {
+  it('adds explicit x-thread guidance without xMode metadata', () => {
     const messages = buildSingleShotContentMessages({
       idea: 'Share launch takeaways',
-      contentType: 'x-post',
+      contentType: 'x-thread',
       style: 'professional',
       outputIndex: 2,
       outputCountForType: 3,
       contentBrief: mockBrief(),
-      xMode: 'thread',
       targetLength: 'small',
     });
 
-    expect(messages[0]?.content).toContain('If xMode is single, return one concise post.');
+    expect(messages[0]?.content).toContain('Return a numbered thread');
     expect(messages[0]?.content).toContain('prefixed like "1/7"');
-    expect(messages[1]?.content).toContain('X mode: thread');
+    expect(messages[1]?.content).not.toContain('X mode:');
+  });
+
+  it('uses explicit x-post single-output guidance', () => {
+    const messages = buildSingleShotContentMessages({
+      idea: 'Ship one short launch note',
+      contentType: 'x-post',
+      style: 'professional',
+      outputIndex: 1,
+      outputCountForType: 1,
+      contentBrief: mockBrief(),
+      targetLength: 'small',
+    });
+
+    expect(messages[0]?.content).toContain('Return one concise post only.');
+    expect(messages[0]?.content).toContain('Do not return numbered thread lines.');
+  });
+
+  it('falls back to generic channel rule for unknown content types', () => {
+    const messages = buildSingleShotContentMessages({
+      idea: 'Fallback channel guidance',
+      contentType: 'unknown-channel',
+      style: 'professional',
+      outputIndex: 1,
+      outputCountForType: 1,
+      contentBrief: mockBrief(),
+      targetLength: 'medium',
+    });
+
+    expect(messages[0]?.content).toContain('Write channel-native Markdown content.');
   });
 });

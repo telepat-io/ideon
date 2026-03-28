@@ -10,7 +10,7 @@ import { renderPlainPipeline } from '../logging/plainRenderer.js';
 import type { PipelineRunResult, StageViewModel } from '../../pipeline/events.js';
 import { loadWriteSession, patchWriteSession } from '../../pipeline/sessionStore.js';
 import { WriteOptionsFlow } from '../flows/writeOptionsFlow.js';
-import { hasXPostWithoutMode, parseTargetSpecs } from './writeTargetSpecs.js';
+import { parseTargetSpecs } from './writeTargetSpecs.js';
 import { withWriteResumeHint } from './writeErrorHint.js';
 
 interface WriteCommandOptions {
@@ -251,9 +251,8 @@ async function applyInteractiveWriteOptionsIfNeeded(
     ? parsedTargets
     : (resolved.job?.settings?.contentTargets ?? resolved.config.settings.contentTargets);
   const targetsProvided = Boolean((parsedTargets && parsedTargets.length > 0) || resolved.job?.settings?.contentTargets?.length);
-  const askXMode = hasXPostWithoutMode(providedTargets);
 
-  if (styleProvided && targetsProvided && lengthProvided && !askXMode) {
+  if (styleProvided && targetsProvided && lengthProvided) {
     return resolved;
   }
 
@@ -261,7 +260,6 @@ async function applyInteractiveWriteOptionsIfNeeded(
     askStyle: !styleProvided,
     askTargets: !targetsProvided,
     askLength: !lengthProvided,
-    askXMode,
     style: resolved.config.settings.style,
     targetLength: resolved.config.settings.targetLength,
     targets: providedTargets,
@@ -285,7 +283,6 @@ async function promptForMissingWriteOptions(params: {
   askStyle: boolean;
   askTargets: boolean;
   askLength: boolean;
-  askXMode: boolean;
   style: string;
   targetLength: string;
   targets: ContentTargetInput[];
@@ -297,7 +294,6 @@ async function promptForMissingWriteOptions(params: {
       askStyle: params.askStyle,
       askTargets: params.askTargets,
       askLength: params.askLength,
-      askXMode: params.askXMode,
       initialStyle: (writingStyleValues as readonly string[]).includes(params.style)
         ? params.style
         : 'professional',

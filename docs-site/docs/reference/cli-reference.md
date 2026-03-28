@@ -35,14 +35,14 @@ Generates one or more content outputs from direct idea input or a job file.
 ideon write "How to productionize editorial AI"
 ideon write --job ./job.json
 ideon write --dry-run "How to productionize editorial AI"
-ideon write "How to productionize editorial AI" --target article=1 --target x-post=3 --style technical
+ideon write "How to productionize editorial AI" --target article=1 --target x-thread=2 --target x-post=1 --style technical
 ideon write "How to productionize editorial AI" --length large --target article=1
 ```
 
 ### Options
 
 - `-j, --job <path>`: path to JSON job file
-- `-t, --target <type=count>`: generation target, repeatable (for example `article=1`, `x-post=10`)
+- `-t, --target <type=count>`: generation target, repeatable (for example `article=1`, `x-thread=3`, `x-post=10`)
 - `--style <style>`: writing style (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
 - `--length <size>`: target length tier (`small`, `medium`, `large`)
 - `--dry-run`: run full orchestration without external provider calls
@@ -51,6 +51,7 @@ Supported target types:
 
 - `article`
 - `blog-post`
+- `x-thread`
 - `x-post`
 - `reddit-post`
 - `linkedin-post`
@@ -76,7 +77,6 @@ Interactive behavior:
 - If style is missing, it prompts for style.
 - If length is missing, it prompts for target length (`small`, `medium`, `large`).
 - If targets are missing, it prompts for content types and per-type counts.
-- If `x-post` is selected and `xMode` is missing, it prompts for `single` or `thread` output mode.
 
 When a fresh write starts, Ideon resets `.ideon/write/state.json` and stores new temporary pipeline artifacts for that run.
 

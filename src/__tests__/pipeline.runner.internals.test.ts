@@ -124,15 +124,15 @@ describe('pipeline runner internals', () => {
 
   it('expands requested outputs, keeps per-prefix indices, and defaults when empty', () => {
     const expanded = __testInternals.expandRequestedOutputs([
-      { contentType: 'x-post', count: 2, xMode: 'thread' },
+      { contentType: 'x-thread', count: 2 },
       { contentType: 'x-post', count: 1 },
       { contentType: 'blog-post', count: 1 },
     ]);
 
     expect(expanded).toEqual([
-      { contentType: 'x-post', filePrefix: 'x', index: 1, outputCountForType: 2, xMode: 'thread' },
-      { contentType: 'x-post', filePrefix: 'x', index: 2, outputCountForType: 2, xMode: 'thread' },
-      { contentType: 'x-post', filePrefix: 'x', index: 3, outputCountForType: 1 },
+      { contentType: 'x-thread', filePrefix: 'x-thread', index: 1, outputCountForType: 2 },
+      { contentType: 'x-thread', filePrefix: 'x-thread', index: 2, outputCountForType: 2 },
+      { contentType: 'x-post', filePrefix: 'x-post', index: 1, outputCountForType: 1 },
       { contentType: 'blog-post', filePrefix: 'blog', index: 1, outputCountForType: 1 },
     ]);
 
@@ -144,7 +144,8 @@ describe('pipeline runner internals', () => {
   it('maps file prefixes for all known content types and fallback values', () => {
     expect(__testInternals.toFilePrefix('article')).toBe('article');
     expect(__testInternals.toFilePrefix('blog-post')).toBe('blog');
-    expect(__testInternals.toFilePrefix('x-post')).toBe('x');
+    expect(__testInternals.toFilePrefix('x-thread')).toBe('x-thread');
+    expect(__testInternals.toFilePrefix('x-post')).toBe('x-post');
     expect(__testInternals.toFilePrefix('reddit-post')).toBe('reddit');
     expect(__testInternals.toFilePrefix('linkedin-post')).toBe('linkedin');
     expect(__testInternals.toFilePrefix('newsletter')).toBe('newsletter');

@@ -33,7 +33,7 @@ Article-inclusive runs execute all five stages; channel-only runs skip article/i
 1. Validate with dry-run first:
 
 ```bash
-ideon write --dry-run "Your idea" --target article=1 --target x-post=2
+ideon write --dry-run "Your idea" --target article=1 --target x-thread=1 --target x-post=1
 ```
 
 2. Start with fewer variants, then scale:
@@ -49,7 +49,7 @@ ideon write "Your idea" --target article=1 --target x-post=1
 ## Runtime-Control Patterns
 
 1. Keep `contentTargets` tight in early iterations.
-2. Use `x-post=thread` only when thread structure is truly needed.
+2. Use `x-thread` only when thread structure is truly needed.
 3. Resume interrupted runs instead of restarting from scratch:
 
 ```bash

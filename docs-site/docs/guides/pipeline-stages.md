@@ -109,7 +109,7 @@ When a stage fails:
 
 ## Output Stage Behavior
 
-- Requested targets are expanded into numbered files by content type (`article-1.md`, `x-1.md`, `x-2.md`, etc.).
+- Requested targets are expanded into numbered files by content type (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.).
 - Article outputs use section-generation artifacts.
 - Non-article outputs are generated in single-shot channel prompts.
 - If article output exists in the run, non-article outputs can be anchored to generated article context.

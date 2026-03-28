@@ -10,7 +10,6 @@ export async function writeSingleShotContent({
   style,
   outputIndex,
   outputCountForType,
-  xMode,
   articleReferenceMarkdown,
   contentBrief,
   settings,
@@ -23,7 +22,6 @@ export async function writeSingleShotContent({
   style: string;
   outputIndex: number;
   outputCountForType: number;
-  xMode?: string;
   articleReferenceMarkdown?: string;
   contentBrief: ContentBrief;
   settings: AppSettings;
@@ -49,7 +47,6 @@ export async function writeSingleShotContent({
       style,
       outputIndex,
       outputCountForType,
-      xMode,
       contentBrief,
       articleReferenceMarkdown,
       targetLength: settings.targetLength,

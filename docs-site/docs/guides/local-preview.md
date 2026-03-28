@@ -23,7 +23,7 @@ This command:
 
 Each generation appears as one sidebar item. In the content panel, preview now shows:
 
-- top-level tabs for each generated content type in that generation (`article`, `x-post`, `linkedin-post`, etc.)
+- top-level tabs for each generated content type in that generation (`article`, `x-thread`, `x-post`, `linkedin-post`, etc.)
 - sub-tabs for each variant index (for example `X Post 1`, `X Post 2`, `X Post 3`)
 - channel-styled cards so social outputs look closer to their native platform context
 

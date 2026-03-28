@@ -9,14 +9,13 @@ interface WriteOptionsFlowProps {
   askStyle: boolean;
   askTargets: boolean;
   askLength: boolean;
-  askXMode: boolean;
   initialStyle: string;
   initialTargetLength: string;
   initialTargets: ContentTargetInput[];
   onDone: (result: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => void;
 }
 
-type Step = 'targets' | 'counts' | 'style' | 'length' | 'x-mode';
+type Step = 'targets' | 'counts' | 'style' | 'length';
 
 interface TargetSelection {
   contentType: string;
@@ -27,7 +26,6 @@ export function WriteOptionsFlow({
   askStyle,
   askTargets,
   askLength,
-  askXMode,
   initialStyle,
   initialTargetLength,
   initialTargets,
@@ -38,7 +36,7 @@ export function WriteOptionsFlow({
     if (askTargets) return 'targets';
     if (askStyle) return 'style';
     if (askLength) return 'length';
-    return askXMode ? 'x-mode' : 'targets';
+    return 'targets';
   });
   const [cursor, setCursor] = useState(0);
   const [targetSelections, setTargetSelections] = useState<TargetSelection[]>(() => {
@@ -59,55 +57,16 @@ export function WriteOptionsFlow({
   const [countIndex, setCountIndex] = useState(0);
   const [style, setStyle] = useState(initialStyle);
   const [targetLength, setTargetLength] = useState(initialTargetLength);
-  const [xMode, setXMode] = useState<string>(() => {
-    const existing = initialTargets.find((target) => target.contentType === 'x-post')?.xMode;
-    return existing === 'thread' ? 'thread' : 'single';
-  });
 
   const selectedTypes = useMemo(
     () => targetSelections.filter((item) => item.checked).map((item) => item.contentType),
     [targetSelections],
   );
 
-  const shouldPromptXMode = useMemo(() => {
-    if (!askXMode) {
-      return false;
-    }
-
-    if (askTargets) {
-      return selectedTypes.includes('x-post');
-    }
-
-    return initialTargets.some((target) => target.contentType === 'x-post');
-  }, [askTargets, askXMode, initialTargets, selectedTypes]);
-
   const buildContentTargets = (types: string[]): ContentTargetInput[] => {
     return types.map((contentType) => {
       const count = counts[contentType] ?? 1;
-      if (contentType !== 'x-post') {
-        return { contentType, count };
-      }
-
-      return {
-        contentType,
-        count,
-        xMode,
-      };
-    });
-  };
-
-  const buildContentTargetsWithXMode = (types: string[], nextXMode: string): ContentTargetInput[] => {
-    return types.map((contentType) => {
-      const count = counts[contentType] ?? 1;
-      if (contentType !== 'x-post') {
-        return { contentType, count };
-      }
-
-      return {
-        contentType,
-        count,
-        xMode: nextXMode,
-      };
+      return { contentType, count };
     });
   };
 
@@ -214,17 +173,11 @@ export function WriteOptionsFlow({
                   setStep('style');
                 } else if (askLength) {
                   setStep('length');
-                } else if (shouldPromptXMode) {
-                  setStep('x-mode');
                 } else {
-                  const contentTargets = normalizedSelection.map((contentType) => {
-                    const count = counts[contentType] ?? (contentType === currentType ? nextCount : 1);
-                    if (contentType !== 'x-post') {
-                      return { contentType, count };
-                    }
-
-                    return { contentType, count, xMode };
-                  });
+                  const contentTargets = normalizedSelection.map((contentType) => ({
+                    contentType,
+                    count: counts[contentType] ?? (contentType === currentType ? nextCount : 1),
+                  }));
                   onDone({ contentTargets });
                   exit();
                 }
@@ -270,11 +223,6 @@ export function WriteOptionsFlow({
                 return;
               }
 
-              if (shouldPromptXMode) {
-                setStep('x-mode');
-                return;
-              }
-
               onDone({
                 style: item.value,
                 ...(contentTargets ? { contentTargets } : {}),
@@ -311,11 +259,6 @@ export function WriteOptionsFlow({
 
               setTargetLength(item.value);
 
-              if (shouldPromptXMode) {
-                setStep('x-mode');
-                return;
-              }
-
               onDone({
                 ...(askStyle ? { style } : {}),
                 targetLength: item.value,
@@ -329,37 +272,5 @@ export function WriteOptionsFlow({
     );
   }
 
-  const xModeItems = [
-    { label: 'single', value: 'single' },
-    { label: 'thread', value: 'thread' },
-  ];
-
-  return (
-    <Box flexDirection="column">
-      <Text bold color="cyanBright">
-        Select X Post Mode
-      </Text>
-      <Text color="gray">Choose single post or thread format for x-post outputs.</Text>
-      <Box marginTop={1}>
-        <SelectInput
-          items={xModeItems}
-          initialIndex={xMode === 'thread' ? 1 : 0}
-          onSelect={(item) => {
-            setXMode(item.value);
-            const normalizedSelection = askTargets
-              ? (selectedTypes.length > 0 ? selectedTypes : ['article'])
-              : initialTargets.map((target) => target.contentType);
-
-            const contentTargets = buildContentTargetsWithXMode(normalizedSelection, item.value);
-            onDone({
-              ...(askStyle ? { style } : {}),
-              ...(askLength ? { targetLength } : {}),
-              contentTargets,
-            });
-            exit();
-          }}
-        />
-      </Box>
-    </Box>
-  );
+  return <Box />;
 }

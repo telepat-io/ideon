@@ -46,9 +46,8 @@ Core settings include:
 
 `contentTargets` entries:
 
-- `contentType`: one of `article`, `blog-post`, `x-post`, `reddit-post`, `linkedin-post`, `newsletter`, `landing-page-copy`
+- `contentType`: one of `article`, `blog-post`, `x-thread`, `x-post`, `reddit-post`, `linkedin-post`, `newsletter`, `landing-page-copy`
 - `count`: positive integer
-- `xMode` (optional): only for `x-post`, values `single` or `thread`
 
 Style values:
 
@@ -91,7 +90,5 @@ npm run dev -- write "An idea"
 ```
 
 Note: content target arrays are not currently configurable through environment variables. Use CLI `--target` flags or job-file `settings.contentTargets`.
-
-`xMode` for `x-post` also cannot be set via environment variables. Set it in `--target` interactions or in `settings.contentTargets` within a job file.
 
 See [Environment Variables](../reference/environment-variables.md) for full list.

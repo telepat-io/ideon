@@ -24,7 +24,7 @@ Inside settings, configure:
 ## 2. Generate Content Outputs
 
 ```bash
-npm run dev -- write "How small editorial teams can productionize AI writing" --target article=1 --target x-post=2 --style professional
+npm run dev -- write "How small editorial teams can productionize AI writing" --target article=1 --target x-thread=1 --target x-post=1 --style professional
 ```
 
 Expected stages:
@@ -42,7 +42,7 @@ If you run without an `article` target, Ideon skips planning/sections/image stag
 By default (resolved from current working directory):
 
 - Generation directories: `output/<timestamp>-<slug>/`
-- Markdown files: `article-1.md`, `x-1.md`, `x-2.md`, ...
+- Markdown files: `article-1.md`, `x-thread-1.md`, `x-post-1.md`, ...
 - Run metadata: `job.json`
 - Run analytics: `generation.analytics.json`
 - Shared generation assets: image files in the same generation directory

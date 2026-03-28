@@ -24,8 +24,8 @@ Example:
 output/
   20260327-practical-ai-workflows/
     article-1.md
-    x-1.md
-    x-2.md
+    x-thread-1.md
+    x-post-1.md
     linkedin-1.md
     job.json
     generation.analytics.json
@@ -37,7 +37,8 @@ Markdown files are numbered by content type prefix:
 
 - `article-1.md`
 - `blog-1.md`
-- `x-1.md`
+- `x-thread-1.md`
+- `x-post-1.md`
 - `reddit-1.md`
 - `linkedin-1.md`
 - `newsletter-1.md`

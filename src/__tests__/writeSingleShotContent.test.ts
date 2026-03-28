@@ -18,7 +18,6 @@ describe('writeSingleShotContent', () => {
       style: 'professional',
       outputIndex: 1,
       outputCountForType: 3,
-      xMode: undefined,
       articleReferenceMarkdown: '# Article context',
       contentBrief,
       settings: defaultAppSettings,
@@ -34,11 +33,10 @@ describe('writeSingleShotContent', () => {
   it('returns dry-run content without article anchor note when no anchor exists', async () => {
     const result = await writeSingleShotContent({
       idea: 'Idea',
-      contentType: 'x-post',
+      contentType: 'x-thread',
       style: 'professional',
       outputIndex: 2,
       outputCountForType: 2,
-      xMode: 'thread',
       articleReferenceMarkdown: undefined,
       contentBrief,
       settings: defaultAppSettings,
@@ -58,7 +56,6 @@ describe('writeSingleShotContent', () => {
       style: 'technical',
       outputIndex: 1,
       outputCountForType: 1,
-      xMode: undefined,
       articleReferenceMarkdown: undefined,
       contentBrief,
       settings: defaultAppSettings,

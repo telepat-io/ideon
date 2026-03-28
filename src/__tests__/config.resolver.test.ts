@@ -209,7 +209,8 @@ describe('resolveRunInput', () => {
       targetLength: 'large',
       contentTargets: [
         { contentType: 'article', count: 1 },
-        { contentType: 'x-post', count: 3 },
+        { contentType: 'x-thread', count: 2 },
+        { contentType: 'x-post', count: 1 },
       ],
     });
 
@@ -217,8 +218,31 @@ describe('resolveRunInput', () => {
     expect(result.config.settings.targetLength).toBe('large');
     expect(result.config.settings.contentTargets).toEqual([
       { contentType: 'article', count: 1 },
-      { contentType: 'x-post', count: 3 },
+      { contentType: 'x-thread', count: 2 },
+      { contentType: 'x-post', count: 1 },
     ]);
+  });
+
+  it('throws hard error when legacy xMode is provided', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-legacy-xmode-'));
+
+    try {
+      const jobPath = path.join(tempDir, 'job.json');
+      await writeFile(
+        jobPath,
+        JSON.stringify({
+          idea: 'legacy mode test',
+          settings: {
+            contentTargets: [{ contentType: 'x-post', count: 1, xMode: 'thread' }],
+          },
+        }),
+        'utf8',
+      );
+
+      await expect(resolveRunInput({ jobPath })).rejects.toThrow('Unsupported legacy xMode');
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('applies env target length when provided', async () => {

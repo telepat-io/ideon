@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const contentTypeValues = [
   'article',
   'blog-post',
+  'x-thread',
   'x-post',
   'reddit-post',
   'linkedin-post',
@@ -14,12 +15,9 @@ export const writingStyleValues = ['professional', 'friendly', 'technical', 'aca
 
 export const targetLengthValues = ['small', 'medium', 'large'] as const;
 
-export const xModeValues = ['single', 'thread'] as const;
-
 const contentTargetSchema = z.object({
   contentType: z.enum(contentTypeValues),
   count: z.number().int().positive().default(1),
-  xMode: z.enum(xModeValues).optional(),
 });
 
 export const modelSettingsSchema = z.object({

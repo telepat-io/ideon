@@ -131,8 +131,8 @@ describe('preview server resilience', () => {
       await mkdir(generationDir, { recursive: true });
 
       await writeFile(path.join(generationDir, 'article-1.md'), '# Sample Article\n\nLongform body\n', 'utf8');
-      await writeFile(path.join(generationDir, 'x-1.md'), '# X Variant 1\n\nShort post one\n', 'utf8');
-      await writeFile(path.join(generationDir, 'x-2.md'), '# X Variant 2\n\nShort post two\n', 'utf8');
+      await writeFile(path.join(generationDir, 'x-post-1.md'), '# X Variant 1\n\nShort post one\n', 'utf8');
+      await writeFile(path.join(generationDir, 'x-post-2.md'), '# X Variant 2\n\nShort post two\n', 'utf8');
 
       const server = await startPreviewServer({
         markdownPath: path.join(generationDir, 'article-1.md'),
@@ -283,7 +283,7 @@ describe('preview server resilience', () => {
         ['---', 'slug: canonical-content-slug', '---', '# Canonical Slug Test', '', 'Body'].join('\n'),
         'utf8',
       );
-      await writeFile(path.join(generationDir, 'x-1.md'), '# X Variant\n\nPost body', 'utf8');
+      await writeFile(path.join(generationDir, 'x-post-1.md'), '# X Variant\n\nPost body', 'utf8');
       await writeFile(path.join(generationDir, 'linkedin-1.md'), '# LinkedIn Variant\n\nPost body', 'utf8');
 
       const server = await startPreviewServer({

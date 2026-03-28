@@ -58,6 +58,7 @@ type TargetLengthTier = {
   label: string;
   article: string;
   'blog-post': string;
+  'x-thread': string;
   'x-post': string;
   'reddit-post': string;
   'linkedin-post': string;
@@ -73,6 +74,8 @@ const TARGET_LENGTH_TIERS: Record<string, TargetLengthTier> = {
       'Target length (small article): 300–800 words total, 2–4 sections, ~2–3 paragraphs per section. One core idea, lightly explored. Minimal storytelling. Use for quick explainers.',
     'blog-post':
       'Target length (small blog post): 500–900 words. Answer-focused, minimal fluff, straight to value. Good for long-tail SEO and short how-to queries.',
+    'x-thread':
+      'Target length (small x-thread): 3–5 posts, each post one clear idea with momentum from one step to the next.',
     'x-post':
       'Target length (small x-post): 70–150 characters, one idea, pure hook or insight.',
     'reddit-post':
@@ -92,6 +95,8 @@ const TARGET_LENGTH_TIERS: Record<string, TargetLengthTier> = {
       'Target length (medium article): 800–1,800 words total, 4–6 sections, ~3–5 paragraphs per section. 2–3 core ideas with examples and light narrative. Default best-performing size.',
     'blog-post':
       'Target length (medium blog post): 900–1,800 words. Structured with clear H2s, includes examples and takeaways. Sweet spot for SEO and readability.',
+    'x-thread':
+      'Target length (medium x-thread): 5–8 posts, each post concise and additive, with clear narrative progression.',
     'x-post':
       'Target length (medium x-post): 150–280 characters or 2–4 short lines, 1–2 ideas with slight expansion.',
     'reddit-post':
@@ -111,8 +116,10 @@ const TARGET_LENGTH_TIERS: Record<string, TargetLengthTier> = {
       'Target length (large article): 1,800–3,500+ words total, 6–10 sections, ~5–8 paragraphs per section. Deep exploration with frameworks, strong internal linking potential. Use for SEO authority and pillar content.',
     'blog-post':
       'Target length (large blog post): 1,800–3,000 words. Comprehensive coverage with FAQs, examples, and edge cases. Use when competing for high-value keywords.',
+    'x-thread':
+      'Target length (large x-thread): 8–12 posts, each post one punchy idea with strong narrative progression. Every post must independently hook.',
     'x-post':
-      'Target length (large x-post): thread of 3–10 tweets, each tweet one punchy idea with strong narrative progression. Every tweet must independently hook.',
+      'Target length (large x-post): 200–300 characters, one strong stance plus one supporting detail or proof.',
     'reddit-post':
       'Target length (large reddit post): 1,200–2,500+ words. Detailed breakdown with story, lessons, numbers, and mistakes.',
     'linkedin-post':

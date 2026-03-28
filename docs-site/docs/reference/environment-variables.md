@@ -49,4 +49,4 @@ npm run dev -- write "How teams scale editorial pipelines"
 - Numeric vars are parsed into numbers and validated.
 - Invalid numeric values are ignored during parsing and schema validation determines final acceptance.
 - Env vars override saved and job-file settings where applicable.
-- Content targets (`contentTargets`) and x-post mode (`xMode`) are not configurable through env vars; use CLI `--target` or job files.
+- Content targets (`contentTargets`) are not configurable through env vars; use CLI `--target` or job files (for example `x-thread` and `x-post`).
