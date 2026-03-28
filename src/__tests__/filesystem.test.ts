@@ -7,8 +7,10 @@ import {
   listMarkdownFilesRecursively,
   relativeAssetPath,
   resolveAnalyticsPath,
+  resolveLinksPath,
   resolveOutputPaths,
   resolveUniqueSlug,
+  writeLinksFile,
   writeJsonFile,
   writeUtf8File,
 } from '../output/filesystem.js';
@@ -129,6 +131,23 @@ describe('output filesystem helpers', () => {
     const assetPath = '/project/output/assets/cover.webp';
 
     expect(resolveAnalyticsPath(markdownPath)).toBe('/project/output/article.analytics.json');
+    expect(resolveLinksPath(markdownPath)).toBe('/project/output/article.links.json');
     expect(relativeAssetPath(markdownPath, assetPath)).toBe('assets/cover.webp');
+  });
+
+  it('writes links sidecar files next to markdown outputs', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-write-links-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article-1.md');
+      await writeLinksFile(markdownPath, {
+        version: 1,
+        links: [{ expression: 'OpenRouter', url: 'https://openrouter.ai', title: 'OpenRouter' }],
+      });
+
+      await expect(readFile(resolveLinksPath(markdownPath), 'utf8')).resolves.toContain('openrouter.ai');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 });

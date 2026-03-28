@@ -59,6 +59,22 @@ describe('pipeline runner internals', () => {
     expect(snapshot?.costSource).toBe('estimated');
   });
 
+  it('tolerates tracking maps that fail to retain started stages', () => {
+    const tracking = {
+      get: () => undefined,
+      set: () => tracking,
+    } as unknown as Map<string, {
+      startedAtMs: number;
+      endedAtMs: number | null;
+      retries: number;
+      costs: Array<number | null>;
+      costSources: Array<'provider' | 'estimated' | 'unavailable'>;
+    }>;
+
+    expect(() => __testInternals.addStageRetries(tracking, 'stage-x', 2)).not.toThrow();
+    expect(() => __testInternals.recordStageCost(tracking, 'stage-x', 0.25, 'provider')).not.toThrow();
+  });
+
   it('maps section phase identifiers correctly', () => {
     expect(__testInternals.toSectionItemId('intro')).toBe('sections:intro');
     expect(__testInternals.toSectionItemId('outro')).toBe('sections:outro');
@@ -169,6 +185,7 @@ describe('pipeline runner internals', () => {
     expect(__testInternals.asWriteStageId('image-prompts')).toBe('image-prompts');
     expect(__testInternals.asWriteStageId('images')).toBe('images');
     expect(__testInternals.asWriteStageId('output')).toBe('output');
+    expect(__testInternals.asWriteStageId('links')).toBe('links');
     expect(__testInternals.asWriteStageId('unknown')).toBeNull();
   });
 

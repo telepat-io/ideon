@@ -2,6 +2,7 @@ import { mkdir, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
+import { enrichLinks } from '../generation/enrichLinks.js';
 import { planContentBrief } from '../generation/planContentBrief.js';
 import { planArticle } from '../generation/planArticle.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
@@ -15,6 +16,7 @@ import {
   ensureOutputDirectories,
   resolveOutputPaths,
   writeJsonFile,
+  writeLinksFile,
   writeUtf8File,
 } from '../output/filesystem.js';
 import { estimateLlmCostUsd, sumKnownCosts, type LlmCallMetrics } from './analytics.js';
@@ -22,6 +24,7 @@ import type {
   CostSource,
   ImagePromptAnalytics,
   ImageRenderAnalytics,
+  LinkEnrichmentItemAnalytics,
   OutputItemAnalytics,
   PipelineRunAnalytics,
   PipelineRunResult,
@@ -42,6 +45,7 @@ export interface PipelineRunOptions {
   dryRun?: boolean;
   runMode?: 'fresh' | 'resume';
   workingDir?: string;
+  enrichLinks?: boolean;
 }
 
 export function createInitialStages(): StageViewModel[] {
@@ -82,6 +86,12 @@ export function createInitialStages(): StageViewModel[] {
       status: 'pending',
       detail: 'Waiting for article content and assets.',
     },
+    {
+      id: 'links',
+      title: 'Enriching Links',
+      status: 'pending',
+      detail: 'Waiting for output assembly.',
+    },
   ];
 }
 
@@ -92,6 +102,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const stages: StageViewModel[] = createInitialStages();
   options.onUpdate?.(cloneStages(stages));
   const dryRun = options.dryRun ?? false;
+  const shouldEnrichLinks = options.enrichLinks ?? true;
   const runMode = options.runMode ?? 'fresh';
   const workingDir = options.workingDir ?? process.cwd();
   const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
@@ -107,6 +118,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const imagePromptCalls: ImagePromptAnalytics[] = [];
   const imageRenderCalls: ImageRenderAnalytics[] = [];
   const outputItemCalls: OutputItemAnalytics[] = [];
+  const linkEnrichmentCalls: LinkEnrichmentItemAnalytics[] = [];
   let writeSession: WriteSessionState;
 
   if (runMode === 'fresh') {
@@ -143,6 +155,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     let text = writeSession.text;
     let imagePrompts = writeSession.imagePrompts ?? writeSession.imageArtifacts?.imagePrompts ?? null;
     let imageArtifacts = writeSession.imageArtifacts;
+    let linksResult = writeSession.links;
     let articleMarkdownTemplate: string | null = null;
 
     if (contentBrief) {
@@ -607,6 +620,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
     const requestedOutputs = expandRequestedOutputs(input.config.settings.contentTargets);
     const markdownPaths: string[] = [];
+    const generatedOutputs: Array<{ fileId: string; contentType: string; markdownPath: string }> = [];
 
     stages[5] = {
       ...stages[5],
@@ -688,6 +702,11 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
         markdownPaths.push(markdownPath);
         await writeUtf8File(markdownPath, content);
+        generatedOutputs.push({
+          fileId: itemId,
+          contentType: output.contentType,
+          markdownPath,
+        });
 
         const itemDurationMs = Date.now() - itemStartedAtMs;
         const knownItemCost = sumKnownCosts(itemTracking.costs);
@@ -756,6 +775,171 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     };
     options.onUpdate?.(cloneStages(stages));
 
+    const eligibleOutputsForLinks = generatedOutputs.filter((output) => output.contentType !== 'x-post' && output.contentType !== 'x-thread');
+    stages[6] = {
+      ...stages[6],
+      status: 'running',
+      detail: 'Selecting expressions and resolving source URLs.',
+      items: eligibleOutputsForLinks.map((output) => ({
+        id: output.fileId,
+        label: output.fileId,
+        status: 'pending',
+        detail: 'Waiting to start.',
+      })),
+    };
+    markStageStarted(stageTracking, 'links');
+    options.onUpdate?.(cloneStages(stages));
+
+    if (!shouldEnrichLinks) {
+      markStageCompleted(stageTracking, 'links');
+      stages[6] = {
+        ...stages[6],
+        status: 'succeeded',
+        detail: 'Skipped link enrichment (--no-enrich-links).',
+        summary: 'Link enrichment disabled for this run',
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
+      };
+      options.onUpdate?.(cloneStages(stages));
+    } else if (eligibleOutputsForLinks.length === 0) {
+      markStageCompleted(stageTracking, 'links');
+      stages[6] = {
+        ...stages[6],
+        status: 'succeeded',
+        detail: 'Skipped link enrichment (no eligible outputs).',
+        summary: 'No long-form outputs to enrich',
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
+      };
+      options.onUpdate?.(cloneStages(stages));
+    } else if (linksResult) {
+      const linksByFileId = new Map(linksResult.map((item) => [item.fileId, item.links]));
+      linksResult = eligibleOutputsForLinks.map((output) => ({
+        fileId: output.fileId,
+        contentType: output.contentType,
+        markdownPath: output.markdownPath,
+        links: linksByFileId.get(output.fileId) ?? [],
+      }));
+
+      for (const item of linksResult) {
+        await writeLinksFile(item.markdownPath, {
+          version: 1,
+          links: item.links,
+        });
+      }
+
+      markStageCompleted(stageTracking, 'links');
+      stages[6] = {
+        ...stages[6],
+        status: 'succeeded',
+        detail: 'Reused saved link metadata from .ideon/write.',
+        summary: `${linksResult.reduce((sum, item) => sum + item.links.length, 0)} links`,
+        items: (stages[6].items ?? []).map((item) => ({
+          ...item,
+          status: 'succeeded',
+          detail: 'Reused saved link metadata.',
+        })),
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
+      };
+      options.onUpdate?.(cloneStages(stages));
+    } else {
+      const itemTracking = new Map<string, {
+        startedAtMs: number;
+        endedAtMs: number | null;
+        retries: number;
+        costs: Array<number | null>;
+        costSources: CostSource[];
+      }>();
+
+      linksResult = await enrichLinks({
+        markdownFiles: eligibleOutputsForLinks,
+        articleTitle: plan?.title ?? deriveTitleFromIdea(input.idea),
+        articleDescription: plan?.description ?? contentBrief.description,
+        openRouter,
+        settings: input.config.settings,
+        dryRun,
+        onLlmMetrics(fileId, metrics) {
+          recordLlmMetrics(stageTracking, 'links', metrics);
+          addStageRetries(itemTracking, fileId, metrics.retries);
+          const cost = estimateLlmCostUsd(metrics.modelId, metrics.usage);
+          recordStageCost(itemTracking, fileId, cost.usd, cost.source);
+        },
+        onItemProgress(event) {
+          markStageStarted(itemTracking, event.fileId);
+
+          stages[6] = {
+            ...stages[6],
+            detail: 'Selecting expressions and resolving source URLs.',
+            items: (stages[6].items ?? []).map((item) => {
+              if (item.id !== event.fileId) {
+                return item;
+              }
+
+              return {
+                ...item,
+                status: item.status === 'succeeded' || item.status === 'failed' ? item.status : 'running',
+                detail: event.detail,
+              };
+            }),
+          };
+          options.onUpdate?.(cloneStages(stages));
+        },
+      });
+
+      for (const item of linksResult) {
+        markStageCompleted(itemTracking, item.fileId);
+        const snapshot = snapshotStageAnalytics(itemTracking, item.fileId);
+        const durationMs = snapshot?.durationMs ?? 0;
+        const costUsd = snapshot?.costUsd ?? null;
+        const costSource = snapshot?.costSource ?? 'unavailable';
+
+        linkEnrichmentCalls.push({
+          fileId: item.fileId,
+          contentType: item.contentType,
+          phraseCount: item.links.length,
+          durationMs,
+          retries: itemTracking.get(item.fileId)?.retries ?? 0,
+          costUsd,
+          costSource,
+        });
+
+        await writeLinksFile(item.markdownPath, {
+          version: 1,
+          links: item.links,
+        });
+      }
+
+      markStageCompleted(stageTracking, 'links');
+      stages[6] = {
+        ...stages[6],
+        status: 'succeeded',
+        detail: 'Resolved links and wrote sidecar metadata files.',
+        summary: `${linksResult.reduce((sum, item) => sum + item.links.length, 0)} links`,
+        items: (stages[6].items ?? []).map((stageItem) => {
+          const fileLinks = linksResult?.find((item) => item.fileId === stageItem.id);
+          const analytics = snapshotStageAnalytics(itemTracking, stageItem.id);
+          return {
+            ...stageItem,
+            status: 'succeeded',
+            detail: 'Saved links sidecar.',
+            summary: fileLinks ? `${fileLinks.links.length} links` : '0 links',
+            analytics,
+          };
+        }),
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
+      };
+      options.onUpdate?.(cloneStages(stages));
+
+      writeSession = await patchWriteSession(
+        {
+          status: 'running',
+          lastCompletedStage: 'links',
+          failedStage: null,
+          errorMessage: null,
+          links: linksResult,
+        },
+        workingDir,
+      );
+    }
+
     const analytics = buildRunAnalytics({
       runId,
       runMode,
@@ -766,6 +950,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       imagePromptCalls,
       imageRenderCalls,
       outputItemCalls,
+      linkEnrichmentCalls,
     });
     const analyticsPath = path.join(generationDir, 'generation.analytics.json');
     await writeJsonFile(analyticsPath, analytics);
@@ -787,7 +972,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     writeSession = await patchWriteSession(
       {
         status: 'completed',
-        lastCompletedStage: 'output',
+        lastCompletedStage: 'links',
         failedStage: null,
         errorMessage: null,
         artifact,
@@ -911,6 +1096,7 @@ function buildRunAnalytics({
   imagePromptCalls,
   imageRenderCalls,
   outputItemCalls,
+  linkEnrichmentCalls,
 }: {
   runId: string;
   runMode: 'fresh' | 'resume';
@@ -921,9 +1107,10 @@ function buildRunAnalytics({
   imagePromptCalls: ImagePromptAnalytics[];
   imageRenderCalls: ImageRenderAnalytics[];
   outputItemCalls: OutputItemAnalytics[];
+  linkEnrichmentCalls: LinkEnrichmentItemAnalytics[];
 }): PipelineRunAnalytics {
   const runEndedAtMs = Date.now();
-  const orderedStageIds: WriteStageId[] = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output'];
+  const orderedStageIds: WriteStageId[] = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
   const stages: PipelineStageAnalytics[] = orderedStageIds.map((stageId) => {
     const tracked = stageTracking.get(stageId);
     const startedAtMs = tracked?.startedAtMs ?? runEndedAtMs;
@@ -959,6 +1146,7 @@ function buildRunAnalytics({
     imagePromptCalls,
     imageRenderCalls,
     outputItemCalls,
+    linkEnrichmentCalls,
   };
 }
 
@@ -1222,7 +1410,8 @@ function asWriteStageId(stageId: string): WriteStageId | null {
     stageId === 'sections' ||
     stageId === 'image-prompts' ||
     stageId === 'images' ||
-    stageId === 'output'
+    stageId === 'output' ||
+    stageId === 'links'
   ) {
     return stageId;
   }

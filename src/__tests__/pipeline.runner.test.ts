@@ -5,6 +5,7 @@ import os from 'node:os';
 import { runPipelineShell, createInitialStages } from '../pipeline/runner.js';
 import { defaultAppSettings, type ResolvedConfig } from '../config/schema.js';
 import type { StageViewModel } from '../pipeline/events.js';
+import { resolveLinksPath } from '../output/filesystem.js';
 import { patchWriteSession, startFreshWriteSession } from '../pipeline/sessionStore.js';
 import { MIN_IMAGE_BYTES } from '../images/renderImages.js';
 
@@ -12,7 +13,7 @@ describe('pipeline runner', () => {
   it('creates initial stages with expected order and states', () => {
     const stages = createInitialStages();
 
-    expect(stages.map((stage) => stage.id)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output']);
+    expect(stages.map((stage) => stage.id)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
     expect(stages[0]?.status).toBe('running');
     expect(stages.slice(1).every((stage) => stage.status === 'pending')).toBe(true);
   });
@@ -55,7 +56,7 @@ describe('pipeline runner', () => {
       expect(result.artifact.imageCount).toBe(3);
       expect(result.artifact.analyticsPath).toContain('.analytics.json');
       expect(result.analytics.summary.totalDurationMs).toBeGreaterThanOrEqual(0);
-      expect(result.analytics.stages).toHaveLength(6);
+      expect(result.analytics.stages).toHaveLength(7);
       expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(3);
       expect(result.analytics.imageRenderCalls.length).toBeGreaterThanOrEqual(3);
 
@@ -69,7 +70,7 @@ describe('pipeline runner', () => {
       expect(markdown).toContain('## Conclusion');
       expect(markdown).toContain('![How Editorial Teams Can Productionize Ai Writing]');
       expect(analytics.runId.length).toBeGreaterThan(0);
-      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output']);
+      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
       expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);
 
       const terminalUpdate = updates.at(-1);
@@ -77,6 +78,13 @@ describe('pipeline runner', () => {
       expect(terminalUpdate?.every((stage) => stage.status === 'succeeded')).toBe(true);
       expect(terminalUpdate?.every((stage) => stage.stageAnalytics !== undefined)).toBe(true);
       expect(terminalUpdate?.every((stage) => (stage.stageAnalytics?.durationMs ?? -1) >= 0)).toBe(true);
+
+      const linksUpdates = updates
+        .map((snapshot) => snapshot.find((stage) => stage.id === 'links'))
+        .filter((stage): stage is StageViewModel => Boolean(stage));
+      expect(linksUpdates.some((stage) => (stage.items ?? []).some((item) => item.status === 'running' && item.detail === 'Selecting expressions.'))).toBe(true);
+      expect(linksUpdates.some((stage) => (stage.items ?? []).some((item) => item.status === 'running' && item.detail === 'Dry run: skipped URL resolution.'))).toBe(true);
+
       expect(updates.length).toBeGreaterThanOrEqual(5);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
@@ -281,6 +289,91 @@ describe('pipeline runner', () => {
       expect(sharedBrief?.status).toBe('failed');
       expect(sharedBrief?.detail).toContain('Missing OpenRouter API key');
       expect(sharedBrief?.stageAnalytics).toBeUndefined();
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('skips the links stage when enrichLinks is disabled', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-no-links-'));
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      const result = await runPipelineShell(
+        {
+          idea: 'skip editorial links',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          enrichLinks: false,
+          workingDir: tempRoot,
+        },
+      );
+
+      const linksStage = result.stages.find((stage) => stage.id === 'links');
+      expect(linksStage?.status).toBe('succeeded');
+      expect(linksStage?.detail).toContain('Skipped link enrichment (--no-enrich-links).');
+      expect(linksStage?.summary).toBe('Link enrichment disabled for this run');
+      expect(result.analytics.linkEnrichmentCalls).toEqual([]);
+
+      await expect(readFile(resolveLinksPath(result.artifact.markdownPath), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('skips the links stage when all outputs are short-form', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-short-links-'));
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      const result = await runPipelineShell(
+        {
+          idea: 'short form only run',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [
+                { contentType: 'x-post', count: 1 },
+                { contentType: 'x-thread', count: 1 },
+              ],
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          workingDir: tempRoot,
+        },
+      );
+
+      const linksStage = result.stages.find((stage) => stage.id === 'links');
+      expect(linksStage?.status).toBe('succeeded');
+      expect(linksStage?.detail).toContain('Skipped link enrichment (no eligible outputs).');
+      expect(linksStage?.summary).toBe('No long-form outputs to enrich');
+      expect(result.analytics.linkEnrichmentCalls).toEqual([]);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -770,6 +863,20 @@ describe('pipeline runner', () => {
               },
             ],
           },
+          links: [
+            {
+              fileId: 'article-1',
+              contentType: 'article',
+              markdownPath: '/stale/article-1.md',
+              links: [
+                {
+                  expression: 'OpenRouter',
+                  url: 'https://openrouter.ai/',
+                  title: 'OpenRouter',
+                },
+              ],
+            },
+          ],
         },
         tempRoot,
       );
@@ -811,9 +918,27 @@ describe('pipeline runner', () => {
       const planningStage = result.stages.find((stage) => stage.id === 'planning');
       const sectionsStage = result.stages.find((stage) => stage.id === 'sections');
       const imagesStage = result.stages.find((stage) => stage.id === 'images');
+      const linksStage = result.stages.find((stage) => stage.id === 'links');
       expect(planningStage?.detail).toContain('Reused saved plan');
       expect(sectionsStage?.detail).toContain('Reused saved section drafts');
       expect(imagesStage?.detail).toContain('Reused previously rendered images');
+      expect(linksStage?.detail).toContain('Reused saved link metadata');
+      expect(linksStage?.summary).toBe('1 links');
+
+      const articleLinksPath = resolveLinksPath(result.artifact.markdownPaths.find((filePath) => path.basename(filePath) === 'article-1.md')!);
+      const articleLinksRaw = await readFile(articleLinksPath, 'utf8');
+      const articleLinks = JSON.parse(articleLinksRaw) as {
+        version: number;
+        links: Array<{ expression: string; url: string; title: string | null }>;
+      };
+      expect(articleLinks.version).toBe(1);
+      expect(articleLinks.links).toEqual([
+        {
+          expression: 'OpenRouter',
+          url: 'https://openrouter.ai/',
+          title: 'OpenRouter',
+        },
+      ]);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

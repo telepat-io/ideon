@@ -4,6 +4,8 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import express from 'express';
 import { marked } from 'marked';
+import { resolveLinksPath } from '../output/filesystem.js';
+import type { LinkEntry } from '../types/article.js';
 import { stripFrontmatter, listAllGenerations, deriveGenerationId } from './previewHelpers.js';
 
 const execFileAsync = promisify(execFile);
@@ -186,7 +188,7 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
         index: output.index,
         slug: canonicalSlug,
         title: output.title,
-        htmlBody: await renderArticleHtml(markdown, generationId),
+        htmlBody: await renderArticleHtml(markdown, generationId, output.sourcePath),
       };
     }),
   );
@@ -226,10 +228,86 @@ function isMissingFileError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
 }
 
-async function renderArticleHtml(markdown: string, generationId: string): Promise<string> {
-  const content = stripFrontmatter(markdown);
+async function renderArticleHtml(markdown: string, generationId: string, sourcePath: string): Promise<string> {
+  let content = stripFrontmatter(markdown);
+  const links = await loadSavedLinks(sourcePath);
+  if (links.length > 0) {
+    content = applyLinksToMarkdown(content, links);
+  }
   const html = await marked.parse(content);
   return rewriteRelativeAssetUrls(html, generationId);
+}
+
+async function loadSavedLinks(markdownPath: string): Promise<LinkEntry[]> {
+  const linksPath = resolveLinksPath(markdownPath);
+
+  try {
+    const raw = await readFile(linksPath, 'utf8');
+    const parsed = JSON.parse(raw) as { links?: unknown };
+    if (!Array.isArray(parsed.links)) {
+      return [];
+    }
+
+    return parsed.links
+      .filter((entry): entry is LinkEntry => {
+        if (typeof entry !== 'object' || entry === null) {
+          return false;
+        }
+
+        const record = entry as { expression?: unknown; url?: unknown; title?: unknown };
+        return typeof record.expression === 'string'
+          && typeof record.url === 'string'
+          && (record.title === null || typeof record.title === 'string');
+      })
+      .map((entry) => ({
+        expression: entry.expression.trim(),
+        url: entry.url.trim(),
+        title: entry.title,
+      }))
+      .filter((entry) => entry.expression.length > 0 && entry.url.length > 0);
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return [];
+    }
+
+    return [];
+  }
+}
+
+function applyLinksToMarkdown(content: string, links: LinkEntry[]): string {
+  const sorted = [...links].sort((left, right) => right.expression.length - left.expression.length);
+  let updated = content;
+
+  for (const link of sorted) {
+    const escapedExpression = escapeRegExp(link.expression);
+    const expressionRegex = new RegExp(`\\b${escapedExpression}\\b`);
+    const match = expressionRegex.exec(updated);
+    if (!match) {
+      continue;
+    }
+
+    const start = match.index;
+    const end = start + match[0].length;
+    if (isLikelyInsideExistingLink(updated, start, end)) {
+      continue;
+    }
+
+    const markdownLink = `[${match[0]}](${link.url})`;
+    updated = `${updated.slice(0, start)}${markdownLink}${updated.slice(end)}`;
+  }
+
+  return updated;
+}
+
+function isLikelyInsideExistingLink(content: string, start: number, end: number): boolean {
+  const lineStart = content.lastIndexOf('\n', start) + 1;
+  const lineEnd = content.indexOf('\n', end) === -1 ? content.length : content.indexOf('\n', end);
+  const line = content.slice(lineStart, lineEnd);
+  return /\[[^\]]+\]\([^\)]+\)/.test(line);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function rewriteRelativeAssetUrls(html: string, generationId: string): string {

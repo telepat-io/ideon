@@ -548,3 +548,129 @@ describe('OpenRouterClient requestText', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('OpenRouterClient requestWebSearch', () => {
+  const apiKey = 'test-key';
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  it('sends web plugin requests and returns the first URL citation', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: '  best result  ',
+                annotations: [
+                  { type: 'other' },
+                  {
+                    type: 'url_citation',
+                    url_citation: {
+                      url: ' https://example.com/docs ',
+                      title: ' Example Docs ',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          usage: {
+            prompt_tokens: 1,
+            completion_tokens: 2,
+            total_tokens: 3,
+          },
+        }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const onMetrics = jest.fn();
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestWebSearch({
+      messages: [{ role: 'user', content: 'find a url' }],
+      settings: defaultAppSettings,
+      onMetrics,
+    });
+
+    expect(result).toEqual({
+      text: 'best result',
+      firstCitationUrl: 'https://example.com/docs',
+      firstCitationTitle: 'Example Docs',
+    });
+    expect(onMetrics).toHaveBeenCalledTimes(1);
+
+    const [, options] = (fetchMock as unknown as jest.Mock).mock.calls[0] as [string, { body?: string }];
+    const body = JSON.parse(options.body ?? '{}') as { plugins?: Array<{ id: string }> };
+    expect(body.plugins).toEqual([{ id: 'web' }]);
+  });
+
+  it('falls back to the first URL found in text when citations are absent or blank', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: 'Use https://fallback.example.com/guide) for details.',
+                annotations: [
+                  {
+                    type: 'url_citation',
+                    url_citation: {
+                      url: '   ',
+                      title: 'Ignored title',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestWebSearch({
+      messages: [{ role: 'user', content: 'find a fallback url' }],
+      settings: defaultAppSettings,
+    });
+
+    expect(result).toEqual({
+      text: 'Use https://fallback.example.com/guide) for details.',
+      firstCitationUrl: 'https://fallback.example.com/guide',
+      firstCitationTitle: null,
+    });
+  });
+
+  it('returns null citation data when neither annotations nor text contain a URL', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{ message: { content: ' none ' } }] }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestWebSearch({
+      messages: [{ role: 'user', content: 'find nothing' }],
+      settings: defaultAppSettings,
+    });
+
+    expect(result).toEqual({
+      text: 'none',
+      firstCitationUrl: null,
+      firstCitationTitle: null,
+    });
+  });
+});

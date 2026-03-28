@@ -20,6 +20,7 @@ interface WriteCommandOptions {
   style?: string;
   length?: string;
   dryRun: boolean;
+  enrichLinks: boolean;
 }
 
 type WriteRunMode = 'fresh' | 'resume';
@@ -29,11 +30,13 @@ const USER_INTERRUPTED_MESSAGE = 'Write interrupted by user. Run `ideon write re
 function WriteApp({
   input,
   dryRun,
+  enrichLinks,
   runMode,
   onError,
 }: {
   input: Awaited<ReturnType<typeof resolveRunInput>>;
   dryRun: boolean;
+  enrichLinks: boolean;
   runMode: WriteRunMode;
   onError: (error: Error) => void;
 }): React.JSX.Element {
@@ -49,6 +52,7 @@ function WriteApp({
       try {
         const runResult = await runPipelineShell(input, {
           dryRun,
+          enrichLinks,
           runMode,
           onUpdate(nextStages) {
             if (mounted) {
@@ -77,7 +81,7 @@ function WriteApp({
     return () => {
       mounted = false;
     };
-  }, [dryRun, input, onError, runMode]);
+  }, [dryRun, enrichLinks, input, onError, runMode]);
 
   useEffect(() => {
     if (!result && !errorMessage) {
@@ -98,7 +102,7 @@ function WriteApp({
 
 export async function runWriteCommand(options: WriteCommandOptions): Promise<void> {
   const input = await resolveInputWithInteractiveIdeaFallback(options);
-  await runWritePipeline(input, options.dryRun, 'fresh');
+  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh');
 }
 
 export async function runWriteResumeCommand(): Promise<void> {
@@ -120,12 +124,13 @@ export async function runWriteResumeCommand(): Promise<void> {
       secrets: resolved.config.secrets,
     },
   };
-  await runWritePipeline(input, session.dryRun, 'resume');
+  await runWritePipeline(input, session.dryRun, true, 'resume');
 }
 
 async function runWritePipeline(
   input: Awaited<ReturnType<typeof resolveRunInput>>,
   dryRun: boolean,
+  enrichLinks: boolean,
   runMode: WriteRunMode,
 ): Promise<void> {
   let interruptHandled = false;
@@ -165,7 +170,7 @@ async function runWritePipeline(
   try {
 
     if (!process.stdout.isTTY) {
-      await renderPlainPipeline(input, dryRun, runMode);
+      await renderPlainPipeline(input, dryRun, enrichLinks, runMode);
       return;
     }
 
@@ -175,6 +180,7 @@ async function runWritePipeline(
       <WriteApp
         input={input}
         dryRun={dryRun}
+        enrichLinks={enrichLinks}
         runMode={runMode}
         onError={(error) => {
           commandError = error;

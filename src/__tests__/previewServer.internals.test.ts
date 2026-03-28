@@ -44,8 +44,67 @@ describe('preview server internals', () => {
 
   it('renders markdown html and rewrites relative image links', async () => {
     const markdown = '# Title\n\n![Cover](cover.png)';
-    const html = await __testInternals.renderArticleHtml(markdown, 'gen-3');
+    const html = await __testInternals.renderArticleHtml(markdown, 'gen-3', '/tmp/gen-3/article-1.md');
     expect(html).toContain('/api/generations/gen-3/assets/cover.png');
+  });
+
+  it('applies saved links from sidecar files without overriding existing markdown links', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-internals-links-'));
+
+    try {
+      const generationDir = path.join(tempRoot, 'gen-1');
+      const markdownPath = path.join(generationDir, 'article-1.md');
+      await mkdir(generationDir, { recursive: true });
+
+      const markdown = [
+        '# Title',
+        '',
+        'OpenRouter API improves routing.',
+        '',
+        'Existing [TypeScript](https://www.typescriptlang.org/) link stays as-is.',
+      ].join('\n');
+      await writeFile(markdownPath, markdown, 'utf8');
+      await writeFile(
+        path.join(generationDir, 'article-1.links.json'),
+        `${JSON.stringify({
+          version: 1,
+          links: [
+            { expression: 'OpenRouter', url: 'https://openrouter.ai/', title: null },
+            { expression: 'OpenRouter API', url: 'https://openrouter.ai/docs/api-reference/overview', title: null },
+            { expression: 'TypeScript', url: 'https://example.com/override', title: null },
+          ],
+        })}\n`,
+        'utf8',
+      );
+
+      const html = await __testInternals.renderArticleHtml(markdown, 'gen-1', markdownPath);
+
+      expect(html).toContain('href="https://openrouter.ai/docs/api-reference/overview"');
+      expect(html).not.toContain('href="https://openrouter.ai/"');
+      expect(html).toContain('href="https://www.typescriptlang.org/"');
+      expect(html).not.toContain('href="https://example.com/override"');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores malformed saved links sidecars and still renders html', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-internals-bad-links-'));
+
+    try {
+      const generationDir = path.join(tempRoot, 'gen-2');
+      const markdownPath = path.join(generationDir, 'article-1.md');
+      await mkdir(generationDir, { recursive: true });
+      await writeFile(markdownPath, '# Title\n\nOpenRouter\n', 'utf8');
+      await writeFile(path.join(generationDir, 'article-1.links.json'), '{bad-json', 'utf8');
+
+      const html = await __testInternals.renderArticleHtml('# Title\n\nOpenRouter\n', 'gen-2', markdownPath);
+
+      expect(html).toContain('<h1>Title</h1>');
+      expect(html).toContain('<p>OpenRouter</p>');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it('resolves generation assets and rejects invalid or missing paths', async () => {

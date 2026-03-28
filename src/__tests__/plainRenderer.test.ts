@@ -118,11 +118,12 @@ describe('renderPlainPipeline', () => {
           imagePromptCalls: [],
           imageRenderCalls: [],
           outputItemCalls: [],
+          linkEnrichmentCalls: [],
         },
       };
     });
 
-    await renderPlainPipeline({} as ResolvedRunInput, true, 'fresh');
+    await renderPlainPipeline({} as ResolvedRunInput, true, true, 'fresh');
 
     const allLogs = (console.log as jest.Mock).mock.calls.map((call) => String(call[0]));
     const itemLogs = allLogs.filter((line) => line.includes('Assembling Markdown :: x post 1/2'));

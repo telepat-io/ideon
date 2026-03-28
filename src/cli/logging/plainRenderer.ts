@@ -58,6 +58,7 @@ function formatCost(costUsd: number | null): string {
 export async function renderPlainPipeline(
   input: ResolvedRunInput,
   dryRun: boolean,
+  enrichLinks: boolean,
   runMode: NonNullable<PipelineRunOptions['runMode']>,
 ): Promise<void> {
   let previousStatuses = new Map<string, string>();
@@ -66,6 +67,7 @@ export async function renderPlainPipeline(
   try {
     const result = await runPipelineShell(input, {
       dryRun,
+      enrichLinks,
       runMode,
       onUpdate(stages) {
         for (const stage of stages) {

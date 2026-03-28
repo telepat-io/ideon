@@ -59,7 +59,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--style <style>', 'Writing style (professional, friendly, technical, academic, opinionated, storytelling)')
     .option('--length <size>', 'Target length: small, medium, or large')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
-    .action(async (ideaArg: string | undefined, options: { idea?: string; job?: string; target?: string[]; style?: string; length?: string; dryRun: boolean }) => {
+    .option('--no-enrich-links', 'Skip link enrichment after markdown generation')
+    .action(async (ideaArg: string | undefined, options: { idea?: string; job?: string; target?: string[]; style?: string; length?: string; dryRun: boolean; enrichLinks: boolean }) => {
       await runWriteCommand({
         idea: options.idea ?? ideaArg,
         jobPath: options.job,
@@ -67,6 +68,7 @@ export async function runCli(argv: string[]): Promise<void> {
         style: options.style,
         length: options.length,
         dryRun: options.dryRun,
+        enrichLinks: options.enrichLinks,
       });
     });
 

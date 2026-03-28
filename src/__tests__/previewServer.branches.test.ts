@@ -19,8 +19,11 @@ const listAllGenerationsMock = jest.fn<() => Promise<Array<{
 
 const deriveGenerationIdMock = jest.fn<(markdownPath: string, markdownOutputDir: string) => string>();
 const stripFrontmatterMock = jest.fn<(markdown: string) => string>();
+const accessMock = jest.fn<(filePath: string) => Promise<void>>();
+const mkdirMock = jest.fn<(filePath: string, options?: unknown) => Promise<void>>();
 const readFileMock = jest.fn<(filePath: string, encoding: string) => Promise<string>>();
 const statMock = jest.fn<(filePath: string) => Promise<{ isFile: () => boolean }>>();
+const writeFileMock = jest.fn<(filePath: string, data: string, encoding: string) => Promise<void>>();
 const parseMock = jest.fn<(markdown: string) => Promise<string>>();
 const execFileAsyncMock = jest.fn<(command: string, args: string[]) => Promise<unknown>>();
 
@@ -31,8 +34,11 @@ jest.unstable_mockModule('node:util', () => ({
 }));
 
 jest.unstable_mockModule('node:fs/promises', () => ({
+  access: accessMock,
+  mkdir: mkdirMock,
   readFile: readFileMock,
   stat: statMock,
+  writeFile: writeFileMock,
 }));
 
 jest.unstable_mockModule('marked', () => ({
@@ -55,9 +61,12 @@ describe('preview server branch coverage', () => {
 
     deriveGenerationIdMock.mockReturnValue('gen-1');
     stripFrontmatterMock.mockImplementation((markdown) => markdown);
+    accessMock.mockResolvedValue(undefined);
+    mkdirMock.mockResolvedValue(undefined);
     parseMock.mockImplementation(async (markdown) => `<p>${markdown}</p>`);
     statMock.mockResolvedValue({ isFile: () => true });
     execFileAsyncMock.mockResolvedValue(undefined);
+    writeFileMock.mockResolvedValue(undefined);
   });
 
   it('returns 500 from /api/articles when generation listing throws Error', async () => {

@@ -22,10 +22,23 @@ export interface TextRequest {
   onMetrics?: (metrics: LlmCallMetrics) => void;
 }
 
+export interface WebSearchRequest {
+  messages: ChatMessage[];
+  settings: AppSettings;
+  onMetrics?: (metrics: LlmCallMetrics) => void;
+}
+
 interface OpenRouterResponse {
   choices?: Array<{
     message?: {
       content?: string | null;
+      annotations?: Array<{
+        type?: string;
+        url_citation?: {
+          url?: string;
+          title?: string;
+        };
+      }>;
     };
   }>;
   error?: {
@@ -108,16 +121,37 @@ export class OpenRouterClient {
     }
   }
 
+  async requestWebSearch(request: WebSearchRequest): Promise<{ text: string; firstCitationUrl: string | null; firstCitationTitle: string | null }> {
+    const completion = await this.sendCompletion({
+      messages: request.messages,
+      settings: request.settings,
+      plugins: [{ id: 'web' }],
+    });
+    request.onMetrics?.(completion.metrics);
+
+    const text = normalizeGeneratedText(extractText(completion.response));
+    const firstCitation = extractFirstUrlCitation(completion.response);
+    const fallbackUrl = extractFirstUrlFromText(text);
+
+    return {
+      text,
+      firstCitationUrl: firstCitation?.url ?? fallbackUrl,
+      firstCitationTitle: firstCitation?.title ?? null,
+    };
+  }
+
   private async sendCompletion({
     messages,
     settings,
     responseFormat,
     requireStructuredOutputs,
+    plugins,
   }: {
     messages: ChatMessage[];
     settings: AppSettings;
     responseFormat?: Record<string, unknown>;
     requireStructuredOutputs?: boolean;
+    plugins?: Array<Record<string, unknown>>;
   }): Promise<{ response: OpenRouterResponse; metrics: LlmCallMetrics }> {
     let lastError: Error | null = null;
     const startedAtMs = Date.now();
@@ -150,6 +184,10 @@ export class OpenRouterClient {
           requestBody.provider = {
             require_parameters: true,
           };
+        }
+
+        if (plugins && plugins.length > 0) {
+          requestBody.plugins = plugins;
         }
 
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -219,6 +257,32 @@ export class OpenRouterClient {
 
     throw lastError ?? new Error('OpenRouter request failed.');
   }
+}
+
+function extractFirstUrlCitation(response: OpenRouterResponse): { url: string; title: string | null } | null {
+  const annotations = response.choices?.[0]?.message?.annotations ?? [];
+  for (const annotation of annotations) {
+    if (annotation.type !== 'url_citation') {
+      continue;
+    }
+
+    const url = annotation.url_citation?.url?.trim();
+    if (!url) {
+      continue;
+    }
+
+    return {
+      url,
+      title: annotation.url_citation?.title?.trim() || null,
+    };
+  }
+
+  return null;
+}
+
+function extractFirstUrlFromText(text: string): string | null {
+  const match = text.match(/https?:\/\/[^\s)]+/i);
+  return match?.[0] ?? null;
 }
 
 function parseOpenRouterResponse(rawBody: string): OpenRouterResponse {

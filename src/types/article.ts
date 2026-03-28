@@ -47,3 +47,16 @@ export interface GeneratedArticle {
   imagePrompts: ArticleImagePrompt[];
   renderedImages: RenderedArticleImage[];
 }
+
+export interface LinkEntry {
+  expression: string;
+  url: string;
+  title: string | null;
+}
+
+export interface ContentItemLinks {
+  fileId: string;
+  contentType: string;
+  markdownPath: string;
+  links: LinkEntry[];
+}

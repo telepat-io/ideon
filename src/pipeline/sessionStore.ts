@@ -4,11 +4,11 @@ import { z } from 'zod';
 import { appSettingsSchema, jobInputSchema, type AppSettings, type JobInput, type ResolvedPaths } from '../config/schema.js';
 import { articlePlanSchema } from '../types/articleSchema.js';
 import { contentBriefSchema } from '../types/contentBriefSchema.js';
-import type { ArticleImagePrompt, GeneratedArticleSection, RenderedArticleImage } from '../types/article.js';
+import type { ArticleImagePrompt, ContentItemLinks, GeneratedArticleSection, RenderedArticleImage } from '../types/article.js';
 import type { ContentBrief } from '../types/contentBrief.js';
 import type { PipelineArtifactSummary } from './events.js';
 
-const STAGE_IDS = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output'] as const;
+const STAGE_IDS = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'] as const;
 
 const generatedArticleSectionSchema = z.object({
   title: z.string().min(1),
@@ -26,6 +26,19 @@ const imagePromptSchema = z.object({
 const renderedImageSchema = imagePromptSchema.extend({
   outputPath: z.string().min(1),
   relativePath: z.string().min(1),
+});
+
+const linkEntrySchema = z.object({
+  expression: z.string().min(1),
+  url: z.string().min(1),
+  title: z.string().nullable(),
+});
+
+const linksResultSchema = z.object({
+  fileId: z.string().min(1),
+  contentType: z.string().min(1),
+  markdownPath: z.string().min(1),
+  links: z.array(linkEntrySchema),
 });
 
 const pipelineArtifactSummarySchema = z.object({
@@ -75,6 +88,7 @@ const writeSessionStateSchema = z.object({
       renderedImages: z.array(renderedImageSchema),
     })
     .nullable(),
+  links: z.array(linksResultSchema).nullable().default(null),
   artifact: pipelineArtifactSummarySchema.nullable(),
 });
 
@@ -98,6 +112,7 @@ export interface WriteSessionPatch {
   text?: WriteSessionState['text'] | null;
   imagePrompts?: WriteSessionState['imagePrompts'] | null;
   imageArtifacts?: WriteSessionState['imageArtifacts'] | null;
+  links?: WriteSessionState['links'] | null;
   artifact?: PipelineArtifactSummary | null;
 }
 
@@ -116,6 +131,7 @@ export interface WriteSessionState extends WriteSessionStateSchema {
     imagePrompts: ArticleImagePrompt[];
     renderedImages: RenderedArticleImage[];
   } | null;
+  links: ContentItemLinks[] | null;
   artifact: PipelineArtifactSummary | null;
 }
 
@@ -151,6 +167,7 @@ export async function startFreshWriteSession(seed: WriteSessionSeed, workingDir:
     text: null,
     imagePrompts: null,
     imageArtifacts: null,
+    links: null,
     artifact: null,
   };
 
@@ -205,6 +222,7 @@ export async function patchWriteSession(patch: WriteSessionPatch, workingDir: st
     text: has('text') ? patch.text ?? null : existing.text,
     imagePrompts: has('imagePrompts') ? patch.imagePrompts ?? null : existing.imagePrompts,
     imageArtifacts: has('imageArtifacts') ? patch.imageArtifacts ?? null : existing.imageArtifacts,
+    links: has('links') ? patch.links ?? null : existing.links,
     artifact: has('artifact') ? patch.artifact ?? null : existing.artifact,
   };
 

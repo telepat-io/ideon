@@ -61,15 +61,17 @@ Key files:
 
 ### Pipeline (src/pipeline/)
 
-`runPipelineShell(input, options)` in `runner.ts` orchestrates five sequential stages:
+`runPipelineShell(input, options)` in `runner.ts` orchestrates seven sequential stages:
 
 | Stage | ID | What it does |
 |---|---|---|
-| 1 | `planning` | LLM → `ParsedArticlePlan` (title, slug, sections, image slots) |
-| 2 | `sections` | LLM → section prose (intro, body, conclusion) |
-| 3 | `image-prompts` | LLM → expanded image prompt strings |
-| 4 | `images` | Replicate API → rendered image files |
-| 5 | `output` | Assembles and writes final Markdown document |
+| 1 | `shared-brief` | LLM → shared cross-channel content brief |
+| 2 | `planning` | LLM → `ParsedArticlePlan` (title, slug, sections, image slots) |
+| 3 | `sections` | LLM → section prose (intro, body, conclusion) |
+| 4 | `image-prompts` | LLM → expanded image prompt strings |
+| 5 | `images` | Replicate API → rendered image files |
+| 6 | `output` | Assembles and writes final Markdown document |
+| 7 | `links` | LLM + web search → sidecar link metadata (`*.links.json`) |
 
 Each stage updates a `StageViewModel[]` array and calls `options.onUpdate()` for live TUI rendering. The pipeline is cancellable at any stage by propagating thrown errors.
 

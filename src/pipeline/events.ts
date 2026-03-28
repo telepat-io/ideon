@@ -92,6 +92,16 @@ export interface OutputItemAnalytics {
   costSource: CostSource;
 }
 
+export interface LinkEnrichmentItemAnalytics {
+  fileId: string;
+  contentType: string;
+  phraseCount: number;
+  durationMs: number;
+  retries: number;
+  costUsd: number | null;
+  costSource: CostSource;
+}
+
 export interface PipelineAnalyticsSummary {
   totalDurationMs: number;
   totalRetries: number;
@@ -110,6 +120,7 @@ export interface PipelineRunAnalytics {
   imagePromptCalls: ImagePromptAnalytics[];
   imageRenderCalls: ImageRenderAnalytics[];
   outputItemCalls: OutputItemAnalytics[];
+  linkEnrichmentCalls: LinkEnrichmentItemAnalytics[];
 }
 
 export interface PipelineRunResult {
