@@ -2,19 +2,21 @@ import React, { useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
-import { contentTypeValues, writingStyleValues } from '../../config/schema.js';
+import { contentTypeValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
 import type { ContentTargetInput } from '../../config/resolver.js';
 
 interface WriteOptionsFlowProps {
   askStyle: boolean;
   askTargets: boolean;
+  askLength: boolean;
   askXMode: boolean;
   initialStyle: string;
+  initialTargetLength: string;
   initialTargets: ContentTargetInput[];
-  onDone: (result: { style?: string; contentTargets?: ContentTargetInput[] } | null) => void;
+  onDone: (result: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => void;
 }
 
-type Step = 'targets' | 'counts' | 'style' | 'x-mode';
+type Step = 'targets' | 'counts' | 'style' | 'length' | 'x-mode';
 
 interface TargetSelection {
   contentType: string;
@@ -24,21 +26,18 @@ interface TargetSelection {
 export function WriteOptionsFlow({
   askStyle,
   askTargets,
+  askLength,
   askXMode,
   initialStyle,
+  initialTargetLength,
   initialTargets,
   onDone,
 }: WriteOptionsFlowProps): React.JSX.Element {
   const { exit } = useApp();
   const [step, setStep] = useState<Step>(() => {
-    if (askTargets) {
-      return 'targets';
-    }
-
-    if (askStyle) {
-      return 'style';
-    }
-
+    if (askTargets) return 'targets';
+    if (askStyle) return 'style';
+    if (askLength) return 'length';
     return askXMode ? 'x-mode' : 'targets';
   });
   const [cursor, setCursor] = useState(0);
@@ -59,6 +58,7 @@ export function WriteOptionsFlow({
   const [countInput, setCountInput] = useState('1');
   const [countIndex, setCountIndex] = useState(0);
   const [style, setStyle] = useState(initialStyle);
+  const [targetLength, setTargetLength] = useState(initialTargetLength);
   const [xMode, setXMode] = useState<string>(() => {
     const existing = initialTargets.find((target) => target.contentType === 'x-post')?.xMode;
     return existing === 'thread' ? 'thread' : 'single';
@@ -212,6 +212,8 @@ export function WriteOptionsFlow({
               if (nextIndex >= normalizedSelection.length) {
                 if (askStyle) {
                   setStep('style');
+                } else if (askLength) {
+                  setStep('length');
                 } else if (shouldPromptXMode) {
                   setStep('x-mode');
                 } else {
@@ -244,39 +246,88 @@ export function WriteOptionsFlow({
     value,
   }));
 
-  return (
-    <Box flexDirection="column">
-      <Text bold color="cyanBright">
-        Select Style
-      </Text>
-      <Text color="gray">Choose a single style for this generation run.</Text>
-      <Box marginTop={1}>
-        <SelectInput
-          items={styleItems}
-          initialIndex={Math.max(0, styleItems.findIndex((item) => item.value === style))}
-          onSelect={(item) => {
-            const normalizedSelection = selectedTypes.length > 0 ? selectedTypes : ['article'];
-            const contentTargets = askTargets
-              ? buildContentTargets(normalizedSelection)
-              : undefined;
+  if (step === 'style') {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyanBright">
+          Select Style
+        </Text>
+        <Text color="gray">Choose a single style for this generation run.</Text>
+        <Box marginTop={1}>
+          <SelectInput
+            items={styleItems}
+            initialIndex={Math.max(0, styleItems.findIndex((item) => item.value === style))}
+            onSelect={(item) => {
+              const normalizedSelection = selectedTypes.length > 0 ? selectedTypes : ['article'];
+              const contentTargets = askTargets
+                ? buildContentTargets(normalizedSelection)
+                : undefined;
 
-            setStyle(item.value);
+              setStyle(item.value);
 
-            if (shouldPromptXMode) {
-              setStep('x-mode');
-              return;
-            }
+              if (askLength) {
+                setStep('length');
+                return;
+              }
 
-            onDone({
-              style: item.value,
-              ...(contentTargets ? { contentTargets } : {}),
-            });
-            exit();
-          }}
-        />
+              if (shouldPromptXMode) {
+                setStep('x-mode');
+                return;
+              }
+
+              onDone({
+                style: item.value,
+                ...(contentTargets ? { contentTargets } : {}),
+              });
+              exit();
+            }}
+          />
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  }
+
+  const lengthItems = targetLengthValues.map((value) => ({
+    label: value,
+    value,
+  }));
+
+  if (step === 'length') {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyanBright">
+          Select Target Length
+        </Text>
+        <Text color="gray">Choose the desired output size for this generation run.</Text>
+        <Box marginTop={1}>
+          <SelectInput
+            items={lengthItems}
+            initialIndex={Math.max(0, lengthItems.findIndex((item) => item.value === targetLength))}
+            onSelect={(item) => {
+              const normalizedSelection = selectedTypes.length > 0 ? selectedTypes : ['article'];
+              const contentTargets = askTargets
+                ? buildContentTargets(normalizedSelection)
+                : undefined;
+
+              setTargetLength(item.value);
+
+              if (shouldPromptXMode) {
+                setStep('x-mode');
+                return;
+              }
+
+              onDone({
+                ...(askStyle ? { style } : {}),
+                targetLength: item.value,
+                ...(contentTargets ? { contentTargets } : {}),
+              });
+              exit();
+            }}
+          />
+        </Box>
+      </Box>
+    );
+  }
 
   const xModeItems = [
     { label: 'single', value: 'single' },
@@ -302,6 +353,7 @@ export function WriteOptionsFlow({
             const contentTargets = buildContentTargetsWithXMode(normalizedSelection, item.value);
             onDone({
               ...(askStyle ? { style } : {}),
+              ...(askLength ? { targetLength } : {}),
               contentTargets,
             });
             exit();

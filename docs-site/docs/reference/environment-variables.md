@@ -25,6 +25,7 @@ title: Environment Variables
 ## Generation Style
 
 - `IDEON_STYLE`
+- `IDEON_TARGET_LENGTH` (`small`, `medium`, `large`)
 
 ## Example
 
@@ -39,6 +40,7 @@ IDEON_MODEL_REQUEST_TIMEOUT_MS=90000 \
 IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
 IDEON_STYLE=professional \
+IDEON_TARGET_LENGTH=medium \
 npm run dev -- write "How teams scale editorial pipelines"
 ```
 

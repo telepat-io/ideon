@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { render, useApp } from 'ink';
 import { createInterface } from 'node:readline/promises';
 import { resolveRunInput, type ContentTargetInput } from '../../config/resolver.js';
-import { appSettingsSchema, writingStyleValues } from '../../config/schema.js';
+import { appSettingsSchema, targetLengthValues, writingStyleValues } from '../../config/schema.js';
 import { ReportedError } from '../reportedError.js';
 import { PipelinePresenter } from '../ui/pipelinePresenter.js';
 import { createInitialStages, runPipelineShell } from '../../pipeline/runner.js';
@@ -18,6 +18,7 @@ interface WriteCommandOptions {
   jobPath?: string;
   targetSpecs?: string[];
   style?: string;
+  length?: string;
   dryRun: boolean;
 }
 
@@ -212,6 +213,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       idea: options.idea,
       jobPath: options.jobPath,
       style: options.style,
+      targetLength: options.length,
       contentTargets: parsedTargets,
     });
 
@@ -226,6 +228,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       idea: interactiveIdea,
       jobPath: options.jobPath,
       style: options.style,
+      targetLength: options.length,
       contentTargets: parsedTargets,
     });
 
@@ -243,21 +246,24 @@ async function applyInteractiveWriteOptionsIfNeeded(
   }
 
   const styleProvided = Boolean(options.style ?? resolved.job?.settings?.style);
+  const lengthProvided = Boolean(options.length ?? resolved.job?.settings?.targetLength);
   const providedTargets = (parsedTargets && parsedTargets.length > 0)
     ? parsedTargets
     : (resolved.job?.settings?.contentTargets ?? resolved.config.settings.contentTargets);
   const targetsProvided = Boolean((parsedTargets && parsedTargets.length > 0) || resolved.job?.settings?.contentTargets?.length);
   const askXMode = hasXPostWithoutMode(providedTargets);
 
-  if (styleProvided && targetsProvided && !askXMode) {
+  if (styleProvided && targetsProvided && lengthProvided && !askXMode) {
     return resolved;
   }
 
   const prompted = await promptForMissingWriteOptions({
     askStyle: !styleProvided,
     askTargets: !targetsProvided,
+    askLength: !lengthProvided,
     askXMode,
     style: resolved.config.settings.style,
+    targetLength: resolved.config.settings.targetLength,
     targets: providedTargets,
   });
 
@@ -268,6 +274,7 @@ async function applyInteractiveWriteOptionsIfNeeded(
       settings: appSettingsSchema.parse({
         ...resolved.config.settings,
         ...(prompted.style ? { style: prompted.style } : {}),
+        ...(prompted.targetLength ? { targetLength: prompted.targetLength } : {}),
         ...(prompted.contentTargets ? { contentTargets: prompted.contentTargets } : {}),
       }),
     },
@@ -277,22 +284,28 @@ async function applyInteractiveWriteOptionsIfNeeded(
 async function promptForMissingWriteOptions(params: {
   askStyle: boolean;
   askTargets: boolean;
+  askLength: boolean;
   askXMode: boolean;
   style: string;
+  targetLength: string;
   targets: ContentTargetInput[];
-}): Promise<{ style?: string; contentTargets?: ContentTargetInput[] }> {
-  let flowResult: { style?: string; contentTargets?: ContentTargetInput[] } | null = null;
+}): Promise<{ style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] }> {
+  let flowResult: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null = null;
 
   const app = render(
     React.createElement(WriteOptionsFlow, {
       askStyle: params.askStyle,
       askTargets: params.askTargets,
+      askLength: params.askLength,
       askXMode: params.askXMode,
       initialStyle: (writingStyleValues as readonly string[]).includes(params.style)
         ? params.style
         : 'professional',
+      initialTargetLength: (targetLengthValues as readonly string[]).includes(params.targetLength)
+        ? params.targetLength
+        : 'medium',
       initialTargets: params.targets,
-      onDone: (result: { style?: string; contentTargets?: ContentTargetInput[] } | null) => {
+      onDone: (result: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => {
         flowResult = result;
       },
     }),

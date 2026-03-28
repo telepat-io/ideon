@@ -12,6 +12,8 @@ export const contentTypeValues = [
 
 export const writingStyleValues = ['professional', 'friendly', 'technical', 'academic', 'opinionated', 'storytelling'] as const;
 
+export const targetLengthValues = ['small', 'medium', 'large'] as const;
+
 export const xModeValues = ['single', 'thread'] as const;
 
 const contentTargetSchema = z.object({
@@ -40,6 +42,7 @@ export const appSettingsSchema = z.object({
   assetOutputDir: z.string().default('/output/assets'),
   contentTargets: z.array(contentTargetSchema).min(1).default([{ contentType: 'article', count: 1 }]),
   style: z.enum(writingStyleValues).default('professional'),
+  targetLength: z.enum(targetLengthValues).default('medium'),
 });
 
 export const envSettingsSchema = z.object({
@@ -53,6 +56,7 @@ export const envSettingsSchema = z.object({
   markdownOutputDir: z.string().optional(),
   assetOutputDir: z.string().optional(),
   style: z.enum(writingStyleValues).optional(),
+  targetLength: z.enum(targetLengthValues).optional(),
 });
 
 export const jobInputSchema = z.object({
@@ -64,6 +68,7 @@ export const jobInputSchema = z.object({
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 export type JobInput = z.infer<typeof jobInputSchema>;
 export type EnvSettings = z.infer<typeof envSettingsSchema>;
+export type TargetLength = (typeof targetLengthValues)[number];
 
 export interface SecretSettings {
   openRouterApiKey: string | null;

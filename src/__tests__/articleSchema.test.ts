@@ -60,7 +60,7 @@ describe('inlineImagePlanSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should enforce anchorAfterSection range 1-6', () => {
+  it('should enforce anchorAfterSection range 1-10', () => {
     const image = {
       anchorAfterSection: 0,
       description: 'A helpful diagram',
@@ -70,9 +70,9 @@ describe('inlineImagePlanSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should enforce anchorAfterSection max 6', () => {
+  it('should enforce anchorAfterSection max 10', () => {
     const image = {
-      anchorAfterSection: 7,
+      anchorAfterSection: 11,
       description: 'A helpful diagram',
     };
 
@@ -132,10 +132,10 @@ describe('articlePlanSchema', () => {
     }
   });
 
-  it('should allow 6 sections (maximum)', () => {
+  it('should allow 10 sections (maximum)', () => {
     const plan = {
       ...validArticlePlan,
-      sections: Array(6)
+      sections: Array(10)
         .fill(null)
         .map((_, i) => ({
           title: `Section ${i + 1}`,
@@ -147,13 +147,11 @@ describe('articlePlanSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject less than 4 sections (minimum)', () => {
+  it('should reject less than 2 sections (minimum)', () => {
     const plan = {
       ...validArticlePlan,
       sections: [
         { title: 'Section 1', description: 'Description' },
-        { title: 'Section 2', description: 'Description' },
-        { title: 'Section 3', description: 'Description' },
       ],
     };
 
@@ -161,10 +159,10 @@ describe('articlePlanSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject more than 6 sections (maximum)', () => {
+  it('should reject more than 10 sections (maximum)', () => {
     const plan = {
       ...validArticlePlan,
-      sections: Array(7)
+      sections: Array(11)
         .fill(null)
         .map((_, i) => ({
           title: `Section ${i + 1}`,

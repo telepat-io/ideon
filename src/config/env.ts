@@ -21,5 +21,6 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     markdownOutputDir: env.IDEON_MARKDOWN_OUTPUT_DIR,
     assetOutputDir: env.IDEON_ASSET_OUTPUT_DIR,
     style: env.IDEON_STYLE,
+    targetLength: env.IDEON_TARGET_LENGTH,
   });
 }

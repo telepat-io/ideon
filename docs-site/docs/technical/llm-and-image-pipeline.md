@@ -37,9 +37,11 @@ Generated text is normalized by:
 
 Prompt composition now includes layered directives:
 
-- shared writing framework (structure, specificity, rhythm, storytelling discipline)
+- shared writing framework (structure, information density, specificity, rhythm, scannability, active voice, storytelling discipline, authenticity filter)
 - style overlay (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
 - content-type/channel directives (`article`, `x-post`, `linkedin-post`, etc.)
+
+Article planning prompts also include adaptive persuasion guidance so the planner can choose AIDA, PAS, or BAB based on audience and objective fit.
 
 For multi-target runs, article outputs may be used as anchor context for social/channel outputs.
 

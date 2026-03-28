@@ -1,4 +1,4 @@
-import { buildArticlePlanMessages } from '../llm/prompts/articlePlan.js';
+import { buildArticlePlanJsonSchema, buildArticlePlanMessages } from '../llm/prompts/articlePlan.js';
 import {
   buildIntroMessages,
   buildOutroMessages,
@@ -8,6 +8,7 @@ import { buildSingleShotContentMessages } from '../llm/prompts/channelContent.js
 import {
   buildRunContextDirective,
   buildStyleDirective,
+  buildTargetLengthDirective,
   buildWritingFrameworkInstruction,
 } from '../llm/prompts/writingFramework.js';
 import type { ArticlePlan } from '../types/article.js';
@@ -57,15 +58,23 @@ describe('writing framework helpers', () => {
     expect(framework).toContain('Writing framework:');
     expect(framework).toContain('Do examples:');
     expect(framework).toContain('Avoid examples:');
+    expect(framework).toContain('Information density mandate');
+    expect(framework).toContain('Authenticity filter');
   });
 
   it('returns style-specific directive and fallback for unknown style', () => {
     expect(buildStyleDirective('technical')).toContain('Style directive (technical)');
-    expect(buildStyleDirective('unknown-style')).toContain('Style directive: keep the tone consistent');
+    expect(buildStyleDirective('unknown-style')).toContain('Style directive: keep tone consistent');
   });
 
   it('includes normalized run context when no content types are provided', () => {
     expect(buildRunContextDirective([])).toContain('requested content types are article');
+  });
+
+  it('returns format-specific and fallback target length directives', () => {
+    expect(buildTargetLengthDirective('article', 'small')).toContain('Target length (small article)');
+    expect(buildTargetLengthDirective('unknown-channel', 'medium')).toContain('Target length (medium):');
+    expect(buildTargetLengthDirective('linkedin-post', 'unknown-size')).toContain('Target length (medium linkedin post)');
   });
 });
 
@@ -75,6 +84,7 @@ describe('article prompt builders', () => {
       style: 'friendly',
       contentTypes: ['article', 'x-post'],
       contentBrief: mockBrief(),
+      targetLength: 'medium',
     });
 
     expect(messages).toHaveLength(2);
@@ -82,23 +92,69 @@ describe('article prompt builders', () => {
     expect(messages[0]?.content).toContain('Writing framework:');
     expect(messages[0]?.content).toContain('Style directive (friendly)');
     expect(messages[0]?.content).toContain('requested content types are article, x-post');
+    expect(messages[0]?.content).toContain('Target length (medium article)');
+    expect(messages[0]?.content).toContain('adaptive persuasion structure');
+    expect(messages[1]?.content).toContain('Avoid AI giveaway phrasing');
+  });
+
+  it('falls back to medium section ranges for unknown targetLength in messages', () => {
+    const messages = buildArticlePlanMessages('Fallback sizing test', {
+      style: 'professional',
+      contentTypes: ['article'],
+      contentBrief: mockBrief(),
+      targetLength: 'invalid-length',
+    });
+
+    expect(messages[1]?.content).toContain('Plan 4 to 6 strong sections');
+    expect(messages[1]?.content).toContain('sections: array of 4 to 6 objects');
+  });
+
+  it('builds article plan schema ranges by target length', () => {
+    const smallSchema = buildArticlePlanJsonSchema('small');
+    const mediumSchema = buildArticlePlanJsonSchema('medium');
+    const largeSchema = buildArticlePlanJsonSchema('large');
+    const fallbackSchema = buildArticlePlanJsonSchema('invalid-length');
+
+    expect(smallSchema.properties.sections.minItems).toBe(2);
+    expect(smallSchema.properties.sections.maxItems).toBe(4);
+    expect(mediumSchema.properties.sections.minItems).toBe(4);
+    expect(mediumSchema.properties.sections.maxItems).toBe(7);
+    expect(largeSchema.properties.sections.minItems).toBe(6);
+    expect(largeSchema.properties.sections.maxItems).toBe(10);
+    expect(fallbackSchema.properties.sections.minItems).toBe(4);
+    expect(fallbackSchema.properties.sections.maxItems).toBe(7);
   });
 
   it('builds intro, section, and outro prompts with shared framework and style overlay', () => {
     const plan = mockPlan();
 
-    const intro = buildIntroMessages(plan, 'professional', ['article', 'linkedin-post']);
-    const section = buildSectionMessages(plan, plan.sections[0]!, 'technical', ['article']);
-    const outro = buildOutroMessages(plan, 'storytelling', ['article', 'newsletter']);
+    const intro = buildIntroMessages(plan, 'professional', ['article', 'linkedin-post'], 'small');
+    const section = buildSectionMessages(plan, plan.sections[0]!, 'technical', ['article'], 'medium');
+    const outro = buildOutroMessages(plan, 'storytelling', ['article', 'newsletter'], 'large');
 
     expect(intro[0]?.content).toContain('Writing framework:');
     expect(intro[0]?.content).toContain('Style directive (professional)');
+    expect(intro[0]?.content).toContain('Target length (small article)');
 
     expect(section[0]?.content).toContain('Style directive (technical)');
     expect(section[1]?.content).toContain('Write the section titled');
+    expect(section[1]?.content).toContain('3 to 6 paragraphs.');
 
     expect(outro[0]?.content).toContain('Style directive (storytelling)');
     expect(outro[0]?.content).toContain('requested content types are article, newsletter');
+    expect(outro[1]?.content).toContain('3 to 5 paragraphs.');
+  });
+
+  it('falls back to medium paragraph targets when targetLength is unknown', () => {
+    const plan = mockPlan();
+
+    const intro = buildIntroMessages(plan, 'professional', ['article'], 'not-a-tier');
+    const section = buildSectionMessages(plan, plan.sections[0]!, 'technical', ['article'], 'not-a-tier');
+    const outro = buildOutroMessages(plan, 'storytelling', ['article'], 'not-a-tier');
+
+    expect(intro[1]?.content).toContain('2 to 4 paragraphs.');
+    expect(section[1]?.content).toContain('3 to 6 paragraphs.');
+    expect(outro[1]?.content).toContain('2 to 3 paragraphs.');
   });
 });
 
@@ -112,6 +168,7 @@ describe('channel prompt builder', () => {
       outputCountForType: 1,
       contentBrief: mockBrief(),
       articleReferenceMarkdown: '# Anchor\n\nReference body',
+      targetLength: 'large',
     });
 
     expect(messages[0]?.content).toContain('Writing framework:');
@@ -119,6 +176,7 @@ describe('channel prompt builder', () => {
     expect(messages[0]?.content).toContain('LinkedIn-native post');
     expect(messages[1]?.content).toContain('Shared content brief');
     expect(messages[1]?.content).toContain('Reference article context');
+    expect(messages[1]?.content).toContain('Target length (large linkedin post)');
   });
 
   it('adds explicit x thread guidance when xMode is thread', () => {
@@ -130,6 +188,7 @@ describe('channel prompt builder', () => {
       outputCountForType: 3,
       contentBrief: mockBrief(),
       xMode: 'thread',
+      targetLength: 'small',
     });
 
     expect(messages[0]?.content).toContain('If xMode is single, return one concise post.');

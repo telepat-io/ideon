@@ -36,6 +36,7 @@ ideon write "How to productionize editorial AI"
 ideon write --job ./job.json
 ideon write --dry-run "How to productionize editorial AI"
 ideon write "How to productionize editorial AI" --target article=1 --target x-post=3 --style technical
+ideon write "How to productionize editorial AI" --length large --target article=1
 ```
 
 ### Options
@@ -43,6 +44,7 @@ ideon write "How to productionize editorial AI" --target article=1 --target x-po
 - `-j, --job <path>`: path to JSON job file
 - `-t, --target <type=count>`: generation target, repeatable (for example `article=1`, `x-post=10`)
 - `--style <style>`: writing style (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
+- `--length <size>`: target length tier (`small`, `medium`, `large`)
 - `--dry-run`: run full orchestration without external provider calls
 
 Supported target types:
@@ -59,6 +61,7 @@ Defaults:
 
 - If no targets are provided, Ideon uses `article=1`.
 - If no style is provided, Ideon uses `professional`.
+- If no length is provided, Ideon uses `medium`.
 
 Idea resolution order:
 
@@ -71,6 +74,7 @@ Interactive behavior:
 
 - In TTY mode, Ideon asks only for missing write variables.
 - If style is missing, it prompts for style.
+- If length is missing, it prompts for target length (`small`, `medium`, `large`).
 - If targets are missing, it prompts for content types and per-type counts.
 - If `x-post` is selected and `xMode` is missing, it prompts for `single` or `thread` output mode.
 

@@ -52,6 +52,7 @@ export async function writeSingleShotContent({
       xMode,
       contentBrief,
       articleReferenceMarkdown,
+      targetLength: settings.targetLength,
     }),
     settings,
     onMetrics: onLlmMetrics,

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
-import { appSettingsSchema, contentTypeValues, jobInputSchema, xModeValues, writingStyleValues, type JobInput, type ResolvedConfig } from './schema.js';
+import { appSettingsSchema, contentTypeValues, jobInputSchema, xModeValues, writingStyleValues, targetLengthValues, type JobInput, type ResolvedConfig, type TargetLength } from './schema.js';
 
 export interface ContentTargetInput {
   contentType: (typeof contentTypeValues)[number] | string;
@@ -15,6 +15,7 @@ export interface ResolveConfigInput {
   jobPath?: string;
   style?: (typeof writingStyleValues)[number] | string;
   contentTargets?: ContentTargetInput[];
+  targetLength?: TargetLength | string;
 }
 
 export interface ResolvedRunInput {
@@ -49,7 +50,9 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ...(envSettings.markdownOutputDir ? { markdownOutputDir: envSettings.markdownOutputDir } : {}),
     ...(envSettings.assetOutputDir ? { assetOutputDir: envSettings.assetOutputDir } : {}),
     ...(envSettings.style ? { style: envSettings.style } : {}),
+    ...(envSettings.targetLength ? { targetLength: envSettings.targetLength } : {}),
     ...(input.style ? { style: input.style } : {}),
+    ...(input.targetLength ? { targetLength: input.targetLength } : {}),
     ...(input.contentTargets ? { contentTargets: input.contentTargets } : {}),
   });
 

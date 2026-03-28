@@ -25,6 +25,7 @@ Per-field merge behavior:
 - `modelSettings` merges by key (`temperature`, `maxTokens`, `topP`) across sources.
 - `contentTargets` is replaced as a full array when provided by a higher-priority source.
 - Scalar settings (for example `model`, `style`, `markdownOutputDir`) are replaced by the highest-priority source.
+- Scalar settings (for example `model`, `style`, `targetLength`, `markdownOutputDir`) are replaced by the highest-priority source.
 
 ## Settings Schema
 
@@ -41,6 +42,7 @@ Core settings include:
 - `assetOutputDir`
 - `contentTargets`: array of output targets with per-type counts
 - `style`: run-level writing style
+- `targetLength`: run-level output size tier (`small`, `medium`, `large`)
 
 `contentTargets` entries:
 
@@ -61,6 +63,13 @@ Defaults:
 
 - `contentTargets`: `[ { "contentType": "article", "count": 1 } ]`
 - `style`: `professional`
+- `targetLength`: `medium`
+
+Target length tiers:
+
+- `small`: compressed output with fewer sections/ideas
+- `medium`: balanced depth and readability (default)
+- `large`: expanded, deeper output with more coverage and examples
 
 ## Saved Settings Location
 
@@ -77,6 +86,7 @@ IDEON_MODEL=openai/gpt-4.1-mini \
 IDEON_TEMPERATURE=0.6 \
 IDEON_MAX_TOKENS=2400 \
 IDEON_STYLE=technical \
+IDEON_TARGET_LENGTH=large \
 npm run dev -- write "An idea"
 ```
 

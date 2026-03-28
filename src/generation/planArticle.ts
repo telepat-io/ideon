@@ -1,5 +1,5 @@
 import type { AppSettings } from '../config/schema.js';
-import { buildArticlePlanMessages, articlePlanSchema } from '../llm/prompts/articlePlan.js';
+import { buildArticlePlanMessages, buildArticlePlanJsonSchema } from '../llm/prompts/articlePlan.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { resolveUniqueSlug } from '../output/filesystem.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
@@ -28,11 +28,12 @@ export async function planArticle({
     ? buildDryRunPlan(idea, contentBrief)
     : await openRouter.requestStructured<ArticlePlan>({
         schemaName: 'article_plan',
-        schema: articlePlanSchema,
+        schema: buildArticlePlanJsonSchema(settings.targetLength),
         messages: buildArticlePlanMessages(idea, {
           style: settings.style,
           contentTypes: settings.contentTargets.map((target) => target.contentType),
           contentBrief,
+          targetLength: settings.targetLength,
         }),
         settings,
         onMetrics: onLlmMetrics,

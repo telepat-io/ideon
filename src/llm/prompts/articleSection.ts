@@ -3,15 +3,35 @@ import type { ChatMessage } from '../openRouterClient.js';
 import {
   buildRunContextDirective,
   buildStyleDirective,
+  buildTargetLengthDirective,
   buildWritingFrameworkInstruction,
 } from './writingFramework.js';
 
-function buildSystemInstruction(base: string, style: string, contentTypes: string[]): string {
+const INTRO_PARAGRAPH_COUNTS: Record<string, string> = {
+  small: '1 to 2',
+  medium: '2 to 4',
+  large: '3 to 5',
+};
+
+const SECTION_PARAGRAPH_COUNTS: Record<string, string> = {
+  small: '2 to 3',
+  medium: '3 to 6',
+  large: '5 to 8',
+};
+
+const OUTRO_PARAGRAPH_COUNTS: Record<string, string> = {
+  small: '1 to 2',
+  medium: '2 to 3',
+  large: '3 to 5',
+};
+
+function buildSystemInstruction(base: string, style: string, contentTypes: string[], targetLength: string): string {
   return [
     base,
     buildWritingFrameworkInstruction(),
     buildStyleDirective(style),
     buildRunContextDirective(contentTypes),
+    buildTargetLengthDirective('article', targetLength),
   ].join(' ');
 }
 
@@ -30,12 +50,14 @@ function sharedPlanContext(plan: ArticlePlan): string {
   ].join('\n');
 }
 
-export function buildIntroMessages(plan: ArticlePlan, style: string, contentTypes: string[]): ChatMessage[] {
+export function buildIntroMessages(plan: ArticlePlan, style: string, contentTypes: string[], targetLength: string): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
     style,
     contentTypes,
+    targetLength,
   );
+  const paragraphCount = INTRO_PARAGRAPH_COUNTS[targetLength] ?? INTRO_PARAGRAPH_COUNTS['medium']!;
 
   return [
     {
@@ -49,7 +71,7 @@ export function buildIntroMessages(plan: ArticlePlan, style: string, contentType
         '',
         `Write the article introduction using this brief: ${plan.introBrief}`,
         'Requirements:',
-        '- 2 to 4 paragraphs.',
+        `- ${paragraphCount} paragraphs.`,
         '- Hook the reader quickly.',
         '- Set up the argument and tone for the rest of the article.',
       ].join('\n'),
@@ -62,12 +84,15 @@ export function buildSectionMessages(
   section: ArticleSectionPlan,
   style: string,
   contentTypes: string[],
+  targetLength: string,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
     style,
     contentTypes,
+    targetLength,
   );
+  const paragraphCount = SECTION_PARAGRAPH_COUNTS[targetLength] ?? SECTION_PARAGRAPH_COUNTS['medium']!;
 
   return [
     {
@@ -82,7 +107,7 @@ export function buildSectionMessages(
         `Write the section titled "${section.title}".`,
         `Section focus: ${section.description}`,
         'Requirements:',
-        '- 3 to 6 paragraphs.',
+        `- ${paragraphCount} paragraphs.`,
         '- Be concrete and specific.',
         '- Use short Markdown lists only if they materially improve clarity.',
       ].join('\n'),
@@ -90,12 +115,14 @@ export function buildSectionMessages(
   ];
 }
 
-export function buildOutroMessages(plan: ArticlePlan, style: string, contentTypes: string[]): ChatMessage[] {
+export function buildOutroMessages(plan: ArticlePlan, style: string, contentTypes: string[], targetLength: string): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
     style,
     contentTypes,
+    targetLength,
   );
+  const paragraphCount = OUTRO_PARAGRAPH_COUNTS[targetLength] ?? OUTRO_PARAGRAPH_COUNTS['medium']!;
 
   return [
     {
@@ -109,7 +136,7 @@ export function buildOutroMessages(plan: ArticlePlan, style: string, contentType
         '',
         `Write the article conclusion using this brief: ${plan.outroBrief}`,
         'Requirements:',
-        '- 2 to 3 paragraphs.',
+        `- ${paragraphCount} paragraphs.`,
         '- Synthesize the main argument.',
         '- End with a strong, thoughtful closing line.',
       ].join('\n'),

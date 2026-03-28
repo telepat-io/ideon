@@ -56,6 +56,7 @@ describe('readEnvSettings', () => {
       IDEON_MARKDOWN_OUTPUT_DIR: '/tmp/out',
       IDEON_ASSET_OUTPUT_DIR: '/tmp/out/assets',
       IDEON_STYLE: 'technical',
+      IDEON_TARGET_LENGTH: 'large',
     });
 
     expect(result).toMatchObject({
@@ -65,6 +66,7 @@ describe('readEnvSettings', () => {
       markdownOutputDir: '/tmp/out',
       assetOutputDir: '/tmp/out/assets',
       style: 'technical',
+      targetLength: 'large',
     });
   });
 });

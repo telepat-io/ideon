@@ -9,10 +9,14 @@ Ideon prompt generation follows a shared writing framework across all content ty
 ## Core Principles
 
 1. Structure with intent
-2. Specificity over vagueness
-3. Rhythm and readability
-4. Storytelling with discipline
-5. Channel-native delivery
+2. Information density over filler
+3. Specificity over vagueness
+4. Rhythm and readability
+5. Scannability and structural signposting
+6. Active voice with concrete subjects
+7. Storytelling with discipline
+8. Channel-native delivery
+9. Authenticity filter (plain, direct language)
 
 ## Do and Avoid
 
@@ -21,6 +25,9 @@ Do:
 - Use concrete mechanisms and examples.
 - Open with a clear hook.
 - Build a clear throughline from opening to close.
+- Use short, medium, and longer sentences to create natural cadence.
+- Start paragraphs with meaningful declarative claims.
+- Prefer measurable or operationally testable statements.
 - Adapt structure to channel expectations.
 
 Avoid:
@@ -28,6 +35,8 @@ Avoid:
 - Generic claims without evidence.
 - Repetitive sentence cadence.
 - Marketing filler and hype language.
+- Empty recap lines that add no new information.
+- Over-polished AI-sounding transitions and dramatic cliches.
 - Copying article structure into social formats unchanged.
 
 ## Style Overlays
@@ -35,11 +44,21 @@ Avoid:
 You can set one run-level style:
 
 - `professional`: concise, confident, decision-ready.
-- `friendly`: warm, approachable, conversational.
-- `technical`: precise, implementation-oriented, explicit.
-- `academic`: formal, analytical, carefully qualified.
-- `opinionated`: clear stance with strong argumentation.
-- `storytelling`: scene-first narrative with practical takeaways.
+- `friendly`: warm, approachable, conversational, and naturally paced.
+- `technical`: precise, implementation-oriented, explicit, and term-stable.
+- `academic`: formal, analytical, carefully qualified, and evidence-aware.
+- `opinionated`: clear stance with explicit tradeoffs and concrete support.
+- `storytelling`: scene-first narrative with practical takeaways tied to utility.
+
+## Adaptive Persuasion Frameworks
+
+For article planning, Ideon can adapt the narrative structure to fit the objective and audience:
+
+- AIDA for awareness-to-action flows.
+- PAS for pain-first decision contexts.
+- BAB for transformation-focused storytelling.
+
+The planner chooses whichever framework best supports the specific topic and intent rather than forcing one universal formula.
 
 ## Prompt Composition Model
 

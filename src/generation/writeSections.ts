@@ -27,6 +27,7 @@ export async function writeArticleSections({
           plan,
           settings.style,
           settings.contentTargets.map((target) => target.contentType),
+          settings.targetLength,
         ),
         settings,
         onMetrics(metrics) {
@@ -46,6 +47,7 @@ export async function writeArticleSections({
             section,
             settings.style,
             settings.contentTargets.map((target) => target.contentType),
+            settings.targetLength,
           ),
           settings,
           onMetrics(metrics) {
@@ -66,6 +68,7 @@ export async function writeArticleSections({
           plan,
           settings.style,
           settings.contentTargets.map((target) => target.contentType),
+          settings.targetLength,
         ),
         settings,
         onMetrics(metrics) {

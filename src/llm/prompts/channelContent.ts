@@ -2,6 +2,7 @@ import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentBrief } from '../../types/contentBrief.js';
 import {
   buildStyleDirective,
+  buildTargetLengthDirective,
   buildWritingFrameworkInstruction,
 } from './writingFramework.js';
 
@@ -43,6 +44,7 @@ export function buildSingleShotContentMessages(options: {
   xMode?: string;
   contentBrief: ContentBrief;
   articleReferenceMarkdown?: string;
+  targetLength: string;
 }): ChatMessage[] {
   const channelRule = CHANNEL_RULES[options.contentType] ?? 'Write channel-native Markdown content.';
   const articleContext = options.articleReferenceMarkdown
@@ -83,6 +85,7 @@ export function buildSingleShotContentMessages(options: {
         'Output requirements:',
         '- Return only final Markdown content with no preamble.',
         '- Keep structure native to the target channel.',
+        buildTargetLengthDirective(options.contentType, options.targetLength),
       ]
         .filter((line) => line.length > 0)
         .join('\n'),

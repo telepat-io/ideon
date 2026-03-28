@@ -6,7 +6,7 @@ export const articleSectionPlanSchema = z.object({
 });
 
 export const inlineImagePlanSchema = z.object({
-  anchorAfterSection: z.number().int().min(1).max(6),
+  anchorAfterSection: z.number().int().min(1).max(10),
   description: z.string().min(1),
 });
 
@@ -18,7 +18,7 @@ export const articlePlanSchema = z.object({
   description: z.string().min(1),
   introBrief: z.string().min(1),
   outroBrief: z.string().min(1),
-  sections: z.array(articleSectionPlanSchema).min(4).max(6),
+  sections: z.array(articleSectionPlanSchema).min(2).max(10),
   coverImageDescription: z.string().min(1),
   inlineImages: z.array(inlineImagePlanSchema).min(2).max(3),
 });
