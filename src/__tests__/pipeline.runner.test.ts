@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -6,6 +6,7 @@ import { runPipelineShell, createInitialStages } from '../pipeline/runner.js';
 import { defaultAppSettings, type ResolvedConfig } from '../config/schema.js';
 import type { StageViewModel } from '../pipeline/events.js';
 import { patchWriteSession, startFreshWriteSession } from '../pipeline/sessionStore.js';
+import { MIN_IMAGE_BYTES } from '../images/renderImages.js';
 
 describe('pipeline runner', () => {
   it('creates initial stages with expected order and states', () => {
@@ -620,6 +621,229 @@ describe('pipeline runner', () => {
         batch.some((stage) => stage.id === 'images' && stage.detail.includes('Rendering image')),
       );
       expect(imageRenderingRan).toBe(true);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('fails fast when resume is requested without an existing session', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-no-resume-session-'));
+
+    try {
+      await expect(
+        runPipelineShell(
+          {
+            idea: 'resume without prior session',
+            job: null,
+            config: {
+              settings: {
+                ...defaultAppSettings,
+                markdownOutputDir: path.join(tempRoot, 'out'),
+                assetOutputDir: path.join(tempRoot, 'out', 'assets'),
+              },
+              secrets: {
+                openRouterApiKey: null,
+                replicateApiToken: null,
+              },
+            },
+          },
+          {
+            dryRun: true,
+            runMode: 'resume',
+            workingDir: tempRoot,
+          },
+        ),
+      ).rejects.toThrow('No resumable write session found');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('resumes from a completed session and reuses shared brief, plan, text, and image artifacts', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-completed-resume-'));
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+      const generationDir = path.join(markdownDir, 'existing-generation');
+      await mkdir(generationDir, { recursive: true });
+
+      const fakeImagePath = path.join(generationDir, 'cover-1.webp');
+      await writeFile(fakeImagePath, new Uint8Array(MIN_IMAGE_BYTES).fill(7));
+
+      await startFreshWriteSession(
+        {
+          idea: 'completed session reuse flow',
+          job: null,
+          settings: {
+            ...defaultAppSettings,
+            markdownOutputDir: markdownDir,
+            assetOutputDir: assetDir,
+          },
+          dryRun: true,
+          outputPaths: {
+            markdownOutputDir: markdownDir,
+            assetOutputDir: assetDir,
+          },
+        },
+        tempRoot,
+      );
+
+      await patchWriteSession(
+        {
+          status: 'completed',
+          lastCompletedStage: 'output',
+          failedStage: null,
+          errorMessage: null,
+          contentBrief: {
+            description: 'Persisted shared brief for resume reuse testing.',
+            targetAudience: 'Content operators',
+            corePromise: 'Resume should reuse persisted artifacts safely.',
+            keyPoints: ['Reuse shared brief.', 'Reuse plan.', 'Reuse section drafts.'],
+            voiceNotes: 'Direct and practical.',
+          },
+          plan: {
+            title: 'Completed Session Reuse Flow',
+            subtitle: 'Resume should skip heavy stages',
+            keywords: ['resume', 'reuse', 'pipeline'],
+            slug: 'completed-session-reuse-flow',
+            description: 'Persisted plan',
+            introBrief: 'Intro brief',
+            outroBrief: 'Outro brief',
+            sections: [
+              { title: 'First', description: 'First section' },
+              { title: 'Second', description: 'Second section' },
+              { title: 'Third', description: 'Third section' },
+              { title: 'Fourth', description: 'Fourth section' },
+            ],
+            coverImageDescription: 'Cover description',
+            inlineImages: [
+              { anchorAfterSection: 1, description: 'Inline one' },
+              { anchorAfterSection: 2, description: 'Inline two' },
+            ],
+          },
+          text: {
+            intro: 'Persisted intro',
+            sections: [
+              { title: 'First', body: 'Persisted body one' },
+              { title: 'Second', body: 'Persisted body two' },
+              { title: 'Third', body: 'Persisted body three' },
+              { title: 'Fourth', body: 'Persisted body four' },
+            ],
+            outro: 'Persisted outro',
+          },
+          imagePrompts: [
+            {
+              id: 'cover',
+              kind: 'cover',
+              prompt: 'Persisted cover prompt',
+              description: 'Cover description',
+              anchorAfterSection: null,
+            },
+          ],
+          imageArtifacts: {
+            imagePrompts: [
+              {
+                id: 'cover',
+                kind: 'cover',
+                prompt: 'Persisted cover prompt',
+                description: 'Cover description',
+                anchorAfterSection: null,
+              },
+            ],
+            renderedImages: [
+              {
+                id: 'cover',
+                kind: 'cover',
+                prompt: 'Persisted cover prompt',
+                description: 'Cover description',
+                anchorAfterSection: null,
+                outputPath: fakeImagePath,
+                relativePath: 'cover-1.webp',
+              },
+            ],
+          },
+        },
+        tempRoot,
+      );
+
+      const result = await runPipelineShell(
+        {
+          idea: 'completed session reuse flow',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [
+                { contentType: 'article', count: 1 },
+                { contentType: 'blog-post', count: 1 },
+                { contentType: 'reddit-post', count: 1 },
+                { contentType: 'newsletter', count: 1 },
+                { contentType: 'landing-page-copy', count: 1 },
+              ],
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          runMode: 'resume',
+          workingDir: tempRoot,
+        },
+      );
+
+      expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
+      const files = result.artifact.markdownPaths.map((filePath) => path.basename(filePath)).sort();
+      expect(files).toEqual(['article-1.md', 'blog-1.md', 'landing-1.md', 'newsletter-1.md', 'reddit-1.md']);
+
+      const planningStage = result.stages.find((stage) => stage.id === 'planning');
+      const sectionsStage = result.stages.find((stage) => stage.id === 'sections');
+      const imagesStage = result.stages.find((stage) => stage.id === 'images');
+      expect(planningStage?.detail).toContain('Reused saved plan');
+      expect(sectionsStage?.detail).toContain('Reused saved section drafts');
+      expect(imagesStage?.detail).toContain('Reused previously rendered images');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('uses fallback title and slug when idea is blank and there is no article target', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-blank-idea-'));
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      const result = await runPipelineShell(
+        {
+          idea: '   ',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [{ contentType: 'x-post', count: 1 }],
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          workingDir: tempRoot,
+        },
+      );
+
+      expect(result.artifact.slug).toBe('generated-content');
+      expect(result.artifact.title).toBe('Generated Content Batch');
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

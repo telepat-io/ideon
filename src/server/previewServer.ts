@@ -1395,3 +1395,16 @@ function escapeHtml(value: string): string {
     .replace(/\"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+export const __testInternals = {
+  getArticleContent,
+  resolveActivePreviewArticle,
+  isMissingFileError,
+  renderArticleHtml,
+  rewriteRelativeAssetUrls,
+  toGenerationAssetUrl,
+  resolveGenerationAssetPath,
+  renderShell,
+  tryOpenBrowser,
+  escapeHtml,
+};

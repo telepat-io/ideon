@@ -45,6 +45,8 @@ export class ReplicateClient {
           await wait(backoff);
           continue;
         }
+
+        break;
       }
     }
 

@@ -1,7 +1,17 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { parsePort, resolveLatestMarkdown, resolveMarkdownPath, stripFrontmatter, extractHeadingTitle, extractArticleMetadata, listAllArticles } from '../server/previewHelpers.js';
+import {
+  parsePort,
+  resolveLatestMarkdown,
+  resolveMarkdownPath,
+  stripFrontmatter,
+  extractHeadingTitle,
+  extractArticleMetadata,
+  listAllArticles,
+  listAllGenerations,
+  deriveGenerationId,
+} from '../server/previewHelpers.js';
 
 describe('preview helpers', () => {
   it('uses default port when none is provided', () => {
@@ -12,6 +22,10 @@ describe('preview helpers', () => {
     expect(() => parsePort('0')).toThrow('Invalid port');
     expect(() => parsePort('70000')).toThrow('Invalid port');
     expect(() => parsePort('abc')).toThrow('Invalid port');
+  });
+
+  it('accepts valid custom ports', () => {
+    expect(parsePort('8080')).toBe(8080);
   });
 
   it('strips yaml frontmatter before markdown rendering', () => {
@@ -27,6 +41,10 @@ describe('preview helpers', () => {
     expect(extractHeadingTitle(markdown)).toBe('Main Heading');
   });
 
+  it('returns null when no heading is present', () => {
+    expect(extractHeadingTitle('No heading here')).toBeNull();
+  });
+
   it('resolves explicit markdown path', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-explicit-'));
 
@@ -39,6 +57,24 @@ describe('preview helpers', () => {
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
+  });
+
+  it('resolves relative markdown path using cwd', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-relative-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article.md');
+      await writeFile(markdownPath, '# Relative\n', 'utf8');
+
+      const resolved = await resolveMarkdownPath('article.md', '/unused', tempRoot);
+      expect(resolved).toBe(markdownPath);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects explicit paths that are not markdown files', async () => {
+    await expect(resolveMarkdownPath('article.txt', '/unused', '/tmp')).rejects.toThrow('Expected a markdown file');
   });
 
   it('selects the latest markdown when no explicit path is provided', async () => {
@@ -104,6 +140,21 @@ describe('preview helpers', () => {
     }
   });
 
+  it('falls back to slug as title when markdown has no heading', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-metadata-title-fallback-'));
+
+    try {
+      const markdown = ['---', 'slug: fallback-slug', '---', '', 'Body only'].join('\n');
+      const markdownPath = path.join(tempRoot, 'article-1.md');
+      await writeFile(markdownPath, markdown, 'utf8');
+
+      const metadata = await extractArticleMetadata(markdownPath);
+      expect(metadata.title).toBe('fallback-slug');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('lists all articles sorted by mtime descending', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-list-articles-'));
 
@@ -138,6 +189,30 @@ describe('preview helpers', () => {
 
       expect(articles).toHaveLength(1);
       expect(articles[0]?.slug).toBe('article');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('derives generation id from nested paths and falls back when outside output root', () => {
+    const root = '/tmp/output';
+    expect(deriveGenerationId('/tmp/output/20260328-120000-topic/article-1.md', root)).toBe('20260328-120000-topic');
+    expect(deriveGenerationId('/tmp/other/article-1.md', root)).toBe('article-1');
+  });
+
+  it('lists grouped generation outputs and labels unknown content types', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-generations-'));
+
+    try {
+      const generationDir = path.join(tempRoot, '20260328-120000-topic');
+      await mkdir(generationDir, { recursive: true });
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Article\n\nBody\n', 'utf8');
+      await writeFile(path.join(generationDir, 'custom-2.md'), '# Custom\n\nBody\n', 'utf8');
+
+      const generations = await listAllGenerations(tempRoot);
+      expect(generations).toHaveLength(1);
+      expect(generations[0]?.outputs).toHaveLength(2);
+      expect(generations[0]?.outputs.some((output) => output.contentTypeLabel === 'Custom')).toBe(true);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

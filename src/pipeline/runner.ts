@@ -1230,3 +1230,25 @@ function asWriteStageId(stageId: string): WriteStageId | null {
 
   return null;
 }
+
+export const __testInternals = {
+  markStageStarted,
+  markStageCompleted,
+  addStageRetries,
+  recordStageCost,
+  recordLlmMetrics,
+  snapshotStageAnalytics,
+  toSectionItemId,
+  toSectionItemIdFromLabel,
+  applySectionItemTransition,
+  toOutputItemId,
+  formatOutputItemLabel,
+  requireSecret,
+  markRunningStageFailed,
+  expandRequestedOutputs,
+  toFilePrefix,
+  deriveTitleFromIdea,
+  slugifyIdea,
+  asWriteStageId,
+  chooseStageCostSource,
+};

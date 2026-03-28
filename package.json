@@ -16,7 +16,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "prepublishOnly": "npm run lint && npm test && npm run build",
+    "prepublishOnly": "npm run lint && npm run test:coverage && npm run build",
     "build": "tsup src/bin/ideon.ts --format esm --dts --clean --out-dir dist",
     "dev": "tsx src/bin/ideon.ts",
     "preview": "tsx src/bin/ideon.ts preview",

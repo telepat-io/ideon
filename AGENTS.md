@@ -9,7 +9,7 @@ Concise reference for AI agents (and humans) working on this codebase.
 ```bash
 npm run lint        # tsc --noEmit (typecheck, no emit)
 npm run build       # tsup → dist/ideon.js
-npm test            # Jest suites in src/__tests__/
+npm run test:coverage # Jest suites + coverage report in src/__tests__/
 npm run docs:build  # Docusaurus static build
 ```
 

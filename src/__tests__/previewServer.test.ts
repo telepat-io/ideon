@@ -354,4 +354,101 @@ describe('preview server resilience', () => {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
+
+  it('returns 400 for invalid generation asset traversal paths', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-invalid-asset-path-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-160000-invalid-asset');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Invalid Asset Path\n\nBody\n', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const response = await fetch(
+          `${server.url}/api/generations/20260327-160000-invalid-asset/assets/%2Fetc%2Fpasswd`,
+        );
+        const payload = (await response.json()) as { error: string };
+
+        expect(response.status).toBe(400);
+        expect(payload.error).toContain('Invalid generation asset path');
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('returns 404 for generation asset requests with unknown generation ids', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-missing-generation-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260327-170000-known-generation');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Known Generation\n\nBody\n', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const response = await fetch(
+          `${server.url}/api/generations/missing-generation/assets/article-cover.webp`,
+        );
+        const payload = (await response.json()) as { error: string };
+
+        expect(response.status).toBe(404);
+        expect(payload.error).toContain('no longer exists');
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('starts with openBrowser=true and keeps preview startup best-effort', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-open-browser-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const markdownPath = path.join(markdownOutputDir, 'article.md');
+      await writeFile(markdownPath, '# Browser Open Linux\n\nBody\n', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath,
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: true,
+      });
+
+      await server.close();
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
 });

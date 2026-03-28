@@ -23,4 +23,10 @@ export default {
     '!src/bin/**',
     '!src/cli/**',
   ],
+  coverageThreshold: {
+    './src/**/*.ts': {
+      lines: 90,
+      branches: 80,
+    },
+  },
 };

@@ -74,6 +74,31 @@ describe('coerceT2IFieldValue', () => {
     it('should not throw for NaN', () => {
       expect(() => coerceT2IFieldValue(TEST_MODEL, 'num_inference_steps', NaN)).not.toThrow();
     });
+
+    it('should preserve boolean primitives for boolean fields', () => {
+      expect(coerceT2IFieldValue(TEST_MODEL, 'go_fast', true)).toBe(true);
+      expect(coerceT2IFieldValue(TEST_MODEL, 'go_fast', false)).toBe(false);
+    });
+
+    it('should reject enum values outside allowed set when allowAnyString is false', () => {
+      const result = coerceT2IFieldValue(TEST_MODEL, 'output_format', 'tiff');
+      expect(result).toBeUndefined();
+    });
+
+    it('should support number fields with clamping on models that define them', () => {
+      const modelId = 'prunaai/z-image-turbo';
+      const clampedHigh = coerceT2IFieldValue(modelId, 'guidance_scale', '999');
+      const clampedLow = coerceT2IFieldValue(modelId, 'guidance_scale', -10);
+
+      expect(clampedHigh).toBe(20);
+      expect(clampedLow).toBe(0);
+    });
+
+    it('should pass through values for fields without explicit types', () => {
+      const modelId = 'prunaai/z-image-turbo';
+      const result = coerceT2IFieldValue(modelId, 'pricingRules', { invalid: true });
+      expect(result).toBeUndefined();
+    });
   });
 });
 
