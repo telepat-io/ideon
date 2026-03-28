@@ -5,6 +5,7 @@ import path from 'node:path';
 import express from 'express';
 import { marked } from 'marked';
 import { resolveLinksPath } from '../output/filesystem.js';
+import { enrichMarkdownWithLinks } from '../output/enrichMarkdownWithLinks.js';
 import type { LinkEntry } from '../types/article.js';
 import { stripFrontmatter, listAllGenerations, deriveGenerationId } from './previewHelpers.js';
 
@@ -275,9 +276,7 @@ function isMissingFileError(error: unknown): boolean {
 async function renderArticleHtml(markdown: string, generationId: string, sourcePath: string): Promise<string> {
   let content = stripFrontmatter(markdown);
   const links = await loadSavedLinks(sourcePath);
-  if (links.length > 0) {
-    content = applyLinksToMarkdown(content, links);
-  }
+  content = enrichMarkdownWithLinks(content, links);
   const html = await marked.parse(content);
   return rewriteRelativeAssetUrls(html, generationId);
 }
@@ -395,42 +394,6 @@ function isPreviewT2IInteraction(value: unknown): value is PreviewT2IInteraction
     && typeof record.input === 'object'
     && record.input !== null
     && (record.errorMessage === null || typeof record.errorMessage === 'string');
-}
-
-function applyLinksToMarkdown(content: string, links: LinkEntry[]): string {
-  const sorted = [...links].sort((left, right) => right.expression.length - left.expression.length);
-  let updated = content;
-
-  for (const link of sorted) {
-    const escapedExpression = escapeRegExp(link.expression);
-    const expressionRegex = new RegExp(`\\b${escapedExpression}\\b`);
-    const match = expressionRegex.exec(updated);
-    if (!match) {
-      continue;
-    }
-
-    const start = match.index;
-    const end = start + match[0].length;
-    if (isLikelyInsideExistingLink(updated, start, end)) {
-      continue;
-    }
-
-    const markdownLink = `[${match[0]}](${link.url})`;
-    updated = `${updated.slice(0, start)}${markdownLink}${updated.slice(end)}`;
-  }
-
-  return updated;
-}
-
-function isLikelyInsideExistingLink(content: string, start: number, end: number): boolean {
-  const lineStart = content.lastIndexOf('\n', start) + 1;
-  const lineEnd = content.indexOf('\n', end) === -1 ? content.length : content.indexOf('\n', end);
-  const line = content.slice(lineStart, lineEnd);
-  return /\[[^\]]+\]\([^\)]+\)/.test(line);
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function rewriteRelativeAssetUrls(html: string, generationId: string): string {

@@ -88,6 +88,47 @@ describe('preview server internals', () => {
     }
   });
 
+  it('applies saved links for italic expressions and plain words sharing the same line', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-internals-italic-links-'));
+
+    try {
+      const generationDir = path.join(tempRoot, 'gen-italic');
+      const markdownPath = path.join(generationDir, 'article-1.md');
+      await mkdir(generationDir, { recursive: true });
+
+      // Aristotle and *phronesis* share the same line — injecting the italic
+      // expression first must not block the plain word from being linked.
+      const markdown = [
+        '# Title',
+        '',
+        'Aristotle called this *phronesis* — practical wisdom.',
+        '',
+        'He also wrote the *Nicomachean Ethics* as a guide.',
+      ].join('\n');
+      await writeFile(markdownPath, markdown, 'utf8');
+      await writeFile(
+        path.join(generationDir, 'article-1.links.json'),
+        `${JSON.stringify({
+          version: 1,
+          links: [
+            { expression: 'Aristotle', url: 'https://example.com/aristotle', title: null },
+            { expression: '*phronesis*', url: 'https://example.com/phronesis', title: null },
+            { expression: '*Nicomachean Ethics*', url: 'https://example.com/nicomachean', title: null },
+          ],
+        })}\n`,
+        'utf8',
+      );
+
+      const html = await __testInternals.renderArticleHtml(markdown, 'gen-italic', markdownPath);
+
+      expect(html).toContain('href="https://example.com/aristotle"');
+      expect(html).toContain('href="https://example.com/phronesis"');
+      expect(html).toContain('href="https://example.com/nicomachean"');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('ignores malformed saved links sidecars and still renders html', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-internals-bad-links-'));
 
