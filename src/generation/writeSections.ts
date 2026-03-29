@@ -53,6 +53,7 @@ export async function writeArticleSections({
           messages: buildSectionMessages(
             plan,
             section,
+            buildArticleSoFarContext(intro, sections),
             settings.style,
             settings.contentTargets.map((target) => target.contentType),
             settings.targetLength,
@@ -125,6 +126,17 @@ function dryRunOutro(plan: ArticlePlan): string {
 interface ArticleSectionPlanLike {
   title: string;
   description: string;
+}
+
+function buildArticleSoFarContext(intro: string, sections: GeneratedArticleSection[]): string {
+  const parts = ['## Introduction', intro.trim()];
+
+  for (const section of sections) {
+    parts.push(`## ${section.title}`);
+    parts.push(section.body.trim());
+  }
+
+  return parts.join('\n\n').trim();
 }
 
 function normalizeGeneratedSection(content: string, label: string): string {

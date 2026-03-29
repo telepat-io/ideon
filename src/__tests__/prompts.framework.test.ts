@@ -133,7 +133,7 @@ describe('article prompt builders', () => {
     const plan = mockPlan();
 
     const intro = buildIntroMessages(plan, 'professional', ['article', 'linkedin-post'], 'small');
-    const section = buildSectionMessages(plan, plan.sections[0]!, 'technical', ['article'], 'medium');
+    const section = buildSectionMessages(plan, plan.sections[0]!, '## Introduction\n\nExisting intro context.', 'technical', ['article'], 'medium');
     const outro = buildOutroMessages(plan, 'storytelling', ['article', 'newsletter'], 'large');
 
     expect(intro[0]?.content).toContain('Writing framework:');
@@ -142,6 +142,8 @@ describe('article prompt builders', () => {
 
     expect(section[0]?.content).toContain('Style directive (technical)');
     expect(section[1]?.content).toContain('Write the section titled');
+    expect(section[1]?.content).toContain('Article generated so far:');
+    expect(section[1]?.content).toContain('Existing intro context.');
     expect(section[1]?.content).toContain('3 to 6 paragraphs.');
 
     expect(outro[0]?.content).toContain('Style directive (storytelling)');
@@ -153,7 +155,7 @@ describe('article prompt builders', () => {
     const plan = mockPlan();
 
     const intro = buildIntroMessages(plan, 'professional', ['article'], 'not-a-tier');
-    const section = buildSectionMessages(plan, plan.sections[0]!, 'technical', ['article'], 'not-a-tier');
+    const section = buildSectionMessages(plan, plan.sections[0]!, '## Introduction\n\nExisting intro context.', 'technical', ['article'], 'not-a-tier');
     const outro = buildOutroMessages(plan, 'storytelling', ['article'], 'not-a-tier');
 
     expect(intro[1]?.content).toContain('2 to 4 paragraphs.');

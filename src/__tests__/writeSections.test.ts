@@ -53,7 +53,7 @@ describe('writeArticleSections', () => {
 
   it('uses OpenRouter for intro/sections/outro and normalizes fenced markdown', async () => {
     const requestText = jest
-      .fn<(args: { onMetrics?: (metrics: typeof llmMetrics) => void }) => Promise<string>>()
+      .fn<(args: { messages?: Array<{ role?: string; content?: string }>; onMetrics?: (metrics: typeof llmMetrics) => void }) => Promise<string>>()
       .mockImplementation(
       async ({ onMetrics }: { onMetrics?: (metrics: typeof llmMetrics) => void }) => {
         onMetrics?.(llmMetrics);
@@ -80,6 +80,18 @@ describe('writeArticleSections', () => {
     expect(onLlmMetrics).toHaveBeenCalledWith('section', llmMetrics, 0);
     expect(onLlmMetrics).toHaveBeenCalledWith('section', llmMetrics, 1);
     expect(onLlmMetrics).toHaveBeenCalledWith('outro', llmMetrics);
+
+    const firstSectionPrompt = requestText.mock.calls[1]?.[0]?.messages?.[1]?.content;
+    const secondSectionPrompt = requestText.mock.calls[2]?.[0]?.messages?.[1]?.content;
+
+    expect(firstSectionPrompt).toContain('Article generated so far:');
+    expect(firstSectionPrompt).toContain('## Introduction');
+    expect(firstSectionPrompt).toContain('Generated body');
+    expect(firstSectionPrompt).not.toContain('## Section One');
+
+    expect(secondSectionPrompt).toContain('## Introduction');
+    expect(secondSectionPrompt).toContain('## Section One');
+    expect(secondSectionPrompt).toContain('Generated body');
   });
 
   it('throws when generated intro is empty after normalization', async () => {

@@ -50,6 +50,18 @@ function sharedPlanContext(plan: ArticlePlan): string {
   ].join('\n');
 }
 
+function sharedDraftContext(articleSoFar: string): string {
+  const normalized = articleSoFar.trim();
+  if (!normalized) {
+    return 'Article generated so far:\n[No prior article content yet.]';
+  }
+
+  return [
+    'Article generated so far:',
+    normalized,
+  ].join('\n');
+}
+
 export function buildIntroMessages(plan: ArticlePlan, style: string, contentTypes: string[], targetLength: string): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
@@ -82,6 +94,7 @@ export function buildIntroMessages(plan: ArticlePlan, style: string, contentType
 export function buildSectionMessages(
   plan: ArticlePlan,
   section: ArticleSectionPlan,
+  articleSoFar: string,
   style: string,
   contentTypes: string[],
   targetLength: string,
@@ -104,11 +117,14 @@ export function buildSectionMessages(
       content: [
         sharedPlanContext(plan),
         '',
+        sharedDraftContext(articleSoFar),
+        '',
         `Write the section titled "${section.title}".`,
         `Section focus: ${section.description}`,
         'Requirements:',
         `- ${paragraphCount} paragraphs.`,
         '- Be concrete and specific.',
+        '- Continue naturally from the article draft so far without rehashing prior sections.',
         '- Use short Markdown lists only if they materially improve clarity.',
       ].join('\n'),
     },
