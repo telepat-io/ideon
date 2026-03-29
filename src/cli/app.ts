@@ -53,20 +53,22 @@ export async function runCli(argv: string[]): Promise<void> {
 
   const writeCommand = program
     .command('write')
-    .description('Generate an article from a prompt or job file.')
-    .argument('[idea]', 'Natural-language idea for the article')
-    .option('-i, --idea <idea>', 'Natural-language idea for the article')
+    .description('Generate one primary content output plus optional secondary outputs from a prompt or job file.')
+    .argument('[idea]', 'Natural-language idea for the generation run')
+    .option('-i, --idea <idea>', 'Natural-language idea for the generation run')
     .option('-j, --job <path>', 'Path to a JSON job definition')
-    .option('-t, --target <type=count>', 'Generation target, repeatable (for example: article=1, x-thread=3, x-post=10)', collectOptionValue)
+    .option('--primary <type=count>', 'Required primary output target (for example: article=1 or x-post=1)')
+    .option('--secondary <type=count>', 'Secondary output target, repeatable (for example: x-thread=3, linkedin-post=2)', collectOptionValue)
     .option('--style <style>', 'Writing style (professional, friendly, technical, academic, opinionated, storytelling)')
     .option('--length <size>', 'Target length: small, medium, or large')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
     .option('--no-enrich-links', 'Skip link enrichment after markdown generation')
-    .action(async (ideaArg: string | undefined, options: { idea?: string; job?: string; target?: string[]; style?: string; length?: string; dryRun: boolean; enrichLinks: boolean }) => {
+    .action(async (ideaArg: string | undefined, options: { idea?: string; job?: string; primary?: string; secondary?: string[]; style?: string; length?: string; dryRun: boolean; enrichLinks: boolean }) => {
       await runWriteCommand({
         idea: options.idea ?? ideaArg,
         jobPath: options.job,
-        targetSpecs: options.target,
+        primarySpec: options.primary,
+        secondarySpecs: options.secondary,
         style: options.style,
         length: options.length,
         dryRun: options.dryRun,

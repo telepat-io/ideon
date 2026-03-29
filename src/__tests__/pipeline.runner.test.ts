@@ -121,10 +121,14 @@ describe('pipeline runner', () => {
                 message: {
                   content: JSON.stringify({
                     description: 'A practical shared brief for testing reliable output and links behavior.',
+                      title: 'Reliable Output And Links Behavior',
                     targetAudience: 'Operators and content teams',
                     corePromise: 'Get reusable process clarity.',
                     keyPoints: ['Point one', 'Point two', 'Point three'],
                     voiceNotes: 'Direct and practical.',
+                    primaryContentType: 'article',
+                    secondaryContentTypes: ['linkedin-post'],
+                    secondaryContentStrategy: 'Secondary outputs should be valuable and invite readers to the primary article.',
                   }),
                 },
               }],
@@ -160,7 +164,7 @@ describe('pipeline runner', () => {
               ...defaultAppSettings,
               markdownOutputDir: markdownDir,
               assetOutputDir: assetDir,
-              contentTargets: [{ contentType: 'linkedin-post', count: 1 }],
+              contentTargets: [{ contentType: 'linkedin-post', role: 'primary', count: 1 }],
             },
             secrets: {
               openRouterApiKey: 'test-openrouter-key',
@@ -177,7 +181,7 @@ describe('pipeline runner', () => {
       const interactionsRaw = await readFile(result.artifact.interactionsPath, 'utf8');
       const interactions = JSON.parse(interactionsRaw) as {
         llmCalls: Array<{ stageId: string; requestType: string; status: string; requestBody: string; responseBody: string | null }>;
-        t2iCalls: Array<unknown>;
+        t2iCalls: Array<{ stageId: string }>;
       };
 
       expect(interactions.llmCalls.length).toBeGreaterThanOrEqual(3);
@@ -185,7 +189,7 @@ describe('pipeline runner', () => {
       expect(interactions.llmCalls.some((call) => call.stageId === 'output' && call.requestType === 'text')).toBe(true);
       expect(interactions.llmCalls.some((call) => call.stageId === 'links' && call.requestType === 'structured')).toBe(true);
       expect(interactions.llmCalls.every((call) => typeof call.requestBody === 'string' && call.requestBody.length > 0)).toBe(true);
-      expect(interactions.t2iCalls).toHaveLength(0);
+      expect(interactions.t2iCalls.some((call) => call.stageId === 'images')).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
       await rm(tempRoot, { recursive: true, force: true });
@@ -210,9 +214,9 @@ describe('pipeline runner', () => {
               markdownOutputDir: markdownDir,
               assetOutputDir: assetDir,
               contentTargets: [
-                { contentType: 'article', count: 1 },
-                { contentType: 'x-thread', count: 1 },
-                { contentType: 'x-post', count: 1 },
+                { contentType: 'article', role: 'primary', count: 1 },
+                { contentType: 'x-thread', role: 'secondary', count: 1 },
+                { contentType: 'x-post', role: 'secondary', count: 1 },
               ],
               style: 'professional',
             },
@@ -233,7 +237,7 @@ describe('pipeline runner', () => {
 
       expect(result.artifact.outputCount).toBe(3);
       expect(result.artifact.markdownPaths).toHaveLength(3);
-      expect(result.analytics.outputItemCalls).toHaveLength(3);
+      expect(result.analytics.outputItemCalls).toHaveLength(2);
       expect(result.analytics.outputItemCalls.every((item) => item.durationMs >= 0)).toBe(true);
 
       const fileNames = result.artifact.markdownPaths.map((filePath) => path.basename(filePath)).sort();
@@ -255,7 +259,7 @@ describe('pipeline runner', () => {
         .filter((filePath) => path.basename(filePath).startsWith('x-'))
         .map(async (filePath) => readFile(filePath, 'utf8')));
       for (const content of xContents) {
-        expect(content).toContain('Anchored to generated article context from this run.');
+          expect(content).toContain('Anchored to generated primary context from this run.');
       }
 
       const generationEntries = await readdir(result.artifact.generationDir);
@@ -275,9 +279,9 @@ describe('pipeline runner', () => {
       };
       expect(job.prompt).toBe('multi target generation test');
       expect(job.contentTargets).toEqual([
-        { contentType: 'article', count: 1 },
-        { contentType: 'x-thread', count: 1 },
-        { contentType: 'x-post', count: 1 },
+        { contentType: 'article', role: 'primary', count: 1 },
+        { contentType: 'x-thread', role: 'secondary', count: 1 },
+        { contentType: 'x-post', role: 'secondary', count: 1 },
       ]);
       expect(job.style).toBe('professional');
       expect(job.settings.markdownOutputDir).toBe(markdownDir);
@@ -287,7 +291,7 @@ describe('pipeline runner', () => {
     }
   });
 
-  it('skips article section flow when article target is absent', async () => {
+  it('uses generic primary generation flow when article is not the primary type', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-non-article-only-'));
     const updates: StageViewModel[][] = [];
 
@@ -305,8 +309,8 @@ describe('pipeline runner', () => {
               markdownOutputDir: markdownDir,
               assetOutputDir: assetDir,
               contentTargets: [
-                { contentType: 'x-thread', count: 2 },
-                { contentType: 'linkedin-post', count: 1 },
+                { contentType: 'x-thread', role: 'primary', count: 1 },
+                { contentType: 'linkedin-post', role: 'secondary', count: 1 },
               ],
               style: 'professional',
             },
@@ -325,24 +329,28 @@ describe('pipeline runner', () => {
         },
       );
 
-      expect(result.artifact.outputCount).toBe(3);
-      expect(result.artifact.imageCount).toBe(0);
+      expect(result.artifact.outputCount).toBe(2);
+      expect(result.artifact.imageCount).toBe(1);
       expect(result.artifact.sectionCount).toBe(0);
-      expect(result.analytics.outputItemCalls).toHaveLength(3);
+      expect(result.analytics.outputItemCalls).toHaveLength(1);
 
       const planningStage = result.stages.find((stage) => stage.id === 'planning');
-      expect(planningStage?.detail).toContain('Skipped article planning');
+      expect(planningStage?.detail).toContain('Primary direction');
+
+      const sectionsStage = result.stages.find((stage) => stage.id === 'sections');
+      expect(sectionsStage?.title).toContain('Generating Primary Content');
 
       const sharedBriefStage = result.stages.find((stage) => stage.id === 'shared-brief');
       expect(sharedBriefStage?.detail).toContain('Shared brief generated successfully');
 
       const firstOutput = await readFile(result.artifact.markdownPaths[0]!, 'utf8');
+      expect(firstOutput).toContain('# Launch Update For Workflow Automation');
       expect(firstOutput).toContain('dry-run placeholder for single-prompt channel generation');
 
       const outputStageSnapshots = updates
         .map((snapshot) => snapshot.find((stage) => stage.id === 'output'))
         .filter((stage): stage is StageViewModel => Boolean(stage));
-      expect(outputStageSnapshots.some((stage) => (stage.items ?? []).length === 3)).toBe(true);
+      expect(outputStageSnapshots.some((stage) => (stage.items ?? []).length === 1)).toBe(true);
       expect(outputStageSnapshots.some((stage) => (stage.items ?? []).every((item) => item.status !== 'pending'))).toBe(true);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
@@ -454,8 +462,8 @@ describe('pipeline runner', () => {
               markdownOutputDir: markdownDir,
               assetOutputDir: assetDir,
               contentTargets: [
-                { contentType: 'x-post', count: 1 },
-                { contentType: 'x-thread', count: 1 },
+                { contentType: 'x-post', role: 'primary', count: 1 },
+                { contentType: 'x-thread', role: 'secondary', count: 1 },
               ],
             },
             secrets: {
@@ -897,11 +905,15 @@ describe('pipeline runner', () => {
           failedStage: null,
           errorMessage: null,
           contentBrief: {
+            title: 'Completed Session Reuse Flow',
             description: 'Persisted shared brief for resume reuse testing.',
             targetAudience: 'Content operators',
             corePromise: 'Resume should reuse persisted artifacts safely.',
             keyPoints: ['Reuse shared brief.', 'Reuse plan.', 'Reuse section drafts.'],
             voiceNotes: 'Direct and practical.',
+            primaryContentType: 'article',
+            secondaryContentTypes: ['blog-post'],
+            secondaryContentStrategy: 'Secondary outputs should offer practical value while directing readers to the primary output.',
           },
           plan: {
             title: 'Completed Session Reuse Flow',
@@ -992,11 +1004,11 @@ describe('pipeline runner', () => {
               markdownOutputDir: markdownDir,
               assetOutputDir: assetDir,
               contentTargets: [
-                { contentType: 'article', count: 1 },
-                { contentType: 'blog-post', count: 1 },
-                { contentType: 'reddit-post', count: 1 },
-                { contentType: 'newsletter', count: 1 },
-                { contentType: 'landing-page-copy', count: 1 },
+                { contentType: 'article', role: 'primary', count: 1 },
+                { contentType: 'blog-post', role: 'secondary', count: 1 },
+                { contentType: 'reddit-post', role: 'secondary', count: 1 },
+                { contentType: 'newsletter', role: 'secondary', count: 1 },
+                { contentType: 'landing-page-copy', role: 'secondary', count: 1 },
               ],
             },
             secrets: {
@@ -1061,7 +1073,7 @@ describe('pipeline runner', () => {
               ...defaultAppSettings,
               markdownOutputDir: markdownDir,
               assetOutputDir: assetDir,
-              contentTargets: [{ contentType: 'x-post', count: 1 }],
+              contentTargets: [{ contentType: 'x-post', role: 'primary', count: 1 }],
             },
             secrets: {
               openRouterApiKey: null,
@@ -1076,7 +1088,7 @@ describe('pipeline runner', () => {
       );
 
       expect(result.artifact.slug).toBe('generated-content');
-      expect(result.artifact.title).toBe('Generated Content Batch');
+      expect(result.artifact.title).toBe('Generated Content Brief');
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

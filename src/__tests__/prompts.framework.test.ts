@@ -16,6 +16,7 @@ import type { ContentBrief } from '../types/contentBrief.js';
 
 function mockBrief(): ContentBrief {
   return {
+    title: 'Shipping AI-Assisted Workflows Across Channels',
     description: 'A practical cross-channel content body about shipping AI-assisted workflows with clear operational guidance.',
     targetAudience: 'Content and product teams running repeatable publishing workflows.',
     corePromise: 'Readers leave with a concrete plan they can run in the next production cycle.',
@@ -25,6 +26,9 @@ function mockBrief(): ContentBrief {
       'Adapt format per channel while preserving core message.',
     ],
     voiceNotes: 'Direct, practical, and specific tone. Avoid hype and vague statements.',
+    primaryContentType: 'article',
+    secondaryContentTypes: ['x-thread', 'linkedin-post'],
+    secondaryContentStrategy: 'Secondaries should provide standalone value and create curiosity that leads to the primary piece.',
   };
 }
 
@@ -163,6 +167,8 @@ describe('channel prompt builder', () => {
     const messages = buildSingleShotContentMessages({
       idea: 'Announce workflow automation update',
       contentType: 'linkedin-post',
+      role: 'secondary',
+      primaryContentType: 'article',
       style: 'opinionated',
       outputIndex: 1,
       outputCountForType: 1,
@@ -175,7 +181,7 @@ describe('channel prompt builder', () => {
     expect(messages[0]?.content).toContain('Style directive (opinionated)');
     expect(messages[0]?.content).toContain('LinkedIn-native post');
     expect(messages[1]?.content).toContain('Shared content brief');
-    expect(messages[1]?.content).toContain('Reference article context');
+    expect(messages[1]?.content).toContain('Reference primary context');
     expect(messages[1]?.content).toContain('Target length (large linkedin post)');
   });
 
@@ -183,6 +189,8 @@ describe('channel prompt builder', () => {
     const messages = buildSingleShotContentMessages({
       idea: 'Share launch takeaways',
       contentType: 'x-thread',
+      role: 'secondary',
+      primaryContentType: 'article',
       style: 'professional',
       outputIndex: 2,
       outputCountForType: 3,
@@ -199,6 +207,8 @@ describe('channel prompt builder', () => {
     const messages = buildSingleShotContentMessages({
       idea: 'Ship one short launch note',
       contentType: 'x-post',
+      role: 'secondary',
+      primaryContentType: 'article',
       style: 'professional',
       outputIndex: 1,
       outputCountForType: 1,
@@ -214,6 +224,8 @@ describe('channel prompt builder', () => {
     const messages = buildSingleShotContentMessages({
       idea: 'Fallback channel guidance',
       contentType: 'unknown-channel',
+      role: 'secondary',
+      primaryContentType: 'article',
       style: 'professional',
       outputIndex: 1,
       outputCountForType: 1,

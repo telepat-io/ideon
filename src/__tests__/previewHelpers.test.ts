@@ -217,4 +217,30 @@ describe('preview helpers', () => {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
+
+  it('selects generation primary from job metadata when article is secondary', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-generations-primary-from-job-'));
+
+    try {
+      const generationDir = path.join(tempRoot, '20260329-120000-topic');
+      await mkdir(generationDir, { recursive: true });
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Article Secondary\n\nBody\n', 'utf8');
+      await writeFile(path.join(generationDir, 'blog-1.md'), '# Blog Primary\n\nBody\n', 'utf8');
+      await writeFile(
+        path.join(generationDir, 'job.json'),
+        `${JSON.stringify({ contentTargets: [
+          { contentType: 'blog-post', role: 'primary', count: 1 },
+          { contentType: 'article', role: 'secondary', count: 1 },
+        ] })}\n`,
+        'utf8',
+      );
+
+      const generations = await listAllGenerations(tempRoot);
+      expect(generations).toHaveLength(1);
+      expect(generations[0]?.primaryContentType).toBe('blog-post');
+      expect(generations[0]?.title).toBe('Blog Primary');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
 });

@@ -224,7 +224,9 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
     throw new MissingArticleError(`Generation "${generationId}" no longer exists.`);
   }
 
-  const canonicalSlug = generation.outputs.find((output) => output.contentType === 'article')?.slug
+  const sourcePath = resolveGenerationSourcePath(generation, markdownOutputDir);
+
+  const canonicalSlug = generation.outputs.find((output) => output.contentType === generation.primaryContentType)?.slug
     ?? generation.outputs[0]?.slug
     ?? generation.id;
 
@@ -260,6 +262,7 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
   return {
     title: generation.title,
     generationId: generation.id,
+    sourcePath,
     interactions,
     analyticsSummary,
     outputs,
@@ -281,13 +284,20 @@ async function resolveActivePreviewArticle(
     return null;
   }
 
-  const sourcePath = activeArticle.outputs[0]?.sourcePath ?? path.join(markdownOutputDir, activeArticle.id);
-
   return {
     slug: activeArticle.id,
     title: activeArticle.title,
-    sourcePath,
+    sourcePath: resolveGenerationSourcePath(activeArticle, markdownOutputDir),
   };
+}
+
+function resolveGenerationSourcePath(
+  generation: { id: string; primaryContentType: string; outputs: Array<{ contentType: string; sourcePath: string }> },
+  markdownOutputDir: string,
+): string {
+  return generation.outputs.find((output) => output.contentType === generation.primaryContentType)?.sourcePath
+    ?? generation.outputs[0]?.sourcePath
+    ?? path.join(markdownOutputDir, generation.id);
 }
 
 function isMissingFileError(error: unknown): boolean {

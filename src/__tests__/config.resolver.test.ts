@@ -33,7 +33,7 @@ describe('resolveRunInput', () => {
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
       markdownOutputDir: '/saved-out',
       assetOutputDir: '/saved-out/assets',
-      contentTargets: [{ contentType: 'article', count: 1 }],
+      contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
       targetLength: 'medium',
     });
@@ -192,14 +192,14 @@ describe('resolveRunInput', () => {
       markdownOutputDir: '/saved-out',
       assetOutputDir: '/saved-out/assets',
       style: 'professional',
-      contentTargets: [{ contentType: 'article', count: 1 }],
+      contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       targetLength: 'medium',
     });
 
     const result = await resolveRunInput({ idea: 'defaults test' });
 
     expect(result.config.settings.style).toBe('professional');
-    expect(result.config.settings.contentTargets).toEqual([{ contentType: 'article', count: 1 }]);
+    expect(result.config.settings.contentTargets).toEqual([{ contentType: 'article', role: 'primary', count: 1 }]);
   });
 
   it('applies direct style and target overrides', async () => {
@@ -208,18 +208,18 @@ describe('resolveRunInput', () => {
       style: 'technical',
       targetLength: 'large',
       contentTargets: [
-        { contentType: 'article', count: 1 },
-        { contentType: 'x-thread', count: 2 },
-        { contentType: 'x-post', count: 1 },
+        { contentType: 'article', role: 'primary', count: 1 },
+        { contentType: 'x-thread', role: 'secondary', count: 2 },
+        { contentType: 'x-post', role: 'secondary', count: 1 },
       ],
     });
 
     expect(result.config.settings.style).toBe('technical');
     expect(result.config.settings.targetLength).toBe('large');
     expect(result.config.settings.contentTargets).toEqual([
-      { contentType: 'article', count: 1 },
-      { contentType: 'x-thread', count: 2 },
-      { contentType: 'x-post', count: 1 },
+      { contentType: 'article', role: 'primary', count: 1 },
+      { contentType: 'x-thread', role: 'secondary', count: 2 },
+      { contentType: 'x-post', role: 'secondary', count: 1 },
     ]);
   });
 
@@ -233,7 +233,7 @@ describe('resolveRunInput', () => {
         JSON.stringify({
           idea: 'legacy mode test',
           settings: {
-            contentTargets: [{ contentType: 'x-post', count: 1, xMode: 'thread' }],
+            contentTargets: [{ contentType: 'x-post', role: 'primary', count: 1, xMode: 'thread' }],
           },
         }),
         'utf8',

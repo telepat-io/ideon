@@ -22,24 +22,24 @@ You can inspect per-run totals in `generation.analytics.json`.
 Primary drivers:
 
 - Total output count and mix of content types
-- Whether `article` is requested (enables planning/sections/image stages)
+- Primary content type (`article` primary uses structured flow; non-article primary uses generic flow)
 - Image model speed and retry behavior
 - Network latency and provider backoff windows
 
-Article-inclusive runs execute all five stages; channel-only runs skip article/image stages.
+Article-primary runs execute structured article stages; non-article-primary runs execute generic primary stages and still render one primary cover image.
 
 ## Cost-Control Patterns
 
 1. Validate with dry-run first:
 
 ```bash
-ideon write --dry-run "Your idea" --target article=1 --target x-thread=1 --target x-post=1
+ideon write --dry-run "Your idea" --primary article=1 --secondary x-thread=1 --secondary x-post=1
 ```
 
 2. Start with fewer variants, then scale:
 
 ```bash
-ideon write "Your idea" --target article=1 --target x-post=1
+ideon write "Your idea" --primary article=1 --secondary x-post=1
 ```
 
 3. Use job files for repeatable experiments and adjust one variable at a time.

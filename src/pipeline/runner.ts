@@ -42,6 +42,7 @@ import {
   type WriteSessionState,
   type WriteStageId,
 } from './sessionStore.js';
+import type { ArticleImagePrompt } from '../types/article.js';
 
 export interface PipelineRunOptions {
   onUpdate?: (stages: StageViewModel[]) => void;
@@ -51,7 +52,16 @@ export interface PipelineRunOptions {
   enrichLinks?: boolean;
 }
 
-export function createInitialStages(): StageViewModel[] {
+export function createInitialStages(options: { isArticlePrimary: boolean } = { isArticlePrimary: true }): StageViewModel[] {
+  const planningTitle = options.isArticlePrimary ? 'Planning Primary Article' : 'Planning Primary Content';
+  const planningDetail = options.isArticlePrimary
+    ? 'Generating title, slug, section plan, and image slots.'
+    : 'Defining the primary angle and output intent.';
+  const sectionsTitle = options.isArticlePrimary ? 'Writing Sections' : 'Generating Primary Content';
+  const sectionsDetail = options.isArticlePrimary
+    ? 'Waiting for the approved article plan.'
+    : 'Waiting for primary content generation to begin.';
+
   return [
     {
       id: 'shared-brief',
@@ -61,15 +71,15 @@ export function createInitialStages(): StageViewModel[] {
     },
     {
       id: 'planning',
-      title: 'Planning Article',
+      title: planningTitle,
       status: 'pending',
-      detail: 'Generating title, slug, section plan, and image slots.',
+      detail: planningDetail,
     },
     {
       id: 'sections',
-      title: 'Writing Sections',
+      title: sectionsTitle,
       status: 'pending',
-      detail: 'Waiting for the approved article plan.',
+      detail: sectionsDetail,
     },
     {
       id: 'image-prompts',
@@ -85,9 +95,9 @@ export function createInitialStages(): StageViewModel[] {
     },
     {
       id: 'output',
-      title: 'Assembling Markdown',
+      title: 'Generating Channel Content',
       status: 'pending',
-      detail: 'Waiting for article content and assets.',
+      detail: 'Waiting for primary content and assets.',
     },
     {
       id: 'links',
@@ -102,14 +112,17 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const runStartedAtMs = Date.now();
   const runStartedAt = new Date(runStartedAtMs).toISOString();
   const runId = randomUUID();
-  const stages: StageViewModel[] = createInitialStages();
+  const primaryTarget = getPrimaryTarget(input.config.settings.contentTargets);
+  const secondaryTargets = getSecondaryTargets(input.config.settings.contentTargets);
+  const isArticlePrimary = primaryTarget.contentType === 'article';
+  const stages: StageViewModel[] = createInitialStages({ isArticlePrimary });
   options.onUpdate?.(cloneStages(stages));
   const dryRun = options.dryRun ?? false;
   const shouldEnrichLinks = options.enrichLinks ?? true;
   const runMode = options.runMode ?? 'fresh';
   const workingDir = options.workingDir ?? process.cwd();
   const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
-  const hasArticleTarget = input.config.settings.contentTargets.some((target) => target.contentType === 'article');
+  const hasArticlePrimary = isArticlePrimary;
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
   stageTracking.set('shared-brief', {
     startedAtMs: runStartedAtMs,
@@ -154,14 +167,16 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   try {
     await ensureOutputDirectories(writeSession.outputPaths);
     const openRouter = dryRun ? null : new OpenRouterClient(requireSecret(input.config.secrets.openRouterApiKey, 'OpenRouter API key'));
-    const replicate = dryRun || !hasArticleTarget ? null : new ReplicateClient(requireSecret(input.config.secrets.replicateApiToken, 'Replicate API token'));
+    const canRenderImagesLive = Boolean(input.config.secrets.replicateApiToken);
+    const imageDryRun = dryRun || !canRenderImagesLive;
+    const replicate = imageDryRun ? null : new ReplicateClient(requireSecret(input.config.secrets.replicateApiToken, 'Replicate API token'));
     let contentBrief = writeSession.contentBrief;
     let plan = writeSession.plan;
     let text = writeSession.text;
     let imagePrompts = writeSession.imagePrompts ?? writeSession.imageArtifacts?.imagePrompts ?? null;
     let imageArtifacts = writeSession.imageArtifacts;
     let linksResult = writeSession.links;
-    let articleMarkdownTemplate: string | null = null;
+    let primaryMarkdownTemplate: string | null = null;
 
     if (contentBrief) {
       markStageCompleted(stageTracking, 'shared-brief');
@@ -169,7 +184,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         ...stages[0],
         status: 'succeeded',
         detail: 'Reused saved shared brief from .ideon/write.',
-        summary: contentBrief.description,
+        summary: contentBrief.title,
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-brief'),
       };
     } else {
@@ -191,7 +206,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         ...stages[0],
         status: 'succeeded',
         detail: 'Shared brief generated successfully.',
-        summary: contentBrief.description,
+        summary: contentBrief.title,
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-brief'),
       };
       writeSession = await patchWriteSession(
@@ -206,7 +221,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       );
     }
 
-    if (hasArticleTarget) {
+    if (hasArticlePrimary) {
       stages[1] = {
         ...stages[1],
         status: 'running',
@@ -489,40 +504,94 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         );
       }
     } else {
+      if (!contentBrief) {
+        throw new Error('Shared content brief is missing for primary content planning stage.');
+      }
+
+      stages[1] = {
+        ...stages[1],
+        status: 'running',
+        detail: `Defining primary direction for ${primaryTarget.contentType}.`,
+      };
+      markStageStarted(stageTracking, 'planning');
+      options.onUpdate?.(cloneStages(stages));
+
       markStageCompleted(stageTracking, 'planning');
       stages[1] = {
         ...stages[1],
         status: 'succeeded',
-        detail: 'Skipped article planning (no article target).',
-        summary: 'No article requested',
+        detail: `Primary direction locked for ${primaryTarget.contentType}.`,
+        summary: `Primary: ${primaryTarget.contentType}`,
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
       };
+
+      stages[2] = {
+        ...stages[2],
+        status: 'running',
+        detail: `Generating primary ${primaryTarget.contentType} content.`,
+      };
+      markStageStarted(stageTracking, 'sections');
+      options.onUpdate?.(cloneStages(stages));
+
+      primaryMarkdownTemplate = await writeSingleShotContent({
+        idea: input.idea,
+        contentType: primaryTarget.contentType,
+        role: 'primary',
+        primaryContentType: primaryTarget.contentType,
+        style: input.config.settings.style,
+        outputIndex: 1,
+        outputCountForType: 1,
+        articleReferenceMarkdown: undefined,
+        contentBrief,
+        settings: input.config.settings,
+        openRouter,
+        dryRun,
+        onInteraction(interaction) {
+          llmInteractions.push(interaction);
+        },
+        onLlmMetrics(metrics) {
+          recordLlmMetrics(stageTracking, 'sections', metrics);
+        },
+      });
 
       markStageCompleted(stageTracking, 'sections');
       stages[2] = {
         ...stages[2],
         status: 'succeeded',
-        detail: 'Skipped section writing (no article target).',
-        summary: 'No article requested',
+        detail: `Generated primary ${primaryTarget.contentType} content.`,
+        summary: `Primary content ready`,
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
       };
+
+      stages[3] = {
+        ...stages[3],
+        status: 'running',
+        detail: 'Preparing primary cover image prompt.',
+      };
+      markStageStarted(stageTracking, 'image-prompts');
+      options.onUpdate?.(cloneStages(stages));
+
+      imagePrompts = [buildPrimaryCoverPrompt(contentBrief, primaryTarget.contentType, primaryMarkdownTemplate)];
 
       markStageCompleted(stageTracking, 'image-prompts');
       stages[3] = {
         ...stages[3],
         status: 'succeeded',
-        detail: 'Skipped image prompt expansion (no article target).',
-        summary: 'No article requested',
+        detail: 'Prepared primary cover image prompt.',
+        summary: '1 prompt ready',
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
       };
 
-      markStageCompleted(stageTracking, 'images');
       stages[4] = {
         ...stages[4],
-        status: 'succeeded',
-        detail: 'Skipped image rendering (no article target).',
-        summary: 'No article requested',
-        stageAnalytics: snapshotStageAnalytics(stageTracking, 'images'),
+        status: 'running',
+        detail: 'Rendering primary cover image.',
+      };
+      markStageStarted(stageTracking, 'images');
+      stages[4] = {
+        ...stages[4],
+        status: 'running',
+        detail: 'Waiting for cover image rendering.',
       };
       options.onUpdate?.(cloneStages(stages));
     }
@@ -544,10 +613,11 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         sourceJob: input.job,
       }),
     );
-    const primaryMarkdownPath = path.join(generationDir, 'article-1.md');
+    const primaryFilePrefix = toFilePrefix(primaryTarget.contentType);
+    const primaryMarkdownPath = path.join(generationDir, `${primaryFilePrefix}-1.md`);
     const sharedAssetDir = generationDir;
 
-    if (hasArticleTarget) {
+    if (hasArticlePrimary) {
       if (imageArtifacts) {
         markStageCompleted(stageTracking, 'images');
         stages[4] = {
@@ -568,7 +638,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           replicate,
           markdownPath: primaryMarkdownPath,
           assetDir: sharedAssetDir,
-          dryRun,
+          dryRun: imageDryRun,
           onInteraction(interaction) {
             t2iInteractions.push(interaction);
           },
@@ -636,18 +706,122 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         imagePrompts: imageArtifacts.imagePrompts,
         renderedImages: imageArtifacts.renderedImages,
       };
-      articleMarkdownTemplate = renderMarkdownDocument(article);
+      primaryMarkdownTemplate = renderMarkdownDocument(article);
+    } else {
+      if (!imagePrompts || imagePrompts.length === 0) {
+        throw new Error('Primary cover image prompt is missing for image rendering stage.');
+      }
+
+      if (imageArtifacts) {
+        markStageCompleted(stageTracking, 'images');
+        stages[4] = {
+          ...stages[4],
+          status: 'succeeded',
+          detail: 'Reused previously rendered primary cover image from .ideon/write.',
+          summary: sharedAssetDir,
+          stageAnalytics: snapshotStageAnalytics(stageTracking, 'images'),
+        };
+      } else {
+        const renderedImages = await renderExpandedImages({
+          prompts: imagePrompts,
+          settings: input.config.settings,
+          replicate,
+          markdownPath: primaryMarkdownPath,
+          assetDir: sharedAssetDir,
+          dryRun: imageDryRun,
+          onInteraction(interaction) {
+            t2iInteractions.push(interaction);
+          },
+          onRenderComplete(metrics) {
+            imageRenderCalls.push({
+              imageId: metrics.imageId,
+              kind: metrics.kind,
+              durationMs: metrics.durationMs,
+              attempts: metrics.attempts,
+              retries: metrics.retries,
+              retryBackoffMs: metrics.retryBackoffMs,
+              outputBytes: metrics.outputBytes,
+              costUsd: metrics.costUsd,
+              costSource: metrics.costSource,
+              modelId: metrics.modelId,
+            });
+            recordStageCost(stageTracking, 'images', metrics.costUsd, metrics.costSource);
+            addStageRetries(stageTracking, 'images', metrics.retries);
+          },
+          onProgress(detail) {
+            stages[4] = {
+              ...stages[4],
+              status: 'running',
+              detail,
+            };
+            options.onUpdate?.(cloneStages(stages));
+          },
+        });
+
+        imageArtifacts = {
+          imagePrompts,
+          renderedImages,
+        };
+
+        markStageCompleted(stageTracking, 'images');
+        stages[4] = {
+          ...stages[4],
+          status: 'succeeded',
+          detail: 'Rendered and stored primary cover image.',
+          summary: sharedAssetDir,
+          stageAnalytics: snapshotStageAnalytics(stageTracking, 'images'),
+        };
+
+        writeSession = await patchWriteSession(
+          {
+            status: 'running',
+            lastCompletedStage: 'images',
+            failedStage: null,
+            errorMessage: null,
+            imageArtifacts,
+          },
+          workingDir,
+        );
+      }
+
+      if (!primaryMarkdownTemplate) {
+        throw new Error(`Primary ${primaryTarget.contentType} content is missing before output assembly.`);
+      }
+
+      const coverImage = imageArtifacts?.renderedImages.find((image) => image.kind === 'cover') ?? null;
+      if (coverImage) {
+        primaryMarkdownTemplate = withCoverImage(primaryMarkdownTemplate, coverImage.relativePath, deriveTitleFromIdea(input.idea));
+      }
+
+      primaryMarkdownTemplate = applyPrimaryTitleHeading(
+        primaryMarkdownTemplate,
+        contentBrief.title || deriveTitleFromIdea(input.idea),
+      );
     }
-    const requestedOutputs = expandRequestedOutputs(input.config.settings.contentTargets);
     const markdownPaths: string[] = [];
     const generatedOutputs: Array<{ fileId: string; contentType: string; markdownPath: string }> = [];
+    const primaryOutputId = toOutputItemId(primaryFilePrefix, 1);
+
+    if (!primaryMarkdownTemplate) {
+      throw new Error('Primary markdown output is missing before channel content generation.');
+    }
+
+    await writeUtf8File(primaryMarkdownPath, primaryMarkdownTemplate);
+    markdownPaths.push(primaryMarkdownPath);
+    generatedOutputs.push({
+      fileId: primaryOutputId,
+      contentType: primaryTarget.contentType,
+      markdownPath: primaryMarkdownPath,
+    });
+
+    const requestedOutputs = expandRequestedOutputs(secondaryTargets, { fallbackToArticle: false });
 
     stages[5] = {
       ...stages[5],
       status: 'running',
-      detail: hasArticleTarget
-        ? 'Writing article and channel outputs.'
-        : 'Generating channel outputs from single prompts.',
+      detail: requestedOutputs.length > 0
+        ? 'Generating secondary channel outputs from primary anchor content.'
+        : 'No secondary content requested.',
       items: requestedOutputs.map((output) => ({
         id: toOutputItemId(output.filePrefix, output.index),
         label: formatOutputItemLabel(output.contentType, output.index, output.outputCountForType),
@@ -690,34 +864,30 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       const markdownPath = path.join(generationDir, `${output.filePrefix}-${output.index}.md`);
       try {
-        const content = output.contentType === 'article'
-          ? articleMarkdownTemplate
-          : await writeSingleShotContent({
-              idea: input.idea,
-              contentType: output.contentType,
-              style: input.config.settings.style,
-              outputIndex: output.index,
-              outputCountForType: output.outputCountForType,
-              articleReferenceMarkdown: articleMarkdownTemplate ?? undefined,
-              contentBrief,
-              settings: input.config.settings,
-              openRouter,
-              dryRun,
-              onInteraction(interaction) {
-                llmInteractions.push(interaction);
-              },
-              onLlmMetrics(metrics) {
-                recordLlmMetrics(stageTracking, 'output', metrics);
-                itemTracking.retries += metrics.retries;
-                const cost = estimateLlmCostUsd(metrics.modelId, metrics.usage);
-                itemTracking.costs.push(cost.usd);
-                itemTracking.costSources.push(cost.source);
-              },
-            });
-
-        if (output.contentType === 'article' && !content) {
-          throw new Error('Article output requested but article section-generation result is missing.');
-        }
+        const content = await writeSingleShotContent({
+          idea: input.idea,
+          contentType: output.contentType,
+          style: input.config.settings.style,
+          outputIndex: output.index,
+          outputCountForType: output.outputCountForType,
+          articleReferenceMarkdown: primaryMarkdownTemplate ?? undefined,
+          contentBrief,
+          settings: input.config.settings,
+          openRouter,
+          dryRun,
+          role: 'secondary',
+          primaryContentType: primaryTarget.contentType,
+          onInteraction(interaction) {
+            llmInteractions.push(interaction);
+          },
+          onLlmMetrics(metrics) {
+            recordLlmMetrics(stageTracking, 'output', metrics);
+            itemTracking.retries += metrics.retries;
+            const cost = estimateLlmCostUsd(metrics.modelId, metrics.usage);
+            itemTracking.costs.push(cost.usd);
+            itemTracking.costSources.push(cost.source);
+          },
+        });
 
         if (!content) {
           throw new Error(`Generated empty content for ${output.contentType} output ${output.index}.`);
@@ -792,7 +962,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     stages[5] = {
       ...stages[5],
       status: 'succeeded',
-      detail: 'Markdown file assembled successfully.',
+      detail: requestedOutputs.length > 0
+        ? 'Generated secondary channel content successfully.'
+        : 'No secondary outputs requested.',
       summary: `${markdownPaths.length} files in ${generationDir}`,
       stageAnalytics: snapshotStageAnalytics(stageTracking, 'output'),
     };
@@ -874,7 +1046,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       linksResult = await enrichLinks({
         markdownFiles: eligibleOutputsForLinks,
-        articleTitle: plan?.title ?? deriveTitleFromIdea(input.idea),
+        articleTitle: plan?.title ?? contentBrief.title ?? deriveTitleFromIdea(input.idea),
         articleDescription: plan?.description ?? contentBrief.description,
         openRouter,
         settings: input.config.settings,
@@ -994,7 +1166,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const primaryMarkdownPathForArtifact = markdownPaths[0] ?? primaryMarkdownPath;
 
     const artifact = {
-      title: plan?.title ?? deriveTitleFromIdea(input.idea),
+      title: plan?.title ?? contentBrief.title ?? deriveTitleFromIdea(input.idea),
       slug: plan?.slug ?? slugifyIdea(input.idea),
       sectionCount: text?.sections.length ?? 0,
       imageCount: imageArtifacts?.renderedImages.length ?? 0,
@@ -1350,6 +1522,7 @@ function markRunningStageFailed(stages: StageViewModel[], detail: string): Write
 
 function expandRequestedOutputs(
   contentTargets: Array<{ contentType: string; count: number }>,
+  options: { fallbackToArticle: boolean } = { fallbackToArticle: true },
 ): Array<{ contentType: string; filePrefix: string; index: number; outputCountForType: number }> {
   const outputs: Array<{ contentType: string; filePrefix: string; index: number; outputCountForType: number }> = [];
   const seenPerPrefix = new Map<string, number>();
@@ -1368,7 +1541,7 @@ function expandRequestedOutputs(
     }
   }
 
-  if (outputs.length === 0) {
+  if (outputs.length === 0 && options.fallbackToArticle) {
     return [{ contentType: 'article', filePrefix: 'article', index: 1, outputCountForType: 1 }];
   }
 
@@ -1385,6 +1558,87 @@ function toFilePrefix(contentType: string): string {
   if (contentType === 'newsletter') return 'newsletter';
   if (contentType === 'landing-page-copy') return 'landing';
   return contentType.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'content';
+}
+
+function getPrimaryTarget(
+  contentTargets: Array<{ contentType: string; role: string; count: number }>,
+): { contentType: string; role: 'primary'; count: number } {
+  const primary = contentTargets.find((target) => target.role === 'primary');
+  if (!primary) {
+    throw new Error('Write configuration must include exactly one primary content target.');
+  }
+
+  if (primary.count !== 1) {
+    throw new Error('Primary content target count must be exactly 1.');
+  }
+
+  return {
+    contentType: primary.contentType,
+    role: 'primary',
+    count: primary.count,
+  };
+}
+
+function getSecondaryTargets(
+  contentTargets: Array<{ contentType: string; role: string; count: number }>,
+): Array<{ contentType: string; role: 'secondary'; count: number }> {
+  return contentTargets
+    .filter((target) => target.role === 'secondary')
+    .map((target) => ({
+      contentType: target.contentType,
+      role: 'secondary',
+      count: target.count,
+    }));
+}
+
+function buildPrimaryCoverPrompt(
+  contentBrief: { description: string; targetAudience: string; corePromise: string; voiceNotes: string },
+  primaryContentType: string,
+  primaryMarkdown: string,
+): ArticleImagePrompt {
+  const markdownExcerpt = primaryMarkdown
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 240);
+
+  return {
+    id: 'cover',
+    kind: 'cover',
+    description: `Cover image for ${primaryContentType}`,
+    anchorAfterSection: null,
+    prompt: [
+      `Editorial cover image for ${primaryContentType}.`,
+      `Core angle: ${contentBrief.description}`,
+      `Audience: ${contentBrief.targetAudience}`,
+      `Promise: ${contentBrief.corePromise}`,
+      `Voice: ${contentBrief.voiceNotes}`,
+      `Primary excerpt: ${markdownExcerpt}`,
+      'Cinematic composition, clear focal subject, no text overlays, high visual clarity.',
+    ].join(' '),
+  };
+}
+
+function withCoverImage(markdown: string, relativePath: string, altText: string): string {
+  const coverLine = `![${altText}](${relativePath})`;
+  if (markdown.includes(coverLine)) {
+    return markdown;
+  }
+
+  return `${coverLine}\n\n${markdown}`;
+}
+
+function applyPrimaryTitleHeading(markdown: string, title: string): string {
+  const normalizedTitle = title.trim();
+  if (!normalizedTitle) {
+    return markdown;
+  }
+
+  const headingPattern = /^#\s+.+$/m;
+  if (headingPattern.test(markdown)) {
+    return markdown.replace(headingPattern, `# ${normalizedTitle}`);
+  }
+
+  return `# ${normalizedTitle}\n\n${markdown}`;
 }
 
 function deriveTitleFromIdea(idea: string): string {
@@ -1477,4 +1731,8 @@ export const __testInternals = {
   slugifyIdea,
   asWriteStageId,
   chooseStageCostSource,
+  getPrimaryTarget,
+  getSecondaryTargets,
+  buildPrimaryCoverPrompt,
+  withCoverImage,
 };

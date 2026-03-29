@@ -8,8 +8,19 @@ import {
 export const contentBriefSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['description', 'targetAudience', 'corePromise', 'keyPoints', 'voiceNotes'],
+  required: [
+    'title',
+    'description',
+    'targetAudience',
+    'corePromise',
+    'keyPoints',
+    'voiceNotes',
+    'primaryContentType',
+    'secondaryContentTypes',
+    'secondaryContentStrategy',
+  ],
   properties: {
+    title: { type: 'string' },
     description: { type: 'string' },
     targetAudience: { type: 'string' },
     corePromise: { type: 'string' },
@@ -20,6 +31,12 @@ export const contentBriefSchema = {
       items: { type: 'string' },
     },
     voiceNotes: { type: 'string' },
+    primaryContentType: { type: 'string' },
+    secondaryContentTypes: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    secondaryContentStrategy: { type: 'string' },
   },
 } as const;
 
@@ -27,7 +44,8 @@ export function buildContentBriefMessages(
   idea: string,
   options: {
     style: string;
-    contentTypes: string[];
+    primaryContentType: string;
+    secondaryContentTypes: string[];
   },
 ): ChatMessage[] {
   const systemInstruction = [
@@ -35,8 +53,9 @@ export function buildContentBriefMessages(
     'Produce a shared content brief that can guide all requested content types in this run.',
     buildWritingFrameworkInstruction(),
     buildStyleDirective(options.style),
-    buildRunContextDirective(options.contentTypes),
+    buildRunContextDirective([options.primaryContentType, ...options.secondaryContentTypes]),
     'The brief must be specific, concrete, and directly usable by writers without extra clarification.',
+    'This run has one explicit primary output and optional secondary outputs that should promote or incite interest in the primary while remaining independently valuable.',
     'Return only the requested JSON.',
   ].join(' ');
 
@@ -52,11 +71,15 @@ export function buildContentBriefMessages(
         idea,
         '',
         'Requirements:',
+        '- title: concise, user-facing title for the primary output (5 to 12 words, plain text).',
         '- description: explicit high-signal summary of the content body and angle for all channels.',
         '- targetAudience: who this is for and their current context.',
         '- corePromise: what concrete outcome the reader should expect.',
         '- keyPoints: 3 to 6 specific points that must survive adaptation across channels.',
         '- voiceNotes: practical tone/voice constraints to keep outputs consistent.',
+        `- primaryContentType: set to "${options.primaryContentType}" exactly.`,
+        `- secondaryContentTypes: include these types exactly: ${options.secondaryContentTypes.join(', ') || 'none'}.`,
+        '- secondaryContentStrategy: explicit guidance for making secondary outputs channel-native, self-contained, and enticing gateways into the primary content.',
         '',
         'Return JSON only with all required fields.',
       ].join('\n'),

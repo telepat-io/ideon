@@ -34,10 +34,10 @@ npm run dev -- write --job ./job.json
     },
     "modelRequestTimeoutMs": 90000,
     "contentTargets": [
-      { "contentType": "article", "count": 1 },
-      { "contentType": "x-thread", "count": 2 },
-      { "contentType": "x-post", "count": 1 },
-      { "contentType": "linkedin-post", "count": 1 }
+      { "contentType": "article", "role": "primary", "count": 1 },
+      { "contentType": "x-thread", "role": "secondary", "count": 2 },
+      { "contentType": "x-post", "role": "secondary", "count": 1 },
+      { "contentType": "linkedin-post", "role": "secondary", "count": 1 }
     ],
     "style": "friendly",
     "t2i": {
@@ -54,7 +54,7 @@ npm run dev -- write --job ./job.json
 
 ## Notes
 
-- If `settings.contentTargets` is omitted, Ideon defaults to one article output.
+- `settings.contentTargets` must include exactly one primary target and optional secondary targets.
 - If `settings.style` is omitted, Ideon defaults to `professional`.
 - CLI arguments override job-file settings for `idea`, `style`, and `contentTargets`.
 - Environment variables override matching job-file fields where supported.
@@ -74,7 +74,7 @@ Practical examples:
 
 - `ideon write --job ./job.json --style technical` forces technical style even if the job file says otherwise.
 - `IDEON_MODEL=... ideon write --job ./job.json` uses the env model instead of the job model.
-- `--target` replaces the full job `settings.contentTargets` array for that run.
+- `--primary` with optional `--secondary` replaces the full job `settings.contentTargets` array for that run.
 
 ## Reusing Generated Job Definitions
 

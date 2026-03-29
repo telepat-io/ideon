@@ -6,34 +6,32 @@ title: Pipeline Stages
 
 Ideon runs a seven-stage pipeline with live status updates and per-stage analytics.
 
-Stage execution is conditional:
+Stage execution depends on primary content type:
 
-- If `article` is requested, all seven stages run.
-- If no `article` target is requested, planning/sections/image-prompts/images are skipped and output generation runs with channel single-shot prompts.
+- Article primary: full structured article flow (plan -> sections -> image prompts -> image rendering), then secondary generation.
+- Non-article primary: generic primary flow (`Planning Primary Content` and `Generating Primary Content`), one primary cover image render, then secondary generation.
 
 ## Stage Flow
 
-1. Planning Article
-2. Writing Sections
+1. Planning Primary Article or Planning Primary Content
+2. Writing Sections or Generating Primary Content
 3. Expanding Image Prompts
 4. Rendering Images
-5. Assembling Markdown
+5. Generating Channel Content
 6. Enriching Links
 
-Always-on stage before article planning:
+Always-on stage before primary planning:
 
 1. Planning Shared Brief
 
-Non-article path:
-
-- If `article` is not requested, stages 1-4 are marked succeeded as skipped and stage 5 generates requested channel outputs directly from single-shot prompts.
-
-With the shared brief stage included, the effective non-article path is:
+Non-article primary path:
 
 - `shared-brief`: runs
-- `planning`, `sections`, `image-prompts`, `images`: marked succeeded as skipped
-- `output`: runs with channel-only generation
-- `links`: runs only for eligible long-form outputs and writes sidecar link metadata
+- `planning`: sets primary direction for non-article type
+- `sections`: performs generic primary generation
+- `image-prompts`, `images`: prepare and render one primary cover image
+- `output`: generates only secondary outputs from primary anchor context
+- `links`: runs only for eligible outputs and writes sidecar link metadata
 
 ## Stage UI Signals
 
@@ -55,7 +53,7 @@ Item history is rendered with a terminal-adaptive window so long runs stay reada
 - Section stage reports active section index/title
 - Image-prompt stage reports current prompt expansion
 - Image-render stage reports current rendering progress
-- Output stage reports per-item generation progress and final generation directory
+- Output stage reports secondary per-item generation progress and final generation directory
 - Links stage reports per-item link enrichment and sidecar metadata writes
 - When a stage reaches `succeeded`, the CLI prints stage analytics (duration and cost when available)
 
@@ -64,7 +62,7 @@ For stages that produce multiple units of work, Ideon emits item-level status ro
 Examples:
 
 - section writing item updates (`Introduction`, `Section 2/N`, `Conclusion`)
-- channel output item updates (`x post 1/10`, `linkedin post 2/3`)
+- secondary output item updates (`x post 1/10`, `linkedin post 2/3`)
 - link enrichment item updates (`article-1`, `linkedin-1`)
 
 Each item shows a spinner while running and prints item analytics as soon as it succeeds.
@@ -114,10 +112,10 @@ When a stage fails:
 
 ## Output Stage Behavior
 
-- Requested targets are expanded into numbered files by content type (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.).
-- Article outputs use section-generation artifacts.
-- Non-article outputs are generated in single-shot channel prompts.
-- If article output exists in the run, non-article outputs can be anchored to generated article context.
+- The primary output is always generated first and written as `<primary-prefix>-1.md`.
+- Secondary targets are expanded into numbered files by content type (`x-thread-1.md`, `x-post-1.md`, etc.).
+- Article primary uses section-generation artifacts; non-article primary uses single-shot primary generation.
+- Secondary outputs are anchored to generated primary context.
 - The output stage also writes `job.json` with the resolved run definition.
 - Output progress is itemized in the CLI and persisted in analytics under `outputItemCalls`.
 

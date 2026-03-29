@@ -24,18 +24,20 @@ Inside settings, configure:
 ## 2. Generate Content Outputs
 
 ```bash
-npm run dev -- write "How small editorial teams can productionize AI writing" --target article=1 --target x-thread=1 --target x-post=1 --style professional
+npm run dev -- write "How small editorial teams can productionize AI writing" --primary article=1 --secondary x-thread=1 --secondary x-post=1 --style professional
 ```
 
-Expected stages:
+Expected stages for article primary:
 
-1. Planning Article
-2. Writing Sections
-3. Expanding Image Prompts
-4. Rendering Images
-5. Assembling Markdown
+1. Planning Shared Brief
+2. Planning Primary Article
+3. Writing Sections
+4. Expanding Image Prompts
+5. Rendering Images
+6. Generating Channel Content
+7. Enriching Links
 
-If you run without an `article` target, Ideon skips planning/sections/image stages and generates only requested channel outputs in the output stage.
+If primary is not `article`, Ideon uses `Planning Primary Content` and `Generating Primary Content`, renders one primary cover image, and then generates secondary outputs.
 
 ## 3. Check Outputs
 

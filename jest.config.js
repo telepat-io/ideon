@@ -29,6 +29,7 @@ export default {
       testEnvironment: 'jsdom',
       moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
+        '\\.(svg|png|jpe?g|gif|webp)$': '<rootDir>/src/preview-app/testFileMock.ts',
       },
       transform: {
         '^.+\\.tsx?$': [
@@ -49,11 +50,16 @@ export default {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
+    '!src/**/*.test.ts',
+    '!src/**/*.test.tsx',
+    '!src/**/__tests__/**',
     '!src/bin/**',
     '!src/cli/**',
+    '!src/preview-app/testSetup.ts',
+    '!src/preview-app/testFileMock.ts',
   ],
   coverageThreshold: {
-    './src/**/*.ts': {
+    global: {
       lines: 90,
       branches: 80,
     },

@@ -8,6 +8,8 @@ import type { ContentBrief } from '../types/contentBrief.js';
 export async function writeSingleShotContent({
   idea,
   contentType,
+  role = 'secondary',
+  primaryContentType,
   style,
   outputIndex,
   outputCountForType,
@@ -21,6 +23,8 @@ export async function writeSingleShotContent({
 }: {
   idea: string;
   contentType: string;
+  role?: 'primary' | 'secondary';
+  primaryContentType: string;
   style: string;
   outputIndex: number;
   outputCountForType: number;
@@ -36,6 +40,8 @@ export async function writeSingleShotContent({
     return buildDryRunContent({
       idea,
       contentType,
+      role,
+      primaryContentType,
       outputIndex,
       outputCountForType,
       contentBrief,
@@ -47,6 +53,8 @@ export async function writeSingleShotContent({
     messages: buildSingleShotContentMessages({
       idea,
       contentType,
+      role,
+      primaryContentType,
       style,
       outputIndex,
       outputCountForType,
@@ -69,18 +77,22 @@ function buildDryRunContent(options: {
   contentType: string;
   outputIndex: number;
   outputCountForType: number;
+  role: 'primary' | 'secondary';
+  primaryContentType: string;
   contentBrief: ContentBrief;
   articleReferenceMarkdown?: string;
 }): string {
   const anchorNote = options.articleReferenceMarkdown
-    ? 'Anchored to generated article context from this run.'
-    : 'No article anchor available; generated directly from idea.';
+    ? 'Anchored to generated primary context from this run.'
+    : 'No primary anchor available; generated directly from idea.';
 
   return [
     `# ${options.contentType} draft ${options.outputIndex}`,
     '',
     `Idea: ${options.idea}`,
     `Variant: ${options.outputIndex}/${options.outputCountForType}`,
+    `Role: ${options.role}`,
+    `Primary content type: ${options.primaryContentType}`,
     `Shared brief: ${options.contentBrief.description}`,
     anchorNote,
     '',

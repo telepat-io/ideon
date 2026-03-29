@@ -13,7 +13,7 @@ Lowest to highest priority:
 1. Saved settings file
 2. Job file settings
 3. Environment variables
-4. Direct CLI arguments (`--style`, `--target`, idea input)
+4. Direct CLI arguments (`--style`, `--primary`, `--secondary`, idea input)
 
 Secret precedence:
 
@@ -47,7 +47,14 @@ Core settings include:
 `contentTargets` entries:
 
 - `contentType`: one of `article`, `blog-post`, `x-thread`, `x-post`, `reddit-post`, `linkedin-post`, `newsletter`, `landing-page-copy`
+- `role`: `primary` or `secondary`
 - `count`: positive integer
+
+Rules:
+
+- Exactly one `contentTargets` entry must have role `primary`.
+- Primary count must be `1`.
+- Secondary entries are optional and can use counts greater than `1`.
 
 Style values:
 
@@ -60,7 +67,7 @@ Style values:
 
 Defaults:
 
-- `contentTargets`: `[ { "contentType": "article", "count": 1 } ]`
+- `contentTargets`: `[ { "contentType": "article", "role": "primary", "count": 1 } ]`
 - `style`: `professional`
 - `targetLength`: `medium`
 
@@ -89,6 +96,6 @@ IDEON_TARGET_LENGTH=large \
 npm run dev -- write "An idea"
 ```
 
-Note: content target arrays are not currently configurable through environment variables. Use CLI `--target` flags or job-file `settings.contentTargets`.
+Note: content target arrays are not currently configurable through environment variables. Use CLI `--primary/--secondary` flags or job-file `settings.contentTargets`.
 
 See [Environment Variables](../reference/environment-variables.md) for full list.

@@ -50,6 +50,8 @@ import {
 } from './interactions.js';
 import { buildPreviewTheme, type PreviewThemeMode } from './theme.js';
 
+const IDEON_LOGO_PATH = './logo.svg';
+
 const CONTENT_TYPE_ICONS: Record<string, React.ReactNode> = {
   'article': <FileTextOutlined />,
   'blog-post': <FileTextOutlined />,
@@ -258,7 +260,7 @@ export default function PreviewApp() {
     };
   }, [copiedSlug]);
 
-  const sourcePathLabel = bootstrap?.sourcePath ?? 'Resolving preview source...';
+  const sourcePathLabel = detail?.sourcePath ?? bootstrap?.sourcePath ?? 'Resolving preview source...';
   const totalDurationLabel = formatDuration(detail?.analyticsSummary?.totalDurationMs ?? null);
   const totalCostLabel = formatUsd(detail?.analyticsSummary?.totalCostUsd ?? null);
   const costSource = detail?.analyticsSummary?.totalCostSource;
@@ -305,6 +307,7 @@ export default function PreviewApp() {
                 <Flex align="center" justify="space-between" style={{ height: '100%' }}>
                   {isMobile ? (
                     <Flex align="center" gap={8}>
+                      <img src={IDEON_LOGO_PATH} alt="Ideon" className="preview-brand-logo" />
                       <Typography.Text strong className="preview-brand">IDEON</Typography.Text>
                       <Button
                         icon={<MenuOutlined />}
@@ -542,7 +545,10 @@ function SidebarContent({
   return (
     <div className="preview-sidebar-shell">
       <div className="preview-sidebar-hd">
-        <Typography.Text strong className="preview-brand">IDEON</Typography.Text>
+        <Flex align="center" gap={8}>
+          <img src={IDEON_LOGO_PATH} alt="Ideon" className="preview-brand-logo" />
+          <Typography.Text strong className="preview-brand">IDEON</Typography.Text>
+        </Flex>
         <Button size="small" icon={<ReloadOutlined />} onClick={onRefresh} title="Refresh" />
       </div>
 

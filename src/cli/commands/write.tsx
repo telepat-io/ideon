@@ -10,13 +10,14 @@ import { renderPlainPipeline } from '../logging/plainRenderer.js';
 import type { PipelineRunResult, StageViewModel } from '../../pipeline/events.js';
 import { loadWriteSession, patchWriteSession } from '../../pipeline/sessionStore.js';
 import { WriteOptionsFlow } from '../flows/writeOptionsFlow.js';
-import { parseTargetSpecs } from './writeTargetSpecs.js';
+import { parsePrimaryAndSecondarySpecs } from './writeTargetSpecs.js';
 import { withWriteResumeHint } from './writeErrorHint.js';
 
 interface WriteCommandOptions {
   idea?: string;
   jobPath?: string;
-  targetSpecs?: string[];
+  primarySpec?: string;
+  secondarySpecs?: string[];
   style?: string;
   length?: string;
   dryRun: boolean;
@@ -41,7 +42,11 @@ function WriteApp({
   onError: (error: Error) => void;
 }): React.JSX.Element {
   const { exit } = useApp();
-  const [stages, setStages] = useState<StageViewModel[]>(createInitialStages);
+  const [stages, setStages] = useState<StageViewModel[]>(() =>
+    createInitialStages({
+      isArticlePrimary: input.config.settings.contentTargets.some((target) => target.role === 'primary' && target.contentType === 'article'),
+    }),
+  );
   const [result, setResult] = useState<PipelineRunResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -212,7 +217,10 @@ async function recordInterruptedWrite(signal: NodeJS.Signals): Promise<void> {
 }
 
 async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOptions) {
-  const parsedTargets = parseTargetSpecs(options.targetSpecs);
+  const parsedTargets = parsePrimaryAndSecondarySpecs({
+    primarySpec: options.primarySpec,
+    secondarySpecs: options.secondarySpecs,
+  });
 
   try {
     const resolved = await resolveRunInput({
@@ -222,6 +230,10 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       targetLength: options.length,
       contentTargets: parsedTargets,
     });
+
+    if (!process.stdout.isTTY && !process.stdin.isTTY && !parsedTargets && !resolved.job?.settings?.contentTargets) {
+      throw new ReportedError('Missing required --primary <content-type=1> for non-interactive runs.');
+    }
 
     return await applyInteractiveWriteOptionsIfNeeded(resolved, options, parsedTargets);
   } catch (error) {
@@ -343,7 +355,7 @@ async function promptForIdea(): Promise<string> {
 
   try {
     while (true) {
-      const idea = (await readline.question('Enter article prompt: ')).trim();
+      const idea = (await readline.question('Enter primary content prompt: ')).trim();
       if (idea.length > 0) {
         return idea;
       }

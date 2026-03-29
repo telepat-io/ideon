@@ -8,8 +8,8 @@ docs-site/build/
 coverage/
 
 # Generated runtime output
-output/
 .ideon/
+/output/
 
 # Environment and secrets
 .env

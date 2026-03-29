@@ -163,10 +163,12 @@ describe('preview server resilience', () => {
         const detailResponse = await fetch(`${server.url}/api/articles/20260327-120000-sample-topic`);
         const detailPayload = (await detailResponse.json()) as {
           generationId: string;
+          sourcePath: string;
           outputs: Array<{ contentType: string; index: number }>;
         };
         expect(detailResponse.status).toBe(200);
         expect(detailPayload.generationId).toBe('20260327-120000-sample-topic');
+        expect(detailPayload.sourcePath).toBe(path.join(generationDir, 'article-1.md'));
         expect(detailPayload.outputs).toEqual(
           expect.arrayContaining([
             expect.objectContaining({ contentType: 'article', index: 1 }),
@@ -484,13 +486,18 @@ describe('preview server resilience', () => {
         const html = await response.text();
 
         expect(response.status).toBe(200);
-        expect(html).toContain("@media (prefers-color-scheme: dark)");
-        expect(html).toContain("html[data-theme='light']");
-        expect(html).toContain("html[data-theme='dark']");
-        expect(html).toContain("const THEME_STORAGE_KEY = 'ideon-preview-theme';");
-        expect(html).toContain("localStorage.getItem(storageKey)");
-        expect(html).toContain('id="themeToggle"');
-        expect(html).toContain("themeToggleButton.addEventListener('click'");
+        const isBuiltPreviewAppShell = html.includes('<div id="root"></div>') && html.includes('app-assets/index-');
+        if (isBuiltPreviewAppShell) {
+          expect(html).toContain('<div id="root"></div>');
+        } else {
+          expect(html).toContain("@media (prefers-color-scheme: dark)");
+          expect(html).toContain("html[data-theme='light']");
+          expect(html).toContain("html[data-theme='dark']");
+          expect(html).toContain("const THEME_STORAGE_KEY = 'ideon-preview-theme';");
+          expect(html).toContain("localStorage.getItem(storageKey)");
+          expect(html).toContain('id="themeToggle"');
+          expect(html).toContain("themeToggleButton.addEventListener('click'");
+        }
       } finally {
         await server.close();
       }

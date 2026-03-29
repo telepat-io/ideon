@@ -15,8 +15,11 @@ export const writingStyleValues = ['professional', 'friendly', 'technical', 'aca
 
 export const targetLengthValues = ['small', 'medium', 'large'] as const;
 
+export const contentTargetRoleValues = ['primary', 'secondary'] as const;
+
 const contentTargetSchema = z.object({
   contentType: z.enum(contentTypeValues),
+  role: z.enum(contentTargetRoleValues),
   count: z.number().int().positive().default(1),
 });
 
@@ -38,7 +41,13 @@ export const appSettingsSchema = z.object({
   t2i: baseT2ISettingsSchema.default(baseT2ISettingsSchema.parse({})),
   markdownOutputDir: z.string().default('/output'),
   assetOutputDir: z.string().default('/output/assets'),
-  contentTargets: z.array(contentTargetSchema).min(1).default([{ contentType: 'article', count: 1 }]),
+  contentTargets: z
+    .array(contentTargetSchema)
+    .min(1)
+    .refine((targets) => targets.filter((target) => target.role === 'primary').length === 1, {
+      message: 'contentTargets must include exactly one primary target.',
+    })
+    .default([{ contentType: 'article', role: 'primary', count: 1 }]),
   style: z.enum(writingStyleValues).default('professional'),
   targetLength: z.enum(targetLengthValues).default('medium'),
 });

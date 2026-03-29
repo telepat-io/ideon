@@ -31,6 +31,7 @@ export interface GenerationMetadata {
   mtime: number;
   previewSnippet: string;
   coverImageUrl: string | null;
+  primaryContentType: string;
   outputs: GenerationOutputMetadata[];
 }
 
@@ -235,7 +236,8 @@ export async function listAllGenerations(markdownOutputDir: string): Promise<Gen
   const generations: GenerationMetadata[] = [];
   for (const [id, outputs] of grouped.entries()) {
     outputs.sort((a, b) => compareContentTypes(a.contentType, b.contentType) || a.index - b.index || b.mtime - a.mtime);
-    const primary = outputs.find((output) => output.contentType === 'article') ?? outputs[0];
+    const primaryContentType = await resolvePrimaryContentType(outputs);
+    const primary = outputs.find((output) => output.contentType === primaryContentType) ?? outputs[0];
     if (!primary) {
       continue;
     }
@@ -247,6 +249,7 @@ export async function listAllGenerations(markdownOutputDir: string): Promise<Gen
       mtime: newestMtime,
       previewSnippet: primary.previewSnippet,
       coverImageUrl: primary.coverImageUrl ?? outputs.find((output) => Boolean(output.coverImageUrl))?.coverImageUrl ?? null,
+      primaryContentType,
       outputs,
     });
   }
@@ -351,4 +354,34 @@ function toContentTypeLabel(contentType: string): string {
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+async function resolvePrimaryContentType(outputs: GenerationOutputMetadata[]): Promise<string> {
+  const fallback = outputs.find((output) => output.contentType === 'article')?.contentType
+    ?? outputs[0]?.contentType
+    ?? 'article';
+  const generationDir = path.dirname(outputs[0]?.sourcePath ?? '');
+  if (!generationDir) {
+    return fallback;
+  }
+
+  const jobPath = path.join(generationDir, 'job.json');
+  try {
+    const raw = await readFile(jobPath, 'utf8');
+    const parsed = JSON.parse(raw) as {
+      contentTargets?: Array<{ contentType?: unknown; role?: unknown }>;
+      settings?: { contentTargets?: Array<{ contentType?: unknown; role?: unknown }> };
+    };
+    const targets = Array.isArray(parsed.contentTargets)
+      ? parsed.contentTargets
+      : (Array.isArray(parsed.settings?.contentTargets) ? parsed.settings.contentTargets : []);
+    const primary = targets.find((target) => target?.role === 'primary' && typeof target.contentType === 'string');
+    if (primary && typeof primary.contentType === 'string') {
+      return primary.contentType;
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
 }

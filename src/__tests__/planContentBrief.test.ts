@@ -33,6 +33,7 @@ describe('planContentBrief', () => {
 
   it('requests structured brief from OpenRouter when enabled', async () => {
     const expected = {
+      title: 'Reliable Output And Links Behavior',
       description: 'Generated brief with concrete execution details and practical examples for teams.',
       targetAudience: 'Creators and operators',
       corePromise: 'Readers gain a clear and actionable plan they can apply immediately.',
@@ -42,10 +43,24 @@ describe('planContentBrief', () => {
         'Adapt framing to each destination channel.',
       ],
       voiceNotes: 'Keep the voice direct, practical, and focused on implementation details.',
+      primaryContentType: 'article',
+      secondaryContentTypes: ['linkedin-post'],
+      secondaryContentStrategy: 'Keep secondary content useful on its own and make it a strong invitation to the primary content.',
     };
 
     const requestStructured = jest
-      .fn<(args: { parse?: (data: unknown) => unknown }) => Promise<unknown>>()
+      .fn<
+        (args: {
+          parse?: (data: unknown) => unknown;
+          settings?: {
+            modelSettings?: {
+              maxTokens?: number;
+              temperature?: number;
+              topP?: number;
+            };
+          };
+        }) => Promise<unknown>
+      >()
       .mockImplementation(
       async ({ parse }: { parse?: (data: unknown) => unknown }) => {
         const parsed = parse ? parse(expected) : expected;
@@ -61,6 +76,10 @@ describe('planContentBrief', () => {
     });
 
     expect(requestStructured).toHaveBeenCalledTimes(1);
+    const requestArgs = requestStructured.mock.calls[0]?.[0];
+    expect(requestArgs?.settings?.modelSettings?.maxTokens).toBe(8000);
+    expect(requestArgs?.settings?.modelSettings?.temperature).toBe(defaultAppSettings.modelSettings.temperature);
+    expect(requestArgs?.settings?.modelSettings?.topP).toBe(defaultAppSettings.modelSettings.topP);
     expect(result).toEqual(expected);
   });
 });

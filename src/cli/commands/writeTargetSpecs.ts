@@ -2,31 +2,10 @@ import type { ContentTargetInput } from '../../config/resolver.js';
 import { contentTypeValues } from '../../config/schema.js';
 import { ReportedError } from '../reportedError.js';
 
-export function parseTargetSpecs(targetSpecs: string[] | undefined): ContentTargetInput[] | undefined {
-  if (!targetSpecs || targetSpecs.length === 0) {
-    return undefined;
-  }
-
-  const targets = targetSpecs.map(parseTargetSpec);
-  const dedupedByType = new Map<string, ContentTargetInput>();
-
-  for (const target of targets) {
-    const previous = dedupedByType.get(target.contentType);
-    if (previous) {
-      previous.count += target.count;
-      continue;
-    }
-
-    dedupedByType.set(target.contentType, { ...target });
-  }
-
-  return [...dedupedByType.values()];
-}
-
-export function parseTargetSpec(spec: string): ContentTargetInput {
+export function parseTargetSpec(spec: string): Omit<ContentTargetInput, 'role'> {
   const trimmed = spec.trim();
   if (!trimmed) {
-    throw new ReportedError('Target spec cannot be empty. Use --target <content-type=count>.');
+    throw new ReportedError('Target spec cannot be empty. Use <content-type=count>.');
   }
 
   const [rawType, rawCount] = trimmed.split('=');
@@ -50,4 +29,53 @@ export function parseTargetSpec(spec: string): ContentTargetInput {
     contentType,
     count,
   };
+}
+
+export function parsePrimaryAndSecondarySpecs(options: {
+  primarySpec?: string;
+  secondarySpecs?: string[];
+}): ContentTargetInput[] | undefined {
+  const { primarySpec, secondarySpecs } = options;
+
+  if (!primarySpec && (!secondarySpecs || secondarySpecs.length === 0)) {
+    return undefined;
+  }
+
+  if (!primarySpec) {
+    throw new ReportedError('Missing required --primary <content-type=count>.');
+  }
+
+  const primary = parseTargetSpec(primarySpec);
+  if (primary.count !== 1) {
+    throw new ReportedError('Primary target count must be exactly 1. Use --primary <content-type=1>.');
+  }
+  const secondaryDedupedByType = new Map<string, ContentTargetInput>();
+
+  for (const spec of secondarySpecs ?? []) {
+    const parsed = parseTargetSpec(spec);
+    if (parsed.contentType === primary.contentType) {
+      throw new ReportedError(
+        `Content type "${parsed.contentType}" cannot be both primary and secondary in the same run.`,
+      );
+    }
+
+    const previous = secondaryDedupedByType.get(parsed.contentType);
+    if (previous) {
+      previous.count += parsed.count;
+      continue;
+    }
+
+    secondaryDedupedByType.set(parsed.contentType, {
+      ...parsed,
+      role: 'secondary',
+    });
+  }
+
+  return [
+    {
+      ...primary,
+      role: 'primary',
+    },
+    ...secondaryDedupedByType.values(),
+  ];
 }

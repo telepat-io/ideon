@@ -119,7 +119,7 @@ Example shape:
     "t2i": { "modelId": "black-forest-labs/flux-schnell", "inputOverrides": {} },
     "markdownOutputDir": "/output",
     "assetOutputDir": "/output/assets",
-    "contentTargets": [{ "contentType": "article", "count": 1 }],
+    "contentTargets": [{ "contentType": "article", "role": "primary", "count": 1 }],
     "style": "professional"
   },
   "sourceJob": null,

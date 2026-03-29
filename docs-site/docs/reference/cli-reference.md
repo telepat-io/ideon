@@ -29,20 +29,21 @@ Capabilities:
 
 ## `ideon write [idea]`
 
-Generates one or more content outputs from direct idea input or a job file.
+Generates exactly one primary content output plus zero or more secondary outputs from direct idea input or a job file.
 
 ```bash
 ideon write "How to productionize editorial AI"
 ideon write --job ./job.json
 ideon write --dry-run "How to productionize editorial AI"
-ideon write "How to productionize editorial AI" --target article=1 --target x-thread=2 --target x-post=1 --style technical
-ideon write "How to productionize editorial AI" --length large --target article=1
+ideon write "How to productionize editorial AI" --primary article=1 --secondary x-thread=2 --secondary x-post=1 --style technical
+ideon write "How to productionize editorial AI" --length large --primary article=1
 ```
 
 ### Options
 
 - `-j, --job <path>`: path to JSON job file
-- `-t, --target <type=count>`: generation target, repeatable (for example `article=1`, `x-thread=3`, `x-post=10`)
+- `--primary <type=count>`: required primary target for the run (must be exactly `count=1`)
+- `--secondary <type=count>`: optional secondary target, repeatable
 - `--style <style>`: writing style (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
 - `--length <size>`: target length tier (`small`, `medium`, `large`)
 - `--dry-run`: run full orchestration without external provider calls
@@ -60,9 +61,15 @@ Supported target types:
 
 Defaults:
 
-- If no targets are provided, Ideon uses `article=1`.
 - If no style is provided, Ideon uses `professional`.
 - If no length is provided, Ideon uses `medium`.
+
+Target rules:
+
+- You must provide exactly one primary target (either via `--primary`, job file, or interactive TTY prompt).
+- Primary count must be `1`.
+- Secondary targets are optional and can be repeated.
+- A content type cannot be both primary and secondary in the same run.
 
 Idea resolution order:
 
@@ -76,7 +83,7 @@ Interactive behavior:
 - In TTY mode, Ideon asks only for missing write variables.
 - If style is missing, it prompts for style.
 - If length is missing, it prompts for target length (`small`, `medium`, `large`).
-- If targets are missing, it prompts for content types and per-type counts.
+- If targets are missing, it prompts for one primary type, optional secondary types, and per-type counts.
 
 When a fresh write starts, Ideon resets `.ideon/write/state.json` and stores new temporary pipeline artifacts for that run.
 

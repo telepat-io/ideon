@@ -22,6 +22,7 @@ const articleListPayload = [
 const articleDetailPayload = {
   title: 'Thinking in Rome',
   generationId: '20260328-roman-forum',
+  sourcePath: '/tmp/output/20260328-roman-forum/article-1.md',
   interactions: {
     llmCalls: [
       {
@@ -121,10 +122,10 @@ describe('PreviewApp', () => {
     expect(titleElements.length).toBeGreaterThan(0);
     expect(await screen.findByText('How antiquity built durable decision systems.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'X Post' }));
+    fireEvent.click(await screen.findByText('X Post'));
     expect(await screen.findByText('Shareable takeaway')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Logs' }));
+    fireEvent.click(await screen.findByText('Logs'));
     expect(await screen.findByText('Interaction Inspector')).toBeInTheDocument();
     expect(screen.getAllByText('outline').length).toBeGreaterThan(0);
     expect(screen.getByText('Structured outline response.')).toBeInTheDocument();
@@ -159,5 +160,69 @@ describe('PreviewApp', () => {
     render(<PreviewApp />);
 
     expect(await screen.findByText('No generated content found in output/ yet.')).toBeInTheDocument();
+  });
+
+  it('updates the displayed source path when switching projects from the sidebar', async () => {
+    const secondSlug = '20260329-athens-debate';
+    const secondSourcePath = '/tmp/output/20260329-athens-debate/article-1.md';
+
+    global.fetch = jest.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
+
+      if (url === '/api/bootstrap') {
+        return { ok: true, status: 200, json: async () => bootstrapPayload };
+      }
+
+      if (url === '/api/articles') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => [
+            ...articleListPayload,
+            {
+              slug: secondSlug,
+              title: 'Debating in Athens',
+              mtime: new Date('2026-03-29T11:00:00.000Z').getTime(),
+              previewSnippet: 'Second generation used to verify sidebar switching.',
+              coverImageUrl: null,
+            },
+          ],
+        };
+      }
+
+      if (url === '/api/articles/20260328-roman-forum') {
+        return { ok: true, status: 200, json: async () => articleDetailPayload };
+      }
+
+      if (url === `/api/articles/${secondSlug}`) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ...articleDetailPayload,
+            title: 'Debating in Athens',
+            generationId: secondSlug,
+            sourcePath: secondSourcePath,
+            outputs: articleDetailPayload.outputs.map((output) => ({
+              ...output,
+              title: output.id === 'article-1' ? 'Debating in Athens' : output.title,
+            })),
+          }),
+        };
+      }
+
+      return { ok: false, status: 404, json: async () => ({ error: 'Not found' }) };
+    }) as unknown as typeof fetch;
+
+    render(<PreviewApp />);
+
+    expect(await screen.findByText('/tmp/output/20260328-roman-forum/article-1.md')).toBeInTheDocument();
+
+    const nextProjectTitle = await screen.findByText('Debating in Athens');
+    const nextProjectButton = nextProjectTitle.closest('button');
+    expect(nextProjectButton).not.toBeNull();
+    fireEvent.click(nextProjectButton as HTMLButtonElement);
+
+    expect(await screen.findByText(secondSourcePath)).toBeInTheDocument();
   });
 });

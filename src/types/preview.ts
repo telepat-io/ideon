@@ -66,6 +66,7 @@ export interface PreviewAnalyticsSummary {
 export interface PreviewArticleContent {
   title: string;
   generationId: string;
+  sourcePath: string;
   interactions: PreviewInteractionsPayload;
   analyticsSummary: PreviewAnalyticsSummary | null;
   outputs: PreviewArticleOutput[];

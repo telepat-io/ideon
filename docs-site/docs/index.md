@@ -21,7 +21,7 @@ Ideon converts a raw idea into a complete content generation run with one or mor
 
 ```bash
 npm install
-npm run dev -- write --idea "Why async Rust is worth learning" --target article=1 --target x-thread=2 --target x-post=1 --style technical
+npm run dev -- write --idea "Why async Rust is worth learning" --primary article=1 --secondary x-thread=2 --secondary x-post=1 --style technical
 ```
 
 See [Installation](./getting-started/installation.md) and [Quickstart](./getting-started/quickstart.md) for full setup including credentials.
@@ -32,7 +32,7 @@ See [Installation](./getting-started/installation.md) and [Quickstart](./getting
 - One or more markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` run definition metadata for reproducibility
 - `generation.analytics.json` with stage and run metrics
-- Shared image assets rendered via a Replicate T2I model when article output is included
+- Shared image assets rendered via a Replicate T2I model for the primary output (article primary includes inline images)
 
 ## Documentation
 

@@ -1,4 +1,4 @@
-import { parseTargetSpec, parseTargetSpecs } from '../cli/commands/writeTargetSpecs.js';
+import { parsePrimaryAndSecondarySpecs, parseTargetSpec } from '../cli/commands/writeTargetSpecs.js';
 import { withWriteResumeHint } from '../cli/commands/writeErrorHint.js';
 
 describe('write target parsing', () => {
@@ -20,16 +20,32 @@ describe('write target parsing', () => {
   });
 
   it('returns undefined for missing specs', () => {
-    expect(parseTargetSpecs(undefined)).toBeUndefined();
-    expect(parseTargetSpecs([])).toBeUndefined();
+    expect(parsePrimaryAndSecondarySpecs({})).toBeUndefined();
   });
 
-  it('aggregates repeated targets by content type', () => {
-    expect(parseTargetSpecs(['article=1', 'x-thread=2', 'x-post=2', 'x-post=3'])).toEqual([
-      { contentType: 'article', count: 1 },
-      { contentType: 'x-thread', count: 2 },
-      { contentType: 'x-post', count: 5 },
+  it('parses one primary and aggregates repeated secondary targets', () => {
+    expect(parsePrimaryAndSecondarySpecs({
+      primarySpec: 'article=1',
+      secondarySpecs: ['x-thread=2', 'x-post=2', 'x-post=3'],
+    })).toEqual([
+      { contentType: 'article', role: 'primary', count: 1 },
+      { contentType: 'x-thread', role: 'secondary', count: 2 },
+      { contentType: 'x-post', role: 'secondary', count: 5 },
     ]);
+  });
+
+  it('requires a primary spec when secondaries are provided', () => {
+    expect(() => parsePrimaryAndSecondarySpecs({ secondarySpecs: ['x-post=1'] })).toThrow('Missing required --primary');
+  });
+
+  it('requires primary target count to be exactly one', () => {
+    expect(() => parsePrimaryAndSecondarySpecs({ primarySpec: 'article=2' })).toThrow('Primary target count must be exactly 1');
+  });
+
+  it('rejects content type collisions between primary and secondary', () => {
+    expect(() => parsePrimaryAndSecondarySpecs({ primarySpec: 'x-post=1', secondarySpecs: ['x-post=1'] })).toThrow(
+      'cannot be both primary and secondary',
+    );
   });
 });
 

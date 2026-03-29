@@ -135,6 +135,12 @@ html[data-theme='dark'] .preview-header {
   color: #0e7490 !important;
 }
 
+.preview-brand-logo {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 html[data-theme='dark'] .preview-brand {
   color: #4dbdd4 !important;
 }

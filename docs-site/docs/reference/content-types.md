@@ -52,12 +52,14 @@ Ideon supports these generation targets:
 
 ## Multi-Output Behavior
 
-- In runs that include `article`, channel outputs can use article content as anchor context.
-- In runs without `article`, channel outputs are generated directly from idea + style + target directives.
+- Every run has exactly one primary output and optional secondary outputs.
+- Secondary outputs can use generated primary content as anchor context.
+- If primary is `article`, Ideon uses structured article planning/writing.
+- If primary is non-article, Ideon uses generic primary generation and still renders a primary cover image.
 
 ## Selection Tips
 
-- Use `article` + channels together when you want one canonical narrative and multiple distribution variants.
+- Use `article` primary + secondaries when you want one canonical narrative and multiple distribution variants.
 - Use channel-only targets for lightweight campaign ideation and iteration.
 - Use `x-thread` for explanatory series, and `x-post` for rapid single-post distribution.
 
@@ -65,9 +67,9 @@ Ideon supports these generation targets:
 
 ```bash
 npm run dev -- write "AI workflow launch" \
-  --target article=1 \
-  --target x-thread=2 \
-  --target x-post=1 \
-  --target linkedin-post=1 \
+  --primary article=1 \
+  --secondary x-thread=2 \
+  --secondary x-post=1 \
+  --secondary linkedin-post=1 \
   --style technical
 ```

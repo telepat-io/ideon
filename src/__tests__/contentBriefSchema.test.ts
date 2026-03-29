@@ -2,6 +2,7 @@ import { contentBriefSchema, type ParsedContentBrief } from '../types/contentBri
 
 describe('contentBriefSchema', () => {
   const validBrief = {
+    title: 'Practical Multi-Channel Content System',
     description:
       'A practical content package explaining how to turn planning outputs into channel-native drafts without losing core substance.',
     targetAudience: 'Content teams shipping across article, social, and newsletter channels.',
@@ -12,6 +13,9 @@ describe('contentBriefSchema', () => {
       'Translate guidance into concrete examples and next steps.',
     ],
     voiceNotes: 'Direct, specific, and practical tone with no hype and no vague claims.',
+    primaryContentType: 'article',
+    secondaryContentTypes: ['x-post', 'linkedin-post'],
+    secondaryContentStrategy: 'Each secondary output should stand alone and create clear motivation to consume the primary piece.',
   };
 
   it('validates a complete shared brief', () => {
@@ -23,6 +27,14 @@ describe('contentBriefSchema', () => {
     const result = contentBriefSchema.safeParse({
       ...validBrief,
       description: 'Too short.',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects too-short title', () => {
+    const result = contentBriefSchema.safeParse({
+      ...validBrief,
+      title: 'Short',
     });
     expect(result.success).toBe(false);
   });

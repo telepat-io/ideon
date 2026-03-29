@@ -2,10 +2,21 @@ import { readFile } from 'node:fs/promises';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
-import { appSettingsSchema, contentTypeValues, jobInputSchema, writingStyleValues, targetLengthValues, type JobInput, type ResolvedConfig, type TargetLength } from './schema.js';
+import {
+  appSettingsSchema,
+  contentTargetRoleValues,
+  contentTypeValues,
+  jobInputSchema,
+  writingStyleValues,
+  targetLengthValues,
+  type JobInput,
+  type ResolvedConfig,
+  type TargetLength,
+} from './schema.js';
 
 export interface ContentTargetInput {
   contentType: (typeof contentTypeValues)[number] | string;
+  role: (typeof contentTargetRoleValues)[number] | string;
   count: number;
 }
 
@@ -31,6 +42,7 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
   assertNoLegacyXMode(savedSettings.contentTargets, 'saved settings contentTargets');
   assertNoLegacyXMode(job?.settings?.contentTargets, 'job settings contentTargets');
   assertNoLegacyXMode(input.contentTargets, 'CLI contentTargets');
+  assertExactlyOnePrimary(input.contentTargets, 'CLI contentTargets');
 
   const mergedSettings = appSettingsSchema.parse({
     ...savedSettings,
@@ -75,6 +87,17 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     idea,
     job,
   };
+}
+
+function assertExactlyOnePrimary(contentTargets: ContentTargetInput[] | undefined, sourceLabel: string): void {
+  if (!contentTargets || contentTargets.length === 0) {
+    return;
+  }
+
+  const primaryCount = contentTargets.filter((target) => target.role === 'primary').length;
+  if (primaryCount !== 1) {
+    throw new Error(`${sourceLabel} must include exactly one primary target.`);
+  }
 }
 
 async function loadJobInput(jobPath: string): Promise<JobInput> {

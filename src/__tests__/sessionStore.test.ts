@@ -82,6 +82,7 @@ describe('sessionStore', () => {
           failedStage: 'sections',
           errorMessage: 'boom',
           contentBrief: {
+            title: 'Reliable Editorial Workflows At Scale',
             description: 'A practical and specific brief for building reliable editorial workflows at scale.',
             targetAudience: 'Operators and content teams',
             corePromise: 'Readers leave with concrete tactics they can apply in production this week.',
@@ -91,6 +92,9 @@ describe('sessionStore', () => {
               'Iterate on clarity before publishing.',
             ],
             voiceNotes: 'Use clear and practical language with specific operational guidance.',
+            primaryContentType: 'article',
+            secondaryContentTypes: ['x-post', 'linkedin-post'],
+            secondaryContentStrategy: 'Secondary pieces should deliver standalone value and point readers toward the primary article.',
           },
         },
         dir,

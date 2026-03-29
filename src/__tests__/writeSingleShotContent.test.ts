@@ -3,11 +3,15 @@ import { defaultAppSettings } from '../config/schema.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 
 const contentBrief = {
+  title: 'Shared Campaign Brief Title',
   description: 'Shared campaign brief',
   targetAudience: 'Builders',
   corePromise: 'Clear execution',
-  keyPoints: ['p1', 'p2'],
+  keyPoints: ['point one', 'point two', 'point three'],
   voiceNotes: 'Practical tone',
+  primaryContentType: 'article',
+  secondaryContentTypes: ['linkedin-post'],
+  secondaryContentStrategy: 'Support the primary angle while standing alone.',
 };
 
 describe('writeSingleShotContent', () => {
@@ -15,6 +19,7 @@ describe('writeSingleShotContent', () => {
     const result = await writeSingleShotContent({
       idea: 'Idea',
       contentType: 'linkedin-post',
+      primaryContentType: 'article',
       style: 'professional',
       outputIndex: 1,
       outputCountForType: 3,
@@ -27,13 +32,14 @@ describe('writeSingleShotContent', () => {
 
     expect(result).toContain('# linkedin-post draft 1');
     expect(result).toContain('Variant: 1/3');
-    expect(result).toContain('Anchored to generated article context from this run.');
+    expect(result).toContain('Anchored to generated primary context from this run.');
   });
 
   it('returns dry-run content without article anchor note when no anchor exists', async () => {
     const result = await writeSingleShotContent({
       idea: 'Idea',
       contentType: 'x-thread',
+      primaryContentType: 'article',
       style: 'professional',
       outputIndex: 2,
       outputCountForType: 2,
@@ -44,7 +50,7 @@ describe('writeSingleShotContent', () => {
       dryRun: false,
     });
 
-    expect(result).toContain('No article anchor available; generated directly from idea.');
+    expect(result).toContain('No primary anchor available; generated directly from idea.');
   });
 
   it('uses OpenRouter text generation when dry-run is disabled', async () => {
@@ -53,6 +59,8 @@ describe('writeSingleShotContent', () => {
     const result = await writeSingleShotContent({
       idea: 'Idea',
       contentType: 'article',
+      primaryContentType: 'article',
+      role: 'primary',
       style: 'technical',
       outputIndex: 1,
       outputCountForType: 1,

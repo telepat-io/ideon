@@ -15,9 +15,9 @@ interface WriteOptionsFlowProps {
   onDone: (result: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => void;
 }
 
-type Step = 'targets' | 'counts' | 'style' | 'length';
+type Step = 'primary' | 'secondary' | 'counts' | 'style' | 'length';
 
-interface TargetSelection {
+interface SecondarySelection {
   contentType: string;
   checked: boolean;
 }
@@ -33,17 +33,25 @@ export function WriteOptionsFlow({
 }: WriteOptionsFlowProps): React.JSX.Element {
   const { exit } = useApp();
   const [step, setStep] = useState<Step>(() => {
-    if (askTargets) return 'targets';
+    if (askTargets) return 'primary';
     if (askStyle) return 'style';
     if (askLength) return 'length';
-    return 'targets';
+    return 'primary';
   });
+  const initialPrimary = initialTargets.find((target) => target.role === 'primary')?.contentType
+    ?? initialTargets[0]?.contentType
+    ?? 'article';
+  const [primaryType, setPrimaryType] = useState(initialPrimary);
   const [cursor, setCursor] = useState(0);
-  const [targetSelections, setTargetSelections] = useState<TargetSelection[]>(() => {
-    const selected = new Set(initialTargets.map((target) => target.contentType));
+  const [secondarySelections, setSecondarySelections] = useState<SecondarySelection[]>(() => {
+    const selected = new Set(
+      initialTargets
+        .filter((target) => target.role === 'secondary')
+        .map((target) => target.contentType),
+    );
     return contentTypeValues.map((contentType) => ({
       contentType,
-      checked: selected.has(contentType),
+      checked: contentType === initialPrimary ? false : selected.has(contentType),
     }));
   });
   const [counts, setCounts] = useState<Record<string, number>>(() => {
@@ -58,15 +66,20 @@ export function WriteOptionsFlow({
   const [style, setStyle] = useState(initialStyle);
   const [targetLength, setTargetLength] = useState(initialTargetLength);
 
-  const selectedTypes = useMemo(
-    () => targetSelections.filter((item) => item.checked).map((item) => item.contentType),
-    [targetSelections],
+  const selectedSecondaryTypes = useMemo(
+    () => secondarySelections.filter((item) => item.checked).map((item) => item.contentType),
+    [secondarySelections],
   );
 
-  const buildContentTargets = (types: string[]): ContentTargetInput[] => {
-    return types.map((contentType) => {
+  const buildContentTargets = (resolvedPrimaryType: string, secondaryTypes: string[]): ContentTargetInput[] => {
+    const orderedTypes = [resolvedPrimaryType, ...secondaryTypes.filter((type) => type !== resolvedPrimaryType)];
+    return orderedTypes.map((contentType, index) => {
       const count = counts[contentType] ?? 1;
-      return { contentType, count };
+      return {
+        contentType,
+        role: index === 0 ? 'primary' : 'secondary',
+        count,
+      };
     });
   };
 
@@ -77,24 +90,24 @@ export function WriteOptionsFlow({
       return;
     }
 
-    if (!askTargets || step !== 'targets') {
+    if (!askTargets || step !== 'secondary') {
       return;
     }
 
     if (key.upArrow) {
-      setCursor((current) => (current <= 0 ? targetSelections.length - 1 : current - 1));
+      setCursor((current) => (current <= 0 ? secondarySelections.length - 1 : current - 1));
       return;
     }
 
     if (key.downArrow) {
-      setCursor((current) => (current + 1) % targetSelections.length);
+      setCursor((current) => (current + 1) % secondarySelections.length);
       return;
     }
 
     if (input === ' ') {
-      setTargetSelections((current) =>
+      setSecondarySelections((current) =>
         current.map((item, index) =>
-          index === cursor
+          index === cursor && item.contentType !== primaryType
             ? {
                 ...item,
                 checked: !item.checked,
@@ -106,36 +119,61 @@ export function WriteOptionsFlow({
     }
 
     if (key.return) {
-      const normalizedSelection = selectedTypes.length > 0 ? selectedTypes : ['article'];
-      if (selectedTypes.length === 0) {
-        setTargetSelections((current) =>
-          current.map((item) => ({
-            ...item,
-            checked: item.contentType === 'article',
-          })),
-        );
-      }
-
       setCountIndex(0);
-      setCountInput(String(counts[normalizedSelection[0]!] ?? 1));
+      setCountInput(String(counts[primaryType] ?? 1));
       setStep('counts');
     }
   });
 
-  if (step === 'targets' && askTargets) {
+  if (step === 'primary' && askTargets) {
+    const items = contentTypeValues.map((value) => ({
+      label: value,
+      value,
+    }));
+
     return (
       <Box flexDirection="column">
         <Text bold color="cyanBright">
-          Select Content Types
+          Select Primary Content Type
+        </Text>
+        <Text color="gray">Choose exactly one primary output for this run.</Text>
+        <Box marginTop={1}>
+          <SelectInput
+            items={items}
+            initialIndex={Math.max(0, items.findIndex((item) => item.value === primaryType))}
+            onSelect={(item) => {
+              setPrimaryType(item.value);
+              setSecondarySelections((current) =>
+                current.map((secondary) =>
+                  secondary.contentType === item.value
+                    ? { ...secondary, checked: false }
+                    : secondary,
+                ),
+              );
+              setStep('secondary');
+            }}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (step === 'secondary' && askTargets) {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyanBright">
+          Select Secondary Content Types
         </Text>
         <Text color="gray">Use up/down to move, space to toggle, enter to continue.</Text>
+        <Text color="gray">Primary: {primaryType}</Text>
         <Box marginTop={1} flexDirection="column">
-          {targetSelections.map((item, index) => {
+          {secondarySelections.map((item, index) => {
             const marker = item.checked ? '[x]' : '[ ]';
             const pointer = index === cursor ? '>' : ' ';
+            const disabled = item.contentType === primaryType;
             return (
               <Text key={item.contentType}>
-                {pointer} {marker} {item.contentType}
+                {pointer} {disabled ? '[•]' : marker} {item.contentType}
               </Text>
             );
           })}
@@ -145,8 +183,8 @@ export function WriteOptionsFlow({
   }
 
   if (step === 'counts') {
-    const normalizedSelection = selectedTypes.length > 0 ? selectedTypes : ['article'];
-    const currentType = normalizedSelection[countIndex] ?? normalizedSelection[0]!;
+    const countTypes = [primaryType, ...selectedSecondaryTypes];
+    const currentType = countTypes[countIndex] ?? countTypes[0]!;
 
     return (
       <Box flexDirection="column">
@@ -168,15 +206,15 @@ export function WriteOptionsFlow({
               }));
 
               const nextIndex = countIndex + 1;
-              if (nextIndex >= normalizedSelection.length) {
+              if (nextIndex >= countTypes.length) {
                 if (askStyle) {
                   setStep('style');
                 } else if (askLength) {
                   setStep('length');
                 } else {
-                  const contentTargets = normalizedSelection.map((contentType) => ({
-                    contentType,
-                    count: counts[contentType] ?? (contentType === currentType ? nextCount : 1),
+                  const contentTargets = buildContentTargets(primaryType, selectedSecondaryTypes).map((target) => ({
+                    ...target,
+                    count: target.contentType === currentType ? nextCount : (counts[target.contentType] ?? target.count),
                   }));
                   onDone({ contentTargets });
                   exit();
@@ -185,7 +223,7 @@ export function WriteOptionsFlow({
               }
 
               setCountIndex(nextIndex);
-              const nextType = normalizedSelection[nextIndex]!;
+              const nextType = countTypes[nextIndex]!;
               setCountInput(String(counts[nextType] ?? 1));
             }}
           />
@@ -211,9 +249,8 @@ export function WriteOptionsFlow({
             items={styleItems}
             initialIndex={Math.max(0, styleItems.findIndex((item) => item.value === style))}
             onSelect={(item) => {
-              const normalizedSelection = selectedTypes.length > 0 ? selectedTypes : ['article'];
               const contentTargets = askTargets
-                ? buildContentTargets(normalizedSelection)
+                ? buildContentTargets(primaryType, selectedSecondaryTypes)
                 : undefined;
 
               setStyle(item.value);
@@ -252,9 +289,8 @@ export function WriteOptionsFlow({
             items={lengthItems}
             initialIndex={Math.max(0, lengthItems.findIndex((item) => item.value === targetLength))}
             onSelect={(item) => {
-              const normalizedSelection = selectedTypes.length > 0 ? selectedTypes : ['article'];
               const contentTargets = askTargets
-                ? buildContentTargets(normalizedSelection)
+                ? buildContentTargets(primaryType, selectedSecondaryTypes)
                 : undefined;
 
               setTargetLength(item.value);

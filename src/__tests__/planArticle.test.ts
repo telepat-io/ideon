@@ -11,11 +11,15 @@ jest.unstable_mockModule('../output/filesystem.js', () => ({
 const { planArticle } = await import('../generation/planArticle.js');
 
 const contentBrief: ContentBrief = {
+  title: 'Practical Workflow Guide For Builders',
   description: 'A practical workflow guide.',
   targetAudience: 'Builders',
   corePromise: 'Clear next steps.',
-  keyPoints: ['point-a', 'point-b'],
+  keyPoints: ['Point with detail a', 'Point with detail b', 'Point with detail c'],
   voiceNotes: 'Direct and practical.',
+  primaryContentType: 'article',
+  secondaryContentTypes: ['x-post'],
+  secondaryContentStrategy: 'Secondary content should stand alone while sending readers to the article for full depth.',
 };
 
 describe('planArticle', () => {

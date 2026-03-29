@@ -9,6 +9,8 @@ import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ContentBrief } from '../types/contentBrief.js';
 import { contentBriefSchema as contentBriefResultSchema } from '../types/contentBriefSchema.js';
 
+const SHARED_BRIEF_MAX_TOKENS = 8000;
+
 export async function planContentBrief({
   idea,
   settings,
@@ -28,14 +30,25 @@ export async function planContentBrief({
     return buildDryRunContentBrief(idea);
   }
 
+  const sharedBriefSettings: AppSettings = {
+    ...settings,
+    modelSettings: {
+      ...settings.modelSettings,
+      maxTokens: Math.max(settings.modelSettings.maxTokens, SHARED_BRIEF_MAX_TOKENS),
+    },
+  };
+
   return await openRouter.requestStructured<ContentBrief>({
     schemaName: 'content_brief',
     schema: contentBriefSchema,
     messages: buildContentBriefMessages(idea, {
       style: settings.style,
-      contentTypes: settings.contentTargets.map((target) => target.contentType),
+      primaryContentType: settings.contentTargets.find((target) => target.role === 'primary')?.contentType ?? 'article',
+      secondaryContentTypes: settings.contentTargets
+        .filter((target) => target.role === 'secondary')
+        .map((target) => target.contentType),
     }),
-    settings,
+    settings: sharedBriefSettings,
     interactionContext: {
       stageId: 'shared-brief',
       operationId: 'shared-brief:content-brief',
@@ -51,6 +64,7 @@ export async function planContentBrief({
 function buildDryRunContentBrief(idea: string): ContentBrief {
   const normalizedIdea = idea.trim();
   return {
+    title: deriveTitleFromIdea(normalizedIdea),
     description: `A practical, cross-channel content package about ${normalizedIdea} with clear mechanisms, examples, and execution guidance.`,
     targetAudience: 'Operators, creators, and small teams looking for practical guidance they can apply this week.',
     corePromise: 'The reader will leave with a concrete understanding of what to do next and why it works.',
@@ -60,5 +74,20 @@ function buildDryRunContentBrief(idea: string): ContentBrief {
       'Translate the same core message into channel-native structure without losing substance.',
     ],
     voiceNotes: 'Keep the tone practical and direct. Avoid hype, vague claims, and filler language.',
+    primaryContentType: 'article',
+    secondaryContentTypes: ['x-post', 'linkedin-post'],
+    secondaryContentStrategy: 'Each secondary output should stand on its own with practical value while creating curiosity that points readers back to the primary piece.',
   };
+}
+
+function deriveTitleFromIdea(idea: string): string {
+  if (!idea) {
+    return 'Generated Content Brief';
+  }
+
+  return idea
+    .split(/\s+/)
+    .slice(0, 8)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }

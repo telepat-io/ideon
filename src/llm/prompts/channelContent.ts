@@ -42,6 +42,8 @@ const CHANNEL_RULES: Record<string, string> = {
 export function buildSingleShotContentMessages(options: {
   idea: string;
   contentType: string;
+  role: 'primary' | 'secondary';
+  primaryContentType: string;
   style: string;
   outputIndex: number;
   outputCountForType: number;
@@ -52,10 +54,20 @@ export function buildSingleShotContentMessages(options: {
   const channelRule = CHANNEL_RULES[options.contentType] ?? 'Write channel-native Markdown content.';
   const articleContext = options.articleReferenceMarkdown
     ? [
-        'Reference article context (use as anchor source, but adapt natively for the requested channel):',
+        'Reference primary context (use as anchor source, but adapt natively for the requested channel):',
         options.articleReferenceMarkdown,
       ].join('\n\n')
-    : 'No article anchor exists for this run. Build directly from the idea.';
+    : 'No primary anchor exists for this run. Build directly from the idea.';
+
+  const roleDirective = options.role === 'primary'
+    ? [
+        'This output is the primary content for the run.',
+        'Deliver the full canonical value for this idea on the requested channel.',
+      ].join(' ')
+    : [
+        `This output is secondary content and must promote or incite interest in the primary ${options.primaryContentType} content.`,
+        'Keep it independently useful, avoid sounding like an ad, and include channel-native cues that point back to the primary narrative.',
+      ].join(' ');
 
   return [
     {
@@ -65,6 +77,7 @@ export function buildSingleShotContentMessages(options: {
         `Write exactly one ${options.contentType} output.`,
         buildWritingFrameworkInstruction(),
         buildStyleDirective(options.style),
+        roleDirective,
         channelRule,
       ].join(' '),
     },
@@ -73,14 +86,20 @@ export function buildSingleShotContentMessages(options: {
       content: [
         `Idea: ${options.idea}`,
         `Content type: ${options.contentType}`,
+        `Role: ${options.role}`,
+        `Primary content type: ${options.primaryContentType}`,
         `Output index: ${options.outputIndex} of ${options.outputCountForType}`,
         '',
         'Shared content brief (must guide this output):',
+        `- title: ${options.contentBrief.title}`,
         `- description: ${options.contentBrief.description}`,
         `- targetAudience: ${options.contentBrief.targetAudience}`,
         `- corePromise: ${options.contentBrief.corePromise}`,
         `- keyPoints: ${options.contentBrief.keyPoints.join(' | ')}`,
         `- voiceNotes: ${options.contentBrief.voiceNotes}`,
+        `- primaryContentType: ${options.contentBrief.primaryContentType}`,
+        `- secondaryContentTypes: ${options.contentBrief.secondaryContentTypes.join(' | ') || 'none'}`,
+        `- secondaryContentStrategy: ${options.contentBrief.secondaryContentStrategy}`,
         '',
         articleContext,
         '',
