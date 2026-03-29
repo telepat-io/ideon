@@ -1,8 +1,16 @@
 {
-  "name": "@cozymantis/ideon",
+  "name": "@telepat/ideon",
   "version": "0.1.0",
   "description": "CLI for generating rich articles and images from ideas.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/telepat-io/ideon.git"
+  },
+  "homepage": "https://telepat-io.github.io/ideon/",
+  "bugs": {
+    "url": "https://github.com/telepat-io/ideon/issues"
+  },
   "bin": {
     "ideon": "dist/ideon.js"
   },

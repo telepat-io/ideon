@@ -16,12 +16,12 @@ npm run build
 
 Ensure `package.json` is set to the scoped public package:
 
-- name: `@cozymantis/ideon`
+- name: `@telepat/ideon`
 - publish access: `public`
 
 ## npm Release Automation
 
-Publishing to npm is automated through GitHub Actions for repository `cozymantis/ideon`.
+Publishing to npm is automated through GitHub Actions for repository `telepat-io/ideon`.
 
 Trigger rules:
 
@@ -32,7 +32,7 @@ Trigger rules:
 Workflow behavior:
 
 1. verifies tag format and commit ancestry
-2. verifies package name is `@cozymantis/ideon`
+2. verifies package name is `@telepat/ideon`
 3. runs release quality gates (`lint`, `test`, `build`, `docs:build`)
 4. publishes to npm with provenance
 
@@ -40,18 +40,18 @@ Workflow behavior:
 
 This repository uses npm Trusted Publishing (OIDC), not `NPM_TOKEN`.
 
-In npm package settings for `@cozymantis/ideon`, configure a trusted publisher for:
+In npm package settings for `@telepat/ideon`, configure a trusted publisher for:
 
 - provider: GitHub Actions
-- repository: `cozymantis/ideon`
+- repository: `telepat-io/ideon`
 - workflow: `.github/workflows/npm-publish.yml`
 
 ## Docs Deployment Target
 
 Docs are configured for GitHub Pages:
 
-- repository: `cozymantis/ideon`
-- url: `https://cozymantis.github.io`
+- repository: `telepat-io/ideon`
+- url: `https://telepat-io.github.io`
 - baseUrl: `/ideon/`
 
 ## Deployment Workflow

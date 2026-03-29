@@ -38,7 +38,7 @@ npm run serve
 
 ## GitHub Pages Target
 
-- Repository: `cozymantis/ideon`
-- URL: `https://cozymantis.github.io/ideon/`
+- Repository: `telepat-io/ideon`
+- URL: `https://telepat-io.github.io/ideon/`
 
 Deployment is handled via repository workflow in `.github/workflows/docs-pages.yml`.

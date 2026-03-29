@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.repository == 'cozymantis/ideon'
+    if: github.repository == 'telepat-io/ideon'
     runs-on: ubuntu-latest
 
     steps:
@@ -51,8 +51,8 @@ jobs:
           PACKAGE_NAME="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).name")"
           PACKAGE_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
 
-          if [ "$PACKAGE_NAME" != "@cozymantis/ideon" ]; then
-            echo "package.json name must be @cozymantis/ideon before publishing. Found: $PACKAGE_NAME"
+          if [ "$PACKAGE_NAME" != "@telepat/ideon" ]; then
+            echo "package.json name must be @telepat/ideon before publishing. Found: $PACKAGE_NAME"
             exit 1
           fi
 

@@ -7,7 +7,7 @@ title: Development Workflow
 ## Repository Setup
 
 ```bash
-git clone https://github.com/cozymantis/ideon.git
+git clone https://github.com/telepat-io/ideon.git
 cd ideon
 npm install
 cd docs-site && npm install && cd ..

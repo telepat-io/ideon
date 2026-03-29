@@ -14,7 +14,7 @@ title: Installation
 ## Clone and Install
 
 ```bash
-git clone https://github.com/cozymantis/ideon.git
+git clone https://github.com/telepat-io/ideon.git
 cd ideon
 npm install
 ```

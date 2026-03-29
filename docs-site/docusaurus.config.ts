@@ -10,14 +10,14 @@ const config: Config = {
   favicon: 'img/favicon.svg',
 
   // Set the production url of your site here
-  url: 'https://cozymantis.github.io',
+  url: 'https://telepat-io.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/ideon/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'cozymantis',
+  organizationName: 'telepat-io',
   projectName: 'ideon',
 
   trailingSlash: false,
@@ -43,7 +43,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
-          editUrl: 'https://github.com/cozymantis/ideon/tree/main/docs-site/',
+          editUrl: 'https://github.com/telepat-io/ideon/tree/main/docs-site/',
         },
         blog: false,
         theme: {
@@ -84,7 +84,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://github.com/cozymantis/ideon',
+          href: 'https://github.com/telepat-io/ideon',
           label: 'GitHub',
           position: 'right',
         },
@@ -111,7 +111,7 @@ const config: Config = {
           items: [
             {
               label: 'Repository',
-              href: 'https://github.com/cozymantis/ideon',
+              href: 'https://github.com/telepat-io/ideon',
             },
           ],
         },
@@ -124,7 +124,7 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/cozymantis/ideon',
+              href: 'https://github.com/telepat-io/ideon',
             },
           ],
         },
