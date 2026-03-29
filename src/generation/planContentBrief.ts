@@ -13,6 +13,7 @@ const SHARED_BRIEF_MAX_TOKENS = 8000;
 
 export async function planContentBrief({
   idea,
+  targetAudienceHint,
   settings,
   openRouter,
   dryRun,
@@ -20,6 +21,7 @@ export async function planContentBrief({
   onInteraction,
 }: {
   idea: string;
+  targetAudienceHint?: string;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
@@ -27,7 +29,7 @@ export async function planContentBrief({
   onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<ContentBrief> {
   if (dryRun || !openRouter) {
-    return buildDryRunContentBrief(idea);
+    return buildDryRunContentBrief(idea, targetAudienceHint);
   }
 
   const sharedBriefSettings: AppSettings = {
@@ -43,6 +45,7 @@ export async function planContentBrief({
     schema: contentBriefSchema,
     messages: buildContentBriefMessages(idea, {
       style: settings.style,
+      targetAudienceHint,
       primaryContentType: settings.contentTargets.find((target) => target.role === 'primary')?.contentType ?? 'article',
       secondaryContentTypes: settings.contentTargets
         .filter((target) => target.role === 'secondary')
@@ -61,12 +64,17 @@ export async function planContentBrief({
   });
 }
 
-function buildDryRunContentBrief(idea: string): ContentBrief {
+function buildDryRunContentBrief(idea: string, targetAudienceHint?: string): ContentBrief {
   const normalizedIdea = idea.trim();
+  const normalizedAudience = targetAudienceHint?.trim();
+  const targetAudience = normalizedAudience && normalizedAudience.length > 0
+    ? `Audience seed: ${normalizedAudience}. Extend this profile with specific motivations, constraints, and context tied to ${normalizedIdea}.`
+    : 'A broad, general audience of curious professionals and creators seeking practical, applicable insight.';
+
   return {
     title: deriveTitleFromIdea(normalizedIdea),
     description: `A practical, cross-channel content package about ${normalizedIdea} with clear mechanisms, examples, and execution guidance.`,
-    targetAudience: 'Operators, creators, and small teams looking for practical guidance they can apply this week.',
+    targetAudience,
     corePromise: 'The reader will leave with a concrete understanding of what to do next and why it works.',
     keyPoints: [
       'Clarify the problem context before proposing tactics.',

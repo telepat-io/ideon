@@ -56,6 +56,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Generate one primary content output plus optional secondary outputs from a prompt or job file.')
     .argument('[idea]', 'Natural-language idea for the generation run')
     .option('-i, --idea <idea>', 'Natural-language idea for the generation run')
+    .option('--audience <description>', 'Optional natural-language audience description for shared-brief targeting')
     .option('-j, --job <path>', 'Path to a JSON job definition')
     .option('--primary <type=count>', 'Required primary output target (for example: article=1 or x-post=1)')
     .option('--secondary <type=count>', 'Secondary output target, repeatable (for example: x-thread=3, linkedin-post=2)', collectOptionValue)
@@ -63,9 +64,10 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Target length: small, medium, or large')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
     .option('--no-enrich-links', 'Skip link enrichment after markdown generation')
-    .action(async (ideaArg: string | undefined, options: { idea?: string; job?: string; primary?: string; secondary?: string[]; style?: string; length?: string; dryRun: boolean; enrichLinks: boolean }) => {
+    .action(async (ideaArg: string | undefined, options: { idea?: string; audience?: string; job?: string; primary?: string; secondary?: string[]; style?: string; length?: string; dryRun: boolean; enrichLinks: boolean }) => {
       await runWriteCommand({
         idea: options.idea ?? ideaArg,
+        audience: options.audience,
         jobPath: options.job,
         primarySpec: options.primary,
         secondarySpecs: options.secondary,

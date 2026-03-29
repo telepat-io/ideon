@@ -66,6 +66,7 @@ const writeSessionStateSchema = z.object({
   createdAt: z.string().min(1),
   updatedAt: z.string().min(1),
   idea: z.string().min(1),
+  targetAudienceHint: z.string().min(1).nullable().default(null),
   job: jobInputSchema.nullable(),
   settings: appSettingsSchema,
   dryRun: z.boolean(),
@@ -97,6 +98,7 @@ type WriteSessionStateSchema = z.infer<typeof writeSessionStateSchema>;
 
 export interface WriteSessionSeed {
   idea: string;
+  targetAudienceHint?: string;
   job: JobInput | null;
   settings: AppSettings;
   dryRun: boolean;
@@ -156,6 +158,7 @@ export async function startFreshWriteSession(seed: WriteSessionSeed, workingDir:
     createdAt: timestamp,
     updatedAt: timestamp,
     idea: seed.idea,
+    targetAudienceHint: seed.targetAudienceHint ?? null,
     job: seed.job,
     settings: seed.settings,
     dryRun: seed.dryRun,

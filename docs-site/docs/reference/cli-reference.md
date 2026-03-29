@@ -37,6 +37,7 @@ ideon write --job ./job.json
 ideon write --dry-run "How to productionize editorial AI"
 ideon write "How to productionize editorial AI" --primary article=1 --secondary x-thread=2 --secondary x-post=1 --style technical
 ideon write "How to productionize editorial AI" --length large --primary article=1
+ideon write "How to productionize editorial AI" --audience "B2B SaaS founders shipping content with tiny teams"
 ```
 
 ### Options
@@ -46,6 +47,7 @@ ideon write "How to productionize editorial AI" --length large --primary article
 - `--secondary <type=count>`: optional secondary target, repeatable
 - `--style <style>`: writing style (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
 - `--length <size>`: target length tier (`small`, `medium`, `large`)
+- `--audience <description>`: optional natural-language audience seed used to guide and enrich the shared brief `targetAudience`
 - `--dry-run`: run full orchestration without external provider calls
 
 Supported target types:
@@ -63,6 +65,7 @@ Defaults:
 
 - If no style is provided, Ideon uses `professional`.
 - If no length is provided, Ideon uses `medium`.
+- If no audience is provided, Ideon seeds the shared brief with a general non-specific audience.
 
 Target rules:
 
@@ -77,6 +80,12 @@ Idea resolution order:
 2. positional `[idea]`
 3. `job.idea`
 4. `job.prompt`
+
+Audience seed resolution order:
+
+1. `--audience`
+2. `job.targetAudience`
+3. general non-specific fallback used by shared brief planning
 
 Interactive behavior:
 

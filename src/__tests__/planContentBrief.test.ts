@@ -76,10 +76,74 @@ describe('planContentBrief', () => {
     });
 
     expect(requestStructured).toHaveBeenCalledTimes(1);
-    const requestArgs = requestStructured.mock.calls[0]?.[0];
+    const requestArgs = requestStructured.mock.calls[0]?.[0] as {
+      messages?: Array<{ role?: string; content?: string }>;
+      settings?: {
+        modelSettings?: {
+          maxTokens?: number;
+          temperature?: number;
+          topP?: number;
+        };
+      };
+    } | undefined;
     expect(requestArgs?.settings?.modelSettings?.maxTokens).toBe(8000);
     expect(requestArgs?.settings?.modelSettings?.temperature).toBe(defaultAppSettings.modelSettings.temperature);
     expect(requestArgs?.settings?.modelSettings?.topP).toBe(defaultAppSettings.modelSettings.topP);
+    const userMessage = requestArgs?.messages?.find((message: { role?: string }) => message.role === 'user') as
+      | { content?: string }
+      | undefined;
+    expect(userMessage?.content).toContain('Audience seed (optional user guidance): A general, non-specific audience.');
     expect(result).toEqual(expected);
+  });
+
+  it('injects provided audience seed into prompt and dry-run brief', async () => {
+    const requestStructured = jest
+      .fn<
+        (args: {
+          parse?: (data: unknown) => unknown;
+          messages?: Array<{ role?: string; content?: string }>;
+        }) => Promise<unknown>
+      >()
+      .mockImplementation(async ({ parse }) => {
+        const payload = {
+          title: 'Audience Seed Coverage',
+          description: 'Checks audience propagation through prompt composition.',
+          targetAudience: 'Refined audience response from model.',
+          corePromise: 'Concrete outcomes with context.',
+          keyPoints: ['Point one', 'Point two', 'Point three'],
+          voiceNotes: 'Direct and practical.',
+          primaryContentType: 'article',
+          secondaryContentTypes: ['linkedin-post'],
+          secondaryContentStrategy: 'Standalone secondary outputs with bridge to primary.',
+        };
+
+        return parse ? parse(payload) : payload;
+      });
+
+    const audienceSeed = 'Romanian startup operators building thought leadership from scratch';
+
+    await planContentBrief({
+      idea: 'model idea with audience',
+      targetAudienceHint: audienceSeed,
+      settings: defaultAppSettings,
+      openRouter: { requestStructured } as never,
+      dryRun: false,
+    });
+
+    const requestArgs = requestStructured.mock.calls[0]?.[0] as { messages?: Array<{ role?: string; content?: string }> } | undefined;
+    const userMessage = requestArgs?.messages?.find((message: { role?: string }) => message.role === 'user') as
+      | { content?: string }
+      | undefined;
+    expect(userMessage?.content).toContain(`Audience seed (optional user guidance): ${audienceSeed}`);
+    expect(userMessage?.content).toContain('Enrich it with concrete context');
+
+    const dryRunResult = await planContentBrief({
+      idea: 'dry-run audience propagation',
+      targetAudienceHint: audienceSeed,
+      settings: defaultAppSettings,
+      openRouter: null,
+      dryRun: true,
+    });
+    expect(dryRunResult.targetAudience).toContain(audienceSeed);
   });
 });

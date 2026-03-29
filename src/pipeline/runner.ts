@@ -143,6 +143,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     writeSession = await startFreshWriteSession(
       {
         idea: input.idea,
+        targetAudienceHint: input.targetAudienceHint,
         job: input.job,
         settings: input.config.settings,
         dryRun,
@@ -190,6 +191,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     } else {
       contentBrief = await planContentBrief({
         idea: input.idea,
+        targetAudienceHint: input.targetAudienceHint,
         settings: input.config.settings,
         openRouter,
         dryRun,
@@ -607,6 +609,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       jobDefinitionPath,
       buildRunJobDefinition({
         idea: input.idea,
+        targetAudienceHint: input.targetAudienceHint,
         dryRun,
         runMode,
         settings: input.config.settings,
@@ -1663,6 +1666,7 @@ function slugifyIdea(idea: string): string {
 
 function buildRunJobDefinition(input: {
   idea: string;
+  targetAudienceHint?: string;
   dryRun: boolean;
   runMode: 'fresh' | 'resume';
   settings: ResolvedRunInput['config']['settings'];
@@ -1670,6 +1674,7 @@ function buildRunJobDefinition(input: {
 }): {
   idea: string;
   prompt: string;
+  targetAudience?: string;
   contentTargets: ResolvedRunInput['config']['settings']['contentTargets'];
   style: string;
   settings: ResolvedRunInput['config']['settings'];
@@ -1683,6 +1688,7 @@ function buildRunJobDefinition(input: {
   return {
     idea: input.idea,
     prompt: input.idea,
+    ...(input.targetAudienceHint ? { targetAudience: input.targetAudienceHint } : {}),
     contentTargets: input.settings.contentTargets,
     style: input.settings.style,
     settings: input.settings,

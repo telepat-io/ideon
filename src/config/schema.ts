@@ -69,6 +69,7 @@ export const envSettingsSchema = z.object({
 export const jobInputSchema = z.object({
   idea: z.string().min(1).optional(),
   prompt: z.string().min(1).optional(),
+  targetAudience: z.string().min(1).optional(),
   settings: appSettingsSchema.partial().optional(),
 });
 

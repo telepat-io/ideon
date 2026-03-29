@@ -101,6 +101,7 @@ This artifact is intended for prompt engineering and failure analysis, so payloa
 Each run also emits `job.json` in the generation directory. It captures the resolved run definition:
 
 - `idea` and `prompt` used for the run
+- optional `targetAudience` seed when provided (or when inherited from a job file)
 - resolved `contentTargets` and `style`
 - full resolved `settings` object (including current and future settings fields)
 - source job payload when provided (`sourceJob`)
@@ -112,6 +113,7 @@ Example shape:
 {
   "idea": "How teams can operationalize content systems",
   "prompt": "How teams can operationalize content systems",
+  "targetAudience": "Content operators building repeatable publishing systems",
   "settings": {
     "model": "moonshotai/kimi-k2.5",
     "modelSettings": { "temperature": 0.7, "maxTokens": 4000, "topP": 1 },

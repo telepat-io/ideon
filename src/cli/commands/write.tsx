@@ -15,6 +15,7 @@ import { withWriteResumeHint } from './writeErrorHint.js';
 
 interface WriteCommandOptions {
   idea?: string;
+  audience?: string;
   jobPath?: string;
   primarySpec?: string;
   secondarySpecs?: string[];
@@ -120,7 +121,10 @@ export async function runWriteResumeCommand(): Promise<void> {
     throw new ReportedError('The last write session already completed. Run ideon write <idea> to start fresh.');
   }
 
-  const resolved = await resolveRunInput({ idea: session.idea });
+  const resolved = await resolveRunInput({
+    idea: session.idea,
+    audience: session.targetAudienceHint ?? undefined,
+  });
   const input = {
     ...resolved,
     job: session.job,
@@ -225,6 +229,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
   try {
     const resolved = await resolveRunInput({
       idea: options.idea,
+      audience: options.audience,
       jobPath: options.jobPath,
       style: options.style,
       targetLength: options.length,
@@ -244,6 +249,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
     const interactiveIdea = await promptForIdea();
     const resolved = await resolveRunInput({
       idea: interactiveIdea,
+      audience: options.audience,
       jobPath: options.jobPath,
       style: options.style,
       targetLength: options.length,

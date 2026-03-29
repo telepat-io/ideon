@@ -144,6 +144,36 @@ describe('resolveRunInput', () => {
     }
   });
 
+  it('resolves target audience from CLI and trims whitespace', async () => {
+    const result = await resolveRunInput({
+      idea: 'audience override test',
+      audience: '  Solo founders running lean content ops  ',
+    });
+
+    expect(result.targetAudienceHint).toBe('Solo founders running lean content ops');
+  });
+
+  it('falls back to job targetAudience when CLI audience is absent', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-audience-fallback-'));
+
+    try {
+      const jobPath = path.join(tempDir, 'job.json');
+      await writeFile(
+        jobPath,
+        JSON.stringify({
+          idea: 'job audience fallback',
+          targetAudience: 'In-house content teams scaling from ad hoc to repeatable workflows.',
+        }),
+        'utf8',
+      );
+
+      const result = await resolveRunInput({ jobPath });
+      expect(result.targetAudienceHint).toBe('In-house content teams scaling from ad hoc to repeatable workflows.');
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it('prefers env secrets over saved secrets', async () => {
     readEnvSettingsMock.mockReturnValue({
       openRouterApiKey: 'env-openrouter-key',

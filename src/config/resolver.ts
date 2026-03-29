@@ -22,6 +22,7 @@ export interface ContentTargetInput {
 
 export interface ResolveConfigInput {
   idea?: string;
+  audience?: string;
   jobPath?: string;
   style?: (typeof writingStyleValues)[number] | string;
   contentTargets?: ContentTargetInput[];
@@ -31,6 +32,7 @@ export interface ResolveConfigInput {
 export interface ResolvedRunInput {
   config: ResolvedConfig;
   idea: string;
+  targetAudienceHint?: string;
   job: JobInput | null;
 }
 
@@ -76,6 +78,8 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     throw new Error('No idea provided. Pass an argument to `ideon write` or use --job with an idea in the JSON file.');
   }
 
+  const targetAudienceHint = normalizeOptionalText(input.audience) ?? normalizeOptionalText(job?.targetAudience);
+
   return {
     config: {
       settings: mergedSettings,
@@ -85,8 +89,18 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
       },
     },
     idea,
+    targetAudienceHint,
     job,
   };
+}
+
+function normalizeOptionalText(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
 }
 
 function assertExactlyOnePrimary(contentTargets: ContentTargetInput[] | undefined, sourceLabel: string): void {

@@ -25,6 +25,7 @@ npm run dev -- write --job ./job.json
 ```json
 {
   "idea": "How editorial teams can ship weekly explainers",
+  "targetAudience": "Content leads at small SaaS teams building repeatable thought-leadership motions",
   "settings": {
     "model": "moonshotai/kimi-k2.5",
     "modelSettings": {
@@ -56,7 +57,8 @@ npm run dev -- write --job ./job.json
 
 - `settings.contentTargets` must include exactly one primary target and optional secondary targets.
 - If `settings.style` is omitted, Ideon defaults to `professional`.
-- CLI arguments override job-file settings for `idea`, `style`, and `contentTargets`.
+- If `targetAudience` is omitted, Ideon seeds shared-brief planning with a general non-specific audience.
+- CLI arguments override job-file settings for `idea`, `targetAudience`, `style`, and `contentTargets`.
 - Environment variables override matching job-file fields where supported.
 - After each run, Ideon writes a generated `job.json` inside the generation directory that captures the resolved run definition and metadata for that specific execution.
 
@@ -73,6 +75,7 @@ Highest to lowest precedence:
 Practical examples:
 
 - `ideon write --job ./job.json --style technical` forces technical style even if the job file says otherwise.
+- `ideon write --job ./job.json --audience "Procurement leaders evaluating AI ops tooling"` overrides `job.targetAudience` for that run.
 - `IDEON_MODEL=... ideon write --job ./job.json` uses the env model instead of the job model.
 - `--primary` with optional `--secondary` replaces the full job `settings.contentTargets` array for that run.
 
