@@ -11,7 +11,7 @@ Ideon serves generated content through a React-based local web app so you can re
 Serve the most recent generated batch from your output directory:
 
 ```bash
-npm run preview
+ideon preview
 ```
 
 This command:
@@ -84,7 +84,7 @@ The React app reads data from:
 ideon preview ./output/my-article.md
 ```
 
-Repository-local equivalent:
+If you are in this repository and want preview-client rebuild + launch in one command, you can also run:
 
 ```bash
 npm run preview -- ./output/my-article.md
@@ -108,7 +108,7 @@ npm run build:preview
 2. Start preview without opening a browser:
 
 ```bash
-npm run dev -- preview --no-open
+ideon preview --no-open
 ```
 
 3. Rebuild the client when preview-app code changes:
@@ -117,7 +117,7 @@ npm run dev -- preview --no-open
 npm run build:preview
 ```
 
-`npm run preview` is the convenience script that does both a preview build and server launch.
+`npm run preview` is an optional repository convenience script that does both a preview build and server launch.
 
 ## Troubleshooting
 

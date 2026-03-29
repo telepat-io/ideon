@@ -78,7 +78,8 @@ Build path:
 
 - Vite builds `src/preview-app` into `dist/preview`
 - `npm run build` includes `npm run build:preview`
-- `npm run preview` builds preview client and launches `ideon preview`
+- `ideon preview` launches the preview server and app
+- `npm run preview` (repo convenience script) builds preview client first, then launches `ideon preview`
 
 ## Error Boundary Strategy
 

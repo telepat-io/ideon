@@ -9,34 +9,35 @@ title: Installation
 
 - Node.js 20+
 - npm 10+
-- macOS/Linux/Windows terminal with access to GitHub repository checkout
+- macOS/Linux/Windows terminal
 
-## Clone and Install
+## Install Globally
+
+```bash
+npm i -g @telepat/ideon
+```
+
+## Verify the CLI
+
+```bash
+ideon --help
+```
+
+## First-Time Setup
+
+```bash
+ideon settings
+```
+
+## Optional: Run From Source (Contributor Workflow)
 
 ```bash
 git clone https://github.com/telepat-io/ideon.git
 cd ideon
 npm install
-```
-
-## Verify the CLI in Development
-
-```bash
-npm run dev -- --help
-```
-
-## Build and Validate
-
-```bash
-npm run typecheck
-npm test
 npm run build
-```
-
-## Optional: Start the Documentation Site Locally
-
-```bash
-npm run docs:start
+npm link
+ideon --help
 ```
 
 ## Common Setup Issues

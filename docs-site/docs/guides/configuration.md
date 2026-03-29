@@ -93,7 +93,7 @@ IDEON_TEMPERATURE=0.6 \
 IDEON_MAX_TOKENS=2400 \
 IDEON_STYLE=technical \
 IDEON_TARGET_LENGTH=large \
-npm run dev -- write "An idea"
+ideon write "An idea"
 ```
 
 Note: content target arrays are not currently configurable through environment variables. Use CLI `--primary/--secondary` flags or job-file `settings.contentTargets`.

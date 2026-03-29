@@ -41,7 +41,7 @@ IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
 IDEON_STYLE=professional \
 IDEON_TARGET_LENGTH=medium \
-npm run dev -- write "How teams scale editorial pipelines"
+ideon write "How teams scale editorial pipelines"
 ```
 
 ## Notes

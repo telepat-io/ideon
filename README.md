@@ -38,16 +38,16 @@ Prerequisites:
 - Node.js 20+
 - npm 10+
 
-Install dependencies:
+Install globally:
 
 ```bash
-npm install
+npm i -g @telepat/ideon
 ```
 
-Run the CLI in development mode:
+Verify installation:
 
 ```bash
-npm run dev -- --help
+ideon --help
 ```
 
 ## Getting Started
@@ -55,25 +55,25 @@ npm run dev -- --help
 1. Configure credentials interactively:
 
 ```bash
-npm run dev -- settings
+ideon settings
 ```
 
 2. Generate your first article:
 
 ```bash
-npm run dev -- write "How small editorial teams can productionize AI writing"
+ideon write "How small editorial teams can productionize AI writing"
 ```
 
 3. Generate multi-output runs:
 
 ```bash
-npm run dev -- write "How small editorial teams can productionize AI writing" --target article=1 --target x-post=2 --style professional
+ideon write "How small editorial teams can productionize AI writing" --target article=1 --target x-post=2 --style professional
 ```
 
 4. Run a safe pipeline dry run (no provider calls):
 
 ```bash
-npm run dev -- write --dry-run "How AI changes technical publishing"
+ideon write --dry-run "How AI changes technical publishing"
 ```
 
 ## Core Commands
@@ -93,7 +93,7 @@ ideon preview
 Serve the latest generated article locally with assets and open it in your browser:
 
 ```bash
-npm run preview
+ideon preview
 ```
 
 This launches the new React preview app (served from `dist/preview`) and the preview API server.
@@ -101,7 +101,7 @@ This launches the new React preview app (served from `dist/preview`) and the pre
 You can also preview a specific article and choose a port:
 
 ```bash
-npm run dev -- preview ./output/my-article.md --port 4173
+ideon preview ./output/my-article.md --port 4173
 ```
 
 If you are iterating on preview UI code in `src/preview-app`, rebuild client assets after UI changes:

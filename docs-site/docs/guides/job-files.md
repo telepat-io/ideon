@@ -17,7 +17,7 @@ Job files allow repeatable and shareable generation runs across one or more cont
 Run:
 
 ```bash
-npm run dev -- write --job ./job.json
+ideon write --job ./job.json
 ```
 
 ## Extended Example

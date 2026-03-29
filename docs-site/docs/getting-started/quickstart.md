@@ -10,7 +10,7 @@ This guide gets you from zero to your first multi-output generation run.
 ## 1. Configure Settings and Secrets
 
 ```bash
-npm run dev -- settings
+ideon settings
 ```
 
 Inside settings, configure:
@@ -24,7 +24,7 @@ Inside settings, configure:
 ## 2. Generate Content Outputs
 
 ```bash
-npm run dev -- write "How small editorial teams can productionize AI writing" --primary article=1 --secondary x-thread=1 --secondary x-post=1 --style professional
+ideon write "How small editorial teams can productionize AI writing" --primary article=1 --secondary x-thread=1 --secondary x-post=1 --style professional
 ```
 
 Expected stages for article primary:
@@ -52,7 +52,7 @@ By default (resolved from current working directory):
 You can open the latest generation in browser preview:
 
 ```bash
-npm run preview
+ideon preview
 ```
 
 Preview includes generation-level browsing, content-type tabs, and per-variant subtabs.
@@ -60,7 +60,7 @@ Preview includes generation-level browsing, content-type tabs, and per-variant s
 ## 4. Run a Safe Dry Run
 
 ```bash
-npm run dev -- write --dry-run "How AI changes developer docs workflows"
+ideon write --dry-run "How AI changes developer docs workflows"
 ```
 
 Dry run keeps the full pipeline flow but skips OpenRouter and Replicate API calls while still producing generation artifacts.
@@ -68,7 +68,7 @@ Dry run keeps the full pipeline flow but skips OpenRouter and Replicate API call
 ## 5. Run with a Job File
 
 ```bash
-npm run dev -- write --job ./job.json
+ideon write --job ./job.json
 ```
 
 See [Job Files](../guides/job-files.md) for full schema and examples.

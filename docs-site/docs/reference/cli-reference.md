@@ -153,7 +153,6 @@ Starts the local preview server and serves the React preview app for generated c
 ideon preview
 ideon preview ./output/my-article.md
 ideon preview --port 4173 --no-open
-npm run preview
 ```
 
 Behavior:
@@ -169,7 +168,7 @@ If the React client build is missing, preview falls back to a server-rendered sh
 
 Developer note:
 
-- `npm run preview` is a convenience wrapper for `ideon preview` in this repository.
+- `npm run preview` is an optional convenience wrapper for `ideon preview` in this repository.
 - In this repository, `npm run preview` also runs `npm run build:preview` before starting the server.
 
 ### Options

@@ -20,8 +20,8 @@ Ideon converts a raw idea into a complete content generation run with one or mor
 ## Quickstart
 
 ```bash
-npm install
-npm run dev -- write --idea "Why async Rust is worth learning" --primary article=1 --secondary x-thread=2 --secondary x-post=1 --style technical
+npm i -g @telepat/ideon
+ideon write "Why async Rust is worth learning" --primary article=1 --secondary x-thread=2 --secondary x-post=1 --style technical
 ```
 
 See [Installation](./getting-started/installation.md) and [Quickstart](./getting-started/quickstart.md) for full setup including credentials.

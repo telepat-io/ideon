@@ -16,7 +16,7 @@ Live generation requires two provider credentials.
 Use the settings flow to store secrets in your OS keychain:
 
 ```bash
-npm run dev -- settings
+ideon settings
 ```
 
 The CLI persists secrets via keychain integration, not plain text config.

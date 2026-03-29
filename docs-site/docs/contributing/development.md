@@ -18,7 +18,7 @@ cd docs-site && npm install && cd ..
 Project root:
 
 ```bash
-npm run dev -- --help
+ideon --help
 npm run typecheck
 npm test
 npm run build

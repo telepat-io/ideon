@@ -82,7 +82,7 @@ The JSON includes:
 - Image prompt calls: per-image prompt expansion timing/cost + token usage (when available)
 - Image render calls: per-image render timing/cost + output byte size
 
-To inspect generated markdown and image embeds in a browser, run `npm run preview`.
+To inspect generated markdown and image embeds in a browser, run `ideon preview`.
 
 ## Model Interaction Artifact
 

@@ -66,7 +66,7 @@ Ideon supports these generation targets:
 ## Multi-Target Example
 
 ```bash
-npm run dev -- write "AI workflow launch" \
+ideon write "AI workflow launch" \
   --primary article=1 \
   --secondary x-thread=2 \
   --secondary x-post=1 \

@@ -30,9 +30,9 @@ This documentation covers running, configuring, and extending Ideon as a multi-o
 
 ## Common Workflows
 
-- Configure settings and credentials: `npm run dev -- settings`
-- Generate content: `npm run dev -- write "your idea" --primary article=1 --secondary x-thread=1 --secondary x-post=1 --style technical`
-- Preview outputs: `npm run preview`
-- Resume failed/interrupted runs: `npm run dev -- write resume`
+- Configure settings and credentials: `ideon settings`
+- Generate content: `ideon write "your idea" --primary article=1 --secondary x-thread=1 --secondary x-post=1 --style technical`
+- Preview outputs: `ideon preview`
+- Resume failed/interrupted runs: `ideon write resume`
 
 For model and run economics, see [Performance and Costs](./guides/performance-and-costs.md).
