@@ -14,7 +14,7 @@ o888o o888bood8P'   o888ooooood8  `Y8bood8P'  o8o        `8
 [![Coverage](https://img.shields.io/badge/coverage-92.5%25-brightgreen)](https://github.com/telepat-io/ideon)
 [![npm version](https://img.shields.io/npm/v/%40telepat%2Fideon)](https://www.npmjs.com/package/@telepat/ideon)
 [![npm downloads](https://img.shields.io/npm/dm/%40telepat%2Fideon)](https://www.npmjs.com/package/@telepat/ideon)
-[![Docs](https://img.shields.io/badge/docs-live-1f6feb)](https://telepat-io.github.io/ideon/)
+[![Docs](https://img.shields.io/badge/docs-live-1f6feb)](https://docs.telepat.io/ideon)
 [![Node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://github.com/telepat-io/ideon/blob/main/LICENSE)
 
@@ -148,7 +148,7 @@ Links:
 
 - GitHub repository: [telepat-io/ideon](https://github.com/telepat-io/ideon)
 - npm package: [@telepat/ideon](https://www.npmjs.com/package/@telepat/ideon)
-- Documentation site: [telepat-io.github.io/ideon](https://telepat-io.github.io/ideon/)
+- Documentation site: [docs.telepat.io/ideon](https://docs.telepat.io/ideon)
 
 Key docs:
 
@@ -160,4 +160,4 @@ Key docs:
 
 GitHub Pages URL:
 
-- [https://telepat-io.github.io/ideon/](https://telepat-io.github.io/ideon/)
+- [https://docs.telepat.io/ideon](https://docs.telepat.io/ideon)

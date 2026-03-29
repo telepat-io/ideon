@@ -39,6 +39,6 @@ npm run serve
 ## GitHub Pages Target
 
 - Repository: `telepat-io/ideon`
-- URL: `https://telepat-io.github.io/ideon/`
+- URL: `https://docs.telepat.io/ideon`
 
 Deployment is handled via repository workflow in `.github/workflows/docs-pages.yml`.

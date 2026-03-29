@@ -51,7 +51,7 @@ In npm package settings for `@telepat/ideon`, configure a trusted publisher for:
 Docs are configured for GitHub Pages:
 
 - repository: `telepat-io/ideon`
-- url: `https://telepat-io.github.io`
+- url: `https://docs.telepat.io`
 - baseUrl: `/ideon/`
 
 ## Deployment Workflow

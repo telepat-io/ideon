@@ -149,7 +149,7 @@ Test files live in `src/__tests__/` and are named `<module>.test.ts`.
 ## Docs
 
 Source: `docs-site/docs/` — Docusaurus Markdown pages.
-Deployed to: https://telepat-io.github.io/ideon/ via `.github/workflows/docs-pages.yml` on push to `main`.
+Deployed to: https://docs.telepat.io/ideon via `.github/workflows/docs-pages.yml` on push to `main`.
 
 ```bash
 npm run docs:start    # local dev server (hot reload)
