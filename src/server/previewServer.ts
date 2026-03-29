@@ -1,12 +1,23 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFile, stat } from 'node:fs/promises';
+import { watch as fsWatch } from 'node:fs';
+import type { ServerResponse } from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { marked } from 'marked';
 import { resolveLinksPath } from '../output/filesystem.js';
 import { enrichMarkdownWithLinks } from '../output/enrichMarkdownWithLinks.js';
 import type { LinkEntry } from '../types/article.js';
+import type {
+  PreviewArticleContent,
+  PreviewAnalyticsSummary,
+  PreviewBootstrapData,
+  PreviewInteractionsPayload,
+  PreviewLlmInteraction,
+  PreviewT2IInteraction,
+} from '../types/preview.js';
 import { stripFrontmatter, listAllGenerations, deriveGenerationId } from './previewHelpers.js';
 
 const execFileAsync = promisify(execFile);
@@ -17,6 +28,7 @@ export interface PreviewServerOptions {
   markdownOutputDir: string;
   port: number;
   openBrowser: boolean;
+  watch?: boolean;
 }
 
 export interface StartedPreviewServer {
@@ -24,59 +36,7 @@ export interface StartedPreviewServer {
   close: () => Promise<void>;
 }
 
-interface ArticleContent {
-  title: string;
-  generationId: string;
-  interactions: {
-    llmCalls: PreviewLlmInteraction[];
-    t2iCalls: PreviewT2IInteraction[];
-  };
-  outputs: Array<{
-    id: string;
-    contentType: string;
-    contentTypeLabel: string;
-    index: number;
-    slug: string;
-    title: string;
-    htmlBody: string;
-  }>;
-}
-
-interface PreviewLlmInteraction {
-  stageId: string;
-  operationId: string;
-  requestType: 'structured' | 'text' | 'web-search';
-  provider: 'openrouter';
-  modelId: string;
-  startedAt: string;
-  endedAt: string;
-  durationMs: number;
-  attempts: number;
-  retries: number;
-  retryBackoffMs: number;
-  status: 'succeeded' | 'failed';
-  requestBody: string;
-  responseBody: string | null;
-  errorMessage: string | null;
-}
-
-interface PreviewT2IInteraction {
-  stageId: 'images';
-  operationId: string;
-  provider: 'replicate' | 'replicate-dry-run';
-  modelId: string;
-  kind: 'cover' | 'inline';
-  startedAt: string;
-  endedAt: string;
-  durationMs: number;
-  attempts: number;
-  retries: number;
-  retryBackoffMs: number;
-  status: 'succeeded' | 'failed';
-  prompt: string;
-  input: Record<string, unknown>;
-  errorMessage: string | null;
-}
+type ArticleContent = PreviewArticleContent;
 
 interface ResolvedPreviewArticle {
   slug: string;
@@ -93,8 +53,37 @@ class MissingArticleError extends Error {
 
 export async function startPreviewServer(options: PreviewServerOptions): Promise<StartedPreviewServer> {
   const app = express();
+  const previewClientDir = await resolvePreviewClientBuildDir();
   app.disable('x-powered-by');
   app.use('/assets', express.static(options.assetDir));
+  if (previewClientDir) {
+    app.use(express.static(previewClientDir, { index: false }));
+  }
+
+  // SSE reload endpoint — only active in watch mode
+  const reloadSubscribers = new Set<ServerResponse>();
+  if (options.watch) {
+    app.get('/api/__reload', (req, res) => {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+      reloadSubscribers.add(res);
+      req.on('close', () => { reloadSubscribers.delete(res); });
+    });
+
+    if (previewClientDir) {
+      let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+      fsWatch(previewClientDir, { recursive: true }, () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          for (const subscriber of reloadSubscribers) {
+            subscriber.write('data: reload\n\n');
+          }
+        }, 120);
+      });
+    }
+  }
 
   app.get('/api/generations/:generationId/assets/*assetPath', async (req, res) => {
     try {
@@ -142,20 +131,50 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
     }
   });
 
+  app.get('/api/bootstrap', async (_req, res) => {
+    try {
+      const bootstrap = await getPreviewBootstrapData(options.markdownPath, options.markdownOutputDir);
+      res.status(200).type('application/json').json(bootstrap);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown preview bootstrap error.';
+      res.status(500).type('application/json').json({ error: message });
+    }
+  });
+
   // Main preview page
   app.get('/', async (_req, res) => {
     try {
-      const activeArticle = await resolveActivePreviewArticle(options.markdownPath, options.markdownOutputDir);
-      const emptyStateMessage = activeArticle
-        ? null
-        : `No generated content found in ${options.markdownOutputDir}. Run ideon write "your idea" first.`;
-      const html = renderShell({
-        title: activeArticle?.title ?? 'Ideon Preview',
-        sourcePath: activeArticle?.sourcePath ?? options.markdownOutputDir,
-        currentSlug: activeArticle?.slug ?? '',
-        emptyStateMessage,
-      });
+      if (previewClientDir) {
+        if (options.watch) {
+          let html: string;
+          try {
+            html = await readFile(path.join(previewClientDir, 'index.html'), 'utf8');
+          } catch {
+            // Vite is mid-rebuild — serve a placeholder that reconnects via SSE.
+            res.status(200).type('html').send(
+              '<!doctype html><html><head><meta charset="utf-8">'
+              + '<title>Rebuilding\u2026</title>'
+              + '<style>body{margin:0;display:flex;align-items:center;justify-content:center;'
+              + 'height:100vh;font-family:sans-serif;background:#101820;color:#e0eaf0}'
+              + 'p{font-size:15px;opacity:.7}</style>'
+              + '</head><body><p>Rebuilding\u2026</p>'
+              + "<script>const s=new EventSource('/api/__reload');s.onmessage=function(){location.reload()};</script>"
+              + '</body></html>',
+            );
+            return;
+          }
 
+          const reloadScript = "<script>const __r=new EventSource('/api/__reload');__r.onmessage=function(){location.reload()};</script>";
+          const injected = html.replace('</body>', `${reloadScript}</body>`);
+          res.status(200).type('html').send(injected);
+        } else {
+          res.status(200).sendFile(path.join(previewClientDir, 'index.html'));
+        }
+        return;
+      }
+
+      const bootstrap = await getPreviewBootstrapData(options.markdownPath, options.markdownOutputDir);
+      const html = renderShell(bootstrap);
       res.status(200).type('html').send(html);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown preview rendering error.';
@@ -236,11 +255,13 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
 
   const generationDir = path.dirname(generation.outputs[0]?.sourcePath ?? '');
   const interactions = generationDir ? await loadSavedInteractions(generationDir) : { llmCalls: [], t2iCalls: [] };
+  const analyticsSummary = generationDir ? await loadSavedAnalyticsSummary(generationDir) : null;
 
   return {
     title: generation.title,
     generationId: generation.id,
     interactions,
+    analyticsSummary,
     outputs,
   };
 }
@@ -317,10 +338,7 @@ async function loadSavedLinks(markdownPath: string): Promise<LinkEntry[]> {
   }
 }
 
-async function loadSavedInteractions(generationDir: string): Promise<{
-  llmCalls: PreviewLlmInteraction[];
-  t2iCalls: PreviewT2IInteraction[];
-}> {
+async function loadSavedInteractions(generationDir: string): Promise<PreviewInteractionsPayload> {
   const interactionsPath = path.join(generationDir, 'model.interactions.json');
 
   try {
@@ -347,6 +365,93 @@ async function loadSavedInteractions(generationDir: string): Promise<{
       t2iCalls: [],
     };
   }
+}
+
+async function loadSavedAnalyticsSummary(generationDir: string): Promise<PreviewAnalyticsSummary | null> {
+  const analyticsPath = path.join(generationDir, 'generation.analytics.json');
+
+  try {
+    const raw = await readFile(analyticsPath, 'utf8');
+    const parsed = JSON.parse(raw) as {
+      summary?: {
+        totalDurationMs?: unknown;
+        totalCostUsd?: unknown;
+        totalCostSource?: unknown;
+      };
+    };
+
+    const summary = parsed.summary;
+    if (!summary || typeof summary !== 'object') {
+      return null;
+    }
+
+    const totalDurationMs = typeof summary.totalDurationMs === 'number'
+      ? summary.totalDurationMs
+      : null;
+    const totalCostUsd = typeof summary.totalCostUsd === 'number'
+      ? summary.totalCostUsd
+      : null;
+    const totalCostSource = typeof summary.totalCostSource === 'string'
+      ? summary.totalCostSource
+      : null;
+
+    if (totalDurationMs === null && totalCostUsd === null && totalCostSource === null) {
+      return null;
+    }
+
+    return {
+      totalDurationMs,
+      totalCostUsd,
+      totalCostSource,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function getPreviewBootstrapData(
+  preferredMarkdownPath: string,
+  markdownOutputDir: string,
+): Promise<PreviewBootstrapData> {
+  const activeArticle = await resolveActivePreviewArticle(preferredMarkdownPath, markdownOutputDir);
+  const emptyStateMessage = activeArticle
+    ? null
+    : `No generated content found in ${markdownOutputDir}. Run ideon write "your idea" first.`;
+
+  return {
+    title: activeArticle?.title ?? 'Ideon Preview',
+    sourcePath: activeArticle?.sourcePath ?? markdownOutputDir,
+    currentSlug: activeArticle?.slug ?? '',
+    emptyStateMessage,
+  };
+}
+
+async function resolvePreviewClientBuildDir(): Promise<string | null> {
+  // Resolve relative to this file so the path is correct in all contexts:
+  //   - Compiled tsup bundle (dist/ideon.js): currentDir = dist/
+  //       → dist/preview/ ✓
+  //   - tsx dev run (src/server/previewServer.ts): currentDir = src/server/
+  //       → ../../dist/preview/ = dist/preview/ ✓
+  //   - Globally installed: /usr/local/.../dist/ideon.js
+  //       → /usr/local/.../dist/preview/ ✓
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    path.resolve(currentDir, 'preview'),
+    path.resolve(currentDir, '../../dist/preview'),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const indexStat = await stat(path.join(candidate, 'index.html'));
+      if (indexStat.isFile()) {
+        return candidate;
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return null;
 }
 
 function isPreviewLlmInteraction(value: unknown): value is PreviewLlmInteraction {
@@ -2008,7 +2113,9 @@ function escapeHtml(value: string): string {
 
 export const __testInternals = {
   getArticleContent,
+  getPreviewBootstrapData,
   resolveActivePreviewArticle,
+  resolvePreviewClientBuildDir,
   isMissingFileError,
   renderArticleHtml,
   rewriteRelativeAssetUrls,

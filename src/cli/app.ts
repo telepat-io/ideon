@@ -41,11 +41,13 @@ export async function runCli(argv: string[]): Promise<void> {
     .argument('[markdownPath]', 'Path to the markdown file to preview')
     .option('-p, --port <port>', 'Port for the local preview server (default: 4173)')
     .option('--no-open', 'Do not auto-open browser after server startup')
-    .action(async (markdownPath: string | undefined, options: { port?: string; open: boolean }) => {
+    .option('--watch', 'Rebuild the preview UI on source changes and auto-reload the browser', false)
+    .action(async (markdownPath: string | undefined, options: { port?: string; open: boolean; watch: boolean }) => {
       await runServeCommand({
         markdownPath,
         port: options.port,
         openBrowser: options.open,
+        watch: options.watch,
       });
     });
 

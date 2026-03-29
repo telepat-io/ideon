@@ -4,7 +4,7 @@ title: Local Preview
 
 # Local Preview
 
-Ideon can serve generated content batches in a clean local web view so you can quickly review copy and images.
+Ideon serves generated content through a React-based local web app so you can review copy, assets, and model interactions in one place.
 
 ## Quick Start
 
@@ -17,36 +17,66 @@ npm run preview
 This command:
 
 - starts a local server on `http://localhost:4173`
-- finds the latest generated markdown output in your configured markdown output directory
-- serves images from your configured asset output directory
+- serves the built React preview client (`dist/preview`)
+- loads generation metadata from preview API endpoints
+- serves generation-local assets from your configured asset output directory
 - opens your default browser automatically
 
-Each generation appears as one sidebar item. In the content panel, preview now shows:
+## What You See In The UI
 
-- top-level tabs for each generated content type in that generation (`article`, `x-thread`, `x-post`, `linkedin-post`, etc.)
-- a distinct `Logs` pill on the right side of the content-type tab row
-- sub-tabs for each variant index (for example `X Post 1`, `X Post 2`, `X Post 3`)
-- channel-styled cards so social outputs look closer to their native platform context
+### Left Rail
 
-In the `Logs` view, preview shows:
+- one item per generation directory
+- title, timestamp, and snippet preview
+- quick reload button
 
-- a stage-grouped list of captured model calls (`shared-brief`, `planning`, `sections`, `image-prompts`, `images`, `output`, `links`)
-- click-to-inspect detail pane per interaction
-- a mode toggle for `Prompt/Response` view vs `Full JSON`
+### Main Content Area
 
-Preview selection behavior:
+- compact summary row (source path, generation count, output count, interaction count)
+- active generation title and slug
+- top-level channel tabs (`article`, `x-post`, `linkedin-post`, etc.)
+- variant tabs within each channel (`Article 1`, `X Post 2`, and so on)
+- rendered markdown body for the selected output
 
-- The preview route chooses an active generation from the newest markdown output when no explicit markdown path is provided.
-- If you pass a markdown path, preview uses its generation as the initial selection when available.
-- Generation asset links in markdown are rewritten to generation-scoped preview routes so relative image paths continue to work.
+### Logs View
 
-Theme behavior:
+- stage-grouped interaction list (`shared-brief`, `planning`, `sections`, `image-prompts`, `images`, `output`, `links`)
+- per-call inspector with metadata (model, status, duration)
+- mode toggle for `Prompt / Response` and `Full JSON`
 
-- Preview defaults to your OS-level color scheme (`prefers-color-scheme`) on first load.
-- Use the theme button in the sidebar to switch between light and dark modes.
-- Your manual choice is persisted in local storage and reused on later visits.
+## Runtime Architecture
 
-If the generation currently open in preview is deleted while the server is running, refreshing the page safely falls back to the newest remaining generation. If no markdown files remain, preview shows a friendly empty state instead of a crash.
+`ideon preview` now runs two layers:
+
+1. API + static server (`src/server/previewServer.ts`)
+2. React client app (`src/preview-app/`, built by Vite into `dist/preview/`)
+
+On startup, the server tries to find the built React client and serves `index.html` at `/`.
+
+- If the React build exists, the SPA UI is served.
+- If the build is missing, preview falls back to a server-rendered shell so preview still works.
+
+## Preview API Endpoints
+
+The React app reads data from:
+
+- `GET /api/bootstrap`: initial source-path and active-generation selection
+- `GET /api/articles`: generation list for the left rail
+- `GET /api/articles/:slug`: full output + interaction payload for one generation
+- `GET /api/generations/:generationId/assets/*assetPath`: generation-scoped asset serving
+
+## Selection And Fallback Behavior
+
+- If `markdownPath` is omitted, preview picks the newest markdown output recursively.
+- If `markdownPath` is provided, preview uses that generation as the initial selection when found.
+- If the active generation disappears while preview is open, refresh safely falls back to the newest remaining generation.
+- If no markdown remains, preview shows an empty-state message instead of crashing.
+
+## Theme Behavior
+
+- First load follows OS color scheme (`prefers-color-scheme`).
+- Light/Dark toggle is persisted in local storage.
+- The app uses Ant Design theme tokens and custom CSS for channel-specific output cards.
 
 ## Preview a Specific Article
 
@@ -65,20 +95,51 @@ Optional flags:
 - `--port <port>` to use a different port
 - `--no-open` to skip automatic browser launch
 
+## Contributor Notes
+
+If you are developing preview UI locally:
+
+1. Build the React client once:
+
+```bash
+npm run build:preview
+```
+
+2. Start preview without opening a browser:
+
+```bash
+npm run dev -- preview --no-open
+```
+
+3. Rebuild the client when preview-app code changes:
+
+```bash
+npm run build:preview
+```
+
+`npm run preview` is the convenience script that does both a preview build and server launch.
+
 ## Troubleshooting
 
 If Ideon reports no generated content found:
 
 1. Run a generation command first (`ideon write "your idea"`).
 2. Confirm your output directories in `ideon settings`.
-3. If your markdown lives elsewhere, pass an explicit path to `ideon preview`.
+3. If markdown lives elsewhere, pass an explicit path to `ideon preview`.
 
 If preview fails to start on the default port:
 
 1. Start on a different port: `ideon preview --port 8080 --no-open`
-2. Check for local port conflicts on `4173`.
+2. Check local port conflicts on `4173`.
 
-If a generation was deleted while preview is open:
+If UI changes are not visible:
 
-- Refresh the page. Preview falls back to the newest remaining generation.
-- If none remain, preview shows an empty state message.
+1. Re-run `npm run build:preview`.
+2. Refresh browser with hard reload.
+3. Confirm `dist/preview/index.html` has a recent timestamp.
+
+If images do not load:
+
+1. Ensure preview is pointed at the same workspace output root used for generation.
+2. Verify markdown uses generation-relative asset paths.
+3. Open browser devtools and confirm `/api/generations/:id/assets/...` returns `200`.

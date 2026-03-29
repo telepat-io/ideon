@@ -30,12 +30,16 @@ describe('preview server resilience', () => {
       try {
         await unlink(olderPath);
 
-        const response = await fetch(`${server.url}/`);
-        const html = await response.text();
+        const rootResponse = await fetch(`${server.url}/`);
+        const html = await rootResponse.text();
+        const bootstrapResponse = await fetch(`${server.url}/api/bootstrap`);
+        const bootstrapPayload = (await bootstrapResponse.json()) as { currentSlug: string; title: string };
 
-        expect(response.status).toBe(200);
-        expect(html).toContain("const currentSlug = 'newer';");
-        expect(html).toContain('Newer Article | Ideon Preview');
+        expect(rootResponse.status).toBe(200);
+        expect(html).toContain('<!doctype html>');
+        expect(bootstrapResponse.status).toBe(200);
+        expect(bootstrapPayload.currentSlug).toBe('newer');
+        expect(bootstrapPayload.title).toBe('Newer Article');
       } finally {
         await server.close();
       }
@@ -103,10 +107,17 @@ describe('preview server resilience', () => {
 
         const rootResponse = await fetch(`${server.url}/`);
         const html = await rootResponse.text();
+        const bootstrapResponse = await fetch(`${server.url}/api/bootstrap`);
+        const bootstrapPayload = (await bootstrapResponse.json()) as {
+          currentSlug: string;
+          emptyStateMessage: string | null;
+        };
 
         expect(rootResponse.status).toBe(200);
-        expect(html).toContain('No generated content found in');
-        expect(html).toContain("const currentSlug = '';");
+        expect(html).toContain('<!doctype html>');
+        expect(bootstrapResponse.status).toBe(200);
+        expect(bootstrapPayload.currentSlug).toBe('');
+        expect(bootstrapPayload.emptyStateMessage).toContain('No generated content found in');
 
         const listResponse = await fetch(`${server.url}/api/articles`);
         const listPayload = (await listResponse.json()) as Array<{ slug: string }>;

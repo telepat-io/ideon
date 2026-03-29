@@ -25,6 +25,8 @@ Ideon is organized as a modular CLI pipeline with generation-directory outputs a
 - `src/images`: Replicate client + image pipeline
 - `src/models/t2i`: model registry + override coercion
 - `src/output`: markdown and filesystem utilities
+- `src/server`: local preview server, generation discovery helpers, API routes
+- `src/preview-app`: React + Ant Design preview client (Vite-built static app)
 - `src/types`: domain and validation schemas
 
 ## Stage Contract
@@ -49,6 +51,34 @@ Each run writes a generation directory:
 - shared assets for that generation
 
 Preview and delete operations work against this generation structure.
+
+## Preview Subsystem
+
+Preview is split into two cooperating layers:
+
+1. `src/server/previewServer.ts` (Express server)
+2. `src/preview-app/*` (React SPA)
+
+The server is responsible for:
+
+- generation discovery and initial selection
+- API endpoints for bootstrap, list, and article detail payloads
+- generation-scoped asset serving
+- serving static client files from `dist/preview`
+- graceful fallback HTML shell when client build is unavailable
+
+The React app is responsible for:
+
+- generation navigation and output variant switching
+- channel-specific markdown presentation
+- interaction inspection (`Prompt / Response` and `Full JSON` modes)
+- light/dark theme UX and persisted theme preference
+
+Build path:
+
+- Vite builds `src/preview-app` into `dist/preview`
+- `npm run build` includes `npm run build:preview`
+- `npm run preview` builds preview client and launches `ideon preview`
 
 ## Error Boundary Strategy
 

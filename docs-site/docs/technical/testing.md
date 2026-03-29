@@ -14,6 +14,9 @@ Ideon uses Jest with ESM support and focused test suites.
 - `pipeline.runner.test.ts`: stage orchestration behavior (multi-targets, generation dirs, resume semantics)
 - `config.resolver.test.ts`: precedence and idea resolution
 - `previewHelpers.test.ts` and `previewServer.test.ts`: recursive discovery, generation grouping, preview resilience, asset serving
+- `previewServer.internals.test.ts` and `previewServer.branches.test.ts`: preview branch/error-path and shell/API behavior
+- `src/preview-app/App.test.tsx`: React preview integration behavior (selection, tab switching, logs inspector)
+- `src/preview-app/interactions.test.ts`: interaction normalization and grouping utilities
 - `prompts.framework.test.ts`: framework/style/content-type prompt layering
 - `write.command.test.ts`: target parsing and CLI write option behavior
 
@@ -40,6 +43,6 @@ npm run docs:build
 
 Priority additions:
 
-- More preview UI interaction coverage (tab/variant switching behavior)
+- More preview UI interaction coverage (theme, mobile drawer, and empty/error states)
 - Additional failure-path coverage for provider responses
 - Integration coverage for delete semantics in mixed generation directories

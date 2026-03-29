@@ -131,7 +131,7 @@ Behavior:
 
 ## `ideon preview [markdownPath]`
 
-Starts a local preview server for generated content batches, including generation-local assets.
+Starts the local preview server and serves the React preview app for generated content batches.
 
 ```bash
 ideon preview
@@ -144,12 +144,17 @@ Behavior:
 
 - If `markdownPath` is omitted, Ideon previews the newest `.md` file recursively in the configured markdown output directory.
 - Preview groups outputs by generation directory, then by content type and output index.
-- Generation-local relative asset links are rewritten and served by preview routes.
+- Generation-local relative asset links are rewritten and served by generation-scoped preview routes.
+- `/` serves the built React app from `dist/preview` when available.
+- The UI reads preview data through `/api/bootstrap`, `/api/articles`, and `/api/articles/:slug`.
 - Browser auto-open is enabled by default.
+
+If the React client build is missing, preview falls back to a server-rendered shell instead of failing startup.
 
 Developer note:
 
 - `npm run preview` is a convenience wrapper for `ideon preview` in this repository.
+- In this repository, `npm run preview` also runs `npm run build:preview` before starting the server.
 
 ### Options
 

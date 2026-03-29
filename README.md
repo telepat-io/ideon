@@ -88,10 +88,18 @@ Serve the latest generated article locally with assets and open it in your brows
 npm run preview
 ```
 
+This launches the new React preview app (served from `dist/preview`) and the preview API server.
+
 You can also preview a specific article and choose a port:
 
 ```bash
 npm run dev -- preview ./output/my-article.md --port 4173
+```
+
+If you are iterating on preview UI code in `src/preview-app`, rebuild client assets after UI changes:
+
+```bash
+npm run build:preview
 ```
 
 ## Credentials
