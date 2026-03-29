@@ -57,6 +57,35 @@ describe('OpenRouterClient requestStructured', () => {
     expect(body.provider).toEqual({ require_parameters: true });
   });
 
+  it('forwards reasoning config for structured requests when provided', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{ message: { content: '{"value":"ok"}' } }] }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    await client.requestStructured<{ value: string }>({
+      schemaName: 'structured_test',
+      schema,
+      messages: [{ role: 'user', content: 'test' }],
+      settings: defaultAppSettings,
+      reasoning: {
+        effort: 'none',
+        exclude: true,
+      },
+    });
+
+    const [, options] = (fetchMock as unknown as jest.Mock).mock.calls[0] as [string, { body?: string }];
+    const body = JSON.parse(options.body ?? '{}') as { reasoning?: { effort?: string; exclude?: boolean } };
+
+    expect(body.reasoning).toEqual({
+      effort: 'none',
+      exclude: true,
+    });
+  });
+
   it('fails with compatibility guidance when model/provider rejects structured outputs', async () => {
     const fetchMock = jest.fn(async () => ({
       ok: false,
@@ -736,6 +765,45 @@ describe('OpenRouterClient requestWebSearch', () => {
     });
   });
 
+  it('treats explicit none as authoritative even when URL citations are present', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: ' none ',
+                annotations: [
+                  {
+                    type: 'url_citation',
+                    url_citation: {
+                      url: 'https://example.com/should-not-be-used',
+                      title: 'Do Not Use',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestWebSearch({
+      messages: [{ role: 'user', content: 'find nothing' }],
+      settings: defaultAppSettings,
+    });
+
+    expect(result).toEqual({
+      text: 'none',
+      firstCitationUrl: null,
+      firstCitationTitle: null,
+    });
+  });
+
   it('returns null citation data when neither annotations nor text contain a URL', async () => {
     const fetchMock = jest.fn(async () => ({
       ok: true,
@@ -754,6 +822,46 @@ describe('OpenRouterClient requestWebSearch', () => {
       text: 'none',
       firstCitationUrl: null,
       firstCitationTitle: null,
+    });
+  });
+
+  it('forwards reasoning config for web search requests when provided', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: 'https://example.com',
+              },
+            },
+          ],
+        }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    await client.requestWebSearch({
+      messages: [{ role: 'user', content: 'find a url' }],
+      settings: defaultAppSettings,
+      reasoning: {
+        effort: 'none',
+        exclude: true,
+      },
+    });
+
+    const [, options] = (fetchMock as unknown as jest.Mock).mock.calls[0] as [string, { body?: string }];
+    const body = JSON.parse(options.body ?? '{}') as {
+      plugins?: Array<{ id: string }>;
+      reasoning?: { effort?: string; exclude?: boolean };
+    };
+
+    expect(body.plugins).toEqual([{ id: 'web' }]);
+    expect(body.reasoning).toEqual({
+      effort: 'none',
+      exclude: true,
     });
   });
 });

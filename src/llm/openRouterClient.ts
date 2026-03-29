@@ -12,6 +12,7 @@ export interface StructuredRequest<T> {
   schema: Record<string, unknown>;
   messages: ChatMessage[];
   settings: AppSettings;
+  reasoning?: OpenRouterReasoningConfig;
   interactionContext?: OpenRouterInteractionContext;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
   parse?: (data: unknown) => T;
@@ -22,6 +23,7 @@ export interface StructuredRequest<T> {
 export interface TextRequest {
   messages: ChatMessage[];
   settings: AppSettings;
+  reasoning?: OpenRouterReasoningConfig;
   interactionContext?: OpenRouterInteractionContext;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
   onMetrics?: (metrics: LlmCallMetrics) => void;
@@ -30,9 +32,17 @@ export interface TextRequest {
 export interface WebSearchRequest {
   messages: ChatMessage[];
   settings: AppSettings;
+  reasoning?: OpenRouterReasoningConfig;
   interactionContext?: OpenRouterInteractionContext;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
   onMetrics?: (metrics: LlmCallMetrics) => void;
+}
+
+export interface OpenRouterReasoningConfig {
+  effort?: 'xhigh' | 'high' | 'medium' | 'low' | 'minimal' | 'none';
+  max_tokens?: number;
+  exclude?: boolean;
+  enabled?: boolean;
 }
 
 export interface OpenRouterInteractionContext {
@@ -73,6 +83,7 @@ export class OpenRouterClient {
       messages: request.messages,
       settings: request.settings,
       requestType: 'text',
+      reasoning: request.reasoning,
       interactionContext: request.interactionContext,
       onInteraction: request.onInteraction,
     });
@@ -90,6 +101,7 @@ export class OpenRouterClient {
           messages: request.messages,
           settings: request.settings,
           requestType: 'structured',
+          reasoning: request.reasoning,
           interactionContext: request.interactionContext,
           onInteraction: request.onInteraction,
           responseFormat: {
@@ -144,6 +156,7 @@ export class OpenRouterClient {
       messages: request.messages,
       settings: request.settings,
       requestType: 'web-search',
+      reasoning: request.reasoning,
       interactionContext: request.interactionContext,
       onInteraction: request.onInteraction,
       plugins: [{ id: 'web' }],
@@ -151,6 +164,14 @@ export class OpenRouterClient {
     request.onMetrics?.(completion.metrics);
 
     const text = normalizeGeneratedText(extractText(completion.response));
+    if (isExplicitNoneResponse(text)) {
+      return {
+        text,
+        firstCitationUrl: null,
+        firstCitationTitle: null,
+      };
+    }
+
     const firstCitation = extractFirstUrlCitation(completion.response);
     const fallbackUrl = extractFirstUrlFromText(text);
 
@@ -170,6 +191,7 @@ export class OpenRouterClient {
     responseFormat,
     requireStructuredOutputs,
     plugins,
+    reasoning,
   }: {
     messages: ChatMessage[];
     settings: AppSettings;
@@ -179,6 +201,7 @@ export class OpenRouterClient {
     responseFormat?: Record<string, unknown>;
     requireStructuredOutputs?: boolean;
     plugins?: Array<Record<string, unknown>>;
+    reasoning?: OpenRouterReasoningConfig;
   }): Promise<{ response: OpenRouterResponse; metrics: LlmCallMetrics }> {
     let lastError: Error | null = null;
     const startedAtMs = Date.now();
@@ -218,6 +241,10 @@ export class OpenRouterClient {
 
         if (plugins && plugins.length > 0) {
           requestBody.plugins = plugins;
+        }
+
+        if (reasoning) {
+          requestBody.reasoning = reasoning;
         }
 
         requestBodyRaw = JSON.stringify(requestBody);
@@ -385,6 +412,11 @@ function extractFirstUrlCitation(response: OpenRouterResponse): { url: string; t
 function extractFirstUrlFromText(text: string): string | null {
   const match = text.match(/https?:\/\/[^\s)]+/i);
   return match?.[0] ?? null;
+}
+
+function isExplicitNoneResponse(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  return normalized === 'none' || normalized === '"none"' || normalized === "'none'" || normalized === 'none.';
 }
 
 function parseOpenRouterResponse(rawBody: string): OpenRouterResponse {

@@ -11,6 +11,10 @@ import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ContentItemLinks, LinkEntry } from '../types/article.js';
 
 const SHORT_FORM_CONTENT_TYPES = new Set(['x-post', 'x-thread']);
+const LINKS_REASONING_SETTINGS = {
+  effort: 'none',
+  exclude: true,
+} as const;
 
 export type LinkEnrichmentProgressPhase =
   | 'selecting-expressions'
@@ -103,6 +107,7 @@ export async function enrichLinks({
       schema: buildLinkCandidatesJsonSchema(),
       messages: buildLinkCandidatesMessages(content, item.contentType),
       settings,
+      reasoning: LINKS_REASONING_SETTINGS,
       interactionContext: {
         stageId: 'links',
         operationId: `links:${item.fileId}:select-expressions`,
@@ -157,6 +162,7 @@ export async function enrichLinks({
           expression,
         }),
         settings,
+        reasoning: LINKS_REASONING_SETTINGS,
         interactionContext: {
           stageId: 'links',
           operationId: `links:${item.fileId}:resolve-${index + 1}`,
