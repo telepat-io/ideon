@@ -5,6 +5,8 @@ sidebar_label: Welcome
 sidebar_position: 0
 ---
 
+> AI Writer Extraordinaire
+
 Ideon converts a raw idea into a complete content generation run with one or more outputs (article, social, newsletter, landing copy) from a single CLI command.
 
 ## Quickstart
