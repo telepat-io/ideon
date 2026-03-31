@@ -31,6 +31,7 @@ describe('resolveRunInput', () => {
       modelSettings: { temperature: 0.5, maxTokens: 1500, topP: 0.9 },
       modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
+      notifications: { enabled: false },
       markdownOutputDir: '/saved-out',
       assetOutputDir: '/saved-out/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
@@ -219,6 +220,7 @@ describe('resolveRunInput', () => {
       modelSettings: { temperature: 0.5, maxTokens: 1500, topP: 0.9 },
       modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
+      notifications: { enabled: false },
       markdownOutputDir: '/saved-out',
       assetOutputDir: '/saved-out/assets',
       style: 'professional',
@@ -230,6 +232,36 @@ describe('resolveRunInput', () => {
 
     expect(result.config.settings.style).toBe('professional');
     expect(result.config.settings.contentTargets).toEqual([{ contentType: 'article', role: 'primary', count: 1 }]);
+    expect(result.config.settings.notifications.enabled).toBe(false);
+  });
+
+  it('applies notification enabled precedence saved < job < env', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-notifications-'));
+
+    try {
+      const jobPath = path.join(tempDir, 'job.json');
+      await writeFile(
+        jobPath,
+        JSON.stringify({
+          idea: 'notifications test',
+          settings: {
+            notifications: {
+              enabled: true,
+            },
+          },
+        }),
+        'utf8',
+      );
+
+      readEnvSettingsMock.mockReturnValue({
+        notificationsEnabled: false,
+      });
+
+      const result = await resolveRunInput({ jobPath });
+      expect(result.config.settings.notifications.enabled).toBe(false);
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('applies direct style and target overrides', async () => {

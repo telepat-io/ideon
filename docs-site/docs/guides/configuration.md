@@ -38,6 +38,7 @@ Core settings include:
 - `modelRequestTimeoutMs`: positive integer request timeout in milliseconds (default `90000`)
 - `t2i.modelId`: selected text-to-image model
 - `t2i.inputOverrides`: model-specific user overrides
+- `notifications.enabled`: toggles OS notifications for write lifecycle updates
 - `markdownOutputDir`
 - `assetOutputDir`
 - `contentTargets`: array of output targets with per-type counts

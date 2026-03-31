@@ -12,6 +12,12 @@ import { loadWriteSession, patchWriteSession } from '../../pipeline/sessionStore
 import { WriteOptionsFlow } from '../flows/writeOptionsFlow.js';
 import { parsePrimaryAndSecondarySpecs } from './writeTargetSpecs.js';
 import { withWriteResumeHint } from './writeErrorHint.js';
+import {
+  notifyWriteCanceled,
+  notifyWriteFailed,
+  notifyWriteStarted,
+  notifyWriteSucceeded,
+} from '../notifications/osNotifier.js';
 
 interface WriteCommandOptions {
   idea?: string;
@@ -56,6 +62,12 @@ function WriteApp({
 
     void (async () => {
       try {
+        await notifyWriteStarted({
+          enabled: input.config.settings.notifications.enabled,
+          idea: input.idea,
+          runMode,
+        });
+
         const runResult = await runPipelineShell(input, {
           dryRun,
           enrichLinks,
@@ -72,6 +84,11 @@ function WriteApp({
         }
 
         setResult(runResult);
+        await notifyWriteSucceeded({
+          enabled: input.config.settings.notifications.enabled,
+          title: runResult.artifact.title,
+          slug: runResult.artifact.slug,
+        });
       } catch (error) {
         if (!mounted) {
           return;
@@ -81,6 +98,10 @@ function WriteApp({
         const messageWithResumeHint = withWriteResumeHint(normalizedError.message);
         setErrorMessage(messageWithResumeHint);
         onError(new Error(messageWithResumeHint));
+        await notifyWriteFailed({
+          enabled: input.config.settings.notifications.enabled,
+          message: messageWithResumeHint,
+        });
       }
     })();
 
@@ -152,6 +173,10 @@ async function runWritePipeline(
     interruptHandled = true;
     void (async () => {
       try {
+        await notifyWriteCanceled({
+          enabled: input.config.settings.notifications.enabled,
+          signal,
+        });
         await recordInterruptedWrite(signal);
       } finally {
         cleanupSignalHandlers();

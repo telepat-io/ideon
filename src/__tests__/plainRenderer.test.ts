@@ -5,9 +5,18 @@ import type { PipelineRunResult, StageViewModel } from '../pipeline/events.js';
 const runPipelineShellMock = jest.fn<
   (input: ResolvedRunInput, options?: { onUpdate?: (stages: StageViewModel[]) => void }) => Promise<PipelineRunResult>
 >();
+const notifyWriteStartedMock = jest.fn<() => Promise<void>>();
+const notifyWriteSucceededMock = jest.fn<() => Promise<void>>();
+const notifyWriteFailedMock = jest.fn<() => Promise<void>>();
 
 jest.unstable_mockModule('../pipeline/runner.js', () => ({
   runPipelineShell: runPipelineShellMock,
+}));
+
+jest.unstable_mockModule('../cli/notifications/osNotifier.js', () => ({
+  notifyWriteStarted: notifyWriteStartedMock,
+  notifyWriteSucceeded: notifyWriteSucceededMock,
+  notifyWriteFailed: notifyWriteFailedMock,
 }));
 
 const { renderPlainPipeline } = await import('../cli/logging/plainRenderer.js');
@@ -20,6 +29,9 @@ describe('renderPlainPipeline', () => {
     jest.clearAllMocks();
     console.log = jest.fn();
     console.error = jest.fn();
+    notifyWriteStartedMock.mockResolvedValue();
+    notifyWriteSucceededMock.mockResolvedValue();
+    notifyWriteFailedMock.mockResolvedValue();
   });
 
   afterEach(() => {
@@ -124,7 +136,14 @@ describe('renderPlainPipeline', () => {
       };
     });
 
-    await renderPlainPipeline({} as ResolvedRunInput, true, true, 'fresh');
+    await renderPlainPipeline({
+      idea: 'A practical idea',
+      config: {
+        settings: {
+          notifications: { enabled: true },
+        },
+      },
+    } as ResolvedRunInput, true, true, 'fresh');
 
     const allLogs = (console.log as jest.Mock).mock.calls.map((call) => String(call[0]));
     const itemLogs = allLogs.filter((line) => line.includes('Assembling Markdown :: x post 1/2'));
@@ -134,5 +153,47 @@ describe('renderPlainPipeline', () => {
     expect(itemLogs[1]).toContain('[running]');
     expect(itemLogs[2]).toContain('[succeeded]');
     expect(itemLogs[2]).toContain('analytics: 1.5s • cost: ~$0.0123');
+    expect(notifyWriteStartedMock).toHaveBeenCalledWith({
+      enabled: true,
+      idea: 'A practical idea',
+      runMode: 'fresh',
+    });
+    expect(notifyWriteSucceededMock).toHaveBeenCalledWith({
+      enabled: true,
+      title: 'Example',
+      slug: 'example',
+    });
+    expect(notifyWriteFailedMock).not.toHaveBeenCalled();
+  });
+
+  it('sends failed terminal notification when the pipeline throws', async () => {
+    runPipelineShellMock.mockRejectedValue(new Error('network issue'));
+
+    await expect(
+      renderPlainPipeline(
+        {
+          idea: 'Failure scenario',
+          config: {
+            settings: {
+              notifications: { enabled: true },
+            },
+          },
+        } as ResolvedRunInput,
+        true,
+        true,
+        'fresh',
+      ),
+    ).rejects.toThrow('network issue');
+
+    expect(notifyWriteStartedMock).toHaveBeenCalledWith({
+      enabled: true,
+      idea: 'Failure scenario',
+      runMode: 'fresh',
+    });
+    expect(notifyWriteFailedMock).toHaveBeenCalledWith({
+      enabled: true,
+      message: 'network issue Run `ideon write resume` to retry the latest job.',
+    });
+    expect(notifyWriteSucceededMock).not.toHaveBeenCalled();
   });
 });

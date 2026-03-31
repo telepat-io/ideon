@@ -53,6 +53,7 @@ describe('readEnvSettings', () => {
       IDEON_OPENROUTER_API_KEY: 'openrouter-key',
       IDEON_REPLICATE_API_TOKEN: 'replicate-token',
       IDEON_MODEL: 'moonshotai/kimi-k2.5',
+      IDEON_NOTIFICATIONS_ENABLED: 'true',
       IDEON_MARKDOWN_OUTPUT_DIR: '/tmp/out',
       IDEON_ASSET_OUTPUT_DIR: '/tmp/out/assets',
       IDEON_STYLE: 'technical',
@@ -63,10 +64,27 @@ describe('readEnvSettings', () => {
       openRouterApiKey: 'openrouter-key',
       replicateApiToken: 'replicate-token',
       model: 'moonshotai/kimi-k2.5',
+      notificationsEnabled: true,
       markdownOutputDir: '/tmp/out',
       assetOutputDir: '/tmp/out/assets',
       style: 'technical',
       targetLength: 'large',
     });
+  });
+
+  it('parses notifications boolean values and drops invalid values', () => {
+    const enabledResult = readEnvSettings({
+      IDEON_NOTIFICATIONS_ENABLED: 'TRUE',
+    });
+    const disabledResult = readEnvSettings({
+      IDEON_NOTIFICATIONS_ENABLED: 'false',
+    });
+    const invalidResult = readEnvSettings({
+      IDEON_NOTIFICATIONS_ENABLED: 'yes',
+    });
+
+    expect(enabledResult.notificationsEnabled).toBe(true);
+    expect(disabledResult.notificationsEnabled).toBe(false);
+    expect(invalidResult.notificationsEnabled).toBeUndefined();
   });
 });

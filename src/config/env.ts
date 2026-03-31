@@ -9,6 +9,23 @@ function parseNumber(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function parseBoolean(value: string | undefined): boolean | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return undefined;
+}
+
 export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettings {
   return envSettingsSchema.parse({
     openRouterApiKey: env.IDEON_OPENROUTER_API_KEY,
@@ -18,6 +35,7 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     maxTokens: parseNumber(env.IDEON_MAX_TOKENS),
     topP: parseNumber(env.IDEON_TOP_P),
     modelRequestTimeoutMs: parseNumber(env.IDEON_MODEL_REQUEST_TIMEOUT_MS),
+    notificationsEnabled: parseBoolean(env.IDEON_NOTIFICATIONS_ENABLED),
     markdownOutputDir: env.IDEON_MARKDOWN_OUTPUT_DIR,
     assetOutputDir: env.IDEON_ASSET_OUTPUT_DIR,
     style: env.IDEON_STYLE,

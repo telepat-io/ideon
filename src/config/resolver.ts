@@ -53,6 +53,15 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ...(envSettings.modelRequestTimeoutMs !== undefined
       ? { modelRequestTimeoutMs: envSettings.modelRequestTimeoutMs }
       : {}),
+    ...(envSettings.notificationsEnabled !== undefined
+      ? {
+          notifications: {
+            ...savedSettings.notifications,
+            ...(job?.settings?.notifications ?? {}),
+            enabled: envSettings.notificationsEnabled,
+          },
+        }
+      : {}),
     ...(envSettings.temperature !== undefined || envSettings.maxTokens !== undefined || envSettings.topP !== undefined
       ? {
           modelSettings: {

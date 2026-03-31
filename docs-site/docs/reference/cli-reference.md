@@ -25,6 +25,7 @@ Capabilities:
 - Select and configure LLM model settings
 - Select T2I model and edit model-specific overrides
 - Configure output directories
+- Enable or disable OS notifications for write lifecycle updates
 - Save OpenRouter and Replicate credentials securely
 
 ## `ideon write [idea]`

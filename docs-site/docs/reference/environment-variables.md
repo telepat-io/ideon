@@ -27,6 +27,10 @@ title: Environment Variables
 - `IDEON_STYLE`
 - `IDEON_TARGET_LENGTH` (`small`, `medium`, `large`)
 
+## Notifications
+
+- `IDEON_NOTIFICATIONS_ENABLED` (`true` or `false`)
+
 ## Example
 
 ```bash
@@ -37,6 +41,7 @@ IDEON_TEMPERATURE=0.7 \
 IDEON_MAX_TOKENS=2000 \
 IDEON_TOP_P=1 \
 IDEON_MODEL_REQUEST_TIMEOUT_MS=90000 \
+IDEON_NOTIFICATIONS_ENABLED=false \
 IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
 IDEON_STYLE=professional \

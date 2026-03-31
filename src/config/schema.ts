@@ -34,11 +34,16 @@ export const baseT2ISettingsSchema = z.object({
   inputOverrides: z.record(z.string(), z.unknown()).default({}),
 });
 
+export const notificationsSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+});
+
 export const appSettingsSchema = z.object({
   model: z.string().default('moonshotai/kimi-k2.5'),
   modelSettings: modelSettingsSchema.default(modelSettingsSchema.parse({})),
   modelRequestTimeoutMs: z.number().int().positive().default(90000),
   t2i: baseT2ISettingsSchema.default(baseT2ISettingsSchema.parse({})),
+  notifications: notificationsSettingsSchema.default(notificationsSettingsSchema.parse({})),
   markdownOutputDir: z.string().default('/output'),
   assetOutputDir: z.string().default('/output/assets'),
   contentTargets: z
@@ -60,6 +65,7 @@ export const envSettingsSchema = z.object({
   maxTokens: z.number().int().positive().optional(),
   topP: z.number().min(0).max(1).optional(),
   modelRequestTimeoutMs: z.number().int().positive().optional(),
+  notificationsEnabled: z.boolean().optional(),
   markdownOutputDir: z.string().optional(),
   assetOutputDir: z.string().optional(),
   style: z.enum(writingStyleValues).optional(),

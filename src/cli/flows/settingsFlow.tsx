@@ -10,6 +10,7 @@ type MenuAction =
   | 'openrouter'
   | 'replicate'
   | 'llm-model'
+  | 'notifications-enabled'
   | 'temperature'
   | 'maxTokens'
   | 'topP'
@@ -81,6 +82,10 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
       {
         label: `LLM model: ${settings.model}`,
         value: 'llm-model',
+      },
+      {
+        label: `Notifications > OS notifications enabled: ${settings.notifications.enabled ? 'true' : 'false'}`,
+        value: 'notifications-enabled',
       },
       {
         label: `Temperature: ${settings.modelSettings.temperature}`,
@@ -233,6 +238,9 @@ function handleMenuSelect(
     case 'llm-model':
       setEditing({ key: action, label: 'LLM model', value: settings.model });
       return;
+    case 'notifications-enabled':
+      setEditing({ key: action, label: 'Notifications > OS notifications enabled (true|false)', value: String(settings.notifications.enabled) });
+      return;
     case 'temperature':
       setEditing({ key: action, label: 'Temperature', value: String(settings.modelSettings.temperature) });
       return;
@@ -292,6 +300,18 @@ function applyEdit(
 
   if (action === 'llm-model') {
     setSettings({ ...settings, model: value.trim() || settings.model });
+    return;
+  }
+
+  if (action === 'notifications-enabled') {
+    const parsed = parseBooleanOrFallback(value, settings.notifications.enabled);
+    setSettings({
+      ...settings,
+      notifications: {
+        ...settings.notifications,
+        enabled: parsed,
+      },
+    });
     return;
   }
 
@@ -384,4 +404,17 @@ function parseNumberOrFallback(value: string, fallback: number): number {
 
 function clampNumber(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+function parseBooleanOrFallback(value: string, fallback: boolean): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return fallback;
 }

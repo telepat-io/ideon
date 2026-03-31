@@ -3,6 +3,7 @@ import { runPipelineShell, type PipelineRunOptions } from '../../pipeline/runner
 import { ReportedError } from '../reportedError.js';
 import type { StageViewModel } from '../../pipeline/events.js';
 import { withWriteResumeHint } from '../commands/writeErrorHint.js';
+import { notifyWriteFailed, notifyWriteStarted, notifyWriteSucceeded } from '../notifications/osNotifier.js';
 
 function formatDuration(durationMs: number): string {
   if (durationMs >= 1000) {
@@ -63,8 +64,15 @@ export async function renderPlainPipeline(
 ): Promise<void> {
   let previousStatuses = new Map<string, string>();
   let previousItemStatuses = new Map<string, string>();
+  const notificationsEnabled = input.config.settings.notifications.enabled;
 
   try {
+    await notifyWriteStarted({
+      enabled: notificationsEnabled,
+      idea: input.idea,
+      runMode,
+    });
+
     const result = await runPipelineShell(input, {
       dryRun,
       enrichLinks,
@@ -102,8 +110,17 @@ export async function renderPlainPipeline(
     console.log(`  duration_ms: ${result.analytics.summary.totalDurationMs}`);
     console.log(`  retries: ${result.analytics.summary.totalRetries}`);
     console.log(`  cost: ${formatCost(result.analytics.summary.totalCostUsd)}`);
+    await notifyWriteSucceeded({
+      enabled: notificationsEnabled,
+      title: result.artifact.title,
+      slug: result.artifact.slug,
+    });
   } catch (error) {
     const message = error instanceof Error ? withWriteResumeHint(error.message) : withWriteResumeHint('Pipeline failed.');
+    await notifyWriteFailed({
+      enabled: notificationsEnabled,
+      message,
+    });
     console.error(`Pipeline failed: ${message}`);
     throw new ReportedError(message);
   }
