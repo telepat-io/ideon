@@ -11,7 +11,7 @@ o888o o888bood8P'   o888ooooood8  `Y8bood8P'  o8o        `8
 # AI Writer Extraordinaire
 
 [![CI](https://github.com/telepat-io/ideon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/telepat-io/ideon/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-92.5%25-brightgreen)](https://github.com/telepat-io/ideon)
+[![Coverage](https://codecov.io/gh/telepat-io/ideon/graph/badge.svg)](https://codecov.io/gh/telepat-io/ideon)
 [![npm version](https://img.shields.io/npm/v/%40telepat%2Fideon)](https://www.npmjs.com/package/@telepat/ideon)
 [![npm downloads](https://img.shields.io/npm/dm/%40telepat%2Fideon)](https://www.npmjs.com/package/@telepat/ideon)
 [![Docs](https://img.shields.io/badge/docs-live-1f6feb)](https://docs.telepat.io/ideon)
