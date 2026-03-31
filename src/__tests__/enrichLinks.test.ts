@@ -25,8 +25,16 @@ function createMetrics(): LlmCallMetrics {
 
 function readExpression(messages: ChatMessage[]): string {
   const userMessage = messages.find((message) => message.role === 'user')?.content ?? '';
-  const expressionLine = userMessage.split('\n').find((line) => line.startsWith('Expression to link: '));
-  return expressionLine?.replace('Expression to link: ', '') ?? '';
+  const expressionLine = userMessage
+    .split('\n')
+    .find((line) => line.startsWith('Text to add link to (input text): '));
+
+  if (!expressionLine) {
+    return '';
+  }
+
+  const quotedExpression = expressionLine.match(/^Text to add link to \(input text\): "(.*)"$/);
+  return quotedExpression?.[1] ?? '';
 }
 
 describe('enrichLinks', () => {

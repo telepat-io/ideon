@@ -46,7 +46,7 @@ describe('linkEnrichment prompts', () => {
     expect(messages[0]?.content).toContain('Return only one line: the selected URL, or "none"');
     expect(messages[1]?.content).toContain('Article title: Editorial Linking');
     expect(messages[1]?.content).toContain('Article description: How to enrich content responsibly.');
-    expect(messages[1]?.content).toContain('Expression to link: OpenRouter');
+    expect(messages[1]?.content).toContain('Text to add link to (input text): "OpenRouter"');
     expect(messages[1]?.content).toContain('OpenRouter can route requests across providers.');
     expect(messages[1]?.content).toContain('Output format: URL only, or "none".');
   });
