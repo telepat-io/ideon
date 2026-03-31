@@ -69,6 +69,28 @@ describe('preview server branch coverage', () => {
     writeFileMock.mockResolvedValue(undefined);
   });
 
+  function createGeneration(id = 'gen-1') {
+    return {
+      id,
+      title: 'Generation 1',
+      mtime: 1,
+      previewSnippet: 'snippet',
+      coverImageUrl: null,
+      primaryContentType: 'article',
+      outputs: [
+        {
+          id: `${id}:article:1`,
+          contentType: 'article',
+          contentTypeLabel: 'Article',
+          index: 1,
+          slug: id,
+          title: 'Generation 1',
+          sourcePath: `/tmp/out/${id}/article-1.md`,
+        },
+      ],
+    };
+  }
+
   it('returns 500 from /api/articles when generation listing throws Error', async () => {
     listAllGenerationsMock.mockRejectedValueOnce(new Error('listing failed'));
 
@@ -114,26 +136,7 @@ describe('preview server branch coverage', () => {
   });
 
   it('returns 500 from /api/articles/:slug when output read fails with non-missing error', async () => {
-    listAllGenerationsMock.mockResolvedValueOnce([
-      {
-        id: 'gen-1',
-        title: 'Generation 1',
-        mtime: 1,
-        previewSnippet: 'snippet',
-        coverImageUrl: null,
-        outputs: [
-          {
-            id: 'gen-1:article:1',
-            contentType: 'article',
-            contentTypeLabel: 'Article',
-            index: 1,
-            slug: 'gen-1',
-            title: 'Generation 1',
-            sourcePath: '/tmp/out/gen-1/article-1.md',
-          },
-        ],
-      },
-    ]);
+    listAllGenerationsMock.mockResolvedValueOnce([createGeneration()]);
     readFileMock.mockRejectedValueOnce(new Error('permission denied'));
 
     const server = await startPreviewServer({
@@ -156,26 +159,7 @@ describe('preview server branch coverage', () => {
   });
 
   it('returns 400 from generation asset endpoint for invalid relative asset paths', async () => {
-    listAllGenerationsMock.mockResolvedValueOnce([
-      {
-        id: 'gen-1',
-        title: 'Generation 1',
-        mtime: 1,
-        previewSnippet: 'snippet',
-        coverImageUrl: null,
-        outputs: [
-          {
-            id: 'gen-1:article:1',
-            contentType: 'article',
-            contentTypeLabel: 'Article',
-            index: 1,
-            slug: 'gen-1',
-            title: 'Generation 1',
-            sourcePath: '/tmp/out/gen-1/article-1.md',
-          },
-        ],
-      },
-    ]);
+    listAllGenerationsMock.mockResolvedValueOnce([createGeneration()]);
 
     const server = await startPreviewServer({
       markdownPath: '/tmp/out/gen-1/article-1.md',
@@ -191,6 +175,95 @@ describe('preview server branch coverage', () => {
 
       expect(response.status).toBe(400);
       expect(payload.error).toContain('Invalid generation asset path');
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('returns 404 from /api/articles/:slug when the generation no longer exists', async () => {
+    listAllGenerationsMock.mockResolvedValueOnce([]);
+
+    const server = await startPreviewServer({
+      markdownPath: '/tmp/out/gen-1/article-1.md',
+      assetDir: '/tmp/out/assets',
+      markdownOutputDir: '/tmp/out',
+      port: 0,
+      openBrowser: false,
+    });
+
+    try {
+      const response = await fetch(`${server.url}/api/articles/gen-1`);
+      const payload = (await response.json()) as { error: string };
+
+      expect(response.status).toBe(404);
+      expect(payload.error).toContain('no longer exists');
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('returns 404 from the asset endpoint when the generation is missing', async () => {
+    listAllGenerationsMock.mockResolvedValueOnce([]);
+
+    const server = await startPreviewServer({
+      markdownPath: '/tmp/out/gen-1/article-1.md',
+      assetDir: '/tmp/out/assets',
+      markdownOutputDir: '/tmp/out',
+      port: 0,
+      openBrowser: false,
+    });
+
+    try {
+      const response = await fetch(`${server.url}/api/generations/gen-1/assets/cover.webp`);
+      const payload = (await response.json()) as { error: string };
+
+      expect(response.status).toBe(404);
+      expect(payload.error).toContain('no longer exists');
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('returns unknown bootstrap errors from /api/bootstrap when the preview index cannot be resolved', async () => {
+    listAllGenerationsMock.mockRejectedValueOnce('boom');
+
+    const server = await startPreviewServer({
+      markdownPath: '/tmp/out/article-1.md',
+      assetDir: '/tmp/out/assets',
+      markdownOutputDir: '/tmp/out',
+      port: 0,
+      openBrowser: false,
+    });
+
+    try {
+      const response = await fetch(`${server.url}/api/bootstrap`);
+      const payload = (await response.json()) as { error: string };
+
+      expect(response.status).toBe(500);
+      expect(payload.error).toBe('Unknown preview bootstrap error.');
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('renders a root failure message when bootstrap rendering fails without a preview client bundle', async () => {
+    statMock.mockRejectedValue(new Error('missing build'));
+    listAllGenerationsMock.mockRejectedValueOnce(new Error('bootstrap broken'));
+
+    const server = await startPreviewServer({
+      markdownPath: '/tmp/out/article-1.md',
+      assetDir: '/tmp/out/assets',
+      markdownOutputDir: '/tmp/out',
+      port: 0,
+      openBrowser: false,
+    });
+
+    try {
+      const response = await fetch(`${server.url}/`);
+      const payload = await response.text();
+
+      expect(response.status).toBe(500);
+      expect(payload).toContain('Failed to render preview: bootstrap broken');
     } finally {
       await server.close();
     }

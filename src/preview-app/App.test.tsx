@@ -225,4 +225,99 @@ describe('PreviewApp', () => {
 
     expect(await screen.findByText(secondSourcePath)).toBeInTheDocument();
   });
+
+  it('shows the preview index error state when the initial list load fails', async () => {
+    global.fetch = jest.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
+
+      if (url === '/api/bootstrap') {
+        return { ok: true, status: 200, json: async () => bootstrapPayload };
+      }
+
+      if (url === '/api/articles') {
+        return { ok: false, status: 500, json: async () => ({ error: 'Preview index unavailable.' }) };
+      }
+
+      return { ok: false, status: 404, json: async () => ({ error: 'Not found' }) };
+    }) as unknown as typeof fetch;
+
+    render(<PreviewApp />);
+
+    expect(await screen.findByText('Unable to load preview index')).toBeInTheDocument();
+    expect((await screen.findAllByText('Preview index unavailable.')).length).toBeGreaterThan(0);
+  });
+
+  it('shows the generation error state when detail loading fails', async () => {
+    global.fetch = jest.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
+
+      if (url === '/api/bootstrap') {
+        return { ok: true, status: 200, json: async () => bootstrapPayload };
+      }
+
+      if (url === '/api/articles') {
+        return { ok: true, status: 200, json: async () => articleListPayload };
+      }
+
+      if (url === '/api/articles/20260328-roman-forum') {
+        return { ok: false, status: 404, json: async () => ({ error: 'Generation no longer exists.' }) };
+      }
+
+      return { ok: false, status: 404, json: async () => ({ error: 'Not found' }) };
+    }) as unknown as typeof fetch;
+
+    render(<PreviewApp />);
+
+    expect(await screen.findByText('Unable to load generation')).toBeInTheDocument();
+    expect(await screen.findByText('Generation no longer exists.')).toBeInTheDocument();
+  });
+
+  it('shows empty output and log states for generations without outputs or interactions', async () => {
+    global.fetch = jest.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
+
+      if (url === '/api/bootstrap') {
+        return { ok: true, status: 200, json: async () => bootstrapPayload };
+      }
+
+      if (url === '/api/articles') {
+        return { ok: true, status: 200, json: async () => articleListPayload };
+      }
+
+      if (url === '/api/articles/20260328-roman-forum') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ...articleDetailPayload,
+            interactions: { llmCalls: [], t2iCalls: [] },
+            outputs: [],
+          }),
+        };
+      }
+
+      return { ok: false, status: 404, json: async () => ({ error: 'Not found' }) };
+    }) as unknown as typeof fetch;
+
+    render(<PreviewApp />);
+
+    expect(await screen.findByText('No content outputs found for this generation.')).toBeInTheDocument();
+
+    fireEvent.click(await screen.findByText('Logs'));
+    expect(await screen.findByText('No interactions captured for this generation.')).toBeInTheDocument();
+  });
+
+  it('copies the selected output slug and updates the button label', async () => {
+    const clipboardWrite = jest.spyOn(navigator.clipboard, 'writeText');
+
+    render(<PreviewApp />);
+
+    const copyButton = await screen.findByRole('button', { name: 'Copy slug' });
+    fireEvent.click(copyButton);
+
+    await waitFor(() => {
+      expect(clipboardWrite).toHaveBeenCalledWith('thinking-in-rome');
+    });
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+  });
 });
