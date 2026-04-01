@@ -52,4 +52,4 @@ jobs:
           npm run docs:build
 
       - name: Publish package to npm
-        run: npm publish --access public
+        run: npm publish --ignore-scripts --access public
