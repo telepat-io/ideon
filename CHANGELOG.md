@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/telepat-io/ideon/compare/ideon-v0.1.4...ideon-v0.1.5) (2026-04-01)
+
+
+### Features
+
+* update Node.js version to 24 and remove npm upgrade step ([1376523](https://github.com/telepat-io/ideon/commit/1376523ba6844c092e666b5de981b1e44bba68af))
+
 ## [0.1.4](https://github.com/telepat-io/ideon/compare/ideon-v0.1.3...ideon-v0.1.4) (2026-04-01)
 
 
