@@ -1,0 +1,56 @@
+# Changelog
+
+## [0.1.1](https://github.com/telepat-io/ideon/compare/ideon-v0.1.0...ideon-v0.1.1) (2026-04-01)
+
+
+### Features
+
+* Add comprehensive test coverage for various modules ([826dc70](https://github.com/telepat-io/ideon/commit/826dc70846b3aad84279b4bbb5d9963eca032762))
+* add cover image URL extraction and update article metadata structure ([43ecf5a](https://github.com/telepat-io/ideon/commit/43ecf5a0c79ff36a9b5b314e7f5152b2d4253cdd))
+* add delete command to remove generated articles and their assets ([dcfbccf](https://github.com/telepat-io/ideon/commit/dcfbccfa021c5913a7b33b079369831a94a848a8))
+* add interaction tracking for LLM and T2I calls ([3c68713](https://github.com/telepat-io/ideon/commit/3c687138293e01460ec0d3174ee2e4482a2aea77))
+* Add interactive prompt for missing idea in write command ([a8271c3](https://github.com/telepat-io/ideon/commit/a8271c3a48d124111d1323022cb2fb148e7c723e))
+* add introductory tagline to the documentation homepage ([2e99c53](https://github.com/telepat-io/ideon/commit/2e99c53638caad3f45b053b538f0cc3a7a171505))
+* add local preview server for generated articles ([f6b3809](https://github.com/telepat-io/ideon/commit/f6b380933bbe8ddc0474c9cb637fdba6a919451e))
+* add OS notification support for write lifecycle updates and enhance configuration options ([d4937ef](https://github.com/telepat-io/ideon/commit/d4937ef590c653c9fc0ad50d57ddd61ef1f5bb41))
+* add preview application with API integration and interactions handling ([8b9cab0](https://github.com/telepat-io/ideon/commit/8b9cab07c567f4c04b851e35a7ad5de2acde264f))
+* add reasoning configuration support for structured and web search requests, enhance link enrichment prompts ([44a7f85](https://github.com/telepat-io/ideon/commit/44a7f85512d1a6b3020a370ebb28547e1fd14f74))
+* add release automation workflow with Release Please and npm publishing steps ([6342687](https://github.com/telepat-io/ideon/commit/6342687f658aa0773adf2dabbbeefa6cd52d6dbb))
+* add stage analytics reporting for pipeline execution duration and cost ([0248f61](https://github.com/telepat-io/ideon/commit/0248f6192f61cdcac97ffb20ca4eb8d979d43bd3))
+* add target audience support in CLI and content generation flow ([451323c](https://github.com/telepat-io/ideon/commit/451323c61e3c503786ee843d3f24e1656376cd65))
+* add target length option to CLI and writing commands ([d38bf26](https://github.com/telepat-io/ideon/commit/d38bf2696b63cfaa39ea313a092ab65c710b6e82))
+* add tests for preview API client to validate bootstrap loading and error handling ([9cf33df](https://github.com/telepat-io/ideon/commit/9cf33dfb4ecea5fa887bdeac32d7860c76ba0f84))
+* Add tests for renderExpandedImages function to validate image byte writing from blob and URL ([7cc2887](https://github.com/telepat-io/ideon/commit/7cc28870930f49bab08f24ec3e4efdc4a98883c4))
+* add write resume hint functionality to error messages ([092258d](https://github.com/telepat-io/ideon/commit/092258d25476f1cc583e421cd9de673491e94338))
+* better openrouter client ([8bc9384](https://github.com/telepat-io/ideon/commit/8bc938439a97107c7bc482fb054e7f573c9ddb29))
+* configure release process with new config and manifest files ([3d6c630](https://github.com/telepat-io/ideon/commit/3d6c6307fecd6d9d1bc40236e0c035fd812e78da))
+* enhance article generation flow with context tracking and improved prompts ([79ad334](https://github.com/telepat-io/ideon/commit/79ad334f0d277cbde4c83bb0981a9ee7b62b08dc))
+* enhance article preview functionality and UI ([f4fd940](https://github.com/telepat-io/ideon/commit/f4fd940d81eba047cc429ae759791d0e5512fb9f))
+* enhance CI configuration with Codecov integration and update coverage badge in README ([fc7106d](https://github.com/telepat-io/ideon/commit/fc7106d0169f25233f4d1b15654709414d536672))
+* Enhance image prompt handling with expanded rendering and session management ([6d50069](https://github.com/telepat-io/ideon/commit/6d50069531ce358777065215589b070341363cce))
+* enhance image rendering and analytics tracking ([42d582e](https://github.com/telepat-io/ideon/commit/42d582e92f676a7f2c798fd840a579435a1f4fc5))
+* enhance link enrichment functionality ([d13cae2](https://github.com/telepat-io/ideon/commit/d13cae2310c6d3df5af1ae5c696ecc1e55fe66ca))
+* enhance pipeline stages and output handling ([dcb83f1](https://github.com/telepat-io/ideon/commit/dcb83f1b392b2adf384effc2112039d35170a37b))
+* enhance requestStructured method with retry logic and metrics aggregation ([d5e12e0](https://github.com/telepat-io/ideon/commit/d5e12e011e99bc656f472d8b21000092f7b1120a))
+* enhance URL resolution messages for clarity and context in link selection ([92971c7](https://github.com/telepat-io/ideon/commit/92971c7e401600cf87050c6ed9af4c980d15c129))
+* implement enrichMarkdownWithLinks function and add tests for link injection ([58d0bef](https://github.com/telepat-io/ideon/commit/58d0bef368943b0a58c916192cd997d8ecd412d5))
+* implement OS-level dark mode support and theme toggle functionality ([3dcc55f](https://github.com/telepat-io/ideon/commit/3dcc55fe3ba4f8ddf5d1974c003ec023b0272d85))
+* Implement write session management with resume support ([953d3fb](https://github.com/telepat-io/ideon/commit/953d3fb5c852c458678faa359666708efca64ad0))
+* introduce content brief functionality and related schema ([092b5fd](https://github.com/telepat-io/ideon/commit/092b5fdf74bf9dcf25aa20c954f0d6d53103b2de))
+* introduce writing framework and content type guidelines ([00a9d4f](https://github.com/telepat-io/ideon/commit/00a9d4f8adeb6cf3e6b34dd19864284411300634))
+* Introduce x-thread content type and update related functionalities ([0508885](https://github.com/telepat-io/ideon/commit/0508885bc66c483e52898344fac3a329305cdb40))
+* prevent browser launch during unit tests ([f54e183](https://github.com/telepat-io/ideon/commit/f54e18388c5754e790a4000ad5ffec0f82a46953))
+* update CLI commands in documentation to use 'ideon' instead of 'npm run dev' ([2174b12](https://github.com/telepat-io/ideon/commit/2174b12f8a96c0103a74dddfddd4d277e56949e2))
+* update documentation and guides for enhanced clarity and new features ([0dd5d60](https://github.com/telepat-io/ideon/commit/0dd5d60bddbbcb63ca100cbf2a43db15ebdba09f))
+* update documentation links to point to the new docs site at docs.telepat.io ([2ad8346](https://github.com/telepat-io/ideon/commit/2ad83469614aec355a46b5faf88b4f7f7381fb98))
+* update link expression format in tests for consistency and clarity ([78890d8](https://github.com/telepat-io/ideon/commit/78890d85904b9ee747c94e626897c1957fdaae14))
+* update logo and favicon with new designs and adjust README for logo display ([1b2db29](https://github.com/telepat-io/ideon/commit/1b2db29a080571e7d501df863cca7741fafc1a08))
+* update README and documentation to reflect new branding and remove outdated content ([6f9b5c9](https://github.com/telepat-io/ideon/commit/6f9b5c9b6894334a116f50f31672dde1556ccb5d))
+* update repository references from cozymantis to telepat-io, adjust CI and npm publish workflows ([dc3489f](https://github.com/telepat-io/ideon/commit/dc3489fb7e18b4a4b8f2cf881f32f6f75b2c3247))
+
+
+### Bug Fixes
+
+* documentation layout ([a04c27c](https://github.com/telepat-io/ideon/commit/a04c27c77fcd96fd16f8a1c94d983719791a58e1))
+* enhance preview server resilience with article fallback and error handling ([0443bfd](https://github.com/telepat-io/ideon/commit/0443bfd0afc38f0479a05b207804e624ee03fdb8))
+* format SVG files for favicon and logo for improved readability ([93f0d71](https://github.com/telepat-io/ideon/commit/93f0d71b0506904f75568e42129592ad0a3ec976))
