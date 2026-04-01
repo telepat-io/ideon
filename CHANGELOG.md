@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/telepat-io/ideon/compare/ideon-v0.1.1...ideon-v0.1.2) (2026-04-01)
+
+
+### Features
+
+* update dependency installation to include docs-site ([370db38](https://github.com/telepat-io/ideon/commit/370db3888b5fe001bf53d47a167e65c6497cca9b))
+
 ## [0.1.1](https://github.com/telepat-io/ideon/compare/ideon-v0.1.0...ideon-v0.1.1) (2026-04-01)
 
 
