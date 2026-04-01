@@ -1,6 +1,6 @@
 {
   "name": "@telepat/ideon",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "CLI for generating rich articles and images from ideas.",
   "type": "module",
   "repository": {

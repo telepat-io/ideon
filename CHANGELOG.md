@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/telepat-io/ideon/compare/ideon-v0.1.2...ideon-v0.1.3) (2026-04-01)
+
+
+### Features
+
+* update Node.js version to 22 and simplify npm publish command ([100ca1d](https://github.com/telepat-io/ideon/commit/100ca1dcd0936c1f5d9da8205772521ba1428f26))
+
 ## [0.1.2](https://github.com/telepat-io/ideon/compare/ideon-v0.1.1...ideon-v0.1.2) (2026-04-01)
 
 
