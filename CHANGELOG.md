@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/telepat-io/ideon/compare/ideon-v0.1.3...ideon-v0.1.4) (2026-04-01)
+
+
+### Features
+
+* add npm upgrade step before installing dependencies ([996a532](https://github.com/telepat-io/ideon/commit/996a532f8e20df16d8ffcc683f827b56f2c8f2f7))
+
 ## [0.1.3](https://github.com/telepat-io/ideon/compare/ideon-v0.1.2...ideon-v0.1.3) (2026-04-01)
 
 
