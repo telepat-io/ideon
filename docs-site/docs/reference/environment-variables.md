@@ -8,6 +8,7 @@ title: Environment Variables
 
 - `IDEON_OPENROUTER_API_KEY`
 - `IDEON_REPLICATE_API_TOKEN`
+- `IDEON_DISABLE_KEYTAR` (`true` or `false`) — when `true`, Ideon does not attempt keychain access and uses env-only secret resolution
 
 ## Model Settings
 
@@ -36,6 +37,7 @@ title: Environment Variables
 ```bash
 IDEON_OPENROUTER_API_KEY=... \
 IDEON_REPLICATE_API_TOKEN=... \
+IDEON_DISABLE_KEYTAR=true \
 IDEON_MODEL=moonshotai/kimi-k2.5 \
 IDEON_TEMPERATURE=0.7 \
 IDEON_MAX_TOKENS=2000 \
@@ -54,4 +56,5 @@ ideon write "How teams scale editorial pipelines"
 - Numeric vars are parsed into numbers and validated.
 - Invalid numeric values are ignored during parsing and schema validation determines final acceptance.
 - Env vars override saved and job-file settings where applicable.
+- In environments where keychain services are unavailable (for example many containers), set `IDEON_DISABLE_KEYTAR=true`.
 - Content targets (`contentTargets`) are not configurable through env vars; use CLI `--primary/--secondary` or job files.

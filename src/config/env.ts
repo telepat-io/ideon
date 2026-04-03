@@ -30,6 +30,7 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
   return envSettingsSchema.parse({
     openRouterApiKey: env.IDEON_OPENROUTER_API_KEY,
     replicateApiToken: env.IDEON_REPLICATE_API_TOKEN,
+    disableKeytar: parseBoolean(env.IDEON_DISABLE_KEYTAR),
     model: env.IDEON_MODEL,
     temperature: parseNumber(env.IDEON_TEMPERATURE),
     maxTokens: parseNumber(env.IDEON_MAX_TOKENS),

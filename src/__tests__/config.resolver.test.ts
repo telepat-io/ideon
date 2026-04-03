@@ -5,7 +5,7 @@ import { jest } from '@jest/globals';
 import type { AppSettings, EnvSettings, SecretSettings } from '../config/schema.js';
 
 const loadSavedSettingsMock = jest.fn<() => Promise<AppSettings>>();
-const loadSecretsMock = jest.fn<() => Promise<SecretSettings>>();
+const loadSecretsMock = jest.fn<(options?: { disableKeytar?: boolean }) => Promise<SecretSettings>>();
 const readEnvSettingsMock = jest.fn<() => EnvSettings>();
 
 jest.unstable_mockModule('../config/settingsFile.js', () => ({
@@ -182,6 +182,32 @@ describe('resolveRunInput', () => {
     });
 
     const result = await resolveRunInput({ idea: 'secret precedence test' });
+
+    expect(result.config.secrets.openRouterApiKey).toBe('env-openrouter-key');
+    expect(result.config.secrets.replicateApiToken).toBe('env-replicate-token');
+  });
+
+  it('passes disable-keytar env flag into secret loading', async () => {
+    readEnvSettingsMock.mockReturnValue({
+      disableKeytar: true,
+    });
+
+    await resolveRunInput({ idea: 'disable keytar test' });
+
+    expect(loadSecretsMock).toHaveBeenCalledWith({ disableKeytar: true });
+  });
+
+  it('still resolves when keytar returns null secrets and env provides keys', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: null,
+      replicateApiToken: null,
+    });
+    readEnvSettingsMock.mockReturnValue({
+      openRouterApiKey: 'env-openrouter-key',
+      replicateApiToken: 'env-replicate-token',
+    });
+
+    const result = await resolveRunInput({ idea: 'env fallback key test' });
 
     expect(result.config.secrets.openRouterApiKey).toBe('env-openrouter-key');
     expect(result.config.secrets.replicateApiToken).toBe('env-replicate-token');

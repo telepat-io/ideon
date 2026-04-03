@@ -19,6 +19,8 @@ Secret precedence:
 
 - `IDEON_OPENROUTER_API_KEY` and `IDEON_REPLICATE_API_TOKEN` from environment variables override keychain-stored secrets.
 - If env vars are not set, Ideon falls back to keychain values saved through `ideon settings`.
+- If keychain access fails (for example D-Bus is unavailable in a container), Ideon falls back to environment variables for secret resolution.
+- Set `IDEON_DISABLE_KEYTAR=true` to skip keychain access entirely in container or CI environments.
 
 Per-field merge behavior:
 

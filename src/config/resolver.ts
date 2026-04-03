@@ -37,8 +37,11 @@ export interface ResolvedRunInput {
 }
 
 export async function resolveRunInput(input: ResolveConfigInput): Promise<ResolvedRunInput> {
-  const [savedSettings, secrets] = await Promise.all([loadSavedSettings(), loadSecrets()]);
   const envSettings = readEnvSettings();
+  const [savedSettings, secrets] = await Promise.all([
+    loadSavedSettings(),
+    loadSecrets({ disableKeytar: envSettings.disableKeytar }),
+  ]);
   const job = input.jobPath ? await loadJobInput(input.jobPath) : null;
 
   assertNoLegacyXMode(savedSettings.contentTargets, 'saved settings contentTargets');

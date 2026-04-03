@@ -2,8 +2,9 @@ import React from 'react';
 import { render } from 'ink';
 import { SettingsFlow } from '../flows/settingsFlow.js';
 import type { AppSettings, SecretSettings } from '../../config/schema.js';
+import { readEnvSettings } from '../../config/env.js';
 import { getSettingsFilePath, loadSavedSettings, saveSettings } from '../../config/settingsFile.js';
-import { loadSecrets, saveSecrets } from '../../config/secretStore.js';
+import { KeytarUnavailableError, loadSecrets, saveSecrets } from '../../config/secretStore.js';
 
 interface SettingsFlowResult {
   settings: AppSettings;
@@ -11,7 +12,11 @@ interface SettingsFlowResult {
 }
 
 export async function openSettings(): Promise<void> {
-  const [settings, secrets] = await Promise.all([loadSavedSettings(), loadSecrets()]);
+  const envSettings = readEnvSettings();
+  const [settings, secrets] = await Promise.all([
+    loadSavedSettings(),
+    loadSecrets({ disableKeytar: envSettings.disableKeytar }),
+  ]);
   let result: SettingsFlowResult | null = null;
 
   const app = render(
@@ -34,6 +39,19 @@ export async function openSettings(): Promise<void> {
 
   const savedResult = finalResult as SettingsFlowResult;
 
-  await Promise.all([saveSettings(savedResult.settings), saveSecrets(savedResult.secrets)]);
+  await saveSettings(savedResult.settings);
+
+  try {
+    await saveSecrets(savedResult.secrets, { disableKeytar: envSettings.disableKeytar });
+  } catch (error) {
+    if (error instanceof KeytarUnavailableError) {
+      console.log('Settings saved, but secrets were not stored in the system keychain.');
+      console.log('Use IDEON_OPENROUTER_API_KEY and IDEON_REPLICATE_API_TOKEN in this environment.');
+      return;
+    }
+
+    throw error;
+  }
+
   console.log(`Settings saved to ${getSettingsFilePath()}.`);
 }

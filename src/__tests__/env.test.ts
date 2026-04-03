@@ -87,4 +87,20 @@ describe('readEnvSettings', () => {
     expect(disabledResult.notificationsEnabled).toBe(false);
     expect(invalidResult.notificationsEnabled).toBeUndefined();
   });
+
+  it('parses IDEON_DISABLE_KEYTAR as a boolean', () => {
+    const enabledResult = readEnvSettings({
+      IDEON_DISABLE_KEYTAR: 'true',
+    });
+    const disabledResult = readEnvSettings({
+      IDEON_DISABLE_KEYTAR: 'FALSE',
+    });
+    const invalidResult = readEnvSettings({
+      IDEON_DISABLE_KEYTAR: 'sometimes',
+    });
+
+    expect(enabledResult.disableKeytar).toBe(true);
+    expect(disabledResult.disableKeytar).toBe(false);
+    expect(invalidResult.disableKeytar).toBeUndefined();
+  });
 });
