@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.6](https://github.com/telepat-io/ideon/compare/ideon-v0.1.5...ideon-v0.1.6) (2026-04-03)
+
+
+### Features
+
+* implement IDEON_DISABLE_KEYTAR environment variable for keychain access control ([cf094c0](https://github.com/telepat-io/ideon/commit/cf094c027617d8319f271551139ab657ce535069))
+
+
+### Bug Fixes
+
+* add --ignore-scripts flag to npm publish command ([2727a8a](https://github.com/telepat-io/ideon/commit/2727a8aa25adf666b9224b33a00e44826e60f553))
+
 ## [0.1.5](https://github.com/telepat-io/ideon/compare/ideon-v0.1.4...ideon-v0.1.5) (2026-04-01)
 
 
