@@ -24,7 +24,7 @@ const config: Config = {
   onBrokenLinks: 'throw',
   markdown: {
     hooks: {
-      onBrokenMarkdownLinks: 'warn',
+      onBrokenMarkdownLinks: 'throw',
     },
   },
 
@@ -33,7 +33,7 @@ const config: Config = {
   // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'zh-Hans'],
   },
 
   presets: [
@@ -41,9 +41,10 @@ const config: Config = {
       'classic',
       {
         docs: {
+          path: '../docs',
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
-          editUrl: 'https://github.com/telepat-io/ideon/tree/main/docs-site/',
+          editUrl: 'https://github.com/telepat-io/ideon/tree/main/',
         },
         blog: false,
         theme: {
@@ -54,7 +55,6 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docusaurus-social-card.jpg',
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
@@ -82,6 +82,15 @@ const config: Config = {
           to: '/technical/architecture',
           label: 'Technical',
           position: 'left',
+        },
+        {
+          to: '/for-agents',
+          label: 'For Agents',
+          position: 'left',
+        },
+        {
+          type: 'localeDropdown',
+          position: 'right',
         },
         {
           href: 'https://github.com/telepat-io/ideon',
@@ -118,6 +127,10 @@ const config: Config = {
         {
           title: 'More',
           items: [
+            {
+              label: 'For Agents',
+              to: '/for-agents',
+            },
             {
               label: 'Contributing',
               to: '/contributing/development',

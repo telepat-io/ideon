@@ -38,8 +38,12 @@
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "pricing:refresh": "node scripts/refresh-openrouter-pricing.mjs",
     "docs:start": "npm --prefix docs-site run start",
+    "docs:start:en": "npm --prefix docs-site run start -- --locale en",
+    "docs:start:zh": "npm --prefix docs-site run start -- --locale zh-Hans",
     "docs:build": "npm --prefix docs-site run build",
     "docs:serve": "npm --prefix docs-site run serve",
+    "docs:preview:all-locales": "npm run docs:build && npm --prefix docs-site run serve",
+    "docs:write-translations": "npm --prefix docs-site run write-translations",
     "docs:typecheck": "npm --prefix docs-site run typecheck"
   },
   "keywords": [

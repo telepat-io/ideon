@@ -1,0 +1,45 @@
+Ideon Documentation Full Index
+
+This file provides a compact full-context index for machine retrieval.
+
+Getting Started
+- /getting-started/overview
+- /getting-started/installation
+- /getting-started/quickstart
+
+Guides
+- /guides/configuration
+- /guides/credentials-and-secrets
+- /guides/job-files
+- /guides/writing-framework
+- /guides/pipeline-stages
+- /guides/output-structure
+- /guides/performance-and-costs
+- /guides/local-preview
+- /guides/troubleshooting
+
+Reference
+- /reference/cli-reference
+- /reference/commands/ideon-settings
+- /reference/commands/ideon-write
+- /reference/commands/ideon-write-resume
+- /reference/commands/ideon-delete
+- /reference/commands/ideon-preview
+- /reference/content-types
+- /reference/environment-variables
+- /reference/t2i-models
+
+Technical
+- /technical/architecture
+- /technical/llm-and-image-pipeline
+- /technical/testing
+
+Contributing
+- /contributing/development
+- /contributing/releasing-and-docs-deploy
+
+For Agents
+- /for-agents
+- /for-agents/command-index
+- /for-agents/mcp-servers
+- /for-agents/skills

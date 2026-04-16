@@ -1,0 +1,30 @@
+{
+  "title": {
+    "message": "Ideon",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "Ideon 标志",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "文档",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.CLI Reference": {
+    "message": "CLI 参考",
+    "description": "Navbar item with label CLI Reference"
+  },
+  "item.label.Technical": {
+    "message": "技术",
+    "description": "Navbar item with label Technical"
+  },
+  "item.label.For Agents": {
+    "message": "面向智能体",
+    "description": "Navbar item with label For Agents"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}

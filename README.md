@@ -1,162 +1,95 @@
-```text
-ooooo oooooooooo.   oooooooooooo   .oooooo.   ooooo      ooo
-`888' `888'   `Y8b  `888'     `8  d8P'  `Y8b  `888b.     `8'
- 888   888      888  888         888      888  8 `88b.    8
- 888   888      888  888oooo8    888      888  8   `88b.  8
- 888   888      888  888    "    888      888  8     `88b.8
- 888   888     d88'  888       o `88b    d88'  8       `888
-o888o o888bood8P'   o888ooooood8  `Y8bood8P'  o8o        `8
-```
+# Ideon
 
-# AI Writer Extraordinaire
+Ideon turns one idea into polished multi-channel Markdown content with optional generated imagery through a single CLI workflow.
+
+[🇺🇸 English](./README.md) | [🇨🇳 简体中文](./README.zh-Hans.md)
 
 [![CI](https://github.com/telepat-io/ideon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/telepat-io/ideon/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/telepat-io/ideon/graph/badge.svg)](https://codecov.io/gh/telepat-io/ideon)
 [![npm version](https://img.shields.io/npm/v/%40telepat%2Fideon)](https://www.npmjs.com/package/@telepat/ideon)
-[![npm downloads](https://img.shields.io/npm/dm/%40telepat%2Fideon)](https://www.npmjs.com/package/@telepat/ideon)
 [![Docs](https://img.shields.io/badge/docs-live-1f6feb)](https://docs.telepat.io/ideon)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://github.com/telepat-io/ideon/blob/main/LICENSE)
 
-Ideon is a TypeScript CLI that turns an idea into one or more Markdown outputs, with optional generated images for article runs.
+## What It Solves
 
-## Features
+Ideon helps small content and product teams ship consistent, high-quality written outputs without manually orchestrating planning, drafting, image prompting, and packaging.
 
-- End-to-end pipeline with stage visibility: planning, sections, image prompts, image rendering, and output assembly
-- Interactive terminal UI with clear per-stage status and summaries
-- Non-interactive fallback logging for CI and piped runs
-- Resume support through local stage checkpoints in `.ideon/write/state.json`
-- Config precedence across saved settings, job files, environment variables, and CLI flags
-- Secure secret storage in OS keychain (OpenRouter + Replicate tokens)
-- Runtime validation for generated plan and image prompt payloads
-- Retry + timeout hardening on OpenRouter requests
+Common use cases:
 
-## Installation
+- Generate a long-form article plus social variants in one run.
+- Produce repeatable outputs from JSON job files in CI or local workflows.
+- Resume interrupted generation runs from local checkpoints.
+- Preview generated markdown and assets locally before publishing.
 
-Prerequisites:
+## Quick Start
 
-- Node.js 20+
-- npm 10+
-
-Install globally:
+Install and run your first generation:
 
 ```bash
 npm i -g @telepat/ideon
+ideon settings
+ideon write "How small editorial teams can productionize AI writing" --primary article=1 --secondary x-post=1
+ideon preview
 ```
 
-Verify installation:
+Expected outcome:
 
-```bash
-ideon --help
-```
+- A generation folder is written under `output/<timestamp>-<slug>/`.
+- Markdown outputs and analytics artifacts are produced.
+- Local preview opens to inspect content and linked assets.
 
-## Getting Started
+## Requirements
 
-1. Configure credentials interactively:
+- Node.js 20+
+- npm 10+
+- OpenRouter API key
+- Replicate API token
+
+## How It Works
+
+Ideon runs a staged pipeline:
+
+1. Resolve config and secrets from settings, environment, job file, and CLI flags.
+2. Generate a shared brief and content plan for requested targets.
+3. Produce section content and optional channel outputs.
+4. Expand and render image prompts when applicable.
+5. Assemble markdown outputs and analytics artifacts.
+6. Optionally enrich links and expose results in local preview.
+
+Core commands:
 
 ```bash
 ideon settings
-```
-
-2. Generate your first article:
-
-```bash
-ideon write "How small editorial teams can productionize AI writing"
-```
-
-3. Generate multi-output runs:
-
-```bash
-ideon write "How small editorial teams can productionize AI writing" --target article=1 --target x-post=2 --style professional
-```
-
-4. Run a safe pipeline dry run (no provider calls):
-
-```bash
-ideon write --dry-run "How AI changes technical publishing"
-```
-
-## Core Commands
-
-```bash
-ideon settings
-ideon write "An article idea"
+ideon write "An article idea" --primary article=1
 ideon write --job ./job.json
-ideon write --dry-run "An article idea"
 ideon write resume
 ideon delete my-article-slug
-ideon preview
+ideon preview --no-open
 ```
 
-### Preview Generated Articles
+## Security And Trust
 
-Serve the latest generated article locally with assets and open it in your browser:
+- Secrets are stored in the OS keychain by default via `ideon settings`.
+- In CI or containerized environments, use `IDEON_OPENROUTER_API_KEY` and `IDEON_REPLICATE_API_TOKEN`.
+- Set `IDEON_DISABLE_KEYTAR=true` when keychain access is unavailable.
+- Generated outputs can include model-produced content, so review content before publication.
 
-```bash
-ideon preview
-```
+To report a security issue, open a private report through the repository security flow or contact maintainers through repository issue channels with minimal sensitive detail.
 
-This launches the new React preview app (served from `dist/preview`) and the preview API server.
+## Documentation And Support
 
-You can also preview a specific article and choose a port:
+- Documentation site: https://docs.telepat.io/ideon
+- Getting started: `docs/getting-started/quickstart.md`
+- CLI reference: `docs/reference/cli-reference.md`
+- Configuration guide: `docs/guides/configuration.md`
+- Troubleshooting guide: `docs/guides/troubleshooting.md`
+- Repository: https://github.com/telepat-io/ideon
+- npm package: https://www.npmjs.com/package/@telepat/ideon
 
-```bash
-ideon preview ./output/my-article.md --port 4173
-```
+## Contributing
 
-If you are iterating on preview UI code in `src/preview-app`, rebuild client assets after UI changes:
+Contributions are welcome. Start with `docs/contributing/development.md` for setup, workflow, and quality gates, then follow `docs/contributing/releasing-and-docs-deploy.md` for release and docs deployment details.
 
-```bash
-npm run build:preview
-```
+## License
 
-## Credentials
-
-Live runs require:
-
-- `IDEON_OPENROUTER_API_KEY`
-- `IDEON_REPLICATE_API_TOKEN`
-
-You can set these as environment variables, or save them via `ideon settings` (recommended).
-
-## Output
-
-By default, Ideon writes:
-
-- Generation directories: `/output/<timestamp>-<slug>/`
-- Markdown outputs per target: `article-1.md`, `x-1.md`, `linkedin-1.md`, and others
-- Run artifacts per generation: `job.json`, `generation.analytics.json`
-- Local resume artifacts: `.ideon/write/state.json`
-
-## Development Scripts
-
-```bash
-npm run lint
-npm test
-npm run build
-npm run preview
-npm run pricing:refresh
-```
-
-## Documentation
-
-- User and technical docs site source: `docs-site/`
-- Start docs locally: `npm run docs:start`
-- Build docs: `npm run docs:build`
-
-Links:
-
-- GitHub repository: [telepat-io/ideon](https://github.com/telepat-io/ideon)
-- npm package: [@telepat/ideon](https://www.npmjs.com/package/@telepat/ideon)
-- Documentation site: [docs.telepat.io/ideon](https://docs.telepat.io/ideon)
-
-Key docs:
-
-- CLI commands: `docs-site/docs/reference/cli-reference.md`
-- Configuration and precedence: `docs-site/docs/guides/configuration.md`
-- Pipeline and resume: `docs-site/docs/guides/pipeline-stages.md`
-- Output artifacts: `docs-site/docs/guides/output-structure.md`
-- Performance tuning: `docs-site/docs/guides/performance-and-costs.md`
-
-GitHub Pages URL:
-
-- [https://docs.telepat.io/ideon](https://docs.telepat.io/ideon)
+MIT. See [LICENSE](./LICENSE).

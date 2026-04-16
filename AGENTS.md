@@ -13,7 +13,7 @@ npm run test:coverage # Jest suites + coverage report in src/__tests__/
 npm run docs:build  # Docusaurus static build
 ```
 
-All four must pass clean. If you change a feature, update the relevant doc page(s) under `docs-site/docs/` and confirm `docs:build` still succeeds.
+All four must pass clean. If you change a feature, update the relevant doc page(s) under `docs/` and confirm `docs:build` still succeeds.
 
 If changes touch the local preview server (`ideon preview`, `src/server/preview*`, preview docs), also run:
 
@@ -148,7 +148,8 @@ Test files live in `src/__tests__/` and are named `<module>.test.ts`.
 
 ## Docs
 
-Source: `docs-site/docs/` — Docusaurus Markdown pages.
+Source: `docs/` — primary Docusaurus Markdown pages.
+i18n docs: `docs-site/i18n/zh-Hans/docusaurus-plugin-content-docs/current/` — Simplified Chinese localized pages.
 Deployed to: https://docs.telepat.io/ideon via `.github/workflows/docs-pages.yml` on push to `main`.
 
 ```bash
@@ -165,7 +166,9 @@ Doc page map:
 - `contributing/` — development setup, releasing and docs deploy
 
 Docs update guardrails:
-- If behavior changes in `src/cli/`, `src/config/`, `src/pipeline/`, or `src/server/preview*`, update the corresponding page under `docs-site/docs/` in the same change.
+- If behavior changes in `src/cli/`, `src/config/`, `src/pipeline/`, or `src/server/preview*`, update the corresponding page under `docs/` in the same change.
+- For user-visible doc changes, maintain locale parity: update both English source docs (`docs/`) and Simplified Chinese localized docs (`docs-site/i18n/zh-Hans/docusaurus-plugin-content-docs/current/`) in the same change when pages exist in both locales.
+- If a page is intentionally English-only, add a TODO note in the matching zh-Hans page (or create a placeholder) instead of leaving silent drift.
 - Keep command examples executable as written (`ideon ...` or `npm run dev -- ...`) and avoid mixing styles in one example block.
 
 ---

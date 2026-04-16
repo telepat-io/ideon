@@ -3,6 +3,9 @@ import { runDeleteCommand } from './commands/delete.js';
 import { openSettings } from './commands/settings.js';
 import { runServeCommand } from './commands/serve.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
+import packageJson from '../../package.json' with { type: 'json' };
+
+const { version } = packageJson;
 
 function collectOptionValue(value: string, previous: string[] = []): string[] {
   return [...previous, value];
@@ -14,7 +17,7 @@ export async function runCli(argv: string[]): Promise<void> {
   program
     .name('ideon')
     .description('Turn ideas into rich Markdown articles with generated images.')
-    .version('0.1.0');
+    .version(version);
 
   program
     .command('settings')

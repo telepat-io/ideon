@@ -1,0 +1,42 @@
+{
+  "link.title.Docs": {
+    "message": "文档",
+    "description": "The title of the footer links column with title=Docs in the footer"
+  },
+  "link.title.Project": {
+    "message": "项目",
+    "description": "The title of the footer links column with title=Project in the footer"
+  },
+  "link.title.More": {
+    "message": "更多",
+    "description": "The title of the footer links column with title=More in the footer"
+  },
+  "link.item.label.Getting Started": {
+    "message": "快速开始",
+    "description": "The label of footer link with label=Getting Started linking to /getting-started/overview"
+  },
+  "link.item.label.CLI Reference": {
+    "message": "CLI 参考",
+    "description": "The label of footer link with label=CLI Reference linking to /reference/cli-reference"
+  },
+  "link.item.label.Repository": {
+    "message": "仓库",
+    "description": "The label of footer link with label=Repository linking to https://github.com/telepat-io/ideon"
+  },
+  "link.item.label.For Agents": {
+    "message": "面向智能体",
+    "description": "The label of footer link with label=For Agents linking to /for-agents"
+  },
+  "link.item.label.Contributing": {
+    "message": "参与贡献",
+    "description": "The label of footer link with label=Contributing linking to /contributing/development"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/telepat-io/ideon"
+  },
+  "copyright": {
+    "message": "Copyright © 2026 Ideon contributors. Built with Docusaurus.",
+    "description": "The footer copyright"
+  }
+}

@@ -45,6 +45,17 @@ const sidebars: SidebarsConfig = {
       label: 'Reference',
       items: [
         'reference/cli-reference',
+        {
+          type: 'category',
+          label: 'Commands',
+          items: [
+            'reference/commands/ideon-settings',
+            'reference/commands/ideon-write',
+            'reference/commands/ideon-write-resume',
+            'reference/commands/ideon-delete',
+            'reference/commands/ideon-preview',
+          ],
+        },
         'reference/content-types',
         'reference/environment-variables',
         'reference/t2i-models',
@@ -65,6 +76,17 @@ const sidebars: SidebarsConfig = {
       items: [
         'contributing/development',
         'contributing/releasing-and-docs-deploy',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'For Agents',
+      collapsed: false,
+      items: [
+        'for-agents/index',
+        'for-agents/command-index',
+        'for-agents/mcp-servers',
+        'for-agents/skills',
       ],
     },
   ],

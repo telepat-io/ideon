@@ -1,0 +1,28 @@
+# Ideon Docs LLM Index
+
+Project: Ideon
+Site: https://docs.telepat.io/ideon
+
+## Primary Entry Points
+- Quickstart: /getting-started/quickstart
+- CLI Reference: /reference/cli-reference
+- Technical Architecture: /technical/architecture
+- For Agents: /for-agents
+
+## Command Docs
+- ideon settings: /reference/commands/ideon-settings
+- ideon write [idea]: /reference/commands/ideon-write
+- ideon write resume: /reference/commands/ideon-write-resume
+- ideon delete <slug>: /reference/commands/ideon-delete
+- ideon preview [markdownPath]: /reference/commands/ideon-preview
+
+## Operations and Troubleshooting
+- Configuration: /guides/configuration
+- Credentials: /guides/credentials-and-secrets
+- Pipeline Stages: /guides/pipeline-stages
+- Local Preview: /guides/local-preview
+- Troubleshooting: /guides/troubleshooting
+
+## Contributing
+- Development: /contributing/development
+- Releases and Docs Deploy: /contributing/releasing-and-docs-deploy
