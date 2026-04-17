@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.7](https://github.com/telepat-io/ideon/compare/ideon-v0.1.6...ideon-v0.1.7) (2026-04-17)
+
+
+### Features
+
+* add integration contract validation and sync check ([31b4c51](https://github.com/telepat-io/ideon/commit/31b4c5101ee3038785f6d7b0d9142b10027cf5dd))
+* enhance keytar integration with lazy loading and improved error handling ([3a4b6fb](https://github.com/telepat-io/ideon/commit/3a4b6fbf1eac3d1d0daf58e7c949cd4a1120a610))
+* refactor documentation and CLI skill for Ideon ([43c4276](https://github.com/telepat-io/ideon/commit/43c4276e8cd8a55d8f31da6d85372cc441b0a38b))
+
 ## [0.1.6](https://github.com/telepat-io/ideon/compare/ideon-v0.1.5...ideon-v0.1.6) (2026-04-03)
 
 
