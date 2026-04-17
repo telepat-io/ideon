@@ -1,4 +1,5 @@
 import type { ArticlePlan, ArticleSectionPlan } from '../../types/article.js';
+import { resolveTargetLengthAlias } from '../../config/schema.js';
 import type { ChatMessage } from '../openRouterClient.js';
 import {
   buildRunContextDirective,
@@ -25,13 +26,13 @@ const OUTRO_PARAGRAPH_COUNTS: Record<string, string> = {
   large: '3 to 5',
 };
 
-function buildSystemInstruction(base: string, style: string, contentTypes: string[], targetLength: string): string {
+function buildSystemInstruction(base: string, style: string, contentTypes: string[], targetLengthWords: number): string {
   return [
     base,
     buildWritingFrameworkInstruction(),
     buildStyleDirective(style),
     buildRunContextDirective(contentTypes),
-    buildTargetLengthDirective('article', targetLength),
+    buildTargetLengthDirective('article', targetLengthWords),
   ].join(' ');
 }
 
@@ -62,14 +63,21 @@ function sharedDraftContext(articleSoFar: string): string {
   ].join('\n');
 }
 
-export function buildIntroMessages(plan: ArticlePlan, style: string, contentTypes: string[], targetLength: string): ChatMessage[] {
+export function buildIntroMessages(
+  plan: ArticlePlan,
+  style: string,
+  contentTypes: string[],
+  targetLengthWords: number,
+  introTargetWords: number,
+): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
     style,
     contentTypes,
-    targetLength,
+    targetLengthWords,
   );
-  const paragraphCount = INTRO_PARAGRAPH_COUNTS[targetLength] ?? INTRO_PARAGRAPH_COUNTS['medium']!;
+  const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
+  const paragraphCount = INTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? INTRO_PARAGRAPH_COUNTS['medium']!;
 
   return [
     {
@@ -84,6 +92,7 @@ export function buildIntroMessages(plan: ArticlePlan, style: string, contentType
         `Write the article introduction using this brief: ${plan.introBrief}`,
         'Requirements:',
         `- ${paragraphCount} paragraphs.`,
+        `- Target length: about ${introTargetWords} words.`,
         '- Hook the reader quickly.',
         '- Set up the argument and tone for the rest of the article.',
       ].join('\n'),
@@ -97,15 +106,17 @@ export function buildSectionMessages(
   articleSoFar: string,
   style: string,
   contentTypes: string[],
-  targetLength: string,
+  targetLengthWords: number,
+  sectionTargetWords: number,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
     style,
     contentTypes,
-    targetLength,
+    targetLengthWords,
   );
-  const paragraphCount = SECTION_PARAGRAPH_COUNTS[targetLength] ?? SECTION_PARAGRAPH_COUNTS['medium']!;
+  const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
+  const paragraphCount = SECTION_PARAGRAPH_COUNTS[targetLengthAlias] ?? SECTION_PARAGRAPH_COUNTS['medium']!;
 
   return [
     {
@@ -123,6 +134,7 @@ export function buildSectionMessages(
         `Section focus: ${section.description}`,
         'Requirements:',
         `- ${paragraphCount} paragraphs.`,
+        `- Target length: about ${sectionTargetWords} words.`,
         '- Be concrete and specific.',
         '- Continue naturally from the article draft so far without rehashing prior sections.',
         '- Use short Markdown lists only if they materially improve clarity.',
@@ -131,14 +143,21 @@ export function buildSectionMessages(
   ];
 }
 
-export function buildOutroMessages(plan: ArticlePlan, style: string, contentTypes: string[], targetLength: string): ChatMessage[] {
+export function buildOutroMessages(
+  plan: ArticlePlan,
+  style: string,
+  contentTypes: string[],
+  targetLengthWords: number,
+  outroTargetWords: number,
+): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
     style,
     contentTypes,
-    targetLength,
+    targetLengthWords,
   );
-  const paragraphCount = OUTRO_PARAGRAPH_COUNTS[targetLength] ?? OUTRO_PARAGRAPH_COUNTS['medium']!;
+  const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
+  const paragraphCount = OUTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? OUTRO_PARAGRAPH_COUNTS['medium']!;
 
   return [
     {
@@ -153,6 +172,7 @@ export function buildOutroMessages(plan: ArticlePlan, style: string, contentType
         `Write the article conclusion using this brief: ${plan.outroBrief}`,
         'Requirements:',
         `- ${paragraphCount} paragraphs.`,
+        `- Target length: about ${outroTargetWords} words.`,
         '- Synthesize the main argument.',
         '- End with a strong, thoughtful closing line.',
       ].join('\n'),

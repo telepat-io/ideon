@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## 用法
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size>] [--no-interactive] [--dry-run] [--no-enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--no-enrich-links]
 ```
 
 ## 参数与选项
@@ -28,7 +28,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--primary <type=1>` | 无 | 非交互模式必填 | string | 交互模式下会提示 | `article`、`blog-post`、`x-thread`、`x-post`、`reddit-post`、`linkedin-post`、`newsletter`、`landing-page-copy`，且 count 必须为 `1` | 必需主目标，数量必须是 `1`。 |
 | `--secondary <type=count>` | 无 | 否 | 可重复 string | 无 | 与主目标相同的类型，count >= `1` | 可重复的次级目标。 |
 | `--style <style>` | 无 | 否 | enum | `professional` | `professional`、`friendly`、`technical`、`academic`、`opinionated`、`storytelling` | 生成内容风格。 |
-| `--length <size>` | 无 | 否 | enum | `medium` | `small`、`medium`、`large` | 目标篇幅。 |
+| `--length <size-or-words>` | 无 | 否 | enum 或整数 | `medium` 别名（`900` 词） | `small`、`medium`、`large` 或正整数 | 按词数控制目标篇幅。别名映射：`small=500`、`medium=900`、`large=1400`。 |
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 禁用所有提示，在缺少必填输入时立即失败。 |
 | `--dry-run` | 无 | 否 | boolean | `false` | `true` 或省略 | 不调用外部提供商 API，仅执行编排流程。 |
 | `--no-enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 跳过 markdown 生成后的链接增强阶段。 |
@@ -48,7 +48,7 @@ ideon write --dry-run "How to test Ideon pipeline changes" --primary article=1
 ```
 
 ```bash title="单次执行 agent 安全示例"
-ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --length medium
+ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --length 1200
 ```
 
 ## 非交互行为
@@ -57,6 +57,7 @@ ideon write --no-interactive --idea "How to productionize docs operations" --pri
 
 - 缺少 idea 输入会立即失败。
 - 在 no-interactive 模式下缺少 `--primary`、`--style` 或 `--length` 会立即失败并给出可执行错误提示。
+- `--length` 同时支持别名（`small`、`medium`、`large`）和正整数词数。
 - 这是 one-shot agent 与 CI 工作流推荐模式。
 
 ## 输出与退出码

@@ -24,7 +24,7 @@ Use this matrix to diagnose common failures quickly.
 | `Primary target count must be exactly 1` | Invalid primary count | Inspect `--primary` value | Use `--primary <type=1>` |
 | `cannot be both primary and secondary` | Same type used in both roles | Inspect target flags | Keep each type in one role only |
 | Keychain warnings/failures in CI/container | Keychain unavailable | Check runtime environment and keychain access | Set `IDEON_DISABLE_KEYTAR=true` and inject env secrets |
-| `No resumable write session found` | Missing `.ideon/write/state.json` in current working dir | Confirm current directory and session file existence | Start a fresh write run in desired directory, then resume if interrupted |
+| `No resumable write session found` | Missing `.ideon/write/state.json` in current working dir | Confirm current directory and session file existence | Run from the same directory as the original write session; if the project moved, restore `.ideon/` with it or start a fresh write run in the new directory |
 | Delete requires confirmation in non-TTY | Running delete without `--force` in automation | Check terminal mode and flags | Re-run with `--force` after explicit user confirmation |
 | Could not find article by slug | Slug typo or wrong output directory | Check slug and output dir config/env overrides | Use correct slug and run `ideon preview` to identify latest outputs |
 | Invalid port for preview | Out-of-range or non-numeric port | Inspect `--port` value | Use `1..65535` (default `4173`) |

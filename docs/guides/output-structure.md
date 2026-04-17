@@ -139,6 +139,13 @@ Example shape:
 - Includes saved stage outputs (plan, section drafts, image metadata, final artifact summary)
 - Fresh runs overwrite previous `.ideon/write` artifacts
 - `ideon write resume` uses this state to continue after failures or interruptions
+- Session state is directory-scoped: Ideon reads and writes `.ideon/write/state.json` under the directory where you run the command
+
+Directory scope examples:
+
+- Running in `~/project-a` creates and resumes state from `~/project-a/.ideon/write/state.json`
+- Running in `~/project-b` uses `~/project-b/.ideon/write/state.json` and cannot see `project-a` state
+- If you move a project, keep its `.ideon/` directory with it; otherwise resume state is not found until restored or regenerated
 
 Key state fields:
 

@@ -153,7 +153,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--primary <type=count>', 'Required primary output target (for example: article=1 or x-post=1)')
     .option('--secondary <type=count>', 'Secondary output target, repeatable (for example: x-thread=3, linkedin-post=2)', collectOptionValue)
     .option('--style <style>', 'Writing style (professional, friendly, technical, academic, opinionated, storytelling)')
-    .option('--length <size>', 'Target length: small, medium, or large')
+    .option('--length <size>', 'Target length: small, medium, large, or a positive integer word count')
     .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
     .option('--no-enrich-links', 'Skip link enrichment after markdown generation')

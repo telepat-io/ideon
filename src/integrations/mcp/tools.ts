@@ -11,7 +11,7 @@ export const writeToolInputSchema = {
   primary: z.string().optional(),
   secondary: z.array(z.string()).optional(),
   style: z.enum(writingStyleValues).optional(),
-  length: z.enum(targetLengthValues).optional(),
+  length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
   dryRun: z.boolean().optional(),
   enrichLinks: z.boolean().optional(),
 };

@@ -1,3 +1,5 @@
+import { resolveTargetLengthAlias } from '../../config/schema.js';
+
 const BASE_WRITING_FRAMEWORK = [
   'Writing framework:',
   'Structure with intent: open with a clear hook, build ideas in a logical progression, and close with a concrete takeaway.',
@@ -133,7 +135,16 @@ const TARGET_LENGTH_TIERS: Record<string, TargetLengthTier> = {
   },
 };
 
-export function buildTargetLengthDirective(contentType: string, targetLength: string): string {
-  const tier = TARGET_LENGTH_TIERS[targetLength] ?? TARGET_LENGTH_TIERS['medium']!;
-  return (tier[contentType as keyof TargetLengthTier] as string | undefined) ?? tier.fallback;
+export function buildTargetLengthDirective(contentType: string, targetLengthWords: number): string {
+  const normalizedTargetLengthWords = Number.isFinite(targetLengthWords) && targetLengthWords > 0
+    ? Math.round(targetLengthWords)
+    : 900;
+  const alias = resolveTargetLengthAlias(normalizedTargetLengthWords);
+  const tier = TARGET_LENGTH_TIERS[alias] ?? TARGET_LENGTH_TIERS['medium']!;
+  if (contentType === 'article') {
+    return `Target length (article): aim for about ${normalizedTargetLengthWords} words total while keeping section depth and structure consistent.`;
+  }
+
+  const baseDirective = (tier[contentType as keyof TargetLengthTier] as string | undefined) ?? tier.fallback;
+  return `${baseDirective} Overall run target is about ${normalizedTargetLengthWords} words.`;
 }

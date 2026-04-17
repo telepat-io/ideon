@@ -49,7 +49,7 @@ export function buildSingleShotContentMessages(options: {
   outputCountForType: number;
   contentBrief: ContentBrief;
   articleReferenceMarkdown?: string;
-  targetLength: string;
+  targetLength: number;
 }): ChatMessage[] {
   const channelRule = CHANNEL_RULES[options.contentType] ?? 'Write channel-native Markdown content.';
   const articleContext = options.articleReferenceMarkdown

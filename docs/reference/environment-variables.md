@@ -28,7 +28,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 ## Generation Style
 
 - `IDEON_STYLE`
-- `IDEON_TARGET_LENGTH` (`small`, `medium`, `large`)
+- `IDEON_TARGET_LENGTH` (`small`, `medium`, `large`, or positive integer words)
 
 ## Notifications
 
@@ -49,13 +49,14 @@ IDEON_NOTIFICATIONS_ENABLED=false \
 IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
 IDEON_STYLE=professional \
-IDEON_TARGET_LENGTH=medium \
+IDEON_TARGET_LENGTH=1200 \
 ideon write "How teams scale editorial pipelines"
 ```
 
 ## Notes
 
 - Numeric vars are parsed into numbers and validated.
+- `IDEON_TARGET_LENGTH` supports aliases (`small=500`, `medium=900`, `large=1400`) or explicit positive integer words.
 - Invalid numeric values are ignored during parsing and schema validation determines final acceptance.
 - Env vars override saved and job-file settings where applicable.
 - In environments where keychain services are unavailable (for example many containers), set `IDEON_DISABLE_KEYTAR=true`.

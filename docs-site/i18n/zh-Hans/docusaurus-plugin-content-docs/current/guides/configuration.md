@@ -47,7 +47,7 @@ Ideon 会从多个来源合并配置，并在执行前完成校验。
 - `assetOutputDir`
 - `contentTargets`: array of output targets with per-type counts
 - `style`: run-level writing style
-- `targetLength`：运行级输出篇幅（`small`、`medium`、`large`）
+- `targetLength`：运行级目标词数（正整数）。输入时支持别名：`small=500`、`medium=900`、`large=1400`。
 
 `contentTargets` entries:
 
@@ -74,13 +74,13 @@ Rules:
 
 - `contentTargets`: `[ { "contentType": "article", "role": "primary", "count": 1 } ]`
 - `style`: `professional`
-- `targetLength`: `medium`
+- `targetLength`: `900`
 
-篇幅等级：
+篇幅别名：
 
-- `small`：精简输出，段落和观点较少
-- `medium`：深度与可读性平衡（默认）
-- `large`：扩展输出，覆盖更广、示例更多
+- `small`：`500` 词
+- `medium`：`900` 词（默认）
+- `large`：`1400` 词
 
 ## 已保存设置位置
 
@@ -97,7 +97,7 @@ IDEON_MODEL=openai/gpt-4.1-mini \
 IDEON_TEMPERATURE=0.6 \
 IDEON_MAX_TOKENS=2400 \
 IDEON_STYLE=technical \
-IDEON_TARGET_LENGTH=large \
+IDEON_TARGET_LENGTH=1200 \
 ideon write "An idea"
 ```
 

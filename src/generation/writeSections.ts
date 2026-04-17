@@ -22,6 +22,8 @@ export async function writeArticleSections({
   onLlmMetrics?: (phase: 'intro' | 'section' | 'outro', metrics: LlmCallMetrics, sectionIndex?: number) => void;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<{ intro: string; sections: GeneratedArticleSection[]; outro: string }> {
+  const wordBudgets = allocateWordBudgets(settings.targetLength, plan.sections.length);
+
   onSectionStart?.('Writing introduction');
   const intro = dryRun || !openRouter
     ? dryRunIntro(plan)
@@ -31,6 +33,7 @@ export async function writeArticleSections({
           settings.style,
           settings.contentTargets.map((target) => target.contentType),
           settings.targetLength,
+          wordBudgets.intro,
         ),
         settings,
         interactionContext: {
@@ -57,6 +60,7 @@ export async function writeArticleSections({
             settings.style,
             settings.contentTargets.map((target) => target.contentType),
             settings.targetLength,
+            wordBudgets.sections[index] ?? wordBudgets.sections[wordBudgets.sections.length - 1] ?? 150,
           ),
           settings,
           interactionContext: {
@@ -83,6 +87,7 @@ export async function writeArticleSections({
           settings.style,
           settings.contentTargets.map((target) => target.contentType),
           settings.targetLength,
+          wordBudgets.outro,
         ),
         settings,
         interactionContext: {
@@ -126,6 +131,26 @@ function dryRunOutro(plan: ArticlePlan): string {
 interface ArticleSectionPlanLike {
   title: string;
   description: string;
+}
+
+function allocateWordBudgets(totalTargetWords: number, sectionCount: number): { intro: number; sections: number[]; outro: number } {
+  const normalizedTotal = Number.isFinite(totalTargetWords) && totalTargetWords > 0 ? Math.round(totalTargetWords) : 900;
+  const normalizedSectionCount = Math.max(1, sectionCount);
+  const intro = Math.max(80, Math.round(normalizedTotal * 0.15));
+  const outro = Math.max(80, Math.round(normalizedTotal * 0.1));
+  const remainingForSections = Math.max(normalizedSectionCount * 120, normalizedTotal - intro - outro);
+  const baseSectionWords = Math.floor(remainingForSections / normalizedSectionCount);
+  let remainder = remainingForSections - (baseSectionWords * normalizedSectionCount);
+
+  const sections = Array.from({ length: normalizedSectionCount }, () => {
+    const next = baseSectionWords + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) {
+      remainder -= 1;
+    }
+    return Math.max(120, next);
+  });
+
+  return { intro, sections, outro };
 }
 
 function buildArticleSoFarContext(intro: string, sections: GeneratedArticleSection[]): string {

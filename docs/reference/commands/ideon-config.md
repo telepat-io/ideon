@@ -74,6 +74,11 @@ Settings keys:
 - `style`
 - `targetLength`
 
+`targetLength` value notes:
+
+- Accepts aliases `small`, `medium`, `large` or a positive integer word count.
+- Alias mapping is `small=500`, `medium=900`, `large=1400`.
+
 Secret keys:
 
 - `openRouterApiKey`

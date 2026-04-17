@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { render, useApp } from 'ink';
 import { createInterface } from 'node:readline/promises';
 import { resolveRunInput, type ContentTargetInput } from '../../config/resolver.js';
-import { appSettingsSchema, targetLengthValues, writingStyleValues } from '../../config/schema.js';
+import { appSettingsSchema, resolveTargetLengthAlias, targetLengthValues, writingStyleValues } from '../../config/schema.js';
 import { ReportedError } from '../reportedError.js';
 import { PipelinePresenter } from '../ui/pipelinePresenter.js';
 import { createInitialStages, runPipelineShell } from '../../pipeline/runner.js';
@@ -347,7 +347,7 @@ async function promptForMissingWriteOptions(params: {
   askTargets: boolean;
   askLength: boolean;
   style: string;
-  targetLength: string;
+  targetLength: number;
   targets: ContentTargetInput[];
 }): Promise<{ style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] }> {
   let flowResult: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null = null;
@@ -360,9 +360,7 @@ async function promptForMissingWriteOptions(params: {
       initialStyle: (writingStyleValues as readonly string[]).includes(params.style)
         ? params.style
         : 'professional',
-      initialTargetLength: (targetLengthValues as readonly string[]).includes(params.targetLength)
-        ? params.targetLength
-        : 'medium',
+      initialTargetLength: resolveTargetLengthAlias(params.targetLength),
       initialTargets: params.targets,
       onDone: (result: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => {
         flowResult = result;

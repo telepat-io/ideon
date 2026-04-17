@@ -139,6 +139,13 @@ JSON 包含：
 - 包含已保存阶段输出（plan、章节草稿、图像元数据、最终产物摘要）
 - fresh 运行会覆盖之前的 `.ideon/write` 产物
 - `ideon write resume` 依赖该状态在失败或中断后继续
+- 会话状态按目录隔离：Ideon 会在你执行命令的当前目录下读写 `.ideon/write/state.json`
+
+目录隔离示例：
+
+- 在 `~/project-a` 运行时，会创建并读取 `~/project-a/.ideon/write/state.json`
+- 在 `~/project-b` 运行时，会使用 `~/project-b/.ideon/write/state.json`，无法读取 `project-a` 的会话状态
+- 若你移动了项目目录，请同时移动 `.ideon/`；否则在恢复前需要先还原该目录或重新生成会话状态
 
 关键状态字段：
 

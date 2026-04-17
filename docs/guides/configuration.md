@@ -29,7 +29,6 @@ Per-field merge behavior:
 
 - `modelSettings` merges by key (`temperature`, `maxTokens`, `topP`) across sources.
 - `contentTargets` is replaced as a full array when provided by a higher-priority source.
-- Scalar settings (for example `model`, `style`, `markdownOutputDir`) are replaced by the highest-priority source.
 - Scalar settings (for example `model`, `style`, `targetLength`, `markdownOutputDir`) are replaced by the highest-priority source.
 
 ## Settings Schema
@@ -48,7 +47,7 @@ Core settings include:
 - `assetOutputDir`
 - `contentTargets`: array of output targets with per-type counts
 - `style`: run-level writing style
-- `targetLength`: run-level output size tier (`small`, `medium`, `large`)
+- `targetLength`: run-level target length in words (positive integer). Aliases are accepted as input: `small=500`, `medium=900`, `large=1400`.
 
 `contentTargets` entries:
 
@@ -75,13 +74,13 @@ Defaults:
 
 - `contentTargets`: `[ { "contentType": "article", "role": "primary", "count": 1 } ]`
 - `style`: `professional`
-- `targetLength`: `medium`
+- `targetLength`: `900`
 
-Target length tiers:
+Target length aliases:
 
-- `small`: compressed output with fewer sections/ideas
-- `medium`: balanced depth and readability (default)
-- `large`: expanded, deeper output with more coverage and examples
+- `small`: `500` words
+- `medium`: `900` words (default)
+- `large`: `1400` words
 
 ## Saved Settings Location
 
@@ -98,7 +97,7 @@ IDEON_MODEL=openai/gpt-4.1-mini \
 IDEON_TEMPERATURE=0.6 \
 IDEON_MAX_TOKENS=2400 \
 IDEON_STYLE=technical \
-IDEON_TARGET_LENGTH=large \
+IDEON_TARGET_LENGTH=1200 \
 ideon write "An idea"
 ```
 

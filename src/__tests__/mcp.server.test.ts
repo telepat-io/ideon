@@ -149,6 +149,21 @@ describe('ideon MCP server', () => {
     expect(result?.structuredContent?.slug).toBe('slug');
   });
 
+  it('accepts numeric word count length for ideon_write tool handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_write');
+
+    await tool?.handler({
+      idea: 'My idea',
+      style: 'professional',
+      length: 1200,
+      dryRun: true,
+      enrichLinks: false,
+    });
+
+    expect(resolveRunInputMock).toHaveBeenCalledWith(expect.objectContaining({ targetLength: 1200 }));
+  });
+
   it('returns tool error when config key is unsupported', async () => {
     isConfigKeyMock.mockReturnValue(false);
     await startIdeonMcpServer();

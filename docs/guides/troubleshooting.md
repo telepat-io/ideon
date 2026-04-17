@@ -63,7 +63,9 @@ Error pattern:
 Fix:
 
 - Start a fresh run first with `ideon write "your idea"`
-- Verify you are in the same workspace and working directory used for the original run
+- Verify you are in the same working directory used for the original run
+- Remember each directory has its own `.ideon/write/state.json`; another directory cannot see this session
+- If the project was moved, move the `.ideon/` directory with it, or start a fresh run and resume from the new state
 
 ## Interrupted Write Run
 
@@ -74,7 +76,8 @@ Scenario:
 Recovery:
 
 1. Run `ideon write resume`
-2. If resume fails repeatedly, inspect and remove `.ideon/write/state.json` to start fresh
+2. If resume is not found, verify you are running in the same directory as the original `ideon write`
+3. If resume fails repeatedly, inspect and remove `.ideon/write/state.json` to start fresh
 
 ## No Generated Content Found
 

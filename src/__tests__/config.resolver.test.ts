@@ -36,7 +36,7 @@ describe('resolveRunInput', () => {
       assetOutputDir: '/saved-out/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
-      targetLength: 'medium',
+      targetLength: 900,
     });
 
     loadSecretsMock.mockResolvedValue({
@@ -251,7 +251,7 @@ describe('resolveRunInput', () => {
       assetOutputDir: '/saved-out/assets',
       style: 'professional',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
-      targetLength: 'medium',
+      targetLength: 900,
     });
 
     const result = await resolveRunInput({ idea: 'defaults test' });
@@ -303,7 +303,7 @@ describe('resolveRunInput', () => {
     });
 
     expect(result.config.settings.style).toBe('technical');
-    expect(result.config.settings.targetLength).toBe('large');
+    expect(result.config.settings.targetLength).toBe(1400);
     expect(result.config.settings.contentTargets).toEqual([
       { contentType: 'article', role: 'primary', count: 1 },
       { contentType: 'x-thread', role: 'secondary', count: 2 },
@@ -335,10 +335,10 @@ describe('resolveRunInput', () => {
 
   it('applies env target length when provided', async () => {
     readEnvSettingsMock.mockReturnValue({
-      targetLength: 'small',
+      targetLength: 500,
     });
 
     const result = await resolveRunInput({ idea: 'env length test' });
-    expect(result.config.settings.targetLength).toBe('small');
+    expect(result.config.settings.targetLength).toBe(500);
   });
 });

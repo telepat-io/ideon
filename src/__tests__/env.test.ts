@@ -68,8 +68,16 @@ describe('readEnvSettings', () => {
       markdownOutputDir: '/tmp/out',
       assetOutputDir: '/tmp/out/assets',
       style: 'technical',
-      targetLength: 'large',
+      targetLength: 1400,
     });
+  });
+
+  it('accepts numeric word count from IDEON_TARGET_LENGTH', () => {
+    const result = readEnvSettings({
+      IDEON_TARGET_LENGTH: '1250',
+    });
+
+    expect(result.targetLength).toBe(1250);
   });
 
   it('parses notifications boolean values and drops invalid values', () => {

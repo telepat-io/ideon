@@ -7,14 +7,20 @@ import {
   buildWritingFrameworkInstruction,
 } from './writingFramework.js';
 
-const ARTICLE_SECTION_COUNTS: Record<string, { min: number; max: number; label: string }> = {
-  small: { min: 2, max: 4, label: '2 to 4' },
-  medium: { min: 4, max: 7, label: '4 to 6' },
-  large: { min: 6, max: 10, label: '6 to 10' },
-};
+function deriveArticleSectionCounts(targetLengthWords: number): { min: number; max: number; label: string } {
+  const normalizedWords = Number.isFinite(targetLengthWords) && targetLengthWords > 0 ? targetLengthWords : 900;
+  const center = Math.max(2, Math.min(10, Math.round(normalizedWords / 220)));
+  const min = Math.max(2, center - 1);
+  const max = Math.min(10, center + 1);
+  return {
+    min,
+    max,
+    label: `${min} to ${max}`,
+  };
+}
 
-export function buildArticlePlanJsonSchema(targetLength: string) {
-  const sectionCounts = ARTICLE_SECTION_COUNTS[targetLength] ?? ARTICLE_SECTION_COUNTS['medium']!;
+export function buildArticlePlanJsonSchema(targetLengthWords: number) {
+  const sectionCounts = deriveArticleSectionCounts(targetLengthWords);
   return {
     type: 'object',
     additionalProperties: false,
@@ -82,10 +88,10 @@ export function buildArticlePlanMessages(
     style: string;
     contentTypes: string[];
     contentBrief: ContentBrief;
-    targetLength: string;
+    targetLength: number;
   },
 ): ChatMessage[] {
-  const sectionCounts = ARTICLE_SECTION_COUNTS[options.targetLength] ?? ARTICLE_SECTION_COUNTS['medium']!;
+  const sectionCounts = deriveArticleSectionCounts(options.targetLength);
   const systemInstruction = [
     'You are a senior editorial strategist. Produce a rigorous article plan for a polished long-form Markdown article.',
     buildWritingFrameworkInstruction(),

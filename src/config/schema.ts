@@ -15,6 +15,61 @@ export const writingStyleValues = ['professional', 'friendly', 'technical', 'aca
 
 export const targetLengthValues = ['small', 'medium', 'large'] as const;
 
+export const targetLengthAliasWordCounts: Record<(typeof targetLengthValues)[number], number> = {
+  small: 500,
+  medium: 900,
+  large: 1400,
+};
+
+const defaultTargetLengthWords = targetLengthAliasWordCounts.medium;
+
+function parseTargetLengthWords(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return undefined;
+  }
+
+  if ((targetLengthValues as readonly string[]).includes(normalized)) {
+    return targetLengthAliasWordCounts[normalized as (typeof targetLengthValues)[number]];
+  }
+
+  if (!/^\d+$/.test(normalized)) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(normalized, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+const targetLengthWordsSchema = z.preprocess(
+  (value) => parseTargetLengthWords(value),
+  z.number().int().positive(),
+);
+
+export function resolveTargetLengthAlias(targetLengthWords: number): (typeof targetLengthValues)[number] {
+  if (!Number.isFinite(targetLengthWords) || targetLengthWords <= 0) {
+    return 'medium';
+  }
+
+  if (targetLengthWords <= 700) {
+    return 'small';
+  }
+
+  if (targetLengthWords <= 1150) {
+    return 'medium';
+  }
+
+  return 'large';
+}
+
 export const contentTargetRoleValues = ['primary', 'secondary'] as const;
 
 const contentTargetSchema = z.object({
@@ -54,7 +109,7 @@ export const appSettingsSchema = z.object({
     })
     .default([{ contentType: 'article', role: 'primary', count: 1 }]),
   style: z.enum(writingStyleValues).default('professional'),
-  targetLength: z.enum(targetLengthValues).default('medium'),
+  targetLength: targetLengthWordsSchema.default(defaultTargetLengthWords),
 });
 
 export const envSettingsSchema = z.object({
@@ -70,7 +125,7 @@ export const envSettingsSchema = z.object({
   markdownOutputDir: z.string().optional(),
   assetOutputDir: z.string().optional(),
   style: z.enum(writingStyleValues).optional(),
-  targetLength: z.enum(targetLengthValues).optional(),
+  targetLength: targetLengthWordsSchema.optional(),
 });
 
 export const jobInputSchema = z.object({
@@ -83,7 +138,7 @@ export const jobInputSchema = z.object({
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 export type JobInput = z.infer<typeof jobInputSchema>;
 export type EnvSettings = z.infer<typeof envSettingsSchema>;
-export type TargetLength = (typeof targetLengthValues)[number];
+export type TargetLength = number;
 
 export interface SecretSettings {
   openRouterApiKey: string | null;

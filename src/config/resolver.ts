@@ -8,7 +8,6 @@ import {
   contentTypeValues,
   jobInputSchema,
   writingStyleValues,
-  targetLengthValues,
   type JobInput,
   type ResolvedConfig,
   type TargetLength,

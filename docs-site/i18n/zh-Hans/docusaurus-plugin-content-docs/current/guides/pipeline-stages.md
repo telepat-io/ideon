@@ -97,7 +97,9 @@ Analytics 会写入每个生成目录下的 `generation.analytics.json`。
 ## Resume 语义
 
 - 每个已完成阶段的检查点都会持久化到 `.ideon/write/state.json`。
+- 检查点绑定到执行 `ideon write` 时的工作目录。
 - `ideon write resume` 会加载已保存产物，并跳过已完成阶段。
+- 若要访问既有检查点，请在同一项目目录执行 resume，或先还原该目录下的 `.ideon/`。
 - 当前 resume 在阶段边界做检查点，因此阶段内未完成工作会从该阶段重试。
 - 即使会话已完成，也可通过 resume 从缓存状态重建下游缺失产物。
 

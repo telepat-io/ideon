@@ -176,10 +176,17 @@ function coerceSettingValue(key: ConfigSettingKey, rawValue: string): unknown {
       return trimmed;
     }
     case 'targetLength': {
-      if (!(targetLengthValues as readonly string[]).includes(trimmed)) {
-        throw new Error(`targetLength must be one of: ${targetLengthValues.join(', ')}.`);
+      const normalized = trimmed.toLowerCase();
+      if ((targetLengthValues as readonly string[]).includes(normalized)) {
+        return normalized;
       }
-      return trimmed;
+
+      const parsed = Number.parseInt(trimmed, 10);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        throw new Error(`targetLength must be one of: ${targetLengthValues.join(', ')}, or a positive integer word count.`);
+      }
+
+      return parsed;
     }
     default:
       throw new Error(`Unsupported config key: ${key}`);

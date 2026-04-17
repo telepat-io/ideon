@@ -88,10 +88,12 @@ describe('writeArticleSections', () => {
     expect(firstSectionPrompt).toContain('## Introduction');
     expect(firstSectionPrompt).toContain('Generated body');
     expect(firstSectionPrompt).not.toContain('## Section One');
+    expect(firstSectionPrompt).toContain('Target length: about 338 words.');
 
     expect(secondSectionPrompt).toContain('## Introduction');
     expect(secondSectionPrompt).toContain('## Section One');
     expect(secondSectionPrompt).toContain('Generated body');
+    expect(secondSectionPrompt).toContain('Target length: about 337 words.');
   });
 
   it('throws when generated intro is empty after normalization', async () => {

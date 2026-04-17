@@ -43,7 +43,7 @@ describe('config manage', () => {
       assetOutputDir: '/output/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
-      targetLength: 'medium',
+      targetLength: 900,
     });
 
     loadSecretsMock.mockResolvedValue({
@@ -145,7 +145,10 @@ describe('config manage', () => {
     expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ assetOutputDir: '/tmp/assets' }));
 
     await configSet('targetLength', 'large');
-    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ targetLength: 'large' }));
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ targetLength: 1400 }));
+
+    await configSet('targetLength', '1200');
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ targetLength: 1200 }));
   });
 
   it('throws on invalid values', async () => {

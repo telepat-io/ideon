@@ -74,6 +74,11 @@ Settings keys:
 - `style`
 - `targetLength`
 
+`targetLength` 取值说明：
+
+- 支持别名 `small`、`medium`、`large`，也支持正整数词数。
+- 别名映射为 `small=500`、`medium=900`、`large=1400`。
+
 Secret keys:
 
 - `openRouterApiKey`

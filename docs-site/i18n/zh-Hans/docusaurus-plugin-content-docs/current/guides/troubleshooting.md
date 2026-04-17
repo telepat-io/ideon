@@ -64,6 +64,8 @@ keywords: [ideon, 故障排查, cli, 错误, 恢复]
 
 - 先执行 `ideon write "your idea"` 产生一次新会话
 - 确认当前工作目录与原运行目录一致
+- 注意每个目录都有独立的 `.ideon/write/state.json`，切换目录后无法读取原会话
+- 如果项目目录被移动，请连同 `.ideon/` 一起移动；否则请在新目录重新执行一次写作后再恢复
 
 ## 写作运行被中断
 
@@ -74,7 +76,8 @@ keywords: [ideon, 故障排查, cli, 错误, 恢复]
 恢复方式：
 
 1. Run `ideon write resume`
-2. 若多次恢复失败，检查并移除 `.ideon/write/state.json` 后重新开始
+2. 若找不到可恢复会话，先确认当前目录与原始 `ideon write` 运行目录一致
+3. 若多次恢复失败，检查并移除 `.ideon/write/state.json` 后重新开始
 
 ## 未找到已生成内容
 
