@@ -196,6 +196,112 @@ describe('pipeline runner', () => {
     }
   });
 
+  it('surfaces live retry state on stages when transient llm errors occur', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-live-retry-state-'));
+    const updates: StageViewModel[][] = [];
+    const originalFetch = globalThis.fetch;
+    let failedSharedBriefOnce = false;
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      globalThis.fetch = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+        const body = typeof init?.body === 'string' ? init.body : '';
+        if (body.includes('"name":"content_brief"')) {
+          if (!failedSharedBriefOnce) {
+            failedSharedBriefOnce = true;
+            return {
+              ok: false,
+              status: 503,
+              text: async () => JSON.stringify({
+                error: {
+                  message: 'Temporary upstream failure',
+                },
+              }),
+            } as Response;
+          }
+
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    description: 'A practical shared brief for retry visibility tests.',
+                    title: 'Retry Visibility Shared Brief',
+                    targetAudience: 'Operators and content teams',
+                    corePromise: 'Understand in-flight retries clearly.',
+                    keyPoints: ['Point one', 'Point two', 'Point three'],
+                    voiceNotes: 'Direct and practical.',
+                    primaryContentType: 'article',
+                    secondaryContentTypes: ['linkedin-post'],
+                    secondaryContentStrategy: 'Secondary outputs should be valuable and invite readers to the primary article.',
+                  }),
+                },
+              }],
+            }),
+          } as Response;
+        }
+
+        if (body.includes('"name":"link_candidates"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{ message: { content: JSON.stringify({ expressions: [] }) } }],
+            }),
+          } as Response;
+        }
+
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({
+            choices: [{ message: { content: 'Generated linkedin post body with practical tips.' } }],
+          }),
+        } as Response;
+      }) as typeof fetch;
+
+      await runPipelineShell(
+        {
+          idea: 'retry visibility integration test',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [{ contentType: 'linkedin-post', role: 'primary', count: 1 }],
+            },
+            secrets: {
+              openRouterApiKey: 'test-openrouter-key',
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: false,
+          workingDir: tempRoot,
+          onUpdate(stages) {
+            updates.push(stages);
+          },
+        },
+      );
+
+      const sharedBriefSnapshots = updates
+        .map((snapshot) => snapshot.find((stage) => stage.id === 'shared-brief'))
+        .filter((stage): stage is StageViewModel => Boolean(stage));
+
+      expect(sharedBriefSnapshots.some((stage) => stage.status === 'running' && (stage.retryCount ?? 0) >= 1)).toBe(true);
+      expect(sharedBriefSnapshots.some((stage) => (stage.lastRetryError ?? '').includes('Temporary upstream failure'))).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('writes multiple outputs into one generation directory with shared assets', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-multi-output-'));
     const updates: StageViewModel[][] = [];

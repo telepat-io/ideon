@@ -1,7 +1,7 @@
 import type { ResolvedRunInput } from '../../config/resolver.js';
 import { runPipelineShell, type PipelineRunOptions } from '../../pipeline/runner.js';
 import { ReportedError } from '../reportedError.js';
-import type { StageViewModel } from '../../pipeline/events.js';
+import type { PipelineStageAnalytics, StageViewModel } from '../../pipeline/events.js';
 import { withWriteResumeHint } from '../commands/writeErrorHint.js';
 import { notifyWriteFailed, notifyWriteStarted, notifyWriteSucceeded } from '../notifications/osNotifier.js';
 
@@ -28,7 +28,20 @@ function formatStage(stage: StageViewModel): string {
   const analytics = stage.status === 'succeeded' && stage.stageAnalytics
     ? `\n    analytics: ${formatDuration(stage.stageAnalytics.durationMs)} • cost: ${formatStageCost(stage)}`
     : '';
-  return `[${stage.status}] ${stage.title}\n    ${stage.detail}${summary}${analytics}`;
+  const retryContext = formatRetryContext(stage);
+  return `[${stage.status}] ${stage.title}\n    ${stage.detail}${retryContext}${summary}${analytics}`;
+}
+
+function formatRetryContext(stage: StageViewModel): string {
+  if (!stage.retryCount || stage.retryCount <= 0) {
+    return '';
+  }
+
+  if (stage.lastRetryError) {
+    return ` • retried ${stage.retryCount}x • last error: ${stage.lastRetryError}`;
+  }
+
+  return ` • retried ${stage.retryCount}x`;
 }
 
 function formatItem(stage: StageViewModel, item: NonNullable<StageViewModel['items']>[number]): string {
@@ -56,13 +69,22 @@ function formatCost(costUsd: number | null): string {
   return `$${costUsd.toFixed(4)}`;
 }
 
+function formatPipelineStageCost(stage: PipelineStageAnalytics): string {
+  const formatted = formatCost(stage.costUsd);
+  if (stage.costUsd === null) {
+    return formatted;
+  }
+
+  return stage.costSource === 'estimated' ? `~${formatted}` : formatted;
+}
+
 export async function renderPlainPipeline(
   input: ResolvedRunInput,
   dryRun: boolean,
   enrichLinks: boolean,
   runMode: NonNullable<PipelineRunOptions['runMode']>,
 ): Promise<void> {
-  let previousStatuses = new Map<string, string>();
+  let previousStages = new Map<string, Pick<StageViewModel, 'status' | 'detail' | 'retryCount' | 'lastRetryError'>>();
   let previousItemStatuses = new Map<string, string>();
   const notificationsEnabled = input.config.settings.notifications.enabled;
 
@@ -79,10 +101,26 @@ export async function renderPlainPipeline(
       runMode,
       onUpdate(stages) {
         for (const stage of stages) {
-          const previous = previousStatuses.get(stage.id);
-          if (previous !== stage.status) {
+          const previous = previousStages.get(stage.id);
+          const shouldLogStage = !previous
+            || previous.status !== stage.status
+            || (
+              stage.status === 'running'
+              && (
+                previous.detail !== stage.detail
+                || previous.retryCount !== stage.retryCount
+                || previous.lastRetryError !== stage.lastRetryError
+              )
+            );
+
+          if (shouldLogStage) {
             console.log(formatStage(stage));
-            previousStatuses.set(stage.id, stage.status);
+            previousStages.set(stage.id, {
+              status: stage.status,
+              detail: stage.detail,
+              retryCount: stage.retryCount,
+              lastRetryError: stage.lastRetryError,
+            });
           }
 
           for (const item of stage.items ?? []) {
@@ -110,6 +148,10 @@ export async function renderPlainPipeline(
     console.log(`  duration_ms: ${result.analytics.summary.totalDurationMs}`);
     console.log(`  retries: ${result.analytics.summary.totalRetries}`);
     console.log(`  cost: ${formatCost(result.analytics.summary.totalCostUsd)}`);
+    console.log('  cost_by_stage:');
+    for (const stage of result.analytics.stages) {
+      console.log(`    ${stage.stageId}: ${formatPipelineStageCost(stage)}`);
+    }
     await notifyWriteSucceeded({
       enabled: notificationsEnabled,
       title: result.artifact.title,

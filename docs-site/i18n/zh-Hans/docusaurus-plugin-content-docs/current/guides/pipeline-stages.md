@@ -47,6 +47,7 @@ Ideon 运行一个七阶段流水线，提供实时状态更新与阶段级 anal
 - currently running stage and item
 - completed history
 - failed rows
+- 当阶段因瞬时错误进入重试时，会在阶段详情中显示重试上下文（`retried Nx` 与最近一次重试错误）
 
 条目历史使用终端自适应窗口渲染，使长任务在小终端中仍保持可读，并保留最近进度。
 
@@ -58,6 +59,7 @@ Ideon 运行一个七阶段流水线，提供实时状态更新与阶段级 anal
 - Output 阶段报告次输出逐项生成进度与最终生成目录
 - Links 阶段报告逐项链接增强与 sidecar 元数据写入
 - 阶段进入 `succeeded` 时，CLI 会输出该阶段 analytics（耗时与可用成本）
+- 非 TTY/plain 输出同样会输出 running 阶段详情变化，因此在非交互模式下也能看到重试/错误进度
 
 对于会产生多个工作单元的阶段，Ideon 会输出条目级状态行，状态模型同样为（`pending`、`running`、`succeeded`、`failed`）。
 
@@ -84,6 +86,7 @@ Ideon 运行一个七阶段流水线，提供实时状态更新与阶段级 anal
 Analytics 会写入每个生成目录下的 `generation.analytics.json`。
 
 流水线结束时，CLI 还会显示运行总耗时、总重试与总成本汇总。
+同时还会给出按阶段拆分的成本明细，便于定位本次运行的成本主要来自哪些阶段。
 
 ## 失败语义
 

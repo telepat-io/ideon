@@ -47,6 +47,7 @@ The live TTY UI intentionally hides pending rows to keep output compact. It show
 - currently running stage and item
 - completed history
 - failed rows
+- retry context on stage detail when transient errors trigger retries (`retried Nx`, last retry error)
 
 Item history is rendered with a terminal-adaptive window so long runs stay readable on short terminals while preserving the most recent progress.
 
@@ -58,6 +59,7 @@ Item history is rendered with a terminal-adaptive window so long runs stay reada
 - Output stage reports secondary per-item generation progress and final generation directory
 - Links stage reports per-item link enrichment and sidecar metadata writes
 - When a stage reaches `succeeded`, the CLI prints stage analytics (duration and cost when available)
+- Non-TTY/plain output also emits running-stage detail changes so retry/error progress is visible outside the interactive UI
 
 For stages that produce multiple units of work, Ideon emits item-level status rows with the same state model (`pending`, `running`, `succeeded`, `failed`).
 
@@ -84,6 +86,7 @@ For each generation run, Ideon records:
 Analytics are written to `generation.analytics.json` in each generation directory.
 
 At pipeline completion, the CLI also shows aggregated totals for run duration, retry count, and total cost.
+It also includes a stage-by-stage cost breakdown so you can see where spend occurred within the run.
 
 ## Failure Semantics
 

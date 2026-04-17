@@ -124,6 +124,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
   const hasArticlePrimary = isArticlePrimary;
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
+  const stageRetryState = new Map<WriteStageId, { retries: number; lastError: string | null }>();
+  const llmOperationRetryState = new Map<string, number>();
+  const imageOperationRetryState = new Map<string, number>();
   stageTracking.set('shared-brief', {
     startedAtMs: runStartedAtMs,
     endedAtMs: null,
@@ -138,6 +141,49 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const llmInteractions: LlmInteractionRecord[] = [];
   const t2iInteractions: T2IInteractionRecord[] = [];
   let writeSession: WriteSessionState;
+
+  const applyRetryUpdate = (stageId: WriteStageId, retryIncrement: number, errorMessage: string | null): void => {
+    if (retryIncrement <= 0) {
+      return;
+    }
+
+    const stageIndex = stages.findIndex((stage) => stage.id === stageId);
+    if (stageIndex < 0) {
+      return;
+    }
+
+    const existing = stageRetryState.get(stageId) ?? { retries: 0, lastError: null };
+    const next = {
+      retries: existing.retries + retryIncrement,
+      lastError: errorMessage && errorMessage.trim().length > 0 ? errorMessage : existing.lastError,
+    };
+    stageRetryState.set(stageId, next);
+
+    stages[stageIndex] = {
+      ...stages[stageIndex],
+      retryCount: next.retries,
+      lastRetryError: next.lastError ?? undefined,
+    };
+    options.onUpdate?.(cloneStages(stages));
+  };
+
+  const onLlmInteraction = (interaction: LlmInteractionRecord): void => {
+    llmInteractions.push(interaction);
+
+    const stageId = asWriteStageId(interaction.stageId);
+    if (!stageId) {
+      return;
+    }
+
+    const previousRetries = llmOperationRetryState.get(interaction.operationId) ?? 0;
+    if (interaction.retries <= previousRetries) {
+      return;
+    }
+
+    const retryIncrement = interaction.retries - previousRetries;
+    llmOperationRetryState.set(interaction.operationId, interaction.retries);
+    applyRetryUpdate(stageId, retryIncrement, interaction.errorMessage);
+  };
 
   if (runMode === 'fresh') {
     writeSession = await startFreshWriteSession(
@@ -196,7 +242,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         openRouter,
         dryRun,
         onInteraction(interaction) {
-          llmInteractions.push(interaction);
+          onLlmInteraction(interaction);
         },
         onLlmMetrics(metrics) {
           recordLlmMetrics(stageTracking, 'shared-brief', metrics);
@@ -254,7 +300,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           openRouter,
           dryRun,
           onInteraction(interaction) {
-            llmInteractions.push(interaction);
+            onLlmInteraction(interaction);
           },
           onLlmMetrics(metrics) {
             recordLlmMetrics(stageTracking, 'planning', metrics);
@@ -328,7 +374,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           openRouter,
           dryRun,
           onInteraction(interaction) {
-            llmInteractions.push(interaction);
+            onLlmInteraction(interaction);
           },
           onLlmMetrics(phase, metrics, sectionIndex) {
             recordLlmMetrics(stageTracking, 'sections', metrics);
@@ -449,7 +495,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           openRouter,
           dryRun,
           onInteraction(interaction) {
-            llmInteractions.push(interaction);
+            onLlmInteraction(interaction);
           },
           onPromptComplete(metrics) {
             imagePromptCalls.push({
@@ -549,7 +595,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         openRouter,
         dryRun,
         onInteraction(interaction) {
-          llmInteractions.push(interaction);
+          onLlmInteraction(interaction);
         },
         onLlmMetrics(metrics) {
           recordLlmMetrics(stageTracking, 'sections', metrics);
@@ -661,6 +707,16 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             recordStageCost(stageTracking, 'images', metrics.costUsd, metrics.costSource);
             addStageRetries(stageTracking, 'images', metrics.retries);
           },
+          onRetry(event) {
+            const operationKey = `images:${event.imageId}`;
+            const previousRetries = imageOperationRetryState.get(operationKey) ?? 0;
+            if (event.retries <= previousRetries) {
+              return;
+            }
+
+            imageOperationRetryState.set(operationKey, event.retries);
+            applyRetryUpdate('images', event.retries - previousRetries, event.errorMessage);
+          },
           onProgress(detail) {
             stages[4] = {
               ...stages[4],
@@ -750,6 +806,16 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             });
             recordStageCost(stageTracking, 'images', metrics.costUsd, metrics.costSource);
             addStageRetries(stageTracking, 'images', metrics.retries);
+          },
+          onRetry(event) {
+            const operationKey = `images:${event.imageId}`;
+            const previousRetries = imageOperationRetryState.get(operationKey) ?? 0;
+            if (event.retries <= previousRetries) {
+              return;
+            }
+
+            imageOperationRetryState.set(operationKey, event.retries);
+            applyRetryUpdate('images', event.retries - previousRetries, event.errorMessage);
           },
           onProgress(detail) {
             stages[4] = {
@@ -881,7 +947,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           role: 'secondary',
           primaryContentType: primaryTarget.contentType,
           onInteraction(interaction) {
-            llmInteractions.push(interaction);
+            onLlmInteraction(interaction);
           },
           onLlmMetrics(metrics) {
             recordLlmMetrics(stageTracking, 'output', metrics);
@@ -1055,7 +1121,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         dryRun,
         onInteraction(interaction) {
-          llmInteractions.push(interaction);
+          onLlmInteraction(interaction);
         },
         onLlmMetrics(fileId, metrics) {
           recordLlmMetrics(stageTracking, 'links', metrics);

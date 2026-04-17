@@ -6,6 +6,15 @@ export interface ReplicateRunMetrics extends RetryStats {
   modelId: string;
 }
 
+export interface ReplicateRetryEvent {
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  backoffMs: number;
+  errorMessage: string;
+  modelId: string;
+}
+
 export class ReplicateClient {
   private readonly client: Replicate;
 
@@ -16,7 +25,10 @@ export class ReplicateClient {
   async runModel(
     model: string,
     input: Record<string, unknown>,
-    options: { onMetrics?: (metrics: ReplicateRunMetrics) => void } = {},
+    options: {
+      onMetrics?: (metrics: ReplicateRunMetrics) => void;
+      onRetry?: (event: ReplicateRetryEvent) => void;
+    } = {},
   ): Promise<unknown> {
     let lastError: Error | null = null;
     const startedAtMs = Date.now();
@@ -42,6 +54,14 @@ export class ReplicateClient {
           const backoff = backoffMs(attempt);
           retries += 1;
           retryBackoffMs += backoff;
+          options.onRetry?.({
+            attempts,
+            retries,
+            retryBackoffMs,
+            backoffMs: backoff,
+            errorMessage: lastError.message,
+            modelId: model,
+          });
           await wait(backoff);
           continue;
         }

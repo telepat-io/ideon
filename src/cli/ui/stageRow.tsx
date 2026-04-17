@@ -37,6 +37,18 @@ function formatStageCost(stage: StageViewModel): string {
   return analytics.costSource === 'estimated' ? `~${formatted}` : formatted;
 }
 
+function formatRetryContext(stage: StageViewModel): string {
+  if (!stage.retryCount || stage.retryCount <= 0) {
+    return '';
+  }
+
+  if (stage.lastRetryError) {
+    return ` • retried ${stage.retryCount}x • last error: ${stage.lastRetryError}`;
+  }
+
+  return ` • retried ${stage.retryCount}x`;
+}
+
 export function StageRow({
   stage,
   isActive,
@@ -73,7 +85,7 @@ export function StageRow({
         <Text bold={stage.status === 'running'}>{stage.title}</Text>
       </Box>
       <Box marginLeft={2}>
-        <Text color="gray">{stage.detail}</Text>
+        <Text color="gray">{stage.detail}{formatRetryContext(stage)}</Text>
       </Box>
       <ItemRows
         items={stage.items ?? []}

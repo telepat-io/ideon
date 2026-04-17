@@ -149,6 +149,7 @@ export async function renderExpandedImages({
   onProgress,
   onRenderComplete,
   onInteraction,
+  onRetry,
 }: {
   prompts: ArticleImagePrompt[];
   settings: AppSettings;
@@ -159,6 +160,7 @@ export async function renderExpandedImages({
   onProgress?: (detail: string) => void;
   onRenderComplete?: (metrics: ImageRenderCallMetrics) => void;
   onInteraction?: (interaction: T2IInteractionRecord) => void;
+  onRetry?: (event: { imageId: string; kind: 'cover' | 'inline'; retries: number; errorMessage: string }) => void;
 }): Promise<RenderedArticleImage[]> {
 
   const renderedImages: RenderedArticleImage[] = [];
@@ -224,6 +226,14 @@ export async function renderExpandedImages({
           runAttempts = metrics.attempts;
           runRetries = metrics.retries;
           runRetryBackoffMs = metrics.retryBackoffMs;
+        },
+        onRetry(event) {
+          onRetry?.({
+            imageId: prompt.id,
+            kind: prompt.kind,
+            retries: event.retries,
+            errorMessage: event.errorMessage,
+          });
         },
       });
       const bytes = await normalizeReplicateOutput(output);

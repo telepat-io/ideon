@@ -36,6 +36,26 @@ function value(id: string, text: string): FinalSummarySegment {
   return { id, text, color: 'white' };
 }
 
+function formatStageCost(costUsd: number | null, costSource: PipelineRunAnalytics['stages'][number]['costSource']): string {
+  const formatted = formatCost(costUsd);
+  if (costUsd === null) {
+    return formatted;
+  }
+
+  return costSource === 'estimated' ? `~${formatted}` : formatted;
+}
+
+function formatStageId(stageId: string): string {
+  if (stageId === 'shared-brief') return 'shared-brief';
+  if (stageId === 'planning') return 'planning';
+  if (stageId === 'sections') return 'sections';
+  if (stageId === 'image-prompts') return 'image-prompts';
+  if (stageId === 'images') return 'images';
+  if (stageId === 'output') return 'output';
+  if (stageId === 'links') return 'links';
+  return stageId;
+}
+
 export function buildFinalSummaryRows({
   artifact,
   analytics,
@@ -43,7 +63,7 @@ export function buildFinalSummaryRows({
   artifact: PipelineArtifactSummary;
   analytics: PipelineRunAnalytics;
 }): FinalSummaryRow[] {
-  return [
+  const rows: FinalSummaryRow[] = [
     {
       id: 'slug',
       segments: [
@@ -93,4 +113,16 @@ export function buildFinalSummaryRows({
       ],
     },
   ];
+
+  const stageCostRows = analytics.stages.map((stage) => ({
+    id: `stage-cost:${stage.stageId}`,
+    segments: [
+      label(`stage-cost-label:${stage.stageId}`, `cost/${formatStageId(stage.stageId)}`, 'greenBright'),
+      colon(`stage-cost-colon:${stage.stageId}`),
+      value(`stage-cost-value:${stage.stageId}`, formatStageCost(stage.costUsd, stage.costSource)),
+    ],
+  }));
+
+  rows.push(...stageCostRows);
+  return rows;
 }

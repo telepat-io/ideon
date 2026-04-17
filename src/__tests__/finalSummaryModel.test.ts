@@ -28,7 +28,26 @@ describe('buildFinalSummaryRows', () => {
           totalCostUsd: 0.0123,
           totalCostSource: 'estimated',
         },
-        stages: [],
+        stages: [
+          {
+            stageId: 'shared-brief',
+            durationMs: 1000,
+            startedAt: new Date().toISOString(),
+            endedAt: new Date().toISOString(),
+            retries: 1,
+            costUsd: 0.001,
+            costSource: 'estimated',
+          },
+          {
+            stageId: 'planning',
+            durationMs: 1000,
+            startedAt: new Date().toISOString(),
+            endedAt: new Date().toISOString(),
+            retries: 0,
+            costUsd: 0.002,
+            costSource: 'provider',
+          },
+        ],
         imagePromptCalls: [],
         imageRenderCalls: [],
         outputItemCalls: [],
@@ -36,7 +55,7 @@ describe('buildFinalSummaryRows', () => {
       },
     });
 
-    expect(rows.map((row) => row.id)).toEqual(['slug', 'counts', 'generation', 'metrics']);
+    expect(rows.map((row) => row.id)).toEqual(['slug', 'counts', 'generation', 'metrics', 'stage-cost:shared-brief', 'stage-cost:planning']);
 
     const flattenedText = rows.flatMap((row) => row.segments.map((segment) => segment.text)).join('');
     expect(flattenedText).not.toContain('markdown');
@@ -51,6 +70,10 @@ describe('buildFinalSummaryRows', () => {
     expect(rows[3]?.segments[4]).toMatchObject({ text: 'retries', color: 'yellowBright', bold: true });
     expect(rows[3]?.segments[8]).toMatchObject({ text: 'cost', color: 'greenBright', bold: true });
     expect(rows[3]?.segments[10]).toMatchObject({ text: '$0.0123', color: 'white' });
+    expect(rows[4]?.segments[0]).toMatchObject({ text: 'cost/shared-brief', color: 'greenBright', bold: true });
+    expect(rows[4]?.segments[2]).toMatchObject({ text: '~$0.0010', color: 'white' });
+    expect(rows[5]?.segments[0]).toMatchObject({ text: 'cost/planning', color: 'greenBright', bold: true });
+    expect(rows[5]?.segments[2]).toMatchObject({ text: '$0.0020', color: 'white' });
   });
 
   it('formats unavailable cost without reintroducing path rows', () => {
@@ -80,7 +103,17 @@ describe('buildFinalSummaryRows', () => {
           totalCostUsd: null,
           totalCostSource: 'unavailable',
         },
-        stages: [],
+        stages: [
+          {
+            stageId: 'shared-brief',
+            durationMs: 100,
+            startedAt: new Date().toISOString(),
+            endedAt: new Date().toISOString(),
+            retries: 0,
+            costUsd: null,
+            costSource: 'unavailable',
+          },
+        ],
         imagePromptCalls: [],
         imageRenderCalls: [],
         outputItemCalls: [],
@@ -89,6 +122,7 @@ describe('buildFinalSummaryRows', () => {
     });
 
     expect(rows[3]?.segments[10]?.text).toBe('unavailable');
+    expect(rows[4]?.segments[2]?.text).toBe('unavailable');
     expect(rows.some((row) => row.id === 'markdown')).toBe(false);
     expect(rows.some((row) => row.id === 'assets')).toBe(false);
     expect(rows.some((row) => row.id === 'analytics')).toBe(false);

@@ -18,6 +18,8 @@ export interface StageViewModel {
   title: string;
   status: StageStatus;
   detail: string;
+  retryCount?: number;
+  lastRetryError?: string;
   summary?: string;
   items?: StageItemViewModel[];
   stageAnalytics?: {
