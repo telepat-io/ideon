@@ -7,9 +7,18 @@ sidebar_label: Welcome
 sidebar_position: 0
 ---
 
-> AI Writer Extraordinaire
+> AI content writer for multi-channel publishing
 
-Ideon converts a raw idea into a complete content generation run with one or more outputs (article, social, newsletter, landing copy) from a single CLI command.
+Ideon turns one idea into multiple publish-ready outputs with consistent style, optional visuals, and research-enriched links.
+
+It is designed for teams who need to ship high-quality content across channels without manually rewriting everything for each format.
+
+## Why Ideon
+
+- Write many formats from one idea: article, blog post, newsletter, Reddit post, LinkedIn post, X thread, X post, and landing-page copy.
+- Keep voice consistent with style controls across all outputs.
+- Add depth with planning briefs, link enrichment, and generated images for article-led runs.
+- Iterate quickly with resumable runs, job files, and local preview.
 
 ## Quickstart
 

@@ -7,7 +7,9 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Quickstart
 
-This guide gets you from zero to your first multi-output generation run.
+This guide gets you from zero to your first multi-output content-writing run.
+
+By the end, you will have a publish-ready content set, generated assets, and a preview workflow you can iterate on.
 
 ## 1. Configure Settings and Secrets
 
@@ -50,6 +52,12 @@ By default (resolved from current working directory):
 - Run metadata: `job.json`
 - Run analytics: `generation.analytics.json`
 - Shared generation assets: image files in the same generation directory
+
+Typical first-run value:
+
+- One idea expanded into multiple channel-ready drafts
+- A consistent style applied across all outputs
+- Structured run artifacts you can reuse in later iterations
 
 You can open the latest generation in browser preview:
 

@@ -7,16 +7,25 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Ideon Documentation
 
-Ideon helps you convert a raw idea into a complete generation run with channel-specific outputs and optional generated imagery.
+Ideon is an AI content writer that turns a raw idea into channel-specific, publish-ready content.
+
+Use Ideon when you need to ship content across multiple formats quickly while keeping tone, structure, and quality consistent.
 
 ## What Ideon Does
 
-- Plans article structure and editorial angle when article output is requested
-- Drafts intro, sections, and conclusion for article outputs
-- Generates non-article outputs (X/LinkedIn/Reddit/newsletter/landing/blog) via channel-native prompts
-- Applies a run-level writing style overlay across all outputs
-- Expands image descriptions and renders cover/inline images for article-enabled generation runs
-- Writes generation artifacts (markdown files, `job.json`, `generation.analytics.json`, shared assets)
+- Writes multiple content types from one idea (article, blog, newsletter, Reddit, LinkedIn, X thread/X post, landing copy)
+- Adapts writing for each channel while preserving run-level style consistency
+- Builds planning context and drafts long-form structures for article-led runs
+- Generates visuals for article-led outputs (cover and inline images)
+- Enriches outputs with relevant links when enabled
+- Produces reusable artifacts (`*.md`, `job.json`, `generation.analytics.json`, and shared assets)
+
+## Why it matters
+
+- Reduce time spent manually rewriting one idea for every channel
+- Keep brand voice and editorial quality more consistent
+- Move from brainstorm to publishable drafts in one repeatable workflow
+- Iterate safely with dry runs, resumable sessions, and preview before publishing
 
 ## Who This Documentation Is For
 

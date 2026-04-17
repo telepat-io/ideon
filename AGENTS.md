@@ -167,9 +167,11 @@ Doc page map:
 
 Docs update guardrails:
 - If behavior changes in `src/cli/`, `src/config/`, `src/pipeline/`, or `src/server/preview*`, update the corresponding page under `docs/` in the same change.
-- For user-visible doc changes, maintain locale parity: update both English source docs (`docs/`) and Simplified Chinese localized docs (`docs-site/i18n/zh-Hans/docusaurus-plugin-content-docs/current/`) in the same change when pages exist in both locales.
-- If a page is intentionally English-only, add a TODO note in the matching zh-Hans page (or create a placeholder) instead of leaving silent drift.
+- For user-visible doc changes, always maintain locale parity: update both English source docs (`docs/`) and Simplified Chinese localized docs (`docs-site/i18n/zh-Hans/docusaurus-plugin-content-docs/current/`) in the same change.
+- If the corresponding zh-Hans page does not exist yet, create it in the same change and include translated content rather than leaving locale drift.
+- Keep multilingual support explicit and current in user-facing docs and README (English + Simplified Chinese).
 - Keep command examples executable as written (`ideon ...` or `npm run dev -- ...`) and avoid mixing styles in one example block.
+- After significant CLI, config, pipeline, preview, MCP, or agent-integration feature updates, refresh `ideon-cli-skill/` so `SKILL.md` and references stay aligned with current behavior.
 
 ---
 

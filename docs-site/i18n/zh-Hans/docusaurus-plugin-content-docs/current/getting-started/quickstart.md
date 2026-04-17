@@ -7,7 +7,9 @@ keywords: [ideon, 快速开始, cli, 内容生成, markdown]
 
 # 快速开始
 
-本指南将带你从零完成第一次多输出生成。
+本指南将带你从零完成第一次多输出内容写作运行。
+
+完成后，你将得到一组可发布草稿、配套资源文件，以及可继续迭代的预览与复用流程。
 
 ## 1. 配置设置与凭据
 
@@ -50,6 +52,12 @@ ideon write "How small editorial teams can productionize AI writing" --primary a
 - 运行元数据：`job.json`
 - 运行分析数据：`generation.analytics.json`
 - 共享资源：同一生成目录中的图片文件
+
+首次运行通常可直接获得：
+
+- 由同一想法扩展出的多渠道草稿
+- 统一写作风格下的跨格式输出
+- 可用于后续迭代的结构化运行产物
 
 你可以通过浏览器预览最新生成结果：
 

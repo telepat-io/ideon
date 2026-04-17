@@ -7,7 +7,17 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Documentation Intro
 
-This documentation covers running, configuring, and extending Ideon as a multi-output content generation CLI.
+Ideon is a content-writing CLI that helps you transform one idea into many channel-ready outputs with consistent style and production-friendly artifacts.
+
+This documentation explains what Ideon is, why teams use it, and how to run it effectively in local, CI, and agent workflows.
+
+## What Ideon is best at
+
+- Multi-format writing from one source idea.
+- Channel-specific output generation (articles, social, newsletter, landing-page copy, and more).
+- Style consistency across outputs in a single run.
+- Research-informed planning, optional link enrichment, and generated visuals for article-led runs.
+- Iterative workflows via reruns, resume support, and local preview.
 
 ## Start Here
 

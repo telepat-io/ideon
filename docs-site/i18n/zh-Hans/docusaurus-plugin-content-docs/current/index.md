@@ -7,9 +7,18 @@ sidebar_label: 欢迎
 sidebar_position: 0
 ---
 
-> AI 写作自动化工具
+> 面向多渠道发布的 AI 内容写作工具
 
-Ideon 可以用一条 CLI 命令把原始想法转成完整内容生产流程，并生成一个或多个输出（文章、社媒文案、Newsletter、落地页文案等）。
+Ideon 可以将一个想法转化为多份可发布内容，并保持一致风格，还可选生成配图与相关链接增强。
+
+它适合需要跨渠道持续产出内容的团队，减少为不同平台反复改写同一主题的时间成本。
+
+## 为什么选择 Ideon
+
+- 一次想法，生成多种格式：article、blog、newsletter、Reddit、LinkedIn、X thread、X post、landing-page copy。
+- 在同一次运行中保持统一写作风格。
+- 通过规划 brief、链接增强与文章配图提升内容完整度。
+- 借助断点恢复、job 文件与本地预览实现高效迭代。
 
 ## 快速开始
 

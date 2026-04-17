@@ -1,6 +1,6 @@
 # Ideon
 
-Ideon 通过单一 CLI 流程，将一个想法转化为多渠道的高质量 Markdown 内容，并可选生成配图。
+Ideon 是一款 AI 内容写作工具，可将一个想法转化为多格式、多风格、可发布的内容。
 
 [🇺🇸 English](./README.md) | [🇨🇳 简体中文](./README.zh-Hans.md)
 
@@ -10,20 +10,22 @@ Ideon 通过单一 CLI 流程，将一个想法转化为多渠道的高质量 Ma
 [![Docs](https://img.shields.io/badge/docs-live-1f6feb)](https://docs.telepat.io/ideon)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://github.com/telepat-io/ideon/blob/main/LICENSE)
 
-## 它解决什么问题
+## 为什么团队使用 Ideon
 
-Ideon 帮助小型内容和产品团队稳定产出高质量内容，无需手动编排选题规划、正文撰写、图像提示和产物打包。
+Ideon 帮助团队更快地从想法走到可发布内容，减少跨渠道重复改写的工作量。
 
-常见使用场景：
+一次运行，Ideon 可以：
 
-- 一次运行同时生成长文主内容和社交渠道变体。
-- 在 CI 或本地工作流中通过 JSON 作业文件实现可复现输出。
-- 从本地检查点恢复中断的生成任务。
-- 发布前在本地预览生成的 Markdown 与资源。
+- 基于同一核心想法生成多种输出类型：article、blog、newsletter、Reddit、LinkedIn、X thread、X post 等。
+- 在所有输出中统一应用写作风格（`professional`、`friendly`、`technical`、`academic`、`opinionated`、`storytelling`）。
+- 生成研究导向的内容 brief，补充相关链接，并在文章型任务中生成配图。
+- 通过作业文件、可配置参数与断点恢复能力支持持续迭代。
+
+这使 Ideon 适用于内容团队、开发者关系、产品营销、创始人以及需要按节奏进行多渠道写作的个人或团队。
 
 ## 快速开始
 
-安装并运行第一次生成：
+安装并完成第一次内容生成：
 
 ```bash
 npm i -g @telepat/ideon
@@ -35,8 +37,9 @@ ideon preview
 预期结果：
 
 - 在 `output/<timestamp>-<slug>/` 下生成一个运行目录。
-- 产出 Markdown 文件与 analytics 文件。
-- 本地预览自动打开，便于检查内容与资源链接。
+- 产出一个或多个可发布的 Markdown 输出。
+- 保存 analytics 与元数据，便于复现与回溯。
+- 本地预览自动打开，便于检查内容、链接与资源。
 
 ## 环境要求
 
@@ -45,16 +48,20 @@ ideon preview
 - OpenRouter API key
 - Replicate API token
 
+## 核心能力
+
+- 一次想法，多格式写作：article、blog、newsletter、Reddit、LinkedIn、X thread、X post、landing-page copy。
+- 风格控制：按运行设置统一写作语气与表达风格。
+- 研究与链接增强：生成规划 brief，并为内容补充相关链接。
+- 图像生成：为文章型任务生成封面图与文内配图。
+- 迭代能力：可通过不同目标/风格重复生成，支持中断恢复和作业文件复用。
+- 本地审阅：在发布前通过浏览器预览内容与资源。
+
 ## 工作原理
 
-Ideon 运行分阶段流水线：
+Ideon 采用分阶段写作流水线：内容规划、正文生成、图像提示扩展、图像渲染、渠道内容生成，以及可选的链接增强。
 
-1. 从 settings、环境变量、作业文件与 CLI 参数解析配置和密钥。
-2. 根据请求目标生成共享 brief 与内容计划。
-3. 生成章节内容与可选渠道输出。
-4. 在适用时扩展图像提示并渲染图像资源。
-5. 组装 Markdown 输出与 analytics 产物。
-6. 可选执行链接增强，并通过本地预览查看结果。
+运行时会合并 settings、环境变量、job 文件与 CLI 参数，并输出结构化产物，便于追踪与复用。
 
 核心命令：
 
@@ -88,6 +95,7 @@ Agent 集成范围：
 ## 文档与支持
 
 - 文档站点：https://docs.telepat.io/ideon
+- 语言支持：English 与 简体中文（`README.md` / `README.zh-Hans.md`，以及双语文档）
 - 快速上手：`docs/getting-started/quickstart.md`
 - CLI 参考：`docs/reference/cli-reference.md`
 - 配置指南：`docs/guides/configuration.md`
@@ -98,6 +106,8 @@ Agent 集成范围：
 ## 贡献
 
 欢迎贡献。请先阅读 `docs/contributing/development.md`（开发环境与质量门禁），再参考 `docs/contributing/releasing-and-docs-deploy.md`（发布与文档部署流程）。
+
+如修改面向用户的文档内容，请在同一变更中同时更新 English 与 简体中文版本。
 
 ## 许可证
 
