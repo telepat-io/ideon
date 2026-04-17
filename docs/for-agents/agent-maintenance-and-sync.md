@@ -16,6 +16,9 @@ In scope:
 - MCP tool contracts
 - first-party skill contract metadata
 
+Note: "skill contract metadata" here refers to internal identifiers in `src/integrations/skills/registry.ts` (for example `ideon-write-primary`).
+This is separate from the external installable skill package at `ideon-cli-skill/`.
+
 Out of scope:
 
 - Cursor integrations

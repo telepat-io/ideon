@@ -66,7 +66,7 @@ ideon agent status --json
 - 已安装 runtime 列表
 - integration sync-check 状态
 - MCP tool 契约数量
-- skill 契约数量
+- skill 契约数量（内部 skill 元数据条目，例如 `ideon-write-primary`）
 - config surface 就绪状态
 
 ## 输出与退出码

@@ -66,7 +66,7 @@ Status includes:
 - installed runtimes
 - integration sync-check status
 - MCP tool contract count
-- skill contract count
+- skill contract count (internal skill metadata entries, for example `ideon-write-primary`)
 - config surface readiness
 
 ## Output and Exit Codes

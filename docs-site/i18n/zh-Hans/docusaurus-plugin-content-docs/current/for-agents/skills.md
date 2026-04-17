@@ -1,12 +1,41 @@
 ---
 title: Skills
-description: 面向未来 Ideon agent 工作流与受约束执行模式的 Skills 契约模板。
+description: 面向第三方 agent 的 Ideon 可安装主技能包说明，以及内部契约元数据说明。
 keywords: [ideon, agents, skills, 工作流, 契约]
 ---
 
 # Skills
 
-Ideon 已发布一方 skill 契约元数据，用于运行时就绪检查与契约同步校验。
+本页首先说明面向第三方 agent 的可安装 Ideon 主技能包。
+
+## 主技能包（优先）
+
+可安装技能包路径：
+
+- `ideon-cli-skill/`
+
+当你希望 agent 以“内容写作平台”方式调用 Ideon 时，应优先使用该技能包。其覆盖完整生命周期：
+
+- 安装与初始配置
+- 多输出格式内容生成
+- 风格与长度控制
+- 链接增强、图像生成与本地预览
+- 通过恢复/重跑实现迭代优化，以及自动化安全运行路径
+
+核心文件：
+
+- `ideon-cli-skill/SKILL.md`
+
+配套参考：
+
+- `ideon-cli-skill/references/command-catalog.md`
+- `ideon-cli-skill/references/troubleshooting.md`
+- `ideon-cli-skill/references/framework-patterns.md`
+
+## 内部契约元数据（次级）
+
+Ideon 同时发布一方内部 skill 契约元数据，用于运行时就绪检查与契约同步校验。
+这些名称是内部集成标识，不是可安装技能包名称。
 
 当前一方 skill 契约条目：
 

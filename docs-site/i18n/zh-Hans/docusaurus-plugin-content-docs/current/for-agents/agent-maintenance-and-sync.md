@@ -16,6 +16,8 @@ In scope:
 - MCP 工具契约
 - 一方 skill 契约元数据
 
+说明：这里的“skill 契约元数据”指 `src/integrations/skills/registry.ts` 中的内部标识（例如 `ideon-write-primary`），与外部可安装的 `ideon-cli-skill/` 包是两个不同概念。
+
 Out of scope:
 
 - Cursor 集成

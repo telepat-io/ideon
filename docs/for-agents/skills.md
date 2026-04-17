@@ -1,12 +1,41 @@
 ---
 title: Skills
-description: Skills contract template for future Ideon agent workflows and constrained execution patterns.
+description: Primary installable Ideon skill package for agent workflows, plus internal contract metadata notes.
 keywords: [ideon, agents, skills, workflow, contracts]
 ---
 
 # Skills
 
-Ideon publishes first-party skill contract metadata used for runtime readiness and contract sync checks.
+This page is primarily about the installable Ideon skill package for third-party agents.
+
+## Primary Skill Package
+
+Installable package:
+
+- `ideon-cli-skill/`
+
+Use this package when you want an agent to run Ideon as a content writer across full lifecycle workflows:
+
+- install and setup
+- content generation across multiple output formats
+- style and length controls
+- link enrichment, image generation, and local preview workflows
+- iterative refinement via resume/rerun and automation-safe command paths
+
+Core file:
+
+- `ideon-cli-skill/SKILL.md`
+
+Companion references:
+
+- `ideon-cli-skill/references/command-catalog.md`
+- `ideon-cli-skill/references/troubleshooting.md`
+- `ideon-cli-skill/references/framework-patterns.md`
+
+## Internal Contract Metadata (Secondary)
+
+Ideon also publishes first-party internal skill contract metadata used by runtime readiness and sync checks.
+These names are internal identifiers and not the installable package name.
 
 Current first-party skill contract entries:
 
