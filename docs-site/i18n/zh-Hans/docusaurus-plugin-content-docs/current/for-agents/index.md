@@ -13,6 +13,7 @@ keywords: [ideon, agents, llms, 导航, 文档]
 - [Command Index](./command-index.md)
 - [MCP Servers](./mcp-servers.md)
 - [Skills](./skills.md)
+- [Agent Maintenance and Sync](./agent-maintenance-and-sync.md)
 
 ## 面向人类读者的权威文档
 

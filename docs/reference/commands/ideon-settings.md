@@ -10,6 +10,8 @@ keywords: [ideon, cli, settings, keychain, configuration]
 
 `ideon settings` opens the interactive settings flow so you can review and update runtime defaults and credential storage.
 
+For non-interactive automation and agent workflows, use [ideon config](./ideon-config.md).
+
 ## Usage
 
 ```bash
@@ -48,6 +50,7 @@ When settings are saved successfully, Ideon prints the settings file path and re
 
 ## Related Commands
 
+- [ideon config](./ideon-config.md)
 - [ideon write [idea]](./ideon-write.md)
 - [ideon preview [markdownPath]](./ideon-preview.md)
 

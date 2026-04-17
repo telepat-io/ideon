@@ -30,7 +30,8 @@
     "build:preview": "vite build",
     "dev": "tsx src/bin/ideon.ts",
     "preview": "npm run build:preview && tsx src/bin/ideon.ts preview --watch",
-    "lint": "npm run typecheck && npm run lint:react",
+    "lint": "npm run typecheck && npm run check:sync && npm run lint:react",
+    "check:sync": "tsx src/integrations/runSyncCheck.ts",
     "lint:react": "eslint src/preview-app --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
@@ -56,6 +57,7 @@
   "license": "MIT",
   "dependencies": {
     "@ant-design/icons": "^6.1.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "antd": "^6.3.4",
     "commander": "^14.0.1",
     "env-paths": "^3.0.0",

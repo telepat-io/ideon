@@ -60,12 +60,21 @@ Ideon 运行分阶段流水线：
 
 ```bash
 ideon settings
+ideon config list --json
 ideon write "An article idea" --primary article=1
+ideon write --no-interactive --idea "An article idea" --primary article=1 --style technical --length medium
 ideon write --job ./job.json
 ideon write resume
 ideon delete my-article-slug
 ideon preview --no-open
+ideon mcp serve
+ideon agent status --json
 ```
+
+Agent 集成范围：
+
+- 支持：CLI 与 MCP runtime 工作流。
+- 不支持：Cursor 与 VS Code runtime 集成。
 
 ## 安全与信任
 

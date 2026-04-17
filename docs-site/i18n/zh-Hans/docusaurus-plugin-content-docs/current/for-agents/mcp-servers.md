@@ -6,19 +6,28 @@ keywords: [ideon, agents, mcp, 协议, 集成]
 
 # MCP 服务器
 
-Ideon 当前尚未发布专用的 Model Context Protocol 服务器。
+Ideon 已发布一方维护的 Model Context Protocol 服务器（stdio 传输）。
 
 ## 当前状态
 
-- 目前没有一方维护的 MCP 服务器端点。
-- Agent 集成应使用已文档化的 CLI 命令与生成文件。
+- 入口命令：`ideon mcp serve`
+- 传输：stdio
+- 目标场景：本地进程拉起的 MCP 客户端
+- 当前工具集：
+	- `ideon_write`
+	- `ideon_write_resume`
+	- `ideon_delete`
+	- `ideon_config_get`
+	- `ideon_config_set`
 
-## 如果后续引入 MCP
+## 契约说明
 
-请在发布前在本页补充以下内容：
+- 工具契约必须与 CLI 行为和 skill 元数据保持同步。
+- 契约一致性通过 lint 中的 integration sync 校验保障。
+- 工具处理器错误会以 MCP 工具错误形式返回可执行信息。
 
-1. 服务器端点与传输方式。
-2. 认证模型。
-3. 工具清单及输入输出 schema。
-4. 错误契约与重试指引。
-5. 版本与弃用策略。
+## 维护策略
+
+强制同改规则与评审清单见：
+
+- [Agent Maintenance and Sync](./agent-maintenance-and-sync.md)

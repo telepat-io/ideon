@@ -6,7 +6,12 @@ keywords: [ideon, agents, skills, 工作流, 契约]
 
 # Skills
 
-Ideon 当前尚未发布一方可复用 agent skills。请将本页作为后续 skills 的契约模板。
+Ideon 已发布一方 skill 契约元数据，用于运行时就绪检查与契约同步校验。
+
+当前一方 skill 契约条目：
+
+- `ideon-write-primary`
+- `ideon-config-set`
 
 ## 必备 Skill 契约
 
@@ -24,3 +29,14 @@ Ideon 当前尚未发布一方可复用 agent skills。请将本页作为后续 
 - 每个 skill 保持单一权威页面。
 - 为每个 skill 链接其依赖的人类可读权威文档。
 - 提供带真实参数值的具体示例。
+- required 字段与 enum 值需与 CLI 和 MCP 契约保持同步。
+
+## 同步与漂移策略
+
+- skill 契约元数据属于 integration contract surface。
+- 若 CLI 参数或 enum 变更，必须在同一变更中同步更新 skill 契约。
+- 出现任何契约漂移时，integration sync 校验应失败。
+
+强制维护策略与评审清单见：
+
+- [Agent Maintenance and Sync](./agent-maintenance-and-sync.md)

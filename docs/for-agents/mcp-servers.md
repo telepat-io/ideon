@@ -6,19 +6,28 @@ keywords: [ideon, agents, mcp, protocol, integration]
 
 # MCP Servers
 
-Ideon currently does not publish a dedicated Model Context Protocol server.
+Ideon publishes a first-party Model Context Protocol server over stdio transport.
 
 ## Current Status
 
-- No first-party MCP server endpoint is available.
-- Agent integrations should use documented CLI commands and generated files.
+- Entry command: `ideon mcp serve`
+- Transport: stdio
+- Intended usage: local process-spawned MCP clients
+- Current tool set:
+	- `ideon_write`
+	- `ideon_write_resume`
+	- `ideon_delete`
+	- `ideon_config_get`
+	- `ideon_config_set`
 
-## If MCP Is Added Later
+## Contract Notes
 
-Document these sections on this page before release:
+- Tool contracts must remain synchronized with CLI behavior and skill metadata.
+- Contract parity is validated via the integration sync check in lint.
+- Errors from tool handlers are returned as MCP tool errors with actionable messages.
 
-1. Server endpoint and transport.
-2. Authentication model.
-3. Tool list with input and output schemas.
-4. Error contract and retry guidance.
-5. Versioning and deprecation policy.
+## Maintenance Policy
+
+For the mandatory same-change sync rule and validation checklist, see:
+
+- [Agent Maintenance and Sync](./agent-maintenance-and-sync.md)

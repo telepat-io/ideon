@@ -60,12 +60,21 @@ Core commands:
 
 ```bash
 ideon settings
+ideon config list --json
 ideon write "An article idea" --primary article=1
+ideon write --no-interactive --idea "An article idea" --primary article=1 --style technical --length medium
 ideon write --job ./job.json
 ideon write resume
 ideon delete my-article-slug
 ideon preview --no-open
+ideon mcp serve
+ideon agent status --json
 ```
+
+Agent integration scope:
+
+- Supported: CLI and MCP runtime workflows.
+- Not supported: Cursor and VS Code runtime integrations.
 
 ## Security And Trust
 

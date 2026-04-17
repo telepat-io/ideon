@@ -13,6 +13,7 @@ Use this section to navigate Ideon documentation with stable, retrieval-friendly
 - [Command Index](./command-index.md)
 - [MCP Servers](./mcp-servers.md)
 - [Skills](./skills.md)
+- [Agent Maintenance and Sync](./agent-maintenance-and-sync.md)
 
 ## Canonical Human Docs
 

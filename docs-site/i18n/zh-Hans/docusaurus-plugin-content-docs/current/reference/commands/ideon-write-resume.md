@@ -13,14 +13,14 @@ keywords: [ideon, cli, resume, 检查点, 写作]
 ## 用法
 
 ```bash
-ideon write resume
+ideon write resume [--no-interactive]
 ```
 
 ## 参数与选项
 
 | 参数/选项 | 简写 | 必填 | 类型 | 默认值 | 允许值 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 无 | 无 | 否 | n/a | n/a | n/a | 此命令没有参数和选项。 |
+| `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 即使在 TTY 中也强制使用纯非交互输出。 |
 
 ## 示例
 
@@ -34,6 +34,10 @@ ideon write "Long-form article about API docs" --primary article=1 && ideon writ
 
 ```bash title="排障验证示例"
 ideon write resume && ideon preview --no-open
+```
+
+```bash title="单次执行 agent 安全示例"
+ideon write resume --no-interactive
 ```
 
 ## 输出与退出码

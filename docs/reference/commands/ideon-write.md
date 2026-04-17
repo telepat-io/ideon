@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## Usage
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size>] [--dry-run] [--no-enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size>] [--no-interactive] [--dry-run] [--no-enrich-links]
 ```
 
 ## Arguments and Options
@@ -29,6 +29,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--secondary <type=count>` | None | No | repeatable string | none | Same target types as primary, count >= `1` | Optional repeatable secondary targets. |
 | `--style <style>` | None | No | enum | `professional` | `professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling` | Writing style applied across generated content. |
 | `--length <size>` | None | No | enum | `medium` | `small`, `medium`, `large` | Target content length. |
+| `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Disables all prompts and fails fast when required inputs are missing. |
 | `--dry-run` | None | No | boolean | `false` | `true` or omitted | Runs orchestration without provider API calls. |
 | `--no-enrich-links` | None | No | boolean | `false` | `true` or omitted | Skips link enrichment stage after markdown generation. |
 
@@ -46,6 +47,18 @@ ideon write "How small editorial teams scale content" --primary article=1 --seco
 ideon write --dry-run "How to test Ideon pipeline changes" --primary article=1
 ```
 
+```bash title="One-shot agent-safe path"
+ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --length medium
+```
+
+## Non-Interactive Behavior
+
+When `--no-interactive` is set, Ideon does not prompt for missing values, even in TTY environments.
+
+- Missing idea input fails immediately.
+- Missing `--primary`, `--style`, or `--length` in no-interactive mode fails immediately with actionable errors.
+- This is the recommended mode for one-shot agent and CI workflows.
+
 ## Output and Exit Codes
 
 On success, Ideon writes generation outputs under `output/<timestamp>-<slug>/` and prints pipeline completion details.
@@ -59,6 +72,7 @@ On success, Ideon writes generation outputs under `output/<timestamp>-<slug>/` a
 ## Related Commands
 
 - [ideon write resume](./ideon-write-resume.md)
+- [ideon config](./ideon-config.md)
 - [ideon preview [markdownPath]](./ideon-preview.md)
 - [ideon settings](./ideon-settings.md)
 - [Configuration Guide](../../guides/configuration.md)

@@ -13,14 +13,14 @@ keywords: [ideon, cli, resume, checkpoints, write]
 ## Usage
 
 ```bash
-ideon write resume
+ideon write resume [--no-interactive]
 ```
 
 ## Arguments and Options
 
 | Flag/Argument | Shorthand | Required | Type | Default | Allowed Values | Description |
 | --- | --- | --- | --- | --- | --- | --- |
-| None | None | No | n/a | n/a | n/a | This command has no arguments or flags. |
+| `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Forces plain non-interactive rendering even in TTY mode. |
 
 ## Examples
 
@@ -34,6 +34,10 @@ ideon write "Long-form article about API docs" --primary article=1 && ideon writ
 
 ```bash title="Debug-focused verification"
 ideon write resume && ideon preview --no-open
+```
+
+```bash title="One-shot agent-safe path"
+ideon write resume --no-interactive
 ```
 
 ## Output and Exit Codes

@@ -27,6 +27,7 @@ interface WriteCommandOptions {
   secondarySpecs?: string[];
   style?: string;
   length?: string;
+  noInteractive: boolean;
   dryRun: boolean;
   enrichLinks: boolean;
 }
@@ -129,10 +130,10 @@ function WriteApp({
 
 export async function runWriteCommand(options: WriteCommandOptions): Promise<void> {
   const input = await resolveInputWithInteractiveIdeaFallback(options);
-  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh');
+  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive);
 }
 
-export async function runWriteResumeCommand(): Promise<void> {
+export async function runWriteResumeCommand(options: { noInteractive?: boolean } = {}): Promise<void> {
   const session = await loadWriteSession();
   if (!session) {
     throw new ReportedError('No resumable write session found in .ideon/write/state.json. Run ideon write <idea> first.');
@@ -154,7 +155,7 @@ export async function runWriteResumeCommand(): Promise<void> {
       secrets: resolved.config.secrets,
     },
   };
-  await runWritePipeline(input, session.dryRun, true, 'resume');
+  await runWritePipeline(input, session.dryRun, true, 'resume', options.noInteractive ?? false);
 }
 
 async function runWritePipeline(
@@ -162,6 +163,7 @@ async function runWritePipeline(
   dryRun: boolean,
   enrichLinks: boolean,
   runMode: WriteRunMode,
+  noInteractive: boolean,
 ): Promise<void> {
   let interruptHandled = false;
 
@@ -203,7 +205,7 @@ async function runWritePipeline(
 
   try {
 
-    if (!process.stdout.isTTY) {
+    if (noInteractive || !process.stdout.isTTY) {
       await renderPlainPipeline(input, dryRun, enrichLinks, runMode);
       return;
     }
@@ -290,16 +292,28 @@ async function applyInteractiveWriteOptionsIfNeeded(
   options: WriteCommandOptions,
   parsedTargets: ContentTargetInput[] | undefined,
 ): Promise<Awaited<ReturnType<typeof resolveRunInput>>> {
-  if (!process.stdout.isTTY || !process.stdin.isTTY) {
-    return resolved;
-  }
-
   const styleProvided = Boolean(options.style ?? resolved.job?.settings?.style);
   const lengthProvided = Boolean(options.length ?? resolved.job?.settings?.targetLength);
   const providedTargets = (parsedTargets && parsedTargets.length > 0)
     ? parsedTargets
     : (resolved.job?.settings?.contentTargets ?? resolved.config.settings.contentTargets);
   const targetsProvided = Boolean((parsedTargets && parsedTargets.length > 0) || resolved.job?.settings?.contentTargets?.length);
+
+  if (options.noInteractive && (!styleProvided || !targetsProvided || !lengthProvided)) {
+    const missingFlags = [
+      !styleProvided ? '--style <style>' : null,
+      !targetsProvided ? '--primary <content-type=1>' : null,
+      !lengthProvided ? '--length <size>' : null,
+    ].filter((value): value is string => Boolean(value));
+
+    throw new ReportedError(
+      `Missing required options for --no-interactive mode: ${missingFlags.join(', ')}.`,
+    );
+  }
+
+  if (!process.stdout.isTTY || !process.stdin.isTTY || options.noInteractive) {
+    return resolved;
+  }
 
   if (styleProvided && targetsProvided && lengthProvided) {
     return resolved;
@@ -367,7 +381,7 @@ async function promptForMissingWriteOptions(params: {
 }
 
 function shouldPromptForIdea(options: WriteCommandOptions, error: unknown): boolean {
-  return !options.idea && process.stdout.isTTY && process.stdin.isTTY && isMissingIdeaError(error);
+  return !options.noInteractive && !options.idea && process.stdout.isTTY && process.stdin.isTTY && isMissingIdeaError(error);
 }
 
 function isMissingIdeaError(error: unknown): boolean {

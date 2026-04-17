@@ -10,6 +10,8 @@ keywords: [ideon, cli, 设置, keychain, 配置]
 
 `ideon settings` 会打开交互式设置流程，帮助你查看并更新运行默认值与凭据存储。
 
+对于非交互自动化与 agent 工作流，请使用 [ideon config](./ideon-config.md)。
+
 ## 用法
 
 ```bash
@@ -48,6 +50,7 @@ ideon settings && ideon --version
 
 ## 相关命令
 
+- [ideon config](./ideon-config.md)
 - [ideon write [idea]](./ideon-write.md)
 - [ideon preview [markdownPath]](./ideon-preview.md)
 

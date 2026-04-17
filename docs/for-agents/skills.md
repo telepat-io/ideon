@@ -6,7 +6,12 @@ keywords: [ideon, agents, skills, workflow, contracts]
 
 # Skills
 
-Ideon currently does not publish first-party reusable agent skills. Use this page as the contract template for future skills.
+Ideon publishes first-party skill contract metadata used for runtime readiness and contract sync checks.
+
+Current first-party skill contract entries:
+
+- `ideon-write-primary`
+- `ideon-config-set`
 
 ## Required Skill Contract
 
@@ -24,3 +29,14 @@ For each skill, document:
 - Keep one canonical page per skill.
 - Link each skill to authoritative human docs it relies on.
 - Include concrete examples with real argument values.
+- Keep required fields and enum values synchronized with CLI and MCP contracts.
+
+## Sync and Drift Policy
+
+- Skill contract metadata is part of the integration contract surface.
+- If CLI arguments or enum values change, skill contracts must be updated in the same change.
+- Integration sync checks should fail on any contract drift.
+
+For mandatory maintenance policy and review checklist, see:
+
+- [Agent Maintenance and Sync](./agent-maintenance-and-sync.md)

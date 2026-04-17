@@ -18,10 +18,13 @@ ideon --version
 ## Command Pages
 
 - [ideon settings](./commands/ideon-settings.md)
+- [ideon config](./commands/ideon-config.md)
 - [ideon write [idea]](./commands/ideon-write.md)
 - [ideon write resume](./commands/ideon-write-resume.md)
 - [`ideon delete <slug>`](./commands/ideon-delete.md)
 - [ideon preview [markdownPath]](./commands/ideon-preview.md)
+- [ideon mcp serve](./commands/ideon-mcp-serve.md)
+- [ideon agent](./commands/ideon-agent.md)
 
 ## Common Exit Codes
 
@@ -42,3 +45,5 @@ ideon --version
 
 - Reference reflects Ideon CLI version `0.1.6`.
 - Deprecated syntax `--target` was replaced by `--primary` and repeatable `--secondary` flags.
+- `ideon write` now supports strict one-shot behavior with `--no-interactive`.
+- Agent runtime integrations support CLI/MCP workflows and do not support Cursor or VS Code integrations.

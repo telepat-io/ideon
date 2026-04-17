@@ -18,10 +18,13 @@ ideon --version
 ## 命令页
 
 - [ideon settings](./commands/ideon-settings.md)
+- [ideon config](./commands/ideon-config.md)
 - [ideon write [idea]](./commands/ideon-write.md)
 - [ideon write resume](./commands/ideon-write-resume.md)
 - [`ideon delete <slug>`](./commands/ideon-delete.md)
 - [ideon preview [markdownPath]](./commands/ideon-preview.md)
+- [ideon mcp serve](./commands/ideon-mcp-serve.md)
+- [ideon agent](./commands/ideon-agent.md)
 
 ## 常见退出码
 
@@ -42,3 +45,5 @@ ideon --version
 
 - 本文档对应 Ideon CLI 版本 `0.1.6`。
 - 已弃用的 `--target` 语法已替换为 `--primary` 与可重复的 `--secondary`。
+- `ideon write` 现支持 `--no-interactive` 严格单次执行模式。
+- Agent 运行时集成支持 CLI/MCP 工作流，不支持 Cursor 与 VS Code 集成。
