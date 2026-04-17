@@ -44,7 +44,7 @@ ideon --help
 
 ## 常见安装问题
 
-- `keytar` 构建/运行问题：请确保系统钥匙串 API 可用且 Node 版本受支持
+- `keytar` 构建/运行问题：密钥功能会在运行时按需懒加载；如果要使用钥匙串存储，请确保系统钥匙串 API 可用且 Node 版本受支持
 - 容器或无头 Linux 环境（D-Bus/keyring 不可用）：设置 `IDEON_DISABLE_KEYTAR=true`，并通过环境变量提供 `IDEON_OPENROUTER_API_KEY` 与 `IDEON_REPLICATE_API_TOKEN`
 - Node 版本不满足：切换到 Node 20+（兼容 ESM 与工具链）
 - 输出目录写入权限问题：在 settings 或环境变量中覆盖输出目录

@@ -1,4 +1,3 @@
-import keytar from 'keytar';
 import type { SecretSettings } from './schema.js';
 
 const SERVICE_NAME = 'ideon';
@@ -8,6 +7,14 @@ const REPLICATE_ACCOUNT = 'replicate-api-token';
 const KEYTAR_UNAVAILABLE_ERROR_NAME = 'KeytarUnavailableError';
 
 let hasWarnedAboutUnavailableKeytar = false;
+let keytarClientPromise: Promise<KeytarClient | null> | null = null;
+let keytarUnavailableReason: string | null = null;
+
+interface KeytarClient {
+  getPassword(service: string, account: string): Promise<string | null>;
+  setPassword(service: string, account: string, password: string): Promise<void>;
+  deletePassword(service: string, account: string): Promise<boolean>;
+}
 
 export interface SecretStoreOptions {
   disableKeytar?: boolean;
@@ -35,13 +42,30 @@ function shouldDisableKeytar(options: SecretStoreOptions): boolean {
   return options.disableKeytar === true;
 }
 
-function isKeytarAvailabilityError(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false;
+function readErrorCode(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return null;
   }
 
-  const lowered = error.message.toLowerCase();
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : null;
+}
+
+function readErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'unknown error';
+}
+
+function isKeytarAvailabilityError(error: unknown): boolean {
+  const code = readErrorCode(error);
+  if (code === 'ERR_DLOPEN_FAILED' || code === 'MODULE_NOT_FOUND') {
+    return true;
+  }
+
+  const lowered = readErrorMessage(error).toLowerCase();
   return [
+    'libsecret',
+    'cannot open shared object file',
+    'dlopen',
     'dbus',
     'd-bus',
     'org.freedesktop.secrets',
@@ -68,15 +92,40 @@ function warnKeytarUnavailable(details: string): void {
   );
 }
 
+async function getKeytarClient(): Promise<KeytarClient | null> {
+  if (keytarClientPromise) {
+    return keytarClientPromise;
+  }
+
+  keytarClientPromise = import('keytar')
+    .then((loaded) => loaded.default as KeytarClient)
+    .catch((error) => {
+      if (isKeytarAvailabilityError(error)) {
+        keytarUnavailableReason = readErrorMessage(error);
+        return null;
+      }
+
+      throw error;
+    });
+
+  return keytarClientPromise;
+}
+
 export async function loadSecrets(options: SecretStoreOptions = {}): Promise<SecretSettings> {
   if (shouldDisableKeytar(options)) {
     return nullSecrets();
   }
 
+  const keytarClient = await getKeytarClient();
+  if (!keytarClient) {
+    warnKeytarUnavailable(keytarUnavailableReason ?? 'keytar module failed to load');
+    return nullSecrets();
+  }
+
   try {
     const [openRouterApiKey, replicateApiToken] = await Promise.all([
-      keytar.getPassword(SERVICE_NAME, OPENROUTER_ACCOUNT),
-      keytar.getPassword(SERVICE_NAME, REPLICATE_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, OPENROUTER_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, REPLICATE_ACCOUNT),
     ]);
 
     return {
@@ -85,7 +134,7 @@ export async function loadSecrets(options: SecretStoreOptions = {}): Promise<Sec
     };
   } catch (error) {
     if (isKeytarAvailabilityError(error)) {
-      const message = error instanceof Error ? error.message : 'unknown error';
+      const message = readErrorMessage(error);
       warnKeytarUnavailable(message);
       return nullSecrets();
     }
@@ -101,30 +150,37 @@ export async function saveSecrets(secrets: Partial<SecretSettings>, options: Sec
     );
   }
 
+  const keytarClient = await getKeytarClient();
+  if (!keytarClient) {
+    throw new KeytarUnavailableError(
+      `System keychain unavailable while saving credentials (${keytarUnavailableReason ?? 'keytar module failed to load'}). Use IDEON_OPENROUTER_API_KEY and IDEON_REPLICATE_API_TOKEN instead.`,
+    );
+  }
+
   const tasks: Promise<void>[] = [];
 
   if (secrets.openRouterApiKey !== undefined) {
-    tasks.push(saveSecretValue(OPENROUTER_ACCOUNT, secrets.openRouterApiKey));
+    tasks.push(saveSecretValue(keytarClient, OPENROUTER_ACCOUNT, secrets.openRouterApiKey));
   }
 
   if (secrets.replicateApiToken !== undefined) {
-    tasks.push(saveSecretValue(REPLICATE_ACCOUNT, secrets.replicateApiToken));
+    tasks.push(saveSecretValue(keytarClient, REPLICATE_ACCOUNT, secrets.replicateApiToken));
   }
 
   await Promise.all(tasks);
 }
 
-async function saveSecretValue(account: string, value: string | null): Promise<void> {
+async function saveSecretValue(keytarClient: KeytarClient, account: string, value: string | null): Promise<void> {
   try {
     if (!value) {
-      await keytar.deletePassword(SERVICE_NAME, account);
+      await keytarClient.deletePassword(SERVICE_NAME, account);
       return;
     }
 
-    await keytar.setPassword(SERVICE_NAME, account, value);
+    await keytarClient.setPassword(SERVICE_NAME, account, value);
   } catch (error) {
     if (isKeytarAvailabilityError(error)) {
-      const message = error instanceof Error ? error.message : 'unknown error';
+      const message = readErrorMessage(error);
       throw new KeytarUnavailableError(
         `System keychain unavailable while saving credentials (${message}). Use IDEON_OPENROUTER_API_KEY and IDEON_REPLICATE_API_TOKEN instead.`,
       );

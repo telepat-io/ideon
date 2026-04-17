@@ -20,7 +20,8 @@ Ideon 会从多个来源合并配置，并在执行前完成校验。
 密钥优先级：
 
 - 环境变量中的 `IDEON_OPENROUTER_API_KEY` 与 `IDEON_REPLICATE_API_TOKEN` 会覆盖钥匙串中的值。
-- 若环境变量未设置，Ideon 会回退到通过 `ideon settings` 保存的钥匙串值。
+- 若环境变量未设置，Ideon 会尝试读取通过 `ideon settings` 保存的钥匙串值。
+- 密钥功能（`keytar`）仅在需要读写密钥时按需懒加载。
 - 若钥匙串不可用（例如容器中无 D-Bus），Ideon 会回退到环境变量。
 - 在容器或 CI 环境中，可设置 `IDEON_DISABLE_KEYTAR=true` 完全跳过钥匙串访问。
 

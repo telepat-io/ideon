@@ -44,7 +44,7 @@ ideon --help
 
 ## Common Setup Issues
 
-- `keytar` build/runtime issues: ensure system keychain APIs are available and Node is supported
+- `keytar` build/runtime issues: keychain support is loaded lazily at runtime; ensure system keychain APIs are available if you plan to use keychain-backed secret storage
 - Container or headless Linux environment (D-Bus/keyring unavailable): set `IDEON_DISABLE_KEYTAR=true` and provide `IDEON_OPENROUTER_API_KEY` plus `IDEON_REPLICATE_API_TOKEN` as environment variables
 - Missing Node version: switch to Node 20+ (for ESM + tooling compatibility)
 - Permission issues writing output: override output directories in settings or environment vars
