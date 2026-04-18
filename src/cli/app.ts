@@ -12,6 +12,7 @@ import {
   runConfigUnsetCommand,
 } from './commands/config.js';
 import { runMcpServeCommand } from './commands/mcp.js';
+import { runLinksCommand } from './commands/links.js';
 import { openSettings } from './commands/settings.js';
 import { runServeCommand } from './commands/serve.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
@@ -128,6 +129,18 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   program
+    .command('links')
+    .description('Run link enrichment for a previously generated article by slug.')
+    .argument('<slug>', 'Slug of the generated article to enrich')
+    .option('--mode <mode>', 'Link merge mode: fresh or append', 'fresh')
+    .action(async (slug: string, options: { mode: string }) => {
+      await runLinksCommand({
+        slug,
+        mode: options.mode,
+      });
+    });
+
+  program
     .command('preview')
     .description('Preview a generated article in a local browser with linked assets.')
     .argument('[markdownPath]', 'Path to the markdown file to preview')
@@ -156,7 +169,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Target length: small, medium, large, or a positive integer word count')
     .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
-    .option('--no-enrich-links', 'Skip link enrichment after markdown generation')
+    .option('--enrich-links', 'Run link enrichment after markdown generation', false)
     .action(async (ideaArg: string | undefined, options: {
       idea?: string;
       audience?: string;
@@ -187,8 +200,12 @@ export async function runCli(argv: string[]): Promise<void> {
     .command('resume')
     .description('Resume the last failed or interrupted write session from .ideon/write.')
     .option('--no-interactive', 'Force plain non-interactive output even in TTY mode', false)
-    .action(async (options: { noInteractive: boolean }) => {
-      await runWriteResumeCommand({ noInteractive: options.noInteractive });
+    .option('--enrich-links', 'Run link enrichment after markdown generation', false)
+    .action(async (options: { noInteractive: boolean; enrichLinks: boolean }) => {
+      await runWriteResumeCommand({
+        noInteractive: options.noInteractive,
+        enrichLinks: options.enrichLinks,
+      });
     });
 
   await program.parseAsync(argv);

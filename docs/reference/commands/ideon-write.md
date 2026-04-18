@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## Usage
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--no-enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
 ```
 
 ## Arguments and Options
@@ -31,7 +31,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--length <size-or-words>` | None | No | enum or integer | `medium` alias (`900` words) | `small`, `medium`, `large`, or positive integer | Target content length in words. Aliases map to `small=500`, `medium=900`, `large=1400`. |
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Disables all prompts and fails fast when required inputs are missing. |
 | `--dry-run` | None | No | boolean | `false` | `true` or omitted | Runs orchestration without provider API calls. |
-| `--no-enrich-links` | None | No | boolean | `false` | `true` or omitted | Skips link enrichment stage after markdown generation. |
+| `--enrich-links` | None | No | boolean | `false` | `true` or omitted | Runs link enrichment stage after markdown generation. |
 
 ## Examples
 
@@ -59,6 +59,14 @@ When `--no-interactive` is set, Ideon does not prompt for missing values, even i
 - Missing `--primary`, `--style`, or `--length` in no-interactive mode fails immediately with actionable errors.
 - `--length` accepts either aliases (`small`, `medium`, `large`) or a positive integer word count.
 - This is the recommended mode for one-shot agent and CI workflows.
+
+## Link Enrichment
+
+- Link enrichment is a post-generation link-suggestion pass for eligible long-form markdown outputs.
+- Ideon selects linkable phrases, resolves relevant source URLs with model + web search, and writes results to `*.links.json` sidecar files.
+- The original markdown files are not rewritten by this step.
+- During `ideon write`, enrichment runs only when `--enrich-links` is provided.
+- Short-form channels such as `x-post` and `x-thread` are skipped.
 
 ## Output and Exit Codes
 

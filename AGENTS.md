@@ -15,6 +15,8 @@ npm run docs:build  # Docusaurus static build
 
 All four must pass clean. If you change a feature, update the relevant doc page(s) under `docs/` and confirm `docs:build` still succeeds.
 
+After any significant user-visible CLI/config/pipeline/preview/MCP/integration update, also refresh `ideon-cli-skill/SKILL.md` in the same change when behavior or guidance drifted.
+
 If changes touch the local preview server (`ideon preview`, `src/server/preview*`, preview docs), also run:
 
 ```bash

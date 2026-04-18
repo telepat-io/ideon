@@ -13,7 +13,7 @@ keywords: [ideon, cli, resume, 检查点, 写作]
 ## 用法
 
 ```bash
-ideon write resume [--no-interactive]
+ideon write resume [--no-interactive] [--enrich-links]
 ```
 
 ## 参数与选项
@@ -21,6 +21,7 @@ ideon write resume [--no-interactive]
 | 参数/选项 | 简写 | 必填 | 类型 | 默认值 | 允许值 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 即使在 TTY 中也强制使用纯非交互输出。 |
+| `--enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 在 resume 执行期间启用链接增强阶段。 |
 
 ## 示例
 
@@ -39,6 +40,13 @@ ideon write resume && ideon preview --no-open
 ```bash title="单次执行 agent 安全示例"
 ideon write resume --no-interactive
 ```
+
+## 链接增强
+
+- 链接增强是面向符合条件的长内容 markdown 输出的后处理链接建议流程。
+- 它会选取短语、解析来源 URL，并写入 `*.links.json` sidecar 文件，而不会改写 markdown。
+- 在 `ideon write resume` 中，只有显式传入 `--enrich-links` 时才会执行链接增强。
+- 短内容渠道（如 `x-post`、`x-thread`）会被跳过。
 
 ## 输出与退出码
 

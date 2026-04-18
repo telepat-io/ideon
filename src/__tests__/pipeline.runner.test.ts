@@ -45,6 +45,7 @@ describe('pipeline runner', () => {
         },
         {
           dryRun: true,
+          enrichLinks: true,
           workingDir: tempRoot,
           onUpdate(stages) {
             updates.push(stages);
@@ -174,6 +175,7 @@ describe('pipeline runner', () => {
         },
         {
           dryRun: false,
+          enrichLinks: true,
           workingDir: tempRoot,
         },
       );
@@ -509,7 +511,7 @@ describe('pipeline runner', () => {
     }
   });
 
-  it('skips the links stage when enrichLinks is disabled', async () => {
+  it('skips the links stage by default', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-no-links-'));
 
     try {
@@ -534,14 +536,13 @@ describe('pipeline runner', () => {
         },
         {
           dryRun: true,
-          enrichLinks: false,
           workingDir: tempRoot,
         },
       );
 
       const linksStage = result.stages.find((stage) => stage.id === 'links');
       expect(linksStage?.status).toBe('succeeded');
-      expect(linksStage?.detail).toContain('Skipped link enrichment (--no-enrich-links).');
+      expect(linksStage?.detail).toContain('Skipped link enrichment (enable with --enrich-links).');
       expect(linksStage?.summary).toBe('Link enrichment disabled for this run');
       expect(result.analytics.linkEnrichmentCalls).toEqual([]);
 
@@ -580,6 +581,7 @@ describe('pipeline runner', () => {
         },
         {
           dryRun: true,
+          enrichLinks: true,
           workingDir: tempRoot,
         },
       );
@@ -1125,6 +1127,7 @@ describe('pipeline runner', () => {
         },
         {
           dryRun: true,
+          enrichLinks: true,
           runMode: 'resume',
           workingDir: tempRoot,
         },

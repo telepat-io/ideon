@@ -21,6 +21,7 @@ ideon --version
 - [ideon config](./commands/ideon-config.md)
 - [ideon write [idea]](./commands/ideon-write.md)
 - [ideon write resume](./commands/ideon-write-resume.md)
+- [`ideon links <slug>`](./commands/ideon-links.md)
 - [`ideon delete <slug>`](./commands/ideon-delete.md)
 - [ideon preview [markdownPath]](./commands/ideon-preview.md)
 - [ideon mcp serve](./commands/ideon-mcp-serve.md)

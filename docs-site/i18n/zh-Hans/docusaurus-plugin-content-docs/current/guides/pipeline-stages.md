@@ -33,7 +33,7 @@ Ideon 运行一个七阶段流水线，提供实时状态更新与阶段级 anal
 - `sections`：执行通用主输出生成
 - `image-prompts`、`images`：准备并渲染一张主封面图
 - `output`：仅基于主输出锚定上下文生成次输出
-- `links`：仅对符合条件的输出执行并写入 sidecar 链接元数据
+- `links`：仅在启用 `--enrich-links` 时执行，并对符合条件的输出写入 sidecar 链接元数据
 
 ## 阶段 UI 信号
 
@@ -129,7 +129,9 @@ Analytics 会写入每个生成目录下的 `generation.analytics.json`。
 ## Links 阶段行为
 
 - 链接增强使用已配置模型，并启用 OpenRouter web search 插件。
+- 链接增强是面向符合条件的长内容 markdown 输出的后处理链接建议流程。
 - Ideon 会先选出可链接表达，再结合段落上下文为每个表达解析最匹配 URL。
 - 链接数据写入 Markdown 输出旁的 sidecar 文件（例如 `article-1.links.json`）。
 - 原始 Markdown 文件保持不变；预览服务在渲染时应用 sidecar 链接。
+- 在 `ideon write` 与 `ideon write resume` 中，该阶段默认关闭，需通过 `--enrich-links` 显式启用。
 - 默认跳过短内容渠道（`x-post`、`x-thread`）的链接增强。

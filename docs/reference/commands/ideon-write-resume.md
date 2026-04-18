@@ -13,7 +13,7 @@ keywords: [ideon, cli, resume, checkpoints, write]
 ## Usage
 
 ```bash
-ideon write resume [--no-interactive]
+ideon write resume [--no-interactive] [--enrich-links]
 ```
 
 ## Arguments and Options
@@ -21,6 +21,7 @@ ideon write resume [--no-interactive]
 | Flag/Argument | Shorthand | Required | Type | Default | Allowed Values | Description |
 | --- | --- | --- | --- | --- | --- | --- |
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Forces plain non-interactive rendering even in TTY mode. |
+| `--enrich-links` | None | No | boolean | `false` | `true` or omitted | Runs link enrichment stage during resume. |
 
 ## Examples
 
@@ -39,6 +40,13 @@ ideon write resume && ideon preview --no-open
 ```bash title="One-shot agent-safe path"
 ideon write resume --no-interactive
 ```
+
+## Link Enrichment
+
+- Link enrichment is a post-generation link-suggestion pass for eligible long-form markdown outputs.
+- It selects phrases, resolves source URLs, and writes `*.links.json` sidecar files without rewriting markdown.
+- During `ideon write resume`, enrichment runs only when `--enrich-links` is provided.
+- Short-form channels such as `x-post` and `x-thread` are skipped.
 
 ## Output and Exit Codes
 

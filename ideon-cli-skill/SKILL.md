@@ -9,7 +9,7 @@ description: Use this skill when users need to install, configure, run, automate
 
 This skill helps users operate Ideon as a content writer platform, not just a command runner.
 
-Ideon can turn one idea into many publish-ready outputs (article, blog, newsletter, Reddit, LinkedIn, X thread/X post, landing copy), apply a selected writing style, enrich content with relevant links, generate visuals for article-led runs, and support iterative refinement through reruns, preview, and resume.
+Ideon can turn one idea into many publish-ready outputs (article, blog, newsletter, Reddit, LinkedIn, X thread/X post, landing copy), apply a selected writing style, optionally enrich content with relevant links, generate visuals for article-led runs, and support iterative refinement through reruns, preview, and resume.
 
 Use this skill to move from install -> setup -> first publishable drafts -> iterative improvements -> cleanup, without assuming prior Ideon knowledge.
 
@@ -110,6 +110,7 @@ Do not use this skill when:
 3. Choose operation path:
    - Create content: `ideon write ...`
    - Resume interrupted run: `ideon write resume`
+  - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append]`
    - Preview outputs: `ideon preview ...`
    - Delete outputs: `ideon delete <slug>`
    - Manage config: `ideon config ...`
@@ -142,11 +143,20 @@ Common operations:
 # Add secondary outputs
 ideon write "Your idea" --primary article=1 --secondary x-post=1 --secondary linkedin-post=1
 
+# Enable link enrichment during write (opt-in)
+ideon write "Your idea" --primary article=1 --enrich-links
+
 # Use job file
 ideon write --job ./job.json
 
 # Resume last failed/interrupted run
 ideon write resume
+
+# Re-run only link enrichment for a previous article (default: fresh)
+ideon links my-article-slug
+
+# Append new links into existing sidecar
+ideon links my-article-slug --mode append
 ```
 
 Monitoring / status:
@@ -270,6 +280,22 @@ Mode behavior:
 - Interactive (TTY default): prompts for missing idea/style/targets/length.
 - Non-interactive (`--no-interactive` or non-TTY): fails fast on missing required inputs.
 
+What link enrichment means:
+
+- Link enrichment is a post-generation link-suggestion pass for long-form markdown outputs.
+- Ideon selects linkable phrases from each eligible markdown file, resolves relevant source URLs using model + web search, and writes results to `*.links.json` sidecar files.
+- Ideon does not rewrite markdown files when enriching links; markdown remains unchanged.
+- During preview, Ideon applies sidecar link metadata at render time.
+
+Link enrichment behavior:
+
+- `ideon write` and `ideon write resume` default to link enrichment disabled.
+- Enable write-time enrichment explicitly with `--enrich-links`.
+- For existing outputs, use `ideon links <slug>`.
+- Link enrichment applies to eligible long-form outputs and skips short-form channels like `x-post` and `x-thread`.
+- `ideon links --mode fresh` (default) replaces existing sidecar content.
+- `ideon links --mode append` merges into existing sidecar content (creates sidecar if missing).
+
 Signal/cancellation behavior:
 
 - `ideon write` traps `SIGINT` and `SIGTERM`, patches resume state, and exits `130`.
@@ -313,7 +339,7 @@ Common exit semantics:
 Write artifacts and sidecars:
 
 - Markdown outputs (`*.md`)
-- Link metadata sidecars (`*.links.json`, when link enrichment enabled)
+- Link metadata sidecars (`*.links.json`, when `--enrich-links` is enabled or `ideon links` is run)
 - Analytics sidecars (`*.analytics.json`)
 - Session state (`.ideon/write/state.json`, read/written in the directory where the command runs)
 
@@ -329,6 +355,8 @@ Write artifacts and sidecars:
   Mitigation: use explicit `x-post` or `x-thread` content types.
 - Resume is directory-scoped and can fail when run from a different directory.
   Mitigation: run `ideon write resume` from the same project directory as the original run, or restore that directory's `.ideon/` folder.
+- Link enrichment is opt-in for write/resume runs.
+  Mitigation: pass `--enrich-links` during write/resume, or run `ideon links <slug>` afterward.
 
 ## Clarifying questions for risky operations
 
@@ -382,6 +410,7 @@ Should not trigger:
 ## Source evidence map
 
 - CLI command surface and options: `src/cli/app.ts`
+- Standalone links command behavior: `src/cli/commands/links.ts`
 - Write/resume behavior and signal handling: `src/cli/commands/write.tsx`
 - Target parsing rules and conflicts: `src/cli/commands/writeTargetSpecs.ts`
 - Delete behavior and confirmation rules: `src/cli/commands/delete.ts`

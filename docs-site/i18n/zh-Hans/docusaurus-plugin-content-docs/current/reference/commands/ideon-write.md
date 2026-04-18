@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## 用法
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--no-enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
 ```
 
 ## 参数与选项
@@ -31,7 +31,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--length <size-or-words>` | 无 | 否 | enum 或整数 | `medium` 别名（`900` 词） | `small`、`medium`、`large` 或正整数 | 按词数控制目标篇幅。别名映射：`small=500`、`medium=900`、`large=1400`。 |
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 禁用所有提示，在缺少必填输入时立即失败。 |
 | `--dry-run` | 无 | 否 | boolean | `false` | `true` 或省略 | 不调用外部提供商 API，仅执行编排流程。 |
-| `--no-enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 跳过 markdown 生成后的链接增强阶段。 |
+| `--enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 在 markdown 生成后执行链接增强阶段。 |
 
 ## 示例
 
@@ -59,6 +59,14 @@ ideon write --no-interactive --idea "How to productionize docs operations" --pri
 - 在 no-interactive 模式下缺少 `--primary`、`--style` 或 `--length` 会立即失败并给出可执行错误提示。
 - `--length` 同时支持别名（`small`、`medium`、`large`）和正整数词数。
 - 这是 one-shot agent 与 CI 工作流推荐模式。
+
+## 链接增强
+
+- 链接增强是面向符合条件的长内容 markdown 输出的后处理链接建议流程。
+- Ideon 会先选取可链接短语，再通过模型 + web search 解析相关来源 URL，并写入 `*.links.json` sidecar 文件。
+- 该步骤不会改写原始 markdown 文件。
+- 在 `ideon write` 中，只有显式传入 `--enrich-links` 时才会执行链接增强。
+- 短内容渠道（如 `x-post`、`x-thread`）会被跳过。
 
 ## 输出与退出码
 

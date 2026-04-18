@@ -118,7 +118,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const stages: StageViewModel[] = createInitialStages({ isArticlePrimary });
   options.onUpdate?.(cloneStages(stages));
   const dryRun = options.dryRun ?? false;
-  const shouldEnrichLinks = options.enrichLinks ?? true;
+  const shouldEnrichLinks = options.enrichLinks ?? false;
   const runMode = options.runMode ?? 'fresh';
   const workingDir = options.workingDir ?? process.cwd();
   const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
@@ -1059,7 +1059,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       stages[6] = {
         ...stages[6],
         status: 'succeeded',
-        detail: 'Skipped link enrichment (--no-enrich-links).',
+        detail: 'Skipped link enrichment (enable with --enrich-links).',
         summary: 'Link enrichment disabled for this run',
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
       };
