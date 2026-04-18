@@ -81,6 +81,32 @@ describe('contentBriefSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('treats sentinel secondary type values as no secondary outputs', () => {
+    const result = contentBriefSchema.safeParse({
+      ...validBrief,
+      secondaryContentTypes: ['none'],
+      secondaryContentStrategy: '',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.secondaryContentTypes).toEqual([]);
+    }
+  });
+
+  it('normalizes trimmed sentinel secondary type values', () => {
+    const result = contentBriefSchema.safeParse({
+      ...validBrief,
+      secondaryContentTypes: ['N/A', '  no secondary outputs  '],
+      secondaryContentStrategy: '',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.secondaryContentTypes).toEqual([]);
+    }
+  });
+
   it('returns typed result with infer', () => {
     const result = contentBriefSchema.safeParse(validBrief);
     expect(result.success).toBe(true);
