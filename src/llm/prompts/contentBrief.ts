@@ -50,6 +50,7 @@ export function buildContentBriefMessages(
   },
 ): ChatMessage[] {
   const audienceSeed = options.targetAudienceHint?.trim() || 'A general, non-specific audience.';
+  const hasSecondaryContentTypes = options.secondaryContentTypes.length > 0;
 
   const systemInstruction = [
     'You are a senior editorial strategist.',
@@ -85,7 +86,9 @@ export function buildContentBriefMessages(
         '- voiceNotes: practical tone/voice constraints to keep outputs consistent.',
         `- primaryContentType: set to "${options.primaryContentType}" exactly.`,
         `- secondaryContentTypes: include these types exactly: ${options.secondaryContentTypes.join(', ') || 'none'}.`,
-        '- secondaryContentStrategy: explicit guidance for making secondary outputs channel-native, self-contained, and enticing gateways into the primary content.',
+        hasSecondaryContentTypes
+          ? '- secondaryContentStrategy: explicit guidance for making secondary outputs channel-native, self-contained, and enticing gateways into the primary content.'
+          : '- secondaryContentStrategy: set to an empty string because this run has no secondary outputs.',
         '',
         'Return JSON only with all required fields.',
       ].join('\n'),

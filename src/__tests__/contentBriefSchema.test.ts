@@ -62,6 +62,25 @@ describe('contentBriefSchema', () => {
     ).toBe(true);
   });
 
+  it('rejects too-short secondary strategy when secondary content exists', () => {
+    const result = contentBriefSchema.safeParse({
+      ...validBrief,
+      secondaryContentStrategy: 'too short',
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('allows empty secondary strategy when no secondary content is requested', () => {
+    const result = contentBriefSchema.safeParse({
+      ...validBrief,
+      secondaryContentTypes: [],
+      secondaryContentStrategy: '',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it('returns typed result with infer', () => {
     const result = contentBriefSchema.safeParse(validBrief);
     expect(result.success).toBe(true);

@@ -146,4 +146,45 @@ describe('planContentBrief', () => {
     });
     expect(dryRunResult.targetAudience).toContain(audienceSeed);
   });
+
+  it('allows empty secondary strategy for primary-only runs', async () => {
+    const requestStructured = jest
+      .fn<
+        (args: {
+          parse?: (data: unknown) => unknown;
+          messages?: Array<{ role?: string; content?: string }>;
+        }) => Promise<unknown>
+      >()
+      .mockImplementation(async ({ parse }) => {
+        const payload = {
+          title: 'Primary-Only Shared Brief',
+          description: 'Primary-only run where no secondary content guidance is required in the brief output.',
+          targetAudience: 'Operators publishing one long-form piece with no social derivatives this run.',
+          corePromise: 'Readers gain concrete execution guidance for a single, primary output workflow.',
+          keyPoints: ['Point one with detail', 'Point two with detail', 'Point three with detail'],
+          voiceNotes: 'Direct, practical guidance that avoids fluff or generic abstractions.',
+          primaryContentType: 'article',
+          secondaryContentTypes: [],
+          secondaryContentStrategy: '',
+        };
+
+        return parse ? parse(payload) : payload;
+      });
+
+    const result = await planContentBrief({
+      idea: 'primary-only generation',
+      settings: defaultAppSettings,
+      openRouter: { requestStructured } as never,
+      dryRun: false,
+    });
+
+    const requestArgs = requestStructured.mock.calls[0]?.[0] as { messages?: Array<{ role?: string; content?: string }> } | undefined;
+    const userMessage = requestArgs?.messages?.find((message: { role?: string }) => message.role === 'user') as
+      | { content?: string }
+      | undefined;
+
+    expect(userMessage?.content).toContain('secondaryContentTypes: include these types exactly: none.');
+    expect(userMessage?.content).toContain('secondaryContentStrategy: set to an empty string because this run has no secondary outputs.');
+    expect(result.secondaryContentStrategy).toBe('');
+  });
 });
