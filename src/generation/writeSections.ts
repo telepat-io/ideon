@@ -31,6 +31,7 @@ export async function writeArticleSections({
         messages: buildIntroMessages(
           plan,
           settings.style,
+          settings.intent,
           settings.contentTargets.map((target) => target.contentType),
           settings.targetLength,
           wordBudgets.intro,
@@ -58,6 +59,7 @@ export async function writeArticleSections({
             section,
             buildArticleSoFarContext(intro, sections),
             settings.style,
+            settings.intent,
             settings.contentTargets.map((target) => target.contentType),
             settings.targetLength,
             wordBudgets.sections[index] ?? wordBudgets.sections[wordBudgets.sections.length - 1] ?? 150,
@@ -85,6 +87,7 @@ export async function writeArticleSections({
         messages: buildOutroMessages(
           plan,
           settings.style,
+          settings.intent,
           settings.contentTargets.map((target) => target.contentType),
           settings.targetLength,
           wordBudgets.outro,

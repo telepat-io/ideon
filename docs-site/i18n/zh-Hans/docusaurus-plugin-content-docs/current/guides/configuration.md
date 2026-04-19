@@ -15,7 +15,7 @@ Ideon 会从多个来源合并配置，并在执行前完成校验。
 1. Saved settings file
 2. Job file settings
 3. Environment variables
-4. Direct CLI arguments (`--style`, `--primary`, `--secondary`, idea input)
+4. Direct CLI arguments (`--style`, `--intent`, `--primary`, `--secondary`, idea input)
 
 密钥优先级：
 
@@ -29,7 +29,7 @@ Ideon 会从多个来源合并配置，并在执行前完成校验。
 
 - `modelSettings` 会按键合并（`temperature`、`maxTokens`、`topP`）。
 - `contentTargets` 在高优先级来源提供时会整体替换。
-- 标量设置（如 `model`、`style`、`targetLength`、`markdownOutputDir`）采用最高优先级来源。
+- 标量设置（如 `model`、`style`、`intent`、`targetLength`、`markdownOutputDir`）采用最高优先级来源。
 
 ## 设置字段
 
@@ -47,11 +47,12 @@ Ideon 会从多个来源合并配置，并在执行前完成校验。
 - `assetOutputDir`
 - `contentTargets`: array of output targets with per-type counts
 - `style`: run-level writing style
+- `intent`: run-level content intent
 - `targetLength`：运行级目标词数（正整数）。输入时支持别名：`small=500`、`medium=900`、`large=1400`。
 
 `contentTargets` entries:
 
-- `contentType`: one of `article`, `blog-post`, `x-thread`, `x-post`, `reddit-post`, `linkedin-post`, `newsletter`, `landing-page-copy`
+- `contentType`: one of `article`, `blog-post`, `linkedin-post`, `newsletter`, `press-release`, `reddit-post`, `science-paper`, `x-post`, `x-thread`
 - `role`: `primary` or `secondary`
 - `count`: positive integer
 
@@ -63,17 +64,41 @@ Rules:
 
 风格可选值：
 
-- `professional`
-- `friendly`
-- `technical`
 - `academic`
-- `opinionated`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
 - `storytelling`
+- `technical`
+
+意图可选值：
+
+- `announcement`
+- `case-study`
+- `cornerstone`
+- `counterargument`
+- `critique-review`
+- `deep-dive-analysis`
+- `how-to-guide`
+- `interview-q-and-a`
+- `listicle`
+- `opinion-piece`
+- `personal-essay`
+- `roundup-curation`
+- `tutorial`
 
 默认值：
 
 - `contentTargets`: `[ { "contentType": "article", "role": "primary", "count": 1 } ]`
 - `style`: `professional`
+- `intent`: `tutorial`
 - `targetLength`: `900`
 
 篇幅别名：
@@ -97,6 +122,7 @@ IDEON_MODEL=openai/gpt-4.1-mini \
 IDEON_TEMPERATURE=0.6 \
 IDEON_MAX_TOKENS=2400 \
 IDEON_STYLE=technical \
+IDEON_INTENT=tutorial \
 IDEON_TARGET_LENGTH=1200 \
 ideon write "An idea"
 ```

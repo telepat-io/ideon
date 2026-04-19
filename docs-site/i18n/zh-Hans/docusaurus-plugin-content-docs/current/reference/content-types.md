@@ -47,10 +47,15 @@ Ideon 支持以下生成目标：
 - 常见结构：强开场、紧凑分节、过渡清晰。
 - 常见输出：适配周期更新节奏的编辑型内容。
 
-## `landing-page-copy`
+## `press-release`
 
-- 最适合：转化导向页面与产品文案。
-- 常见结构：标题、价值主张、证据、异议处理、行动号召（CTA）。
+- 最适合：正式公告与面向多方干系人的信息发布。
+- 常见结构：标题、导语、公告细节、可引用语句、时间与背景说明。
+
+## `science-paper`
+
+- 最适合：研究密集型或证据优先的长内容。
+- 常见结构：研究背景、方法说明、结果、局限性与影响讨论。
 
 ## 多输出行为
 
@@ -65,6 +70,42 @@ Ideon 支持以下生成目标：
 - 当你想做轻量活动创意与快速迭代时，使用纯渠道目标。
 - 解释型系列建议使用 `x-thread`，快速单条分发建议使用 `x-post`。
 
+## 风格（Styles）
+
+Ideon 支持以下运行级风格：
+
+- `academic`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
+- `storytelling`
+- `technical`
+
+## 意图（Intents）
+
+Ideon 支持以下运行级意图：
+
+- `announcement`
+- `case-study`
+- `cornerstone`
+- `counterargument`
+- `critique-review`
+- `deep-dive-analysis`
+- `how-to-guide`
+- `interview-q-and-a`
+- `listicle`
+- `opinion-piece`
+- `personal-essay`
+- `roundup-curation`
+- `tutorial`
+
 ## 多目标示例
 
 ```bash
@@ -73,5 +114,6 @@ ideon write "AI workflow launch" \
   --secondary x-thread=2 \
   --secondary x-post=1 \
   --secondary linkedin-post=1 \
-  --style technical
+  --style technical \
+  --intent tutorial
 ```

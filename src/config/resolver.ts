@@ -4,6 +4,7 @@ import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
 import {
   appSettingsSchema,
+  contentIntentValues,
   contentTargetRoleValues,
   contentTypeValues,
   jobInputSchema,
@@ -24,6 +25,7 @@ export interface ResolveConfigInput {
   audience?: string;
   jobPath?: string;
   style?: (typeof writingStyleValues)[number] | string;
+  intent?: (typeof contentIntentValues)[number] | string;
   contentTargets?: ContentTargetInput[];
   targetLength?: TargetLength | string;
 }
@@ -78,8 +80,10 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ...(envSettings.markdownOutputDir ? { markdownOutputDir: envSettings.markdownOutputDir } : {}),
     ...(envSettings.assetOutputDir ? { assetOutputDir: envSettings.assetOutputDir } : {}),
     ...(envSettings.style ? { style: envSettings.style } : {}),
+    ...(envSettings.intent ? { intent: envSettings.intent } : {}),
     ...(envSettings.targetLength ? { targetLength: envSettings.targetLength } : {}),
     ...(input.style ? { style: input.style } : {}),
+    ...(input.intent ? { intent: input.intent } : {}),
     ...(input.targetLength ? { targetLength: input.targetLength } : {}),
     ...(input.contentTargets ? { contentTargets: input.contentTargets } : {}),
   });

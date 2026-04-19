@@ -15,7 +15,7 @@ Lowest to highest priority:
 1. Saved settings file
 2. Job file settings
 3. Environment variables
-4. Direct CLI arguments (`--style`, `--primary`, `--secondary`, idea input)
+4. Direct CLI arguments (`--style`, `--intent`, `--primary`, `--secondary`, idea input)
 
 Secret precedence:
 
@@ -29,7 +29,7 @@ Per-field merge behavior:
 
 - `modelSettings` merges by key (`temperature`, `maxTokens`, `topP`) across sources.
 - `contentTargets` is replaced as a full array when provided by a higher-priority source.
-- Scalar settings (for example `model`, `style`, `targetLength`, `markdownOutputDir`) are replaced by the highest-priority source.
+- Scalar settings (for example `model`, `style`, `intent`, `targetLength`, `markdownOutputDir`) are replaced by the highest-priority source.
 
 ## Settings Schema
 
@@ -47,11 +47,12 @@ Core settings include:
 - `assetOutputDir`
 - `contentTargets`: array of output targets with per-type counts
 - `style`: run-level writing style
+- `intent`: run-level content intent
 - `targetLength`: run-level target length in words (positive integer). Aliases are accepted as input: `small=500`, `medium=900`, `large=1400`.
 
 `contentTargets` entries:
 
-- `contentType`: one of `article`, `blog-post`, `x-thread`, `x-post`, `reddit-post`, `linkedin-post`, `newsletter`, `landing-page-copy`
+- `contentType`: one of `article`, `blog-post`, `linkedin-post`, `newsletter`, `press-release`, `reddit-post`, `science-paper`, `x-post`, `x-thread`
 - `role`: `primary` or `secondary`
 - `count`: positive integer
 
@@ -63,17 +64,41 @@ Rules:
 
 Style values:
 
-- `professional`
-- `friendly`
-- `technical`
 - `academic`
-- `opinionated`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
 - `storytelling`
+- `technical`
+
+Intent values:
+
+- `announcement`
+- `case-study`
+- `cornerstone`
+- `counterargument`
+- `critique-review`
+- `deep-dive-analysis`
+- `how-to-guide`
+- `interview-q-and-a`
+- `listicle`
+- `opinion-piece`
+- `personal-essay`
+- `roundup-curation`
+- `tutorial`
 
 Defaults:
 
 - `contentTargets`: `[ { "contentType": "article", "role": "primary", "count": 1 } ]`
 - `style`: `professional`
+- `intent`: `tutorial`
 - `targetLength`: `900`
 
 Target length aliases:
@@ -97,6 +122,7 @@ IDEON_MODEL=openai/gpt-4.1-mini \
 IDEON_TEMPERATURE=0.6 \
 IDEON_MAX_TOKENS=2400 \
 IDEON_STYLE=technical \
+IDEON_INTENT=tutorial \
 IDEON_TARGET_LENGTH=1200 \
 ideon write "An idea"
 ```

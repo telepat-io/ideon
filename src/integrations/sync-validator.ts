@@ -1,5 +1,5 @@
 import { configSecretKeys, configSettingKeys } from '../config/manage.js';
-import { targetLengthValues, writingStyleValues } from '../config/schema.js';
+import { contentIntentValues, targetLengthValues, writingStyleValues } from '../config/schema.js';
 import { ideonToolContracts } from './mcp/tools.js';
 import { ideonSkillRegistry } from './skills/registry.js';
 import type { ToolContract } from './mcp/tools.js';
@@ -60,6 +60,18 @@ export function validateIntegrationContracts(sources: ValidationSources = {
       'write.enum.style.skill-vs-schema',
       [...(writeSkill.inputContract.enums.style ?? [])].sort(),
       [...writingStyleValues].sort(),
+    );
+    compareStringArrays(
+      drifts,
+      'write.enum.intent.tool-vs-schema',
+      [...(writeTool.enums.intent ?? [])].sort(),
+      [...contentIntentValues].sort(),
+    );
+    compareStringArrays(
+      drifts,
+      'write.enum.intent.skill-vs-schema',
+      [...(writeSkill.inputContract.enums.intent ?? [])].sort(),
+      [...contentIntentValues].sort(),
     );
     compareStringArrays(
       drifts,

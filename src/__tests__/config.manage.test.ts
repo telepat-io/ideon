@@ -43,6 +43,7 @@ describe('config manage', () => {
       assetOutputDir: '/output/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
+      intent: 'tutorial',
       targetLength: 900,
     });
 
@@ -59,6 +60,7 @@ describe('config manage', () => {
 
     expect(result.settings.model).toBe('moonshotai/kimi-k2.5');
     expect(result.settings.style).toBe('professional');
+    expect(result.settings.intent).toBe('tutorial');
     expect(result.secrets.openRouterApiKey).toBe(true);
     expect(result.secrets.replicateApiToken).toBe(false);
   });
@@ -81,8 +83,14 @@ describe('config manage', () => {
     await configSet('style', 'technical');
     expect(saveSettingsMock).toHaveBeenCalledWith(expect.objectContaining({ style: 'technical' }));
 
+    await configSet('intent', 'case-study');
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ intent: 'case-study' }));
+
     await configUnset('style');
     expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ style: 'professional' }));
+
+    await configUnset('intent');
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ intent: 'tutorial' }));
   });
 
   it('sets and unsets secrets via secret store', async () => {
@@ -95,6 +103,7 @@ describe('config manage', () => {
 
   it('validates known keys', () => {
     expect(isConfigKey('style')).toBe(true);
+    expect(isConfigKey('intent')).toBe(true);
     expect(isConfigKey('openRouterApiKey')).toBe(true);
     expect(isConfigKey('unknown.key')).toBe(false);
   });
@@ -154,6 +163,7 @@ describe('config manage', () => {
   it('throws on invalid values', async () => {
     await expect(configSet('notifications.enabled', 'yes')).rejects.toThrow('true or false');
     await expect(configSet('style', 'unknown-style')).rejects.toThrow('style must be one of');
+    await expect(configSet('intent', 'unknown-intent')).rejects.toThrow('intent must be one of');
     await expect(configSet('targetLength', 'tiny')).rejects.toThrow('targetLength must be one of');
     await expect(configSet('modelSettings.maxTokens', '0')).rejects.toThrow('positive integer');
     await expect(configSet('model', '   ')).rejects.toThrow('cannot be empty');

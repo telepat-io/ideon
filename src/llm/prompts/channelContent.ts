@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentBrief } from '../../types/contentBrief.js';
 import {
+  buildIntentDirective,
   buildStyleDirective,
   buildTargetLengthDirective,
   buildWritingFrameworkInstruction,
@@ -20,10 +21,6 @@ const CHANNEL_RULES: Record<string, string> = {
     'Write native X content with short lines, high signal, and a strong hook in the first line.',
     'Return one concise post only. Do not return numbered thread lines.',
   ].join(' '),
-  'reddit-post': [
-    'Write a Reddit-native post in plain, authentic voice with practical detail and no marketing gloss.',
-    'Use first-hand framing, candid constraints, and only minimal formatting that improves readability.',
-  ].join(' '),
   'linkedin-post': [
     'Write a LinkedIn-native post for professional clarity and engagement.',
     'Open with a strong two-line hook, use spaced short paragraphs, and end with one focused reflection or CTA.',
@@ -32,9 +29,17 @@ const CHANNEL_RULES: Record<string, string> = {
     'Write a concise newsletter piece with a subject-line-quality opening and clear section flow.',
     'Prioritize practical value density, strong transitions, and sustained reader momentum.',
   ].join(' '),
-  'landing-page-copy': [
-    'Write landing-page copy in Markdown with headline, value proposition, proof-oriented body blocks, objection handling, and clear CTA text.',
-    'Keep claims specific, credible, and measurable. Avoid hype language.',
+  'press-release': [
+    'Write a press release in Markdown with a clear headline, lead paragraph, body details, and quote-ready statements.',
+    'Prioritize factual clarity, stakeholder relevance, and explicit timing/context for the announcement.',
+  ].join(' '),
+  'science-paper': [
+    'Write science-paper style Markdown with disciplined structure, methodological clarity, and evidence-conscious claims.',
+    'Separate observations from interpretations and include caveats where certainty is limited.',
+  ].join(' '),
+  'reddit-post': [
+    'Write a Reddit-native post in plain, authentic voice with practical detail and no marketing gloss.',
+    'Use first-hand framing, candid constraints, and only minimal formatting that improves readability.',
   ].join(' '),
   article: 'Write a polished Markdown article.',
 };
@@ -45,6 +50,7 @@ export function buildSingleShotContentMessages(options: {
   role: 'primary' | 'secondary';
   primaryContentType: string;
   style: string;
+  intent: string;
   outputIndex: number;
   outputCountForType: number;
   contentBrief: ContentBrief;
@@ -77,6 +83,7 @@ export function buildSingleShotContentMessages(options: {
         `Write exactly one ${options.contentType} output.`,
         buildWritingFrameworkInstruction(),
         buildStyleDirective(options.style),
+        buildIntentDirective(options.intent),
         roleDirective,
         channelRule,
       ].join(' '),

@@ -11,6 +11,7 @@ export async function writeSingleShotContent({
   role = 'secondary',
   primaryContentType,
   style,
+  intent,
   outputIndex,
   outputCountForType,
   articleReferenceMarkdown,
@@ -26,6 +27,7 @@ export async function writeSingleShotContent({
   role?: 'primary' | 'secondary';
   primaryContentType: string;
   style: string;
+  intent: string;
   outputIndex: number;
   outputCountForType: number;
   articleReferenceMarkdown?: string;
@@ -56,6 +58,7 @@ export async function writeSingleShotContent({
       role,
       primaryContentType,
       style,
+      intent,
       outputIndex,
       outputCountForType,
       contentBrief,

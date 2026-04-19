@@ -9,7 +9,7 @@ description: Use this skill when users need to install, configure, run, automate
 
 This skill helps users operate Ideon as a content writer platform, not just a command runner.
 
-Ideon can turn one idea into many publish-ready outputs (article, blog, newsletter, Reddit, LinkedIn, X thread/X post, landing copy), apply a selected writing style, optionally enrich content with relevant links, generate visuals for article-led runs, and support iterative refinement through reruns, preview, and resume.
+Ideon can turn one idea into many publish-ready outputs (article, blog, newsletter, Reddit, LinkedIn, X thread/X post, press release, science paper), apply a selected writing style and intent, optionally enrich content with relevant links, generate visuals for article-led runs, and support iterative refinement through reruns, preview, and resume.
 
 Use this skill to move from install -> setup -> first publishable drafts -> iterative improvements -> cleanup, without assuming prior Ideon knowledge.
 
@@ -57,7 +57,7 @@ Setup verification checks:
 ideon config list --json
 
 # Safe smoke run with no provider API calls
-ideon write --dry-run "Smoke test ideon pipeline" --primary article=1 --style professional --length medium --no-interactive
+ideon write --dry-run "Smoke test ideon pipeline" --primary article=1 --style professional --intent tutorial --length medium --no-interactive
 ```
 
 ## Local readiness checks
@@ -99,6 +99,7 @@ Do not use this skill when:
 | Primary target (`--primary`) | Yes (non-interactive) | Must be exactly one primary with count `1`. |
 | Secondary targets (`--secondary`) | No | Optional channel variants and counts. |
 | Style (`--style`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied via job. |
+| Intent (`--intent`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied explicitly. |
 | Length (`--length`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied via job. |
 | Credentials strategy | Yes | Keychain via `ideon settings` or env-based secrets for CI. |
 | Run mode | Yes | Fresh run vs `ideon write resume`. |
@@ -246,21 +247,45 @@ Allowed content types:
 
 - `article`
 - `blog-post`
-- `x-thread`
-- `x-post`
-- `reddit-post`
 - `linkedin-post`
 - `newsletter`
-- `landing-page-copy`
+- `press-release`
+- `reddit-post`
+- `science-paper`
+- `x-post`
+- `x-thread`
 
 Allowed style values:
 
-- `professional`
-- `friendly`
-- `technical`
 - `academic`
-- `opinionated`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
 - `storytelling`
+- `technical`
+
+Allowed intent values:
+
+- `announcement`
+- `case-study`
+- `cornerstone`
+- `counterargument`
+- `critique-review`
+- `deep-dive-analysis`
+- `how-to-guide`
+- `interview-q-and-a`
+- `listicle`
+- `opinion-piece`
+- `personal-essay`
+- `roundup-curation`
+- `tutorial`
 
 Allowed length values:
 
@@ -277,7 +302,7 @@ Range constraints:
 
 Mode behavior:
 
-- Interactive (TTY default): prompts for missing idea/style/targets/length.
+- Interactive (TTY default): prompts for missing idea/style/intent/targets/length.
 - Non-interactive (`--no-interactive` or non-TTY): fails fast on missing required inputs.
 
 What link enrichment means:
@@ -345,7 +370,7 @@ Write artifacts and sidecars:
 
 ## Gotchas and sharp edges
 
-- Non-interactive runs can fail if style/length/targets are missing.
+- Non-interactive runs can fail if style/intent/length/targets are missing.
   Mitigation: pass all required flags or provide equivalent job settings.
 - `ideon delete` in non-TTY requires `--force`.
   Mitigation: require explicit user confirmation before forced delete.
@@ -380,7 +405,7 @@ Credentials:
 | Failure | Action |
 | --- | --- |
 | No idea provided | Ask for idea or require `--job` with `idea`/`prompt`. |
-| Missing required options in non-interactive mode | Add `--primary`, `--style`, and `--length` (or equivalent in job settings). |
+| Missing required options in non-interactive mode | Add `--primary`, `--style`, `--intent`, and `--length` (or equivalent in job settings). |
 | Keychain unavailable | Set `IDEON_DISABLE_KEYTAR=true` and use env secrets. |
 | No resumable session found | Verify the current directory matches the original run directory; if state was moved/deleted, restore `.ideon/` or start a fresh `ideon write ...` run. |
 | Preview cannot find markdown | Run write first or pass explicit `.md` path. |

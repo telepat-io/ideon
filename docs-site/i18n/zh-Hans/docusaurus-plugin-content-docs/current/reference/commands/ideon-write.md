@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## 用法
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
 ```
 
 ## 参数与选项
@@ -25,9 +25,10 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--idea <idea>` | `-i` | 否 | string | n/a | 任意自然语言文本 | 显式 idea，优先级高于位置参数。 |
 | `--audience <description>` | 无 | 否 | string | 泛化受众 | 任意自然语言文本 | 用于 shared-brief 规划的受众提示。 |
 | `--job <path>` | `-j` | 否 | string (path) | n/a | 有效 JSON 文件路径 | 从文件加载 job 定义。 |
-| `--primary <type=1>` | 无 | 非交互模式必填 | string | 交互模式下会提示 | `article`、`blog-post`、`x-thread`、`x-post`、`reddit-post`、`linkedin-post`、`newsletter`、`landing-page-copy`，且 count 必须为 `1` | 必需主目标，数量必须是 `1`。 |
+| `--primary <type=1>` | 无 | 非交互模式必填 | string | 交互模式下会提示 | `article`、`blog-post`、`linkedin-post`、`newsletter`、`press-release`、`reddit-post`、`science-paper`、`x-post`、`x-thread`，且 count 必须为 `1` | 必需主目标，数量必须是 `1`。 |
 | `--secondary <type=count>` | 无 | 否 | 可重复 string | 无 | 与主目标相同的类型，count >= `1` | 可重复的次级目标。 |
-| `--style <style>` | 无 | 否 | enum | `professional` | `professional`、`friendly`、`technical`、`academic`、`opinionated`、`storytelling` | 生成内容风格。 |
+| `--style <style>` | 无 | 否 | enum | `professional` | `academic`、`analytical`、`authoritative`、`conversational`、`empathetic`、`friendly`、`journalistic`、`minimalist`、`persuasive`、`playful`、`professional`、`storytelling`、`technical` | 生成内容风格。 |
+| `--intent <intent>` | 无 | 非交互模式必填 | enum | 交互模式下会提示 | `announcement`、`case-study`、`cornerstone`、`counterargument`、`critique-review`、`deep-dive-analysis`、`how-to-guide`、`interview-q-and-a`、`listicle`、`opinion-piece`、`personal-essay`、`roundup-curation`、`tutorial` | 内容意图，会影响所有输出的结构与论证方式。 |
 | `--length <size-or-words>` | 无 | 否 | enum 或整数 | `medium` 别名（`900` 词） | `small`、`medium`、`large` 或正整数 | 按词数控制目标篇幅。别名映射：`small=500`、`medium=900`、`large=1400`。 |
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 禁用所有提示，在缺少必填输入时立即失败。 |
 | `--dry-run` | 无 | 否 | boolean | `false` | `true` 或省略 | 不调用外部提供商 API，仅执行编排流程。 |
@@ -40,7 +41,7 @@ ideon write "How AI changes technical publishing"
 ```
 
 ```bash title="常见生产示例"
-ideon write "How small editorial teams scale content" --primary article=1 --secondary x-thread=2 --style technical --length large
+ideon write "How small editorial teams scale content" --primary article=1 --secondary x-thread=2 --style technical --intent how-to-guide --length large
 ```
 
 ```bash title="排障与安全示例"
@@ -48,7 +49,7 @@ ideon write --dry-run "How to test Ideon pipeline changes" --primary article=1
 ```
 
 ```bash title="单次执行 agent 安全示例"
-ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --length 1200
+ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --intent tutorial --length 1200
 ```
 
 ## 非交互行为
@@ -56,7 +57,7 @@ ideon write --no-interactive --idea "How to productionize docs operations" --pri
 当设置 `--no-interactive` 时，Ideon 在 TTY 环境中也不会弹出任何提示。
 
 - 缺少 idea 输入会立即失败。
-- 在 no-interactive 模式下缺少 `--primary`、`--style` 或 `--length` 会立即失败并给出可执行错误提示。
+- 在 no-interactive 模式下缺少 `--primary`、`--style`、`--intent` 或 `--length` 会立即失败并给出可执行错误提示。
 - `--length` 同时支持别名（`small`、`medium`、`large`）和正整数词数。
 - 这是 one-shot agent 与 CI 工作流推荐模式。
 

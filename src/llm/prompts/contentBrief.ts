@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import {
+  buildIntentDirective,
   buildRunContextDirective,
   buildStyleDirective,
   buildWritingFrameworkInstruction,
@@ -44,6 +45,7 @@ export function buildContentBriefMessages(
   idea: string,
   options: {
     style: string;
+    intent: string;
     targetAudienceHint?: string;
     primaryContentType: string;
     secondaryContentTypes: string[];
@@ -57,6 +59,7 @@ export function buildContentBriefMessages(
     'Produce a shared content brief that can guide all requested content types in this run.',
     buildWritingFrameworkInstruction(),
     buildStyleDirective(options.style),
+    buildIntentDirective(options.intent),
     buildRunContextDirective([options.primaryContentType, ...options.secondaryContentTypes]),
     'The brief must be specific, concrete, and directly usable by writers without extra clarification.',
     'This run has one explicit primary output and optional secondary outputs that should promote or incite interest in the primary while remaining independently valuable.',

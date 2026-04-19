@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentBrief } from '../../types/contentBrief.js';
 import {
+  buildIntentDirective,
   buildRunContextDirective,
   buildStyleDirective,
   buildTargetLengthDirective,
@@ -86,6 +87,7 @@ export function buildArticlePlanMessages(
   idea: string,
   options: {
     style: string;
+    intent: string;
     contentTypes: string[];
     contentBrief: ContentBrief;
     targetLength: number;
@@ -96,6 +98,7 @@ export function buildArticlePlanMessages(
     'You are a senior editorial strategist. Produce a rigorous article plan for a polished long-form Markdown article.',
     buildWritingFrameworkInstruction(),
     buildStyleDirective(options.style),
+    buildIntentDirective(options.intent),
     buildRunContextDirective(options.contentTypes),
     buildTargetLengthDirective('article', options.targetLength),
     'Quality bar: produce expert-level structure with high information density, concrete mechanisms, and practical reader outcomes.',

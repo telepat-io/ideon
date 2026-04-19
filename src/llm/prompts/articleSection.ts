@@ -2,6 +2,7 @@ import type { ArticlePlan, ArticleSectionPlan } from '../../types/article.js';
 import { resolveTargetLengthAlias } from '../../config/schema.js';
 import type { ChatMessage } from '../openRouterClient.js';
 import {
+  buildIntentDirective,
   buildRunContextDirective,
   buildStyleDirective,
   buildTargetLengthDirective,
@@ -26,11 +27,18 @@ const OUTRO_PARAGRAPH_COUNTS: Record<string, string> = {
   large: '3 to 5',
 };
 
-function buildSystemInstruction(base: string, style: string, contentTypes: string[], targetLengthWords: number): string {
+function buildSystemInstruction(
+  base: string,
+  style: string,
+  intent: string,
+  contentTypes: string[],
+  targetLengthWords: number,
+): string {
   return [
     base,
     buildWritingFrameworkInstruction(),
     buildStyleDirective(style),
+    buildIntentDirective(intent),
     buildRunContextDirective(contentTypes),
     buildTargetLengthDirective('article', targetLengthWords),
   ].join(' ');
@@ -66,6 +74,7 @@ function sharedDraftContext(articleSoFar: string): string {
 export function buildIntroMessages(
   plan: ArticlePlan,
   style: string,
+  intent: string,
   contentTypes: string[],
   targetLengthWords: number,
   introTargetWords: number,
@@ -73,6 +82,7 @@ export function buildIntroMessages(
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
     style,
+    intent,
     contentTypes,
     targetLengthWords,
   );
@@ -105,6 +115,7 @@ export function buildSectionMessages(
   section: ArticleSectionPlan,
   articleSoFar: string,
   style: string,
+  intent: string,
   contentTypes: string[],
   targetLengthWords: number,
   sectionTargetWords: number,
@@ -112,6 +123,7 @@ export function buildSectionMessages(
   const baseSystemInstruction = buildSystemInstruction(
     'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
     style,
+    intent,
     contentTypes,
     targetLengthWords,
   );
@@ -146,6 +158,7 @@ export function buildSectionMessages(
 export function buildOutroMessages(
   plan: ArticlePlan,
   style: string,
+  intent: string,
   contentTypes: string[],
   targetLengthWords: number,
   outroTargetWords: number,
@@ -153,6 +166,7 @@ export function buildOutroMessages(
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
     style,
+    intent,
     contentTypes,
     targetLengthWords,
   );

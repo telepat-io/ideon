@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { configSettingKeys, configSecretKeys } from '../../config/manage.js';
-import { targetLengthValues, writingStyleValues } from '../../config/schema.js';
+import { contentIntentValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
 
 const configKeys = [...configSettingKeys, ...configSecretKeys] as const;
 
@@ -11,6 +11,7 @@ export const writeToolInputSchema = {
   primary: z.string().optional(),
   secondary: z.array(z.string()).optional(),
   style: z.enum(writingStyleValues).optional(),
+  intent: z.enum(contentIntentValues).optional(),
   length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
   dryRun: z.boolean().optional(),
   enrichLinks: z.boolean().optional(),
@@ -56,6 +57,7 @@ export const ideonToolContracts: ToolContract[] = [
     required: ['idea'],
     enums: {
       style: [...writingStyleValues],
+      intent: [...contentIntentValues],
       length: [...targetLengthValues],
     },
   },

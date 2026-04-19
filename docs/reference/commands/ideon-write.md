@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## Usage
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
 ```
 
 ## Arguments and Options
@@ -25,9 +25,10 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--idea <idea>` | `-i` | No | string | n/a | Any natural-language text | Explicit idea prompt. Takes precedence over positional idea. |
 | `--audience <description>` | None | No | string | general non-specific audience | Any natural-language text | Audience hint used by shared-brief planning. |
 | `--job <path>` | `-j` | No | string (path) | n/a | Valid JSON file path | Loads job definition from file. |
-| `--primary <type=1>` | None | Yes in non-interactive mode | string | TTY prompt in interactive mode | `article`, `blog-post`, `x-thread`, `x-post`, `reddit-post`, `linkedin-post`, `newsletter`, `landing-page-copy` with count `1` | Required primary target. Primary count must be exactly `1`. |
+| `--primary <type=1>` | None | Yes in non-interactive mode | string | TTY prompt in interactive mode | `article`, `blog-post`, `linkedin-post`, `newsletter`, `press-release`, `reddit-post`, `science-paper`, `x-post`, `x-thread` with count `1` | Required primary target. Primary count must be exactly `1`. |
 | `--secondary <type=count>` | None | No | repeatable string | none | Same target types as primary, count >= `1` | Optional repeatable secondary targets. |
-| `--style <style>` | None | No | enum | `professional` | `professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling` | Writing style applied across generated content. |
+| `--style <style>` | None | No | enum | `professional` | `academic`, `analytical`, `authoritative`, `conversational`, `empathetic`, `friendly`, `journalistic`, `minimalist`, `persuasive`, `playful`, `professional`, `storytelling`, `technical` | Writing style applied across generated content. |
+| `--intent <intent>` | None | Yes in non-interactive mode | enum | TTY prompt in interactive mode | `announcement`, `case-study`, `cornerstone`, `counterargument`, `critique-review`, `deep-dive-analysis`, `how-to-guide`, `interview-q-and-a`, `listicle`, `opinion-piece`, `personal-essay`, `roundup-curation`, `tutorial` | Content intent that steers structure and argument shape across all generated outputs. |
 | `--length <size-or-words>` | None | No | enum or integer | `medium` alias (`900` words) | `small`, `medium`, `large`, or positive integer | Target content length in words. Aliases map to `small=500`, `medium=900`, `large=1400`. |
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Disables all prompts and fails fast when required inputs are missing. |
 | `--dry-run` | None | No | boolean | `false` | `true` or omitted | Runs orchestration without provider API calls. |
@@ -40,7 +41,7 @@ ideon write "How AI changes technical publishing"
 ```
 
 ```bash title="Common real-world path"
-ideon write "How small editorial teams scale content" --primary article=1 --secondary x-thread=2 --style technical --length large
+ideon write "How small editorial teams scale content" --primary article=1 --secondary x-thread=2 --style technical --intent how-to-guide --length large
 ```
 
 ```bash title="Safety and debugging path"
@@ -48,7 +49,7 @@ ideon write --dry-run "How to test Ideon pipeline changes" --primary article=1
 ```
 
 ```bash title="One-shot agent-safe path"
-ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --length 1200
+ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --intent tutorial --length 1200
 ```
 
 ## Non-Interactive Behavior
@@ -56,7 +57,7 @@ ideon write --no-interactive --idea "How to productionize docs operations" --pri
 When `--no-interactive` is set, Ideon does not prompt for missing values, even in TTY environments.
 
 - Missing idea input fails immediately.
-- Missing `--primary`, `--style`, or `--length` in no-interactive mode fails immediately with actionable errors.
+- Missing `--primary`, `--style`, `--intent`, or `--length` in no-interactive mode fails immediately with actionable errors.
 - `--length` accepts either aliases (`small`, `medium`, `large`) or a positive integer word count.
 - This is the recommended mode for one-shot agent and CI workflows.
 

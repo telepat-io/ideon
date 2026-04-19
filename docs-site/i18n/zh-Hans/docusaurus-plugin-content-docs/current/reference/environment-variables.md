@@ -28,6 +28,7 @@ keywords: [ideon, 文档, cli, 指南, 参考]
 ## 生成风格
 
 - `IDEON_STYLE`
+- `IDEON_INTENT`
 - `IDEON_TARGET_LENGTH`（`small`、`medium`、`large` 或正整数词数）
 
 ## 通知
@@ -49,6 +50,7 @@ IDEON_NOTIFICATIONS_ENABLED=false \
 IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
 IDEON_STYLE=professional \
+IDEON_INTENT=tutorial \
 IDEON_TARGET_LENGTH=1200 \
 ideon write "How teams scale editorial pipelines"
 ```

@@ -8,6 +8,7 @@ import { buildSingleShotContentMessages } from '../llm/prompts/channelContent.js
 import {
   buildRunContextDirective,
   buildStyleDirective,
+  buildIntentDirective,
   buildTargetLengthDirective,
   buildWritingFrameworkInstruction,
 } from '../llm/prompts/writingFramework.js';
@@ -71,6 +72,11 @@ describe('writing framework helpers', () => {
     expect(buildStyleDirective('unknown-style')).toContain('Style directive: keep tone consistent');
   });
 
+  it('returns intent-specific directive and fallback for unknown intent', () => {
+    expect(buildIntentDirective('tutorial')).toContain('Intent directive (tutorial)');
+    expect(buildIntentDirective('unknown-intent')).toContain('Intent directive: align structure and emphasis');
+  });
+
   it('includes normalized run context when no content types are provided', () => {
     expect(buildRunContextDirective([])).toContain('requested content types are article');
   });
@@ -86,6 +92,7 @@ describe('article prompt builders', () => {
   it('builds article plan prompt with framework, style, and run context', () => {
     const messages = buildArticlePlanMessages('Ship better docs with AI', {
       style: 'friendly',
+      intent: 'tutorial',
       contentTypes: ['article', 'x-thread'],
       contentBrief: mockBrief(),
       targetLength: 900,
@@ -95,6 +102,7 @@ describe('article prompt builders', () => {
     expect(messages[0]?.role).toBe('system');
     expect(messages[0]?.content).toContain('Writing framework:');
     expect(messages[0]?.content).toContain('Style directive (friendly)');
+    expect(messages[0]?.content).toContain('Intent directive (tutorial)');
     expect(messages[0]?.content).toContain('requested content types are article, x-thread');
     expect(messages[0]?.content).toContain('aim for about 900 words total');
     expect(messages[0]?.content).toContain('adaptive persuasion structure');
@@ -104,6 +112,7 @@ describe('article prompt builders', () => {
   it('falls back to medium section ranges for unknown targetLength in messages', () => {
     const messages = buildArticlePlanMessages('Fallback sizing test', {
       style: 'professional',
+      intent: 'how-to-guide',
       contentTypes: ['article'],
       contentBrief: mockBrief(),
       targetLength: Number.NaN,
@@ -132,23 +141,26 @@ describe('article prompt builders', () => {
   it('builds intro, section, and outro prompts with shared framework and style overlay', () => {
     const plan = mockPlan();
 
-    const intro = buildIntroMessages(plan, 'professional', ['article', 'linkedin-post'], 500, 120);
+    const intro = buildIntroMessages(plan, 'professional', 'tutorial', ['article', 'linkedin-post'], 500, 120);
     const section = buildSectionMessages(
       plan,
       plan.sections[0]!,
       '## Introduction\n\nExisting intro context.',
       'technical',
+      'deep-dive-analysis',
       ['article'],
       900,
       210,
     );
-    const outro = buildOutroMessages(plan, 'storytelling', ['article', 'newsletter'], 1400, 200);
+    const outro = buildOutroMessages(plan, 'storytelling', 'opinion-piece', ['article', 'newsletter'], 1400, 200);
 
     expect(intro[0]?.content).toContain('Writing framework:');
     expect(intro[0]?.content).toContain('Style directive (professional)');
+    expect(intro[0]?.content).toContain('Intent directive (tutorial)');
     expect(intro[0]?.content).toContain('aim for about 500 words total');
 
     expect(section[0]?.content).toContain('Style directive (technical)');
+    expect(section[0]?.content).toContain('Intent directive (deep-dive-analysis)');
     expect(section[1]?.content).toContain('Write the section titled');
     expect(section[1]?.content).toContain('Article generated so far:');
     expect(section[1]?.content).toContain('Existing intro context.');
@@ -156,6 +168,7 @@ describe('article prompt builders', () => {
     expect(section[1]?.content).toContain('Target length: about 210 words.');
 
     expect(outro[0]?.content).toContain('Style directive (storytelling)');
+    expect(outro[0]?.content).toContain('Intent directive (opinion-piece)');
     expect(outro[0]?.content).toContain('requested content types are article, newsletter');
     expect(outro[1]?.content).toContain('3 to 5 paragraphs.');
     expect(outro[1]?.content).toContain('Target length: about 200 words.');
@@ -164,17 +177,18 @@ describe('article prompt builders', () => {
   it('falls back to medium paragraph targets when targetLength is unknown', () => {
     const plan = mockPlan();
 
-    const intro = buildIntroMessages(plan, 'professional', ['article'], Number.NaN, 140);
+    const intro = buildIntroMessages(plan, 'professional', 'tutorial', ['article'], Number.NaN, 140);
     const section = buildSectionMessages(
       plan,
       plan.sections[0]!,
       '## Introduction\n\nExisting intro context.',
       'technical',
+      'tutorial',
       ['article'],
       Number.NaN,
       200,
     );
-    const outro = buildOutroMessages(plan, 'storytelling', ['article'], Number.NaN, 120);
+    const outro = buildOutroMessages(plan, 'storytelling', 'tutorial', ['article'], Number.NaN, 120);
 
     expect(intro[1]?.content).toContain('2 to 4 paragraphs.');
     expect(section[1]?.content).toContain('3 to 6 paragraphs.');
@@ -189,7 +203,8 @@ describe('channel prompt builder', () => {
       contentType: 'linkedin-post',
       role: 'secondary',
       primaryContentType: 'article',
-      style: 'opinionated',
+      style: 'authoritative',
+      intent: 'announcement',
       outputIndex: 1,
       outputCountForType: 1,
       contentBrief: mockBrief(),
@@ -198,7 +213,8 @@ describe('channel prompt builder', () => {
     });
 
     expect(messages[0]?.content).toContain('Writing framework:');
-    expect(messages[0]?.content).toContain('Style directive (opinionated)');
+    expect(messages[0]?.content).toContain('Style directive (authoritative)');
+    expect(messages[0]?.content).toContain('Intent directive (announcement)');
     expect(messages[0]?.content).toContain('LinkedIn-native post');
     expect(messages[1]?.content).toContain('Shared content brief');
     expect(messages[1]?.content).toContain('Reference primary context');
@@ -213,6 +229,7 @@ describe('channel prompt builder', () => {
       role: 'secondary',
       primaryContentType: 'article',
       style: 'professional',
+      intent: 'tutorial',
       outputIndex: 2,
       outputCountForType: 3,
       contentBrief: mockBrief(),
@@ -231,6 +248,7 @@ describe('channel prompt builder', () => {
       role: 'secondary',
       primaryContentType: 'article',
       style: 'professional',
+      intent: 'tutorial',
       outputIndex: 1,
       outputCountForType: 1,
       contentBrief: mockBrief(),
@@ -248,6 +266,7 @@ describe('channel prompt builder', () => {
       role: 'secondary',
       primaryContentType: 'article',
       style: 'professional',
+      intent: 'tutorial',
       outputIndex: 1,
       outputCountForType: 1,
       contentBrief: mockBrief(),

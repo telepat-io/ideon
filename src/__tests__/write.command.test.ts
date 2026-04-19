@@ -6,6 +6,8 @@ describe('write target parsing', () => {
     expect(parseTargetSpec('article=1')).toEqual({ contentType: 'article', count: 1 });
     expect(parseTargetSpec('x-thread=4')).toEqual({ contentType: 'x-thread', count: 4 });
     expect(parseTargetSpec('x-post=10')).toEqual({ contentType: 'x-post', count: 10 });
+    expect(parseTargetSpec('press-release=2')).toEqual({ contentType: 'press-release', count: 2 });
+    expect(parseTargetSpec('science-paper=1')).toEqual({ contentType: 'science-paper', count: 1 });
   });
 
   it('rejects malformed target spec', () => {
@@ -15,6 +17,7 @@ describe('write target parsing', () => {
 
   it('rejects unsupported content type and invalid counts', () => {
     expect(() => parseTargetSpec('my-type=1')).toThrow('Unsupported content type');
+    expect(() => parseTargetSpec('landing-page-copy=1')).toThrow('Unsupported content type');
     expect(() => parseTargetSpec('article=0')).toThrow('Count must be a positive integer');
     expect(() => parseTargetSpec('article=-1')).toThrow('Count must be a positive integer');
   });

@@ -1116,7 +1116,7 @@ describe('pipeline runner', () => {
                 { contentType: 'blog-post', role: 'secondary', count: 1 },
                 { contentType: 'reddit-post', role: 'secondary', count: 1 },
                 { contentType: 'newsletter', role: 'secondary', count: 1 },
-                { contentType: 'landing-page-copy', role: 'secondary', count: 1 },
+                { contentType: 'press-release', role: 'secondary', count: 1 },
               ],
             },
             secrets: {
@@ -1135,7 +1135,7 @@ describe('pipeline runner', () => {
 
       expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
       const files = result.artifact.markdownPaths.map((filePath) => path.basename(filePath)).sort();
-      expect(files).toEqual(['article-1.md', 'blog-1.md', 'landing-1.md', 'newsletter-1.md', 'reddit-1.md']);
+      expect(files).toEqual(['article-1.md', 'blog-1.md', 'newsletter-1.md', 'press-release-1.md', 'reddit-1.md']);
 
       const planningStage = result.stages.find((stage) => stage.id === 'planning');
       const sectionsStage = result.stages.find((stage) => stage.id === 'sections');

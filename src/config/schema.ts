@@ -3,15 +3,46 @@ import { z } from 'zod';
 export const contentTypeValues = [
   'article',
   'blog-post',
-  'x-thread',
-  'x-post',
-  'reddit-post',
   'linkedin-post',
   'newsletter',
-  'landing-page-copy',
+  'press-release',
+  'reddit-post',
+  'science-paper',
+  'x-post',
+  'x-thread',
 ] as const;
 
-export const writingStyleValues = ['professional', 'friendly', 'technical', 'academic', 'opinionated', 'storytelling'] as const;
+export const writingStyleValues = [
+  'academic',
+  'analytical',
+  'authoritative',
+  'conversational',
+  'empathetic',
+  'friendly',
+  'journalistic',
+  'minimalist',
+  'persuasive',
+  'playful',
+  'professional',
+  'storytelling',
+  'technical',
+] as const;
+
+export const contentIntentValues = [
+  'announcement',
+  'case-study',
+  'cornerstone',
+  'counterargument',
+  'critique-review',
+  'deep-dive-analysis',
+  'how-to-guide',
+  'interview-q-and-a',
+  'listicle',
+  'opinion-piece',
+  'personal-essay',
+  'roundup-curation',
+  'tutorial',
+] as const;
 
 export const targetLengthValues = ['small', 'medium', 'large'] as const;
 
@@ -109,6 +140,7 @@ export const appSettingsSchema = z.object({
     })
     .default([{ contentType: 'article', role: 'primary', count: 1 }]),
   style: z.enum(writingStyleValues).default('professional'),
+  intent: z.enum(contentIntentValues).default('tutorial'),
   targetLength: targetLengthWordsSchema.default(defaultTargetLengthWords),
 });
 
@@ -125,6 +157,7 @@ export const envSettingsSchema = z.object({
   markdownOutputDir: z.string().optional(),
   assetOutputDir: z.string().optional(),
   style: z.enum(writingStyleValues).optional(),
+  intent: z.enum(contentIntentValues).optional(),
   targetLength: targetLengthWordsSchema.optional(),
 });
 

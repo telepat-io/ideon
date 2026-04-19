@@ -28,6 +28,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 ## Generation Style
 
 - `IDEON_STYLE`
+- `IDEON_INTENT`
 - `IDEON_TARGET_LENGTH` (`small`, `medium`, `large`, or positive integer words)
 
 ## Notifications
@@ -49,6 +50,7 @@ IDEON_NOTIFICATIONS_ENABLED=false \
 IDEON_MARKDOWN_OUTPUT_DIR=/output \
 IDEON_ASSET_OUTPUT_DIR=/output/assets \
 IDEON_STYLE=professional \
+IDEON_INTENT=tutorial \
 IDEON_TARGET_LENGTH=1200 \
 ideon write "How teams scale editorial pipelines"
 ```

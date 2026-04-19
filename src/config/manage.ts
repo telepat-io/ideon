@@ -1,4 +1,11 @@
-import { appSettingsSchema, defaultAppSettings, targetLengthValues, writingStyleValues, type AppSettings } from './schema.js';
+import {
+  appSettingsSchema,
+  contentIntentValues,
+  defaultAppSettings,
+  targetLengthValues,
+  writingStyleValues,
+  type AppSettings,
+} from './schema.js';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings, saveSettings } from './settingsFile.js';
 import { loadSecrets, saveSecrets, type SecretStoreOptions } from './secretStore.js';
@@ -13,6 +20,7 @@ export const configSettingKeys = [
   'markdownOutputDir',
   'assetOutputDir',
   'style',
+  'intent',
   'targetLength',
 ] as const;
 
@@ -62,6 +70,7 @@ export async function configList(): Promise<ConfigListResult> {
       markdownOutputDir: settings.markdownOutputDir,
       assetOutputDir: settings.assetOutputDir,
       style: settings.style,
+      intent: settings.intent,
       targetLength: settings.targetLength,
     },
     secrets: {
@@ -175,6 +184,12 @@ function coerceSettingValue(key: ConfigSettingKey, rawValue: string): unknown {
       }
       return trimmed;
     }
+    case 'intent': {
+      if (!(contentIntentValues as readonly string[]).includes(trimmed)) {
+        throw new Error(`intent must be one of: ${contentIntentValues.join(', ')}.`);
+      }
+      return trimmed;
+    }
     case 'targetLength': {
       const normalized = trimmed.toLowerCase();
       if ((targetLengthValues as readonly string[]).includes(normalized)) {
@@ -213,6 +228,8 @@ function getSettingValue(settings: AppSettings, key: ConfigSettingKey): unknown 
       return settings.assetOutputDir;
     case 'style':
       return settings.style;
+    case 'intent':
+      return settings.intent;
     case 'targetLength':
       return settings.targetLength;
     default:
@@ -240,6 +257,8 @@ function setSettingValue(settings: AppSettings, key: ConfigSettingKey, value: un
       return { ...settings, assetOutputDir: value as string };
     case 'style':
       return { ...settings, style: value as AppSettings['style'] };
+    case 'intent':
+      return { ...settings, intent: value as AppSettings['intent'] };
     case 'targetLength':
       return { ...settings, targetLength: value as AppSettings['targetLength'] };
     default:

@@ -36,6 +36,7 @@ describe('resolveRunInput', () => {
       assetOutputDir: '/saved-out/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
+      intent: 'tutorial',
       targetLength: 900,
     });
 
@@ -250,6 +251,7 @@ describe('resolveRunInput', () => {
       markdownOutputDir: '/saved-out',
       assetOutputDir: '/saved-out/assets',
       style: 'professional',
+      intent: 'tutorial',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       targetLength: 900,
     });
@@ -294,6 +296,7 @@ describe('resolveRunInput', () => {
     const result = await resolveRunInput({
       idea: 'override test',
       style: 'technical',
+      intent: 'how-to-guide',
       targetLength: 'large',
       contentTargets: [
         { contentType: 'article', role: 'primary', count: 1 },
@@ -303,6 +306,7 @@ describe('resolveRunInput', () => {
     });
 
     expect(result.config.settings.style).toBe('technical');
+    expect(result.config.settings.intent).toBe('how-to-guide');
     expect(result.config.settings.targetLength).toBe(1400);
     expect(result.config.settings.contentTargets).toEqual([
       { contentType: 'article', role: 'primary', count: 1 },

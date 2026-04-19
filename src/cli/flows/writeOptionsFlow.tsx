@@ -2,20 +2,22 @@ import React, { useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
-import { contentTypeValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
+import { contentIntentValues, contentTypeValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
 import type { ContentTargetInput } from '../../config/resolver.js';
 
 interface WriteOptionsFlowProps {
   askStyle: boolean;
+  askIntent: boolean;
   askTargets: boolean;
   askLength: boolean;
   initialStyle: string;
+  initialIntent: string;
   initialTargetLength: string;
   initialTargets: ContentTargetInput[];
-  onDone: (result: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => void;
+  onDone: (result: { style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => void;
 }
 
-type Step = 'primary' | 'secondary' | 'counts' | 'style' | 'length';
+type Step = 'primary' | 'secondary' | 'counts' | 'style' | 'intent' | 'length';
 
 interface SecondarySelection {
   contentType: string;
@@ -24,9 +26,11 @@ interface SecondarySelection {
 
 export function WriteOptionsFlow({
   askStyle,
+  askIntent,
   askTargets,
   askLength,
   initialStyle,
+  initialIntent,
   initialTargetLength,
   initialTargets,
   onDone,
@@ -35,6 +39,7 @@ export function WriteOptionsFlow({
   const [step, setStep] = useState<Step>(() => {
     if (askTargets) return 'primary';
     if (askStyle) return 'style';
+    if (askIntent) return 'intent';
     if (askLength) return 'length';
     return 'primary';
   });
@@ -64,6 +69,7 @@ export function WriteOptionsFlow({
   const [countInput, setCountInput] = useState('1');
   const [countIndex, setCountIndex] = useState(0);
   const [style, setStyle] = useState(initialStyle);
+  const [intent, setIntent] = useState(initialIntent);
   const [targetLength, setTargetLength] = useState(initialTargetLength);
 
   const selectedSecondaryTypes = useMemo(
@@ -209,6 +215,8 @@ export function WriteOptionsFlow({
               if (nextIndex >= countTypes.length) {
                 if (askStyle) {
                   setStep('style');
+                } else if (askIntent) {
+                  setStep('intent');
                 } else if (askLength) {
                   setStep('length');
                 } else {
@@ -255,6 +263,11 @@ export function WriteOptionsFlow({
 
               setStyle(item.value);
 
+              if (askIntent) {
+                setStep('intent');
+                return;
+              }
+
               if (askLength) {
                 setStep('length');
                 return;
@@ -262,6 +275,47 @@ export function WriteOptionsFlow({
 
               onDone({
                 style: item.value,
+                ...(contentTargets ? { contentTargets } : {}),
+              });
+              exit();
+            }}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  const intentItems = contentIntentValues.map((value) => ({
+    label: value,
+    value,
+  }));
+
+  if (step === 'intent') {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyanBright">
+          Select Intent
+        </Text>
+        <Text color="gray">Choose the primary content intent for this generation run.</Text>
+        <Box marginTop={1}>
+          <SelectInput
+            items={intentItems}
+            initialIndex={Math.max(0, intentItems.findIndex((item) => item.value === intent))}
+            onSelect={(item) => {
+              const contentTargets = askTargets
+                ? buildContentTargets(primaryType, selectedSecondaryTypes)
+                : undefined;
+
+              setIntent(item.value);
+
+              if (askLength) {
+                setStep('length');
+                return;
+              }
+
+              onDone({
+                ...(askStyle ? { style } : {}),
+                intent: item.value,
                 ...(contentTargets ? { contentTargets } : {}),
               });
               exit();
@@ -297,6 +351,7 @@ export function WriteOptionsFlow({
 
               onDone({
                 ...(askStyle ? { style } : {}),
+                ...(askIntent ? { intent } : {}),
                 targetLength: item.value,
                 ...(contentTargets ? { contentTargets } : {}),
               });

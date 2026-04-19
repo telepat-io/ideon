@@ -165,7 +165,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('-j, --job <path>', 'Path to a JSON job definition')
     .option('--primary <type=count>', 'Required primary output target (for example: article=1 or x-post=1)')
     .option('--secondary <type=count>', 'Secondary output target, repeatable (for example: x-thread=3, linkedin-post=2)', collectOptionValue)
-    .option('--style <style>', 'Writing style (professional, friendly, technical, academic, opinionated, storytelling)')
+    .option('--style <style>', 'Writing style (academic, analytical, authoritative, conversational, empathetic, friendly, journalistic, minimalist, persuasive, playful, professional, storytelling, technical)')
+    .option('--intent <intent>', 'Content intent (announcement, case-study, cornerstone, counterargument, critique-review, deep-dive-analysis, how-to-guide, interview-q-and-a, listicle, opinion-piece, personal-essay, roundup-curation, tutorial)')
     .option('--length <size>', 'Target length: small, medium, large, or a positive integer word count')
     .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
@@ -177,6 +178,7 @@ export async function runCli(argv: string[]): Promise<void> {
       primary?: string;
       secondary?: string[];
       style?: string;
+      intent?: string;
       length?: string;
       interactive: boolean;
       dryRun: boolean;
@@ -189,6 +191,7 @@ export async function runCli(argv: string[]): Promise<void> {
         primarySpec: options.primary,
         secondarySpecs: options.secondary,
         style: options.style,
+        intent: options.intent,
         length: options.length,
         noInteractive: !options.interactive,
         dryRun: options.dryRun,

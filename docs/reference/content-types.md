@@ -47,10 +47,15 @@ Ideon supports these generation targets:
 - Typical structure: strong opening, compact sections, clear transitions.
 - Typical output: editorial cadence tuned for recurring audience updates.
 
-## `landing-page-copy`
+## `press-release`
 
-- Best for: conversion-oriented pages and product messaging.
-- Typical structure: headline, value proposition, proof, objection handling, CTA.
+- Best for: official announcements and stakeholder communication.
+- Typical structure: headline, lead, announcement details, quote-ready lines, and timing/context.
+
+## `science-paper`
+
+- Best for: research-heavy or evidence-first long-form content.
+- Typical structure: research context, method clarity, findings, limitations, and implications.
 
 ## Multi-Output Behavior
 
@@ -65,6 +70,42 @@ Ideon supports these generation targets:
 - Use channel-only targets for lightweight campaign ideation and iteration.
 - Use `x-thread` for explanatory series, and `x-post` for rapid single-post distribution.
 
+## Styles
+
+Ideon supports these run-level styles:
+
+- `academic`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
+- `storytelling`
+- `technical`
+
+## Intents
+
+Ideon supports these run-level intents:
+
+- `announcement`
+- `case-study`
+- `cornerstone`
+- `counterargument`
+- `critique-review`
+- `deep-dive-analysis`
+- `how-to-guide`
+- `interview-q-and-a`
+- `listicle`
+- `opinion-piece`
+- `personal-essay`
+- `roundup-curation`
+- `tutorial`
+
 ## Multi-Target Example
 
 ```bash
@@ -73,5 +114,6 @@ ideon write "AI workflow launch" \
   --secondary x-thread=2 \
   --secondary x-post=1 \
   --secondary linkedin-post=1 \
-  --style technical
+  --style technical \
+  --intent tutorial
 ```

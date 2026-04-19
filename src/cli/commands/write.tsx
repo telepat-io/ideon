@@ -2,7 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { render, useApp } from 'ink';
 import { createInterface } from 'node:readline/promises';
 import { resolveRunInput, type ContentTargetInput } from '../../config/resolver.js';
-import { appSettingsSchema, resolveTargetLengthAlias, targetLengthValues, writingStyleValues } from '../../config/schema.js';
+import {
+  appSettingsSchema,
+  contentIntentValues,
+  resolveTargetLengthAlias,
+  targetLengthValues,
+  writingStyleValues,
+} from '../../config/schema.js';
 import { ReportedError } from '../reportedError.js';
 import { PipelinePresenter } from '../ui/pipelinePresenter.js';
 import { createInitialStages, runPipelineShell } from '../../pipeline/runner.js';
@@ -26,6 +32,7 @@ interface WriteCommandOptions {
   primarySpec?: string;
   secondarySpecs?: string[];
   style?: string;
+  intent?: string;
   length?: string;
   noInteractive: boolean;
   dryRun: boolean;
@@ -259,6 +266,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       audience: options.audience,
       jobPath: options.jobPath,
       style: options.style,
+      intent: options.intent,
       targetLength: options.length,
       contentTargets: parsedTargets,
     });
@@ -279,6 +287,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       audience: options.audience,
       jobPath: options.jobPath,
       style: options.style,
+      intent: options.intent,
       targetLength: options.length,
       contentTargets: parsedTargets,
     });
@@ -293,15 +302,17 @@ async function applyInteractiveWriteOptionsIfNeeded(
   parsedTargets: ContentTargetInput[] | undefined,
 ): Promise<Awaited<ReturnType<typeof resolveRunInput>>> {
   const styleProvided = Boolean(options.style ?? resolved.job?.settings?.style);
+  const intentProvided = Boolean(options.intent);
   const lengthProvided = Boolean(options.length ?? resolved.job?.settings?.targetLength);
   const providedTargets = (parsedTargets && parsedTargets.length > 0)
     ? parsedTargets
     : (resolved.job?.settings?.contentTargets ?? resolved.config.settings.contentTargets);
   const targetsProvided = Boolean((parsedTargets && parsedTargets.length > 0) || resolved.job?.settings?.contentTargets?.length);
 
-  if (options.noInteractive && (!styleProvided || !targetsProvided || !lengthProvided)) {
+  if (options.noInteractive && (!styleProvided || !intentProvided || !targetsProvided || !lengthProvided)) {
     const missingFlags = [
       !styleProvided ? '--style <style>' : null,
+      !intentProvided ? '--intent <intent>' : null,
       !targetsProvided ? '--primary <content-type=1>' : null,
       !lengthProvided ? '--length <size>' : null,
     ].filter((value): value is string => Boolean(value));
@@ -315,16 +326,18 @@ async function applyInteractiveWriteOptionsIfNeeded(
     return resolved;
   }
 
-  if (styleProvided && targetsProvided && lengthProvided) {
+  if (styleProvided && intentProvided && targetsProvided && lengthProvided) {
     return resolved;
   }
 
   const prompted = await promptForMissingWriteOptions({
     askStyle: !styleProvided,
+    askIntent: !intentProvided,
     askTargets: !targetsProvided,
     askLength: !lengthProvided,
     style: resolved.config.settings.style,
     targetLength: resolved.config.settings.targetLength,
+    intent: resolved.config.settings.intent,
     targets: providedTargets,
   });
 
@@ -335,6 +348,7 @@ async function applyInteractiveWriteOptionsIfNeeded(
       settings: appSettingsSchema.parse({
         ...resolved.config.settings,
         ...(prompted.style ? { style: prompted.style } : {}),
+        ...(prompted.intent ? { intent: prompted.intent } : {}),
         ...(prompted.targetLength ? { targetLength: prompted.targetLength } : {}),
         ...(prompted.contentTargets ? { contentTargets: prompted.contentTargets } : {}),
       }),
@@ -344,25 +358,31 @@ async function applyInteractiveWriteOptionsIfNeeded(
 
 async function promptForMissingWriteOptions(params: {
   askStyle: boolean;
+  askIntent: boolean;
   askTargets: boolean;
   askLength: boolean;
   style: string;
+  intent: string;
   targetLength: number;
   targets: ContentTargetInput[];
-}): Promise<{ style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] }> {
-  let flowResult: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null = null;
+}): Promise<{ style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] }> {
+  let flowResult: { style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null = null;
 
   const app = render(
     React.createElement(WriteOptionsFlow, {
       askStyle: params.askStyle,
+      askIntent: params.askIntent,
       askTargets: params.askTargets,
       askLength: params.askLength,
       initialStyle: (writingStyleValues as readonly string[]).includes(params.style)
         ? params.style
         : 'professional',
+      initialIntent: (contentIntentValues as readonly string[]).includes(params.intent)
+        ? params.intent
+        : 'tutorial',
       initialTargetLength: resolveTargetLengthAlias(params.targetLength),
       initialTargets: params.targets,
-      onDone: (result: { style?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => {
+      onDone: (result: { style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => {
         flowResult = result;
       },
     }),

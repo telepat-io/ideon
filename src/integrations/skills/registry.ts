@@ -1,5 +1,5 @@
 import { configSettingKeys, configSecretKeys } from '../../config/manage.js';
-import { targetLengthValues, writingStyleValues } from '../../config/schema.js';
+import { contentIntentValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
 
 export interface SkillInputContract {
   required: string[];
@@ -24,6 +24,7 @@ export const ideonSkillRegistry: SkillDefinition[] = [
       required: ['idea'],
       enums: {
         style: [...writingStyleValues],
+        intent: [...contentIntentValues],
         length: [...targetLengthValues],
       },
     },
