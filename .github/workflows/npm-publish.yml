@@ -12,7 +12,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  quality-gates:
+    if: github.repository == 'telepat-io/ideon'
+    uses: ./.github/workflows/quality-gates.yml
+    with:
+      node-version: '20'
+      upload-coverage: false
+    secrets: inherit
+
   publish:
+    needs: quality-gates
     if: github.repository == 'telepat-io/ideon'
     runs-on: ubuntu-latest
 
@@ -63,13 +72,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Validate release quality gates
-        run: |
-          npm run lint
-          npm run test:coverage
-          npm run build
-          npm run docs:build
 
       - name: Publish package to npm
         run: npm publish --provenance --access public

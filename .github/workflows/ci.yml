@@ -10,41 +10,9 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install root dependencies
-        run: npm ci
-
-      - name: Install docs dependencies
-        run: npm ci
-        working-directory: docs-site
-
-      - name: Validate repository quality gates
-        run: |
-          npm run lint
-          npm run test:coverage
-          npm run build
-          npm run docs:build
-
-      - name: Upload coverage to Codecov
-        if: ${{ env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ env.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-          disable_search: true
-          verbose: true
+  quality-gates:
+    uses: ./.github/workflows/quality-gates.yml
+    with:
+      node-version: '20'
+      upload-coverage: true
+    secrets: inherit
