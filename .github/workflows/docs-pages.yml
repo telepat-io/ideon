@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'docs-site/**'
+      - 'writing-guide/**'
       - '.github/workflows/docs-pages.yml'
   workflow_dispatch:
 

@@ -54,6 +54,19 @@ const config: Config = {
     ],
   ],
 
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'writingGuide',
+        path: '../writing-guide',
+        routeBasePath: '/writing-guide',
+        sidebarPath: './writing-guide-sidebars.ts',
+        editUrl: 'https://github.com/telepat-io/ideon/tree/main/',
+      },
+    ],
+  ],
+
   themeConfig: {
     colorMode: {
       defaultMode: 'light',
@@ -89,6 +102,13 @@ const config: Config = {
           position: 'left',
         },
         {
+          type: 'docSidebar',
+          docsPluginId: 'writingGuide',
+          sidebarId: 'writingGuideSidebar',
+          position: 'left',
+          label: 'Writing Guide',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
         },
@@ -108,6 +128,10 @@ const config: Config = {
             {
               label: 'Getting Started',
               to: '/getting-started/overview',
+            },
+            {
+              label: 'Writing Guide',
+              to: '/writing-guide',
             },
             {
               label: 'CLI Reference',
