@@ -61,6 +61,7 @@ Example: `article` format + `deep-dive-analysis` content-intent + `analytical` s
 - x-thread
 - reddit-post
 - linkedin-post
+- landing-page-copy
 - press-release
 - science-paper
 
@@ -70,6 +71,7 @@ Example: `article` format + `deep-dive-analysis` content-intent + `analytical` s
 - friendly
 - technical
 - academic
+- storytelling
 - persuasive
 - conversational
 - authoritative
@@ -123,3 +125,13 @@ Avoid:
 - workflow or operations advice (publishing cadence, post-publish analytics, feedback loops)
 - instructions to create multiple variants before choosing
 - platform growth tactics not directly tied to writing quality
+
+## Migration Notes
+
+The prompt-era rules that are most important for generation parity are now documented in:
+
+- `references/target-length-guidance.md`
+- `references/multi-channel-brief-strategy.md`
+- `references/image-planning-strategy.md`
+- `styles/storytelling.md`
+- `formats/landing-page-copy.md`

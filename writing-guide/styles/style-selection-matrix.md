@@ -12,6 +12,7 @@ Use this matrix to choose a default style quickly.
 | Fast factual summary | journalistic | minimalist |
 | Humanized onboarding | empathetic | friendly |
 | Sharp short-form guidance | minimalist | authoritative |
+| Teach through narrative moments | storytelling | professional |
 
 ## Rule: Pick One Primary Style
 Description: Start with one base style, then add one supporting style only if needed.

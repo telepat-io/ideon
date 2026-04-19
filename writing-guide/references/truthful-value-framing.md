@@ -39,9 +39,20 @@ Description: Share lessons that shorten the reader's trial-and-error path.
 Negative example: "I know a secret but I cannot explain it."
 Positive example: "Here is the hidden mistake in most openers and the exact rewrite that fixes it."
 
+## Rule: Prefer Plain Professional Language Over AI Giveaway Phrasing
+Description: Keep tone natural and specific. Remove over-polished transitions, dramatic cliches, and generic conclusion filler.
+Negative example: "In today's fast-paced world, this revolutionary strategy changes everything, and in conclusion success is inevitable."
+Positive example: "Most teams lose time because approval ownership is unclear; define owner, deadline, and acceptance signal in each update."
+
+## Rule: End With New Value, Not Recap-Only Filler
+Description: Closing lines should add a decision rule, tradeoff, or practical next step.
+Negative example: "To summarize, everything above is important and should be considered carefully."
+Positive example: "If you can only change one line today, rewrite the opener to state one measurable reader outcome."
+
 ## Guardrails
 
 - Keep claims specific and verifiable.
 - Do not imply guaranteed outcomes.
 - Do not exploit fear, shame, or urgency without evidence.
 - Match every promise with real delivery in the body.
+- Avoid dramatic cliches and vague intensifiers when a concrete mechanism is available.

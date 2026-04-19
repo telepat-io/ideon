@@ -181,6 +181,7 @@ Positive example: Keeping copy as long as needed to clarify value, fit, proof, a
 Choose one structure before drafting persuasive or conversion-oriented copy:
 1. AIDA: Attention -> Interest -> Desire -> Action
 2. PAS: Problem -> Agitation -> Solution
+3. BAB: Before -> After -> Bridge
 3. 4Ps: Problem -> Promise -> Proof -> Proposal
 4. QUEST: Qualify -> Understand -> Educate -> Stimulate -> Transition
 5. FAB: Feature -> Advantage -> Benefit
@@ -189,6 +190,16 @@ Choose one structure before drafting persuasive or conversion-oriented copy:
 Description: Use structure based on how aware the reader already is of the problem and solution.
 Negative example: Leading with feature lists for readers who do not yet feel the problem.
 Positive example: Using PAS for cold readers, then FAB when readers are comparing solution details.
+
+### Rule: Select Spine by Search Intent and Job-to-Be-Done
+Description: Choose the persuasion sequence that best matches what the reader is trying to solve right now.
+Negative example: Applying the same persuasion formula to every piece regardless of audience need.
+Positive example: Using PAS for pain-first diagnostic queries, AIDA for awareness-to-action explainers, and BAB for transformation narratives where readers need a clear before/after contrast.
+
+### Rule: Treat Spine as Planning Logic, Not Surface Template
+Description: Keep one internal persuasion sequence while adapting the visible structure to channel conventions.
+Negative example: Forcing a rigid AIDA label stack into channels where that packaging feels unnatural.
+Positive example: Maintaining one persuasion arc while expressing it through channel-native pacing, transitions, and formatting.
 
 ### Rule: Do Not Skip Desire or Proof
 Description: Ensure the copy includes emotional motivation and credibility support before the CTA.
