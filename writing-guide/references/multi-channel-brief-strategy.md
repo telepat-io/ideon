@@ -4,6 +4,11 @@ Use one shared brief for all outputs in a run, then adapt execution by channel.
 
 This keeps ideas coherent across article, social, and newsletter outputs without copy-pasting structure.
 
+## Role Model
+
+- Primary output: delivers full canonical value for the idea.
+- Secondary output: promotes interest in the primary narrative while still helping a reader immediately.
+
 ## Shared Brief Fields
 
 Every brief should define:
@@ -17,10 +22,10 @@ Every brief should define:
 - Primary output target: the canonical artifact for full depth.
 - Secondary output strategy: how secondary pieces should create interest while remaining useful on their own.
 
-## Role Model
+Conditional handling:
 
-- Primary output: delivers full canonical value for the idea.
-- Secondary output: promotes interest in the primary narrative while still helping a reader immediately.
+- If secondary outputs exist, provide an explicit secondary output strategy.
+- If no secondary outputs exist, set secondary output strategy to an empty string.
 
 ## Rules
 
