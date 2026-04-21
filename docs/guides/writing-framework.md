@@ -6,7 +6,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Writing Framework
 
-Ideon prompt generation follows a shared writing framework across all content types.
+Ideon now uses guide-first prompt composition. Writing behavior is sourced from markdown guides under `writing-guide/` and assembled per stage.
 
 ## Core Principles
 
@@ -41,42 +41,40 @@ Avoid:
 - Over-polished AI-sounding transitions and dramatic cliches.
 - Copying article structure into social formats unchanged.
 
-## Style Overlays
+## Style Selection
 
-You can set one run-level style:
+You can set one run-level style. Ideon uses this value to select the matching style guide file under `writing-guide/styles/`.
 
-- `professional`: concise, confident, decision-ready.
-- `friendly`: warm, approachable, conversational, and naturally paced.
-- `technical`: precise, implementation-oriented, explicit, and term-stable.
-- `academic`: formal, analytical, carefully qualified, and evidence-aware.
-- `opinionated`: clear stance with explicit tradeoffs and concrete support.
-- `storytelling`: scene-first narrative with practical takeaways tied to utility.
-
-## Adaptive Persuasion Frameworks
-
-For article planning, Ideon can adapt the narrative structure to fit the objective and audience:
-
-- AIDA for awareness-to-action flows.
-- PAS for pain-first decision contexts.
-- BAB for transformation-focused storytelling.
-
-The planner chooses whichever framework best supports the specific topic and intent rather than forcing one universal formula.
+- `academic`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
+- `storytelling`
+- `technical`
 
 ## Prompt Composition Model
 
-Ideon composes writing instructions in layers:
+Ideon composes writing instructions by loading stage-specific guide bundles plus run metadata:
 
-1. Base writing framework (shared principles and do/avoid examples)
-2. Style directive (one run-level style)
-3. Content-type directive (article, x-thread, x-post, newsletter, and so on)
-4. Run context directive (the full set of requested output types)
+1. Stage bundle guides (planning, section writing, shared brief, channel adaptation)
+2. Selected style guide (`writing-guide/styles/<style>.md`)
+3. Selected intent guide (`writing-guide/content-intent/<intent>.md`)
+4. Selected format guide(s) (`writing-guide/formats/<content-type>.md`)
+5. Operational metadata in code (run context and target length)
 
-This layering keeps voice and quality consistent while still adapting structure to each channel format.
+This keeps writing behavior in versioned guide files while preserving deterministic runtime constraints.
 
 ## How This Applies in Multi-Output Runs
 
-- The same framework and style overlay applies to every output in the run.
-- Content-type directives then specialize formatting for each channel.
+- The same selected style and intent guide applies to every output in the run.
+- Format guides then specialize structure for each channel.
 - When article output is included, social outputs can use that article as anchor context.
 
 Practical implication:

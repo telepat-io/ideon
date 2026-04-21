@@ -44,7 +44,6 @@ export async function planContentBrief({
     schemaName: 'content_brief',
     schema: contentBriefSchema,
     messages: buildContentBriefMessages(idea, {
-      style: settings.style,
       intent: settings.intent,
       targetAudienceHint,
       primaryContentType: settings.contentTargets.find((target) => target.role === 'primary')?.contentType ?? 'article',

@@ -1,12 +1,10 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentBrief } from '../../types/contentBrief.js';
 import {
-  buildIntentDirective,
   buildRunContextDirective,
-  buildStyleDirective,
   buildTargetLengthDirective,
-  buildWritingFrameworkInstruction,
 } from './writingFramework.js';
+import { buildArticlePlanGuideInstruction } from './guideBundles.js';
 
 function deriveArticleSectionCounts(targetLengthWords: number): { min: number; max: number; label: string } {
   const normalizedWords = Number.isFinite(targetLengthWords) && targetLengthWords > 0 ? targetLengthWords : 900;
@@ -86,7 +84,6 @@ export function buildArticlePlanJsonSchema(targetLengthWords: number) {
 export function buildArticlePlanMessages(
   idea: string,
   options: {
-    style: string;
     intent: string;
     contentTypes: string[];
     contentBrief: ContentBrief;
@@ -96,14 +93,9 @@ export function buildArticlePlanMessages(
   const sectionCounts = deriveArticleSectionCounts(options.targetLength);
   const systemInstruction = [
     'You are a senior editorial strategist. Produce a rigorous article plan for a polished long-form Markdown article.',
-    buildWritingFrameworkInstruction(),
-    buildStyleDirective(options.style),
-    buildIntentDirective(options.intent),
+    buildArticlePlanGuideInstruction(options.intent, 'article'),
     buildRunContextDirective(options.contentTypes),
     buildTargetLengthDirective('article', options.targetLength),
-    'Quality bar: produce expert-level structure with high information density, concrete mechanisms, and practical reader outcomes.',
-    'Choose an adaptive persuasion structure (AIDA, PAS, or BAB) based on audience need, search intent, and the job-to-be-done of the idea.',
-    'Avoid generic filler, empty wrap-up sentences, and vague claims that do not specify how or why.',
     'Return only the requested JSON.',
   ].join(' ');
 
@@ -122,7 +114,7 @@ export function buildArticlePlanMessages(
         '- The article should feel authoritative, practical, and clearly structured for scanning and deep reading.',
         '- Generate a memorable title and a sharp subtitle that promise a concrete benefit, mechanism, or outcome.',
         '- The slug must be lowercase kebab-case and publication-ready.',
-        '- The description should work as a concise meta description, align with the shared content brief, and avoid hype language.',
+        '- The description should work as a concise meta description and align with the shared content brief.',
         `- Plan ${sectionCounts.label} strong sections with distinct focus areas and logical progression (no repetitive section intent).`,
         '- Frame section titles to reflect likely search intent or practical reader questions when appropriate.',
         '- Each section description should name the mechanism, evidence type, or practical action that makes the section useful.',
@@ -130,7 +122,6 @@ export function buildArticlePlanMessages(
         '- Include a cover image description and 2 to 3 inline image descriptions.',
         '- Image descriptions must be concrete and contextual, not generic stock-photo phrasing.',
         '- Inline images should be anchored after specific sections using 1-based indexes.',
-        '- Avoid AI giveaway phrasing, dramatic cliches, and generic conclusions that add no new information.',
         '',
         'Shared content brief context:',
         `- description: ${options.contentBrief.description}`,

@@ -102,11 +102,9 @@ const config: Config = {
           position: 'left',
         },
         {
-          type: 'docSidebar',
-          docsPluginId: 'writingGuide',
-          sidebarId: 'writingGuideSidebar',
-          position: 'left',
+          to: '/writing-guide',
           label: 'Writing Guide',
+          position: 'left',
         },
         {
           type: 'localeDropdown',

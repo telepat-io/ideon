@@ -1,48 +1,21 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentBrief } from '../../types/contentBrief.js';
 import {
-  buildIntentDirective,
-  buildStyleDirective,
   buildTargetLengthDirective,
-  buildWritingFrameworkInstruction,
 } from './writingFramework.js';
+import { buildChannelContentGuideInstruction } from './guideBundles.js';
 
-const CHANNEL_RULES: Record<string, string> = {
-  'blog-post': [
-    'Write a complete Markdown blog post with a clear title, short lead, scannable subheadings, and practical takeaways.',
-    'Favor concrete examples, compact paragraphs, and actionable guidance over theory.',
-  ].join(' '),
-  'x-thread': [
-    'Write native X thread content with short lines, high signal, and a strong hook in the first line.',
-    'Return a numbered thread with one post per line prefixed like "1/7".',
-    'Each thread line must be self-contained but still advance the same core narrative.',
-  ].join(' '),
-  'x-post': [
-    'Write native X content with short lines, high signal, and a strong hook in the first line.',
-    'Return one concise post only. Do not return numbered thread lines.',
-  ].join(' '),
-  'linkedin-post': [
-    'Write a LinkedIn-native post for professional clarity and engagement.',
-    'Open with a strong two-line hook, use spaced short paragraphs, and end with one focused reflection or CTA.',
-  ].join(' '),
-  newsletter: [
-    'Write a concise newsletter piece with a subject-line-quality opening and clear section flow.',
-    'Prioritize practical value density, strong transitions, and sustained reader momentum.',
-  ].join(' '),
-  'press-release': [
-    'Write a press release in Markdown with a clear headline, lead paragraph, body details, and quote-ready statements.',
-    'Prioritize factual clarity, stakeholder relevance, and explicit timing/context for the announcement.',
-  ].join(' '),
-  'science-paper': [
-    'Write science-paper style Markdown with disciplined structure, methodological clarity, and evidence-conscious claims.',
-    'Separate observations from interpretations and include caveats where certainty is limited.',
-  ].join(' '),
-  'reddit-post': [
-    'Write a Reddit-native post in plain, authentic voice with practical detail and no marketing gloss.',
-    'Use first-hand framing, candid constraints, and only minimal formatting that improves readability.',
-  ].join(' '),
-  article: 'Write a polished Markdown article.',
-};
+function buildOutputShapeConstraint(contentType: string): string {
+  if (contentType === 'x-thread') {
+    return 'Return a numbered thread with one post per line prefixed like "1/7".';
+  }
+
+  if (contentType === 'x-post') {
+    return 'Return one concise post only. Do not return numbered thread lines.';
+  }
+
+  return '';
+}
 
 export function buildSingleShotContentMessages(options: {
   idea: string;
@@ -57,7 +30,7 @@ export function buildSingleShotContentMessages(options: {
   articleReferenceMarkdown?: string;
   targetLength: number;
 }): ChatMessage[] {
-  const channelRule = CHANNEL_RULES[options.contentType] ?? 'Write channel-native Markdown content.';
+  const outputShapeConstraint = buildOutputShapeConstraint(options.contentType);
   const articleContext = options.articleReferenceMarkdown
     ? [
         'Reference primary context (use as anchor source, but adapt natively for the requested channel):',
@@ -81,11 +54,9 @@ export function buildSingleShotContentMessages(options: {
       content: [
         'You are a senior content strategist and copywriter.',
         `Write exactly one ${options.contentType} output.`,
-        buildWritingFrameworkInstruction(),
-        buildStyleDirective(options.style),
-        buildIntentDirective(options.intent),
+        buildChannelContentGuideInstruction(options.style, options.intent, options.contentType),
         roleDirective,
-        channelRule,
+        outputShapeConstraint,
       ].join(' '),
     },
     {

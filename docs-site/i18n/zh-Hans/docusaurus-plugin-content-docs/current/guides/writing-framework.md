@@ -6,7 +6,7 @@ keywords: [ideon, 文档, cli, 指南, 参考]
 
 # 写作框架
 
-Ideon 的提示词生成在所有内容类型上遵循统一写作框架。
+Ideon 现已采用“指南优先”的提示词组合方式。写作行为来自 `writing-guide/` 下的 markdown 指南文件，并按阶段组合。
 
 ## 核心原则
 
@@ -41,42 +41,40 @@ Ideon 的提示词生成在所有内容类型上遵循统一写作框架。
 - 过度打磨、AI 味重的过渡与戏剧化陈词滥调。
 - 生搬硬套文章结构到社交平台格式。
 
-## 风格叠加
+## 风格选择
 
-你可以设置一个运行级风格：
+你可以设置一个运行级风格。Ideon 会用该值选择 `writing-guide/styles/` 下对应的风格指南文件。
 
-- `professional`：简洁、自信、利于决策。
-- `friendly`：温和、易接近、对话式且节奏自然。
-- `technical`：精确、实现导向、表达明确且术语稳定。
-- `academic`：正式、分析性强、论证谨慎并注重证据。
-- `opinionated`：立场明确，清晰呈现取舍并提供具体支撑。
-- `storytelling`：场景先行叙事，并落到实用结论。
-
-## 自适应说服框架
-
-在文章规划中，Ideon 可根据目标与受众自适应叙事结构：
-
-- AIDA：用于从认知到行动的流程。
-- PAS：用于痛点先行的决策语境。
-- BAB：用于强调转变过程的叙事。
-
-规划器会选择最适配具体主题与意图的框架，而不是强行套用单一公式。
+- `academic`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
+- `storytelling`
+- `technical`
 
 ## 提示词组合模型
 
-Ideon 以分层方式组合写作指令：
+Ideon 会将“阶段指南 + 运行元数据”组合成提示词：
 
-1. Base writing framework (shared principles and do/avoid examples)
-2. Style directive (one run-level style)
-3. Content-type directive (article, x-thread, x-post, newsletter, and so on)
-4. Run context directive (the full set of requested output types)
+1. 阶段指南集合（规划、正文写作、共享简报、渠道改写）
+2. 选定风格指南（`writing-guide/styles/<style>.md`）
+3. 选定意图指南（`writing-guide/content-intent/<intent>.md`）
+4. 选定格式指南（`writing-guide/formats/<content-type>.md`）
+5. 代码中的运行约束（运行上下文与目标长度）
 
-这种分层既能保持语气和质量一致，也能对不同渠道格式进行结构适配。
+这种方式将写作规则沉淀到可版本化的指南文件，同时保留可预测的运行时约束。
 
 ## 在多输出运行中的应用
 
-- 同一套框架与风格叠加会应用到该次运行的所有输出。
-- 随后由内容类型指令对不同渠道进行格式特化。
+- 同一套风格与意图指南会应用到该次运行的所有输出。
+- 随后由格式指南对不同渠道进行结构特化。
 - 当包含文章输出时，社交输出可将文章作为锚定上下文。
 
 实践含义：

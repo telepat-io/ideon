@@ -33,7 +33,6 @@ export async function planArticle({
         schemaName: 'article_plan',
         schema: buildArticlePlanJsonSchema(settings.targetLength),
         messages: buildArticlePlanMessages(idea, {
-          style: settings.style,
           intent: settings.intent,
           contentTypes: settings.contentTargets.map((target) => target.contentType),
           contentBrief,

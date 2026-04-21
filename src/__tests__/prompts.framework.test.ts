@@ -7,11 +7,9 @@ import {
 import { buildSingleShotContentMessages } from '../llm/prompts/channelContent.js';
 import {
   buildRunContextDirective,
-  buildStyleDirective,
-  buildIntentDirective,
   buildTargetLengthDirective,
-  buildWritingFrameworkInstruction,
 } from '../llm/prompts/writingFramework.js';
+import { buildContentBriefMessages } from '../llm/prompts/contentBrief.js';
 import type { ArticlePlan } from '../types/article.js';
 import type { ContentBrief } from '../types/contentBrief.js';
 
@@ -57,26 +55,6 @@ function mockPlan(): ArticlePlan {
 }
 
 describe('writing framework helpers', () => {
-  it('returns universal framework guidance with do and avoid examples', () => {
-    const framework = buildWritingFrameworkInstruction();
-
-    expect(framework).toContain('Writing framework:');
-    expect(framework).toContain('Do examples:');
-    expect(framework).toContain('Avoid examples:');
-    expect(framework).toContain('Information density mandate');
-    expect(framework).toContain('Authenticity filter');
-  });
-
-  it('returns style-specific directive and fallback for unknown style', () => {
-    expect(buildStyleDirective('technical')).toContain('Style directive (technical)');
-    expect(buildStyleDirective('unknown-style')).toContain('Style directive: keep tone consistent');
-  });
-
-  it('returns intent-specific directive and fallback for unknown intent', () => {
-    expect(buildIntentDirective('tutorial')).toContain('Intent directive (tutorial)');
-    expect(buildIntentDirective('unknown-intent')).toContain('Intent directive: align structure and emphasis');
-  });
-
   it('includes normalized run context when no content types are provided', () => {
     expect(buildRunContextDirective([])).toContain('requested content types are article');
   });
@@ -89,9 +67,8 @@ describe('writing framework helpers', () => {
 });
 
 describe('article prompt builders', () => {
-  it('builds article plan prompt with framework, style, and run context', () => {
+  it('builds article plan prompt with guide bundle and run context only', () => {
     const messages = buildArticlePlanMessages('Ship better docs with AI', {
-      style: 'friendly',
       intent: 'tutorial',
       contentTypes: ['article', 'x-thread'],
       contentBrief: mockBrief(),
@@ -100,18 +77,34 @@ describe('article prompt builders', () => {
 
     expect(messages).toHaveLength(2);
     expect(messages[0]?.role).toBe('system');
-    expect(messages[0]?.content).toContain('Writing framework:');
-    expect(messages[0]?.content).toContain('Style directive (friendly)');
-    expect(messages[0]?.content).toContain('Intent directive (tutorial)');
     expect(messages[0]?.content).toContain('requested content types are article, x-thread');
     expect(messages[0]?.content).toContain('aim for about 900 words total');
-    expect(messages[0]?.content).toContain('adaptive persuasion structure');
-    expect(messages[1]?.content).toContain('Avoid AI giveaway phrasing');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/headline-writing-systems.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/content-frameworks.md');
+    expect(messages[0]?.content).not.toContain('Writing framework:');
+    expect(messages[0]?.content).not.toContain('Style directive (friendly)');
+    expect(messages[0]?.content).not.toContain('Intent directive (tutorial)');
+    expect(messages[0]?.content).not.toContain('adaptive persuasion structure');
+    expect(messages[0]?.content).not.toContain('Quality bar:');
+    expect(messages[0]?.content).not.toContain('Avoid generic filler');
+    expect(messages[1]?.content).not.toContain('Avoid AI giveaway phrasing');
+  });
+
+  it('builds content brief prompt with shared-brief guide bundle', () => {
+    const messages = buildContentBriefMessages('Ship better docs with AI', {
+      intent: 'tutorial',
+      primaryContentType: 'article',
+      secondaryContentTypes: ['x-thread', 'linkedin-post'],
+    });
+
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/multi-channel-brief-strategy.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/target-length-guidance.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/article.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/x-thread.md');
   });
 
   it('falls back to medium section ranges for unknown targetLength in messages', () => {
     const messages = buildArticlePlanMessages('Fallback sizing test', {
-      style: 'professional',
       intent: 'how-to-guide',
       contentTypes: ['article'],
       contentBrief: mockBrief(),
@@ -138,7 +131,7 @@ describe('article prompt builders', () => {
     expect(fallbackSchema.properties.sections.maxItems).toBe(5);
   });
 
-  it('builds intro, section, and outro prompts with shared framework and style overlay', () => {
+  it('builds intro, section, and outro prompts with guide bundles and operational constraints', () => {
     const plan = mockPlan();
 
     const intro = buildIntroMessages(plan, 'professional', 'tutorial', ['article', 'linkedin-post'], 500, 120);
@@ -154,21 +147,33 @@ describe('article prompt builders', () => {
     );
     const outro = buildOutroMessages(plan, 'storytelling', 'opinion-piece', ['article', 'newsletter'], 1400, 200);
 
-    expect(intro[0]?.content).toContain('Writing framework:');
-    expect(intro[0]?.content).toContain('Style directive (professional)');
-    expect(intro[0]?.content).toContain('Intent directive (tutorial)');
+    expect(intro[0]?.content).toContain('Guide source: writing-guide/general/core-web-writing-rules.md');
+    expect(intro[0]?.content).toContain('Guide source: writing-guide/references/skimmability-patterns.md');
+    expect(intro[0]?.content).toContain('Guide source: writing-guide/styles/professional.md');
+    expect(intro[0]?.content).toContain('Guide source: writing-guide/content-intent/tutorial.md');
+    expect(intro[0]?.content).toContain('Guide source: writing-guide/formats/article.md');
+    expect(intro[0]?.content).not.toContain('Writing framework:');
+    expect(intro[0]?.content).not.toContain('Style directive (professional)');
+    expect(intro[0]?.content).not.toContain('Intent directive (tutorial)');
     expect(intro[0]?.content).toContain('aim for about 500 words total');
 
-    expect(section[0]?.content).toContain('Style directive (technical)');
-    expect(section[0]?.content).toContain('Intent directive (deep-dive-analysis)');
+    expect(section[0]?.content).toContain('Guide source: writing-guide/references/emotional-resonance.md');
+    expect(section[0]?.content).toContain('Guide source: writing-guide/references/readability-and-pace.md');
+    expect(section[0]?.content).toContain('Guide source: writing-guide/styles/technical.md');
+    expect(section[0]?.content).toContain('Guide source: writing-guide/content-intent/deep-dive-analysis.md');
+    expect(section[0]?.content).not.toContain('Style directive (technical)');
+    expect(section[0]?.content).not.toContain('Intent directive (deep-dive-analysis)');
     expect(section[1]?.content).toContain('Write the section titled');
     expect(section[1]?.content).toContain('Article generated so far:');
     expect(section[1]?.content).toContain('Existing intro context.');
     expect(section[1]?.content).toContain('3 to 6 paragraphs.');
     expect(section[1]?.content).toContain('Target length: about 210 words.');
 
-    expect(outro[0]?.content).toContain('Style directive (storytelling)');
-    expect(outro[0]?.content).toContain('Intent directive (opinion-piece)');
+    expect(outro[0]?.content).toContain('Guide source: writing-guide/references/prose-quality-checks.md');
+    expect(outro[0]?.content).toContain('Guide source: writing-guide/styles/storytelling.md');
+    expect(outro[0]?.content).toContain('Guide source: writing-guide/content-intent/opinion-piece.md');
+    expect(outro[0]?.content).not.toContain('Style directive (storytelling)');
+    expect(outro[0]?.content).not.toContain('Intent directive (opinion-piece)');
     expect(outro[0]?.content).toContain('requested content types are article, newsletter');
     expect(outro[1]?.content).toContain('3 to 5 paragraphs.');
     expect(outro[1]?.content).toContain('Target length: about 200 words.');
@@ -197,7 +202,7 @@ describe('article prompt builders', () => {
 });
 
 describe('channel prompt builder', () => {
-  it('embeds framework and style directives for channel outputs', () => {
+  it('embeds guide-driven instructions and operational constraints for channel outputs', () => {
     const messages = buildSingleShotContentMessages({
       idea: 'Announce workflow automation update',
       contentType: 'linkedin-post',
@@ -212,10 +217,12 @@ describe('channel prompt builder', () => {
       targetLength: 1400,
     });
 
-    expect(messages[0]?.content).toContain('Writing framework:');
-    expect(messages[0]?.content).toContain('Style directive (authoritative)');
-    expect(messages[0]?.content).toContain('Intent directive (announcement)');
-    expect(messages[0]?.content).toContain('LinkedIn-native post');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/truthful-value-framing.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/linkedin-post.md');
+    expect(messages[0]?.content).not.toContain('Writing framework:');
+    expect(messages[0]?.content).not.toContain('Style directive (authoritative)');
+    expect(messages[0]?.content).not.toContain('Intent directive (announcement)');
+    expect(messages[0]?.content).not.toContain('LinkedIn-native post');
     expect(messages[1]?.content).toContain('Shared content brief');
     expect(messages[1]?.content).toContain('Reference primary context');
     expect(messages[1]?.content).toContain('Target length (large linkedin post)');
@@ -238,6 +245,7 @@ describe('channel prompt builder', () => {
 
     expect(messages[0]?.content).toContain('Return a numbered thread');
     expect(messages[0]?.content).toContain('prefixed like "1/7"');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/x-thread-hooks.md');
     expect(messages[1]?.content).not.toContain('X mode:');
   });
 
@@ -273,6 +281,6 @@ describe('channel prompt builder', () => {
       targetLength: 900,
     });
 
-    expect(messages[0]?.content).toContain('Write channel-native Markdown content.');
+    expect(messages[0]?.content).not.toContain('Write channel-native Markdown content.');
   });
 });

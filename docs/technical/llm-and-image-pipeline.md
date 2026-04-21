@@ -37,13 +37,13 @@ Generated text is normalized by:
 
 ## Prompt System Composition
 
-Prompt composition now includes layered directives:
+Prompt composition is guide-first:
 
-- shared writing framework (structure, information density, specificity, rhythm, scannability, active voice, storytelling discipline, authenticity filter)
-- style overlay (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`)
-- content-type/channel directives (`article`, `x-thread`, `x-post`, `linkedin-post`, etc.)
-
-Article planning prompts also include adaptive persuasion guidance so the planner can choose AIDA, PAS, or BAB based on audience and objective fit.
+- stage-specific guide bundles loaded from `writing-guide/`
+- style guide selected from `writing-guide/styles/<style>.md`
+- intent guide selected from `writing-guide/content-intent/<intent>.md`
+- format guide(s) selected from `writing-guide/formats/<content-type>.md`
+- operational runtime constraints from code (run context, target length, and minimal output-shape contracts)
 
 For multi-target runs, article outputs may be used as anchor context for social/channel outputs.
 

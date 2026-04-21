@@ -1,10 +1,8 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import {
-  buildIntentDirective,
   buildRunContextDirective,
-  buildStyleDirective,
-  buildWritingFrameworkInstruction,
 } from './writingFramework.js';
+import { buildContentBriefGuideInstruction } from './guideBundles.js';
 
 export const contentBriefSchema = {
   type: 'object',
@@ -44,7 +42,6 @@ export const contentBriefSchema = {
 export function buildContentBriefMessages(
   idea: string,
   options: {
-    style: string;
     intent: string;
     targetAudienceHint?: string;
     primaryContentType: string;
@@ -57,9 +54,7 @@ export function buildContentBriefMessages(
   const systemInstruction = [
     'You are a senior editorial strategist.',
     'Produce a shared content brief that can guide all requested content types in this run.',
-    buildWritingFrameworkInstruction(),
-    buildStyleDirective(options.style),
-    buildIntentDirective(options.intent),
+    buildContentBriefGuideInstruction(options.intent, options.primaryContentType, options.secondaryContentTypes),
     buildRunContextDirective([options.primaryContentType, ...options.secondaryContentTypes]),
     'The brief must be specific, concrete, and directly usable by writers without extra clarification.',
     'This run has one explicit primary output and optional secondary outputs that should promote or incite interest in the primary while remaining independently valuable.',

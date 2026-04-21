@@ -2,12 +2,10 @@ import type { ArticlePlan, ArticleSectionPlan } from '../../types/article.js';
 import { resolveTargetLengthAlias } from '../../config/schema.js';
 import type { ChatMessage } from '../openRouterClient.js';
 import {
-  buildIntentDirective,
   buildRunContextDirective,
-  buildStyleDirective,
   buildTargetLengthDirective,
-  buildWritingFrameworkInstruction,
 } from './writingFramework.js';
+import { buildArticleSectionGuideInstruction } from './guideBundles.js';
 
 const INTRO_PARAGRAPH_COUNTS: Record<string, string> = {
   small: '1 to 2',
@@ -36,9 +34,7 @@ function buildSystemInstruction(
 ): string {
   return [
     base,
-    buildWritingFrameworkInstruction(),
-    buildStyleDirective(style),
-    buildIntentDirective(intent),
+    buildArticleSectionGuideInstruction(style, intent, 'article'),
     buildRunContextDirective(contentTypes),
     buildTargetLengthDirective('article', targetLengthWords),
   ].join(' ');
