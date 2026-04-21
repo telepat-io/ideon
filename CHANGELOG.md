@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.8](https://github.com/telepat-io/ideon/compare/ideon-v0.1.7...ideon-v0.1.8) (2026-04-21)
+
+
+### Features
+
+* add comprehensive writing guides and frameworks for effective web content creation ([b1a6b55](https://github.com/telepat-io/ideon/commit/b1a6b55699df69151c7cf05c50006119aa2fdc40))
+* add content intent option to CLI and related components ([fe0974d](https://github.com/telepat-io/ideon/commit/fe0974def7f22229a573112e2f41c73900054b40))
+* add link enrichment command and options ([6868e16](https://github.com/telepat-io/ideon/commit/6868e16e301961917a8437d2c5aefc17012c19f4))
+* add new writing frameworks and guidelines for improved content structure and storytelling techniques ([f7f851e](https://github.com/telepat-io/ideon/commit/f7f851e2f068863cf523e3bad9b3d47034d85966))
+* Add retry handling and cost tracking for pipeline stages ([5aa5d4d](https://github.com/telepat-io/ideon/commit/5aa5d4de565ef5703bb66b20eab41c8aef9f6c73))
+* enhance contentBriefSchema validation and add related tests for secondary content strategies ([b3cb5d7](https://github.com/telepat-io/ideon/commit/b3cb5d7ef1b35486c62523b3502f54e43718c44c))
+* Enhance target length handling and documentation ([fd371fa](https://github.com/telepat-io/ideon/commit/fd371fa8b6ca9d5f6ee78688383da430456199e5))
+* implement guide-driven prompt composition and refactor related functions ([0a9739a](https://github.com/telepat-io/ideon/commit/0a9739a1dabc11751916038acd69e785292af690))
+* restructure writing guide sidebar to include categorized sections for better navigation ([33f4297](https://github.com/telepat-io/ideon/commit/33f4297f0d8acc9fb5dcf782074b679db4c5743b))
+
+
+### Bug Fixes
+
+* add handling for sentinel secondary type values in contentBriefSchema ([ab0e9e9](https://github.com/telepat-io/ideon/commit/ab0e9e9aebabe759d5e04a56b3a5439b7bc0028b))
+
 ## [0.1.7](https://github.com/telepat-io/ideon/compare/ideon-v0.1.6...ideon-v0.1.7) (2026-04-17)
 
 
