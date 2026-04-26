@@ -86,6 +86,19 @@ jobs:
 
           node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(0,"utf8"));const keys=["iss","sub","aud","repository","repository_owner","ref","sha","workflow","workflow_ref","job_workflow_ref","event_name","actor","environment","runner_environment"];const out={};for(const k of keys){if(j[k]!==undefined)out[k]=j[k];}console.log(JSON.stringify(out,null,2));' <<<"$OIDC_PAYLOAD"
 
+          EXCHANGE_RESPONSE_FILE="$(mktemp)"
+          EXCHANGE_STATUS="$(curl -sS -o "$EXCHANGE_RESPONSE_FILE" -w '%{http_code}' \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/%40telepat%2Fideon")"
+
+          echo "npm_oidc_exchange_status=$EXCHANGE_STATUS"
+          node -e 'const fs=require("fs");let body={raw:fs.readFileSync(process.argv[1],"utf8")};try{body=JSON.parse(body.raw);}catch{}if(body.token){body.token="<redacted>";}console.log(JSON.stringify(body,null,2));' "$EXCHANGE_RESPONSE_FILE"
+
+          if [ "$EXCHANGE_STATUS" -lt 200 ] || [ "$EXCHANGE_STATUS" -gt 299 ]; then
+            echo "npm OIDC package exchange failed before publish"
+            exit 1
+          fi
+
       - name: Publish package to npm
         id: npm_publish
         continue-on-error: true
