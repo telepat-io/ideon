@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/telepat-io/ideon/compare/ideon-v0.1.8...ideon-v0.1.9) (2026-04-26)
+
+
+### Bug Fixes
+
+* release workflow ([4ac0ae2](https://github.com/telepat-io/ideon/commit/4ac0ae27e737b94da6a0ee2c5d47118ba13ac28b))
+
 ## [0.1.8](https://github.com/telepat-io/ideon/compare/ideon-v0.1.7...ideon-v0.1.8) (2026-04-21)
 
 
