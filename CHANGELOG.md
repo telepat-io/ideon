@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.10](https://github.com/telepat-io/ideon/compare/ideon-v0.1.9...ideon-v0.1.10) (2026-04-26)
+
+
+### Bug Fixes
+
+* enhance npm publishing workflow with OIDC claims inspection and debug logging ([dd49f71](https://github.com/telepat-io/ideon/commit/dd49f71734d2a7c827f1e55f64e71a67b5594333))
+
 ## [0.1.9](https://github.com/telepat-io/ideon/compare/ideon-v0.1.8...ideon-v0.1.9) (2026-04-26)
 
 
