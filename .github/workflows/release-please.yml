@@ -58,5 +58,50 @@ jobs:
       - name: Build package
         run: npm run build
 
+      - name: Print publish context
+        run: |
+          echo "repository=$GITHUB_REPOSITORY"
+          echo "ref=$GITHUB_REF"
+          echo "sha=$GITHUB_SHA"
+          echo "workflow=$GITHUB_WORKFLOW"
+          echo "workflow_ref=$GITHUB_WORKFLOW_REF"
+          echo "run_id=$GITHUB_RUN_ID"
+
+      - name: Inspect OIDC claims for npm trusted publishing
+        run: |
+          set -euo pipefail
+
+          OIDC_RESPONSE="$(curl -sSfL \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org")"
+
+          OIDC_TOKEN="$(node -e 'const fs=require("fs");const d=JSON.parse(fs.readFileSync(0,"utf8"));process.stdout.write(d.value||"");' <<<"$OIDC_RESPONSE")"
+
+          if [ -z "$OIDC_TOKEN" ]; then
+            echo "Failed to obtain OIDC token for npm audience"
+            exit 1
+          fi
+
+          OIDC_PAYLOAD="$(node -e 'const t=process.argv[1];const p=t.split(".")[1]||"";const s=p.replace(/-/g,"+").replace(/_/g,"/");const pad=s+"===".slice((s.length+3)%4);process.stdout.write(Buffer.from(pad,"base64").toString("utf8"));' "$OIDC_TOKEN")"
+
+          node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync(0,"utf8"));const keys=["iss","sub","aud","repository","repository_owner","ref","sha","workflow","workflow_ref","job_workflow_ref","event_name","actor","environment","runner_environment"];const out={};for(const k of keys){if(j[k]!==undefined)out[k]=j[k];}console.log(JSON.stringify(out,null,2));' <<<"$OIDC_PAYLOAD"
+
       - name: Publish package to npm
+        id: npm_publish
+        continue-on-error: true
         run: npm publish --provenance --access public
+
+      - name: Dump npm debug logs on failure
+        if: steps.npm_publish.outcome == 'failure'
+        run: |
+          set -euo pipefail
+          echo "npm publish failed; dumping debug logs"
+          ls -la /home/runner/.npm/_logs || true
+          for f in /home/runner/.npm/_logs/*-debug-0.log; do
+            if [ -f "$f" ]; then
+              echo "::group::$f"
+              sed -n '1,220p' "$f"
+              echo "::endgroup::"
+            fi
+          done
+          exit 1
