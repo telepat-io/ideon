@@ -88,6 +88,7 @@ jobs:
 
           EXCHANGE_RESPONSE_FILE="$(mktemp)"
           EXCHANGE_STATUS="$(curl -sS -o "$EXCHANGE_RESPONSE_FILE" -w '%{http_code}' \
+            -X POST \
             -H "Authorization: Bearer $OIDC_TOKEN" \
             "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/%40telepat%2Fideon")"
 
