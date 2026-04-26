@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11](https://github.com/telepat-io/ideon/compare/ideon-v0.1.10...ideon-v0.1.11) (2026-04-26)
+
+
+### Bug Fixes
+
+* add OIDC token exchange for npm publishing with error handling ([5cacbaa](https://github.com/telepat-io/ideon/commit/5cacbaaa86bca0e8b56f667c38850bb98cb7a80c))
+
 ## [0.1.10](https://github.com/telepat-io/ideon/compare/ideon-v0.1.9...ideon-v0.1.10) (2026-04-26)
 
 
