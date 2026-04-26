@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.12](https://github.com/telepat-io/ideon/compare/ideon-v0.1.11...ideon-v0.1.12) (2026-04-26)
+
+
+### Bug Fixes
+
+* add POST method for OIDC token exchange in npm publishing workflow ([d133c66](https://github.com/telepat-io/ideon/commit/d133c665c23a1dc564a87a6b0db62bd80dd84fd4))
+
 ## [0.1.11](https://github.com/telepat-io/ideon/compare/ideon-v0.1.10...ideon-v0.1.11) (2026-04-26)
 
 
