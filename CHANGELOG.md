@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.13](https://github.com/telepat-io/ideon/compare/ideon-v0.1.12...ideon-v0.1.13) (2026-04-26)
+
+
+### Bug Fixes
+
+* update Node.js version to 24 in release workflow ([eddeffe](https://github.com/telepat-io/ideon/commit/eddeffec34b46a62e3f394e7ada5d33225937521))
+
 ## [0.1.12](https://github.com/telepat-io/ideon/compare/ideon-v0.1.11...ideon-v0.1.12) (2026-04-26)
 
 
