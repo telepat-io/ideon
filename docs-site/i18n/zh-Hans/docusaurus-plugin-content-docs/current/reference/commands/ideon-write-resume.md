@@ -13,7 +13,7 @@ keywords: [ideon, cli, resume, 检查点, 写作]
 ## 用法
 
 ```bash
-ideon write resume [--no-interactive] [--enrich-links]
+ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## 参数与选项
@@ -22,6 +22,9 @@ ideon write resume [--no-interactive] [--enrich-links]
 | --- | --- | --- | --- | --- | --- | --- |
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 即使在 TTY 中也强制使用纯非交互输出。 |
 | `--enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 在 resume 执行期间启用链接增强阶段。 |
+| `--link <expression->url>` | 无 | 否 | 可重复 string | 无 | `"文字->https://..."` | 添加或更新自定义链接。需要 `--enrich-links`。 |
+| `--unlink <expression>` | 无 | 否 | 可重复 string | 无 | 任意 expression 字符串 | 按 expression 删除自定义链接。需要 `--enrich-links`。 |
+| `--max-links <n>` | 无 | 否 | 正整数 | 由文章长度决定 | 任意正整数 | 限制生成链接数量。需要 `--enrich-links`。 |
 
 ## 示例
 

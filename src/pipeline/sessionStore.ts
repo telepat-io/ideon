@@ -39,6 +39,7 @@ const linksResultSchema = z.object({
   contentType: z.string().min(1),
   markdownPath: z.string().min(1),
   links: z.array(linkEntrySchema),
+  customLinks: z.array(linkEntrySchema).default([]),
 });
 
 const pipelineArtifactSummarySchema = z.object({

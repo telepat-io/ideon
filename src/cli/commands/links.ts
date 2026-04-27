@@ -11,6 +11,9 @@ import { ReportedError } from '../reportedError.js';
 interface LinksCommandOptions {
   slug: string;
   mode: string;
+  links?: string[];
+  unlinks?: string[];
+  maxLinks?: number;
 }
 
 type LinksMergeMode = 'fresh' | 'append';
@@ -28,6 +31,7 @@ interface ParsedFrontmatter {
 
 interface LinksSidecar {
   version: number;
+  customLinks: LinkEntry[];
   links: LinkEntry[];
 }
 
@@ -58,6 +62,14 @@ export async function runLinksCommand(
   }
 
   const openRouter = new OpenRouterClient(openRouterApiKey);
+  const linksPath = resolveLinksPath(markdownPath);
+  const existing = await readExistingLinks(linksPath);
+
+  // Resolve custom links: start from existing, apply --link additions, then --unlink removals
+  const updatedCustomLinks = resolveCustomLinks(existing?.customLinks ?? [], options.links ?? [], options.unlinks ?? []);
+
+  const effectiveMaxLinks = options.maxLinks;
+
   const linksResult = await enrichLinks({
     markdownFiles: [{ markdownPath, fileId, contentType: 'article' }],
     articleTitle,
@@ -65,20 +77,21 @@ export async function runLinksCommand(
     openRouter,
     settings: resolved.config.settings,
     dryRun: false,
+    customLinks: updatedCustomLinks,
+    maxLinks: effectiveMaxLinks,
     onItemProgress(event) {
       logProgress(event, log);
     },
   });
 
   const generatedLinks = linksResult[0]?.links ?? [];
-  const linksPath = resolveLinksPath(markdownPath);
-  const existing = await readExistingLinks(linksPath);
-  const mergedLinks = mode === 'append' ? mergeLinks(existing?.links ?? [], generatedLinks) : generatedLinks;
-  const appendedCount = Math.max(0, mergedLinks.length - (existing?.links.length ?? 0));
+  const mergedGeneratedLinks = mode === 'append' ? mergeLinks(existing?.links ?? [], generatedLinks) : generatedLinks;
+  const appendedCount = Math.max(0, mergedGeneratedLinks.length - (existing?.links.length ?? 0));
 
   await writeLinksFile(markdownPath, {
-    version: 1,
-    links: mergedLinks,
+    version: 2,
+    customLinks: updatedCustomLinks,
+    links: mergedGeneratedLinks,
   } satisfies LinksSidecar);
 
   const relativeMarkdownPath = formatRelativePath(cwd, markdownPath);
@@ -87,14 +100,14 @@ export async function runLinksCommand(
   if (mode === 'fresh') {
     const replaced = existing ? 'Replaced existing links.' : 'Created links sidecar.';
     log(`Enriched links for "${slug}".`);
-    log(`${replaced} Saved ${generatedLinks.length} links to ${relativeLinksPath} (${relativeMarkdownPath}).`);
+    log(`${replaced} Saved ${generatedLinks.length} generated + ${updatedCustomLinks.length} custom links to ${relativeLinksPath} (${relativeMarkdownPath}).`);
     return;
   }
 
   const baseCount = existing?.links.length ?? 0;
   const verb = existing ? 'Appended and deduplicated links.' : 'Created links sidecar.';
   log(`Enriched links for "${slug}".`);
-  log(`${verb} Base ${baseCount}, added ${appendedCount}, total ${mergedLinks.length} in ${relativeLinksPath} (${relativeMarkdownPath}).`);
+  log(`${verb} Base ${baseCount}, added ${appendedCount}, total ${mergedGeneratedLinks.length} generated + ${updatedCustomLinks.length} custom in ${relativeLinksPath} (${relativeMarkdownPath}).`);
 }
 
 function normalizeMode(rawMode: string): LinksMergeMode {
@@ -232,7 +245,7 @@ async function isReadableFile(filePath: string): Promise<boolean> {
 async function readExistingLinks(linksPath: string): Promise<LinksSidecar | null> {
   try {
     const raw = await readFile(linksPath, 'utf8');
-    const parsed = JSON.parse(raw) as { version?: unknown; links?: unknown };
+    const parsed = JSON.parse(raw) as { version?: unknown; links?: unknown; customLinks?: unknown };
     const links = Array.isArray(parsed.links)
       ? parsed.links
         .filter((entry): entry is LinkEntry => isValidLinkEntry(entry))
@@ -247,8 +260,19 @@ async function readExistingLinks(linksPath: string): Promise<LinksSidecar | null
       throw new ReportedError(`Invalid links sidecar format at ${linksPath}. Expected { version, links[] }.`);
     }
 
+    const customLinks = Array.isArray(parsed.customLinks)
+      ? parsed.customLinks
+        .filter((entry): entry is LinkEntry => isValidLinkEntry(entry))
+        .map((entry) => ({
+          expression: entry.expression.trim(),
+          url: entry.url.trim(),
+          title: typeof entry.title === 'string' ? entry.title : null,
+        }))
+      : [];
+
     return {
       version: typeof parsed.version === 'number' ? parsed.version : 1,
+      customLinks,
       links,
     };
   } catch (error) {
@@ -313,4 +337,45 @@ function logProgress(event: LinkEnrichmentProgressEvent, log: (message: string) 
   }
 
   log(event.detail);
+}
+
+export function parseCustomLinkFlag(raw: string): { expression: string; url: string } {
+  const separatorIndex = raw.indexOf('->');
+  if (separatorIndex < 0) {
+    throw new ReportedError(`Invalid --link value "${raw}". Expected format: "expression->url".`);
+  }
+
+  const expression = raw.slice(0, separatorIndex).trim();
+  const url = raw.slice(separatorIndex + 2).trim();
+
+  if (!expression) {
+    throw new ReportedError(`Invalid --link value "${raw}": expression (left side of ->) cannot be empty.`);
+  }
+
+  if (!url) {
+    throw new ReportedError(`Invalid --link value "${raw}": url (right side of ->) cannot be empty.`);
+  }
+
+  return { expression, url };
+}
+
+function resolveCustomLinks(
+  existing: LinkEntry[],
+  addRaw: string[],
+  removeExpressions: string[],
+): LinkEntry[] {
+  const result = new Map<string, LinkEntry>(
+    existing.map((entry) => [entry.expression.trim().toLowerCase(), entry]),
+  );
+
+  for (const raw of addRaw) {
+    const { expression, url } = parseCustomLinkFlag(raw);
+    result.set(expression.toLowerCase(), { expression, url, title: null });
+  }
+
+  for (const expr of removeExpressions) {
+    result.delete(expr.trim().toLowerCase());
+  }
+
+  return Array.from(result.values());
 }

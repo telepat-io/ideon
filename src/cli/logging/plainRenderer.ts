@@ -83,6 +83,9 @@ export async function renderPlainPipeline(
   dryRun: boolean,
   enrichLinks: boolean,
   runMode: NonNullable<PipelineRunOptions['runMode']>,
+  links?: string[],
+  unlinks?: string[],
+  maxLinks?: number,
 ): Promise<void> {
   let previousStages = new Map<string, Pick<StageViewModel, 'status' | 'detail' | 'retryCount' | 'lastRetryError'>>();
   let previousItemStatuses = new Map<string, string>();
@@ -99,6 +102,9 @@ export async function renderPlainPipeline(
       dryRun,
       enrichLinks,
       runMode,
+      customLinks: links,
+      unlinks,
+      maxLinks,
       onUpdate(stages) {
         for (const stage of stages) {
           const previous = previousStages.get(stage.id);

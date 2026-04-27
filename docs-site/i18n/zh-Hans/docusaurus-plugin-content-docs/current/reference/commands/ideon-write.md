@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## 用法
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## 参数与选项
@@ -33,6 +33,9 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 禁用所有提示，在缺少必填输入时立即失败。 |
 | `--dry-run` | 无 | 否 | boolean | `false` | `true` 或省略 | 不调用外部提供商 API，仅执行编排流程。 |
 | `--enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 在 markdown 生成后执行链接增强阶段。 |
+| `--link <expression->url>` | 无 | 否 | 可重复 string | 无 | `"文字->https://..."` | 添加或更新自定义链接。格式：`expression->url`。需要 `--enrich-links`。可重复。自定义链接优先于生成链接。 |
+| `--unlink <expression>` | 无 | 否 | 可重复 string | 无 | 任意 expression 字符串 | 按 expression 删除自定义链接。可重复，需要 `--enrich-links`。 |
+| `--max-links <n>` | 无 | 否 | 正整数 | 由 `--length` 决定 | 任意正整数 | 限制生成链接数量，不影响自定义链接。需要 `--enrich-links`。 |
 
 ## 示例
 
@@ -68,6 +71,8 @@ ideon write --no-interactive --idea "How to productionize docs operations" --pri
 - 该步骤不会改写原始 markdown 文件。
 - 在 `ideon write` 中，只有显式传入 `--enrich-links` 时才会执行链接增强。
 - 短内容渠道（如 `x-post`、`x-thread`）会被跳过。
+- 使用 `--link "expression->url"` 添加自定义链接（分开存储，始终包含）详见 [ideon links](./ideon-links.md)。
+- 使用 `--max-links <n>` 限制生成链接数量；默认根据 `--length` 为 5 / 8 / 12。
 
 ## 输出与退出码
 

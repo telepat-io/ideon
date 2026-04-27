@@ -101,6 +101,13 @@ export function resolveTargetLengthAlias(targetLengthWords: number): (typeof tar
   return 'large';
 }
 
+export function resolveDefaultMaxLinks(targetLengthWords: number): number {
+  const alias = resolveTargetLengthAlias(targetLengthWords);
+  if (alias === 'small') return 5;
+  if (alias === 'medium') return 8;
+  return 12;
+}
+
 export const contentTargetRoleValues = ['primary', 'secondary'] as const;
 
 const contentTargetSchema = z.object({

@@ -38,6 +38,8 @@ export async function enrichLinks({
   openRouter,
   settings,
   dryRun,
+  customLinks = [],
+  maxLinks = 10,
   onLlmMetrics,
   onItemProgress,
   onInteraction,
@@ -48,6 +50,8 @@ export async function enrichLinks({
   openRouter: OpenRouterClient | null;
   settings: AppSettings;
   dryRun: boolean;
+  customLinks?: LinkEntry[];
+  maxLinks?: number;
   onLlmMetrics?: (fileId: string, metrics: LlmCallMetrics) => void;
   onItemProgress?: (event: LinkEnrichmentProgressEvent) => void;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
@@ -72,6 +76,7 @@ export async function enrichLinks({
         contentType: item.contentType,
         markdownPath: item.markdownPath,
         links: [],
+        customLinks,
       });
       continue;
     }
@@ -92,6 +97,7 @@ export async function enrichLinks({
         contentType: item.contentType,
         markdownPath: item.markdownPath,
         links: [],
+        customLinks,
       });
       continue;
     }
@@ -104,8 +110,8 @@ export async function enrichLinks({
 
     const candidateResult = await openRouter.requestStructured<{ expressions: string[] }>({
       schemaName: 'link_candidates',
-      schema: buildLinkCandidatesJsonSchema(),
-      messages: buildLinkCandidatesMessages(content, item.contentType),
+      schema: buildLinkCandidatesJsonSchema(maxLinks),
+      messages: buildLinkCandidatesMessages(content, item.contentType, maxLinks),
       settings,
       reasoning: LINKS_REASONING_SETTINGS,
       interactionContext: {
@@ -119,7 +125,12 @@ export async function enrichLinks({
           ? record.expressions.filter((value): value is string => typeof value === 'string')
           : [];
 
-        return { expressions: dedupeExpressions(expressions).slice(0, 10) };
+        const customExpressions = new Set(customLinks.map((e) => e.expression.trim().toLowerCase()));
+        return {
+          expressions: dedupeExpressions(expressions)
+            .filter((expr) => !customExpressions.has(expr.trim().toLowerCase()))
+            .slice(0, maxLinks),
+        };
       },
       onMetrics(metrics) {
         onLlmMetrics?.(item.fileId, metrics);
@@ -208,6 +219,7 @@ export async function enrichLinks({
       contentType: item.contentType,
       markdownPath: item.markdownPath,
       links,
+      customLinks,
     });
   }
 

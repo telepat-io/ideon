@@ -13,7 +13,7 @@ keywords: [ideon, cli, resume, checkpoints, write]
 ## Usage
 
 ```bash
-ideon write resume [--no-interactive] [--enrich-links]
+ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## Arguments and Options
@@ -22,6 +22,9 @@ ideon write resume [--no-interactive] [--enrich-links]
 | --- | --- | --- | --- | --- | --- | --- |
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Forces plain non-interactive rendering even in TTY mode. |
 | `--enrich-links` | None | No | boolean | `false` | `true` or omitted | Runs link enrichment stage during resume. |
+| `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link in the sidecar. Requires `--enrich-links`. |
+| `--unlink <expression>` | None | No | repeatable string | none | Any expression string | Removes a custom link by expression. Requires `--enrich-links`. |
+| `--max-links <n>` | None | No | positive integer | Derived from article length | Any positive integer | Caps the number of generated links. Requires `--enrich-links`. |
 
 ## Examples
 

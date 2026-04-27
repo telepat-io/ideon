@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## Usage
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## Arguments and Options
@@ -33,6 +33,9 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Disables all prompts and fails fast when required inputs are missing. |
 | `--dry-run` | None | No | boolean | `false` | `true` or omitted | Runs orchestration without provider API calls. |
 | `--enrich-links` | None | No | boolean | `false` | `true` or omitted | Runs link enrichment stage after markdown generation. |
+| `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link in the sidecar. Format: `expression->url`. Requires `--enrich-links`. Repeatable. Custom links take precedence over generated ones. |
+| `--unlink <expression>` | None | No | repeatable string | none | Any expression string | Removes a custom link by expression. Repeatable. Requires `--enrich-links`. |
+| `--max-links <n>` | None | No | positive integer | Derived from `--length` | Any positive integer | Caps the number of generated links. Does not apply to custom links. Requires `--enrich-links`. |
 
 ## Examples
 
@@ -68,6 +71,8 @@ When `--no-interactive` is set, Ideon does not prompt for missing values, even i
 - The original markdown files are not rewritten by this step.
 - During `ideon write`, enrichment runs only when `--enrich-links` is provided.
 - Short-form channels such as `x-post` and `x-thread` are skipped.
+- Use `--link "expression->url"` to add custom links that are saved separately and always included (see [ideon links](./ideon-links.md) for full custom link semantics).
+- Use `--max-links <n>` to cap the number of generated links; defaults to 5 / 8 / 12 based on `--length`.
 
 ## Output and Exit Codes
 

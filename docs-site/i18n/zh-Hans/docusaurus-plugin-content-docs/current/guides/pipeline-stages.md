@@ -131,7 +131,10 @@ Analytics 会写入每个生成目录下的 `generation.analytics.json`。
 - 链接增强使用已配置模型，并启用 OpenRouter web search 插件。
 - 链接增强是面向符合条件的长内容 markdown 输出的后处理链接建议流程。
 - Ideon 会先选出可链接表达，再结合段落上下文为每个表达解析最匹配 URL。
-- 链接数据写入 Markdown 输出旁的 sidecar 文件（例如 `article-1.links.json`）。
+- 链接数据写入 Markdown 输出旁的 sidecar 文件（例如 `article-1.links.json`），格式为 v2：`{ version: 2, customLinks: [...], links: [...] }`。
 - 原始 Markdown 文件保持不变；预览服务在渲染时应用 sidecar 链接。
 - 在 `ideon write` 与 `ideon write resume` 中，该阶段默认关闭，需通过 `--enrich-links` 显式启用。
 - 默认跳过短内容渠道（`x-post`、`x-thread`）的链接增强。
+- **自定义链接**（`--link "expression->url"`）单独存储，无论 `--mode fresh` 与否始终保留。使用 `--unlink <expression>` 删除自定义链接。
+- 自定义链接具有优先级：若 LLM 选取的 expression 已有自定义链接，该生成条目将被忽略。
+- **最大链接数**（`--max-links <n>`）限制生成链接数量，默认根据目标字数决定：≤700 词→5，≤1150 词→8，>1150 词→12。

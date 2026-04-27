@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { jest } from '@jest/globals';
-import { defaultAppSettings } from '../config/schema.js';
+import { defaultAppSettings, resolveDefaultMaxLinks } from '../config/schema.js';
 import { enrichLinks } from '../generation/enrichLinks.js';
 import type { ChatMessage } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
@@ -105,11 +105,11 @@ describe('enrichLinks', () => {
       });
 
       expect(dryRunResult).toEqual([
-        { fileId: 'article-1', contentType: 'article', markdownPath: emptyPath, links: [] },
-        { fileId: 'blog-1', contentType: 'blog-post', markdownPath: bodyPath, links: [] },
+        { fileId: 'article-1', contentType: 'article', markdownPath: emptyPath, links: [], customLinks: [] },
+        { fileId: 'blog-1', contentType: 'blog-post', markdownPath: bodyPath, links: [], customLinks: [] },
       ]);
       expect(noClientResult).toEqual([
-        { fileId: 'linkedin-1', contentType: 'linkedin-post', markdownPath: bodyNoClientPath, links: [] },
+        { fileId: 'linkedin-1', contentType: 'linkedin-post', markdownPath: bodyNoClientPath, links: [], customLinks: [] },
       ]);
       expect(openRouter.requestStructured).not.toHaveBeenCalled();
       expect(openRouter.requestWebSearch).not.toHaveBeenCalled();
@@ -260,6 +260,7 @@ describe('enrichLinks', () => {
               title: 'GitHub Copilot',
             },
           ],
+          customLinks: [],
         },
       ]);
       expect(requestStructured).toHaveBeenCalledTimes(1);
@@ -361,6 +362,116 @@ describe('enrichLinks', () => {
       ]);
       expect(requestStructured).toHaveBeenCalledTimes(1);
       expect(requestWebSearch).not.toHaveBeenCalled();
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('resolveDefaultMaxLinks', () => {
+  it('returns 5 for small word counts', () => {
+    expect(resolveDefaultMaxLinks(300)).toBe(5);
+    expect(resolveDefaultMaxLinks(700)).toBe(5);
+  });
+
+  it('returns 8 for medium word counts', () => {
+    expect(resolveDefaultMaxLinks(900)).toBe(8);
+    expect(resolveDefaultMaxLinks(1150)).toBe(8);
+  });
+
+  it('returns 12 for large word counts', () => {
+    expect(resolveDefaultMaxLinks(1400)).toBe(12);
+    expect(resolveDefaultMaxLinks(2000)).toBe(12);
+  });
+});
+
+describe('enrichLinks custom link behavior', () => {
+  it('excludes custom link expressions from generated candidates', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-enrich-custom-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article-1.md');
+      await writeFile(
+        markdownPath,
+        '# Article\n\nOpenRouter is used. React is great.\n',
+        'utf8',
+      );
+
+      const capturedMessages: ChatMessage[][] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const requestStructured = jest.fn().mockImplementation((options: any) => {
+        capturedMessages.push(options.messages as ChatMessage[]);
+        return Promise.resolve(options.parse({ expressions: ['OpenRouter', 'React'] }));
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const requestWebSearch = jest.fn().mockImplementation((_options: any) => {
+        return Promise.resolve({
+          text: 'https://openrouter.ai',
+          firstCitationUrl: 'https://openrouter.ai',
+          firstCitationTitle: null,
+        });
+      });
+
+      const result = await enrichLinks({
+        markdownFiles: [{ markdownPath, fileId: 'article-1', contentType: 'article' }],
+        articleTitle: 'Test Article',
+        articleDescription: 'Testing custom link exclusion',
+        openRouter: { requestStructured, requestWebSearch } as never,
+        settings: defaultAppSettings,
+        dryRun: false,
+        customLinks: [{ expression: 'React', url: 'https://react.dev', title: null }],
+      });
+
+      // React was a custom link, so web search for it should be skipped
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const resolvedExpressions = (requestWebSearch as jest.Mock).mock.calls.map((call: any) =>
+        readExpression((call[0] as { messages: ChatMessage[] }).messages),
+      );
+      expect(resolvedExpressions).not.toContain('React');
+      expect(resolvedExpressions).toContain('OpenRouter');
+
+      // customLinks should be passed through in the result
+      expect(result[0]?.customLinks).toEqual([
+        { expression: 'React', url: 'https://react.dev', title: null },
+      ]);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('respects maxLinks cap on candidate count', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-enrich-maxlinks-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article-1.md');
+      await writeFile(
+        markdownPath,
+        '# Article\n\nTerm1 Term2 Term3 Term4 Term5 are discussed.\n',
+        'utf8',
+      );
+
+      let capturedMaxItems = 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const requestStructured = jest.fn().mockImplementation((options: any) => {
+        capturedMaxItems = options.schema.properties.expressions.maxItems as number;
+        return Promise.resolve(options.parse({ expressions: ['Term1', 'Term2', 'Term3'] }));
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const requestWebSearch = jest.fn().mockImplementation((_options: any) => {
+        return Promise.resolve({ text: 'none', firstCitationUrl: null, firstCitationTitle: null });
+      });
+
+      await enrichLinks({
+        markdownFiles: [{ markdownPath, fileId: 'article-1', contentType: 'article' }],
+        articleTitle: 'Test Article',
+        articleDescription: 'Testing maxLinks',
+        openRouter: { requestStructured, requestWebSearch } as never,
+        settings: defaultAppSettings,
+        dryRun: false,
+        maxLinks: 3,
+      });
+
+      expect(capturedMaxItems).toBe(3);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

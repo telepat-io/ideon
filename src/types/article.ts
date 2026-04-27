@@ -59,4 +59,5 @@ export interface ContentItemLinks {
   contentType: string;
   markdownPath: string;
   links: LinkEntry[];
+  customLinks: LinkEntry[];
 }

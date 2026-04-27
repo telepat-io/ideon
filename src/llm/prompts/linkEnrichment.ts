@@ -1,6 +1,6 @@
 import type { ChatMessage } from '../openRouterClient.js';
 
-export function buildLinkCandidatesJsonSchema() {
+export function buildLinkCandidatesJsonSchema(maxLinks = 10) {
   return {
     type: 'object',
     additionalProperties: false,
@@ -9,14 +9,14 @@ export function buildLinkCandidatesJsonSchema() {
       expressions: {
         type: 'array',
         minItems: 0,
-        maxItems: 10,
+        maxItems: maxLinks,
         items: { type: 'string', minLength: 2 },
       },
     },
   } as const;
 }
 
-export function buildLinkCandidatesMessages(content: string, contentType: string): ChatMessage[] {
+export function buildLinkCandidatesMessages(content: string, contentType: string, maxLinks = 10): ChatMessage[] {
   return [
     {
       role: 'system',
@@ -32,7 +32,7 @@ export function buildLinkCandidatesMessages(content: string, contentType: string
       role: 'user',
       content: [
         `Content type: ${contentType}`,
-        'Select up to 10 expressions that should become links in this content.',
+        `Select up to ${maxLinks} expressions that should become links in this content.`,
         'Each expression must be copied exactly from the text and be useful to link.',
         '',
         'Content:',

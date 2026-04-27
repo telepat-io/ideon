@@ -131,7 +131,10 @@ When a stage fails:
 - Link enrichment uses the configured model with OpenRouter web search plugin enabled.
 - Link enrichment is a post-generation link-suggestion pass for eligible long-form markdown outputs.
 - Ideon first selects linkable expressions, then resolves a best-fit URL for each expression using paragraph context.
-- Link data is written to sidecar files next to markdown outputs (for example `article-1.links.json`).
+- Link data is written to sidecar files next to markdown outputs (for example `article-1.links.json`), in v2 format: `{ version: 2, customLinks: [...], links: [...] }`.
 - Source markdown files are preserved unchanged; the preview server applies sidecar links at render time.
 - During `ideon write` and `ideon write resume`, this stage is opt-in via `--enrich-links`.
 - Short-form channels (`x-post`, `x-thread`) are skipped by default for link enrichment.
+- **Custom links** (`--link "expression->url"`) are stored separately and always preserved regardless of `--mode fresh`. Use `--unlink <expression>` to remove a custom link.
+- Custom links take precedence: if the LLM selects an expression already covered by a custom link, the generated entry for that expression is discarded.
+- **Max links** (`--max-links <n>`) caps the number of generated links. Defaults to 5 / 8 / 12 based on the article's target word count (≤700 / ≤1150 / >1150).

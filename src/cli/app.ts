@@ -133,10 +133,16 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Run link enrichment for a previously generated article by slug.')
     .argument('<slug>', 'Slug of the generated article to enrich')
     .option('--mode <mode>', 'Link merge mode: fresh or append', 'fresh')
-    .action(async (slug: string, options: { mode: string }) => {
+    .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
+    .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
+    .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
+    .action(async (slug: string, options: { mode: string; link?: string[]; unlink?: string[]; maxLinks?: number }) => {
       await runLinksCommand({
         slug,
         mode: options.mode,
+        links: options.link,
+        unlinks: options.unlink,
+        maxLinks: options.maxLinks,
       });
     });
 
@@ -171,6 +177,9 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode')
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
     .option('--enrich-links', 'Run link enrichment after markdown generation', false)
+    .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
+    .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
+    .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
     .action(async (ideaArg: string | undefined, options: {
       idea?: string;
       audience?: string;
@@ -183,6 +192,9 @@ export async function runCli(argv: string[]): Promise<void> {
       interactive: boolean;
       dryRun: boolean;
       enrichLinks: boolean;
+      link?: string[];
+      unlink?: string[];
+      maxLinks?: number;
     }) => {
       await runWriteCommand({
         idea: options.idea ?? ideaArg,
@@ -196,6 +208,9 @@ export async function runCli(argv: string[]): Promise<void> {
         noInteractive: !options.interactive,
         dryRun: options.dryRun,
         enrichLinks: options.enrichLinks,
+        links: options.link,
+        unlinks: options.unlink,
+        maxLinks: options.maxLinks,
       });
     });
 
@@ -204,10 +219,16 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Resume the last failed or interrupted write session from .ideon/write.')
     .option('--no-interactive', 'Force plain non-interactive output even in TTY mode', false)
     .option('--enrich-links', 'Run link enrichment after markdown generation', false)
-    .action(async (options: { noInteractive: boolean; enrichLinks: boolean }) => {
+    .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
+    .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
+    .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
+    .action(async (options: { noInteractive: boolean; enrichLinks: boolean; link?: string[]; unlink?: string[]; maxLinks?: number }) => {
       await runWriteResumeCommand({
         noInteractive: options.noInteractive,
         enrichLinks: options.enrichLinks,
+        links: options.link,
+        unlinks: options.unlink,
+        maxLinks: options.maxLinks,
       });
     });
 

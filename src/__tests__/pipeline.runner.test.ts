@@ -1096,6 +1096,7 @@ describe('pipeline runner', () => {
                   title: 'OpenRouter',
                 },
               ],
+              customLinks: [],
             },
           ],
         },
@@ -1151,9 +1152,11 @@ describe('pipeline runner', () => {
       const articleLinksRaw = await readFile(articleLinksPath, 'utf8');
       const articleLinks = JSON.parse(articleLinksRaw) as {
         version: number;
+        customLinks: Array<{ expression: string; url: string; title: string | null }>;
         links: Array<{ expression: string; url: string; title: string | null }>;
       };
-      expect(articleLinks.version).toBe(1);
+      expect(articleLinks.version).toBe(2);
+      expect(articleLinks.customLinks).toEqual([]);
       expect(articleLinks.links).toEqual([
         {
           expression: 'OpenRouter',

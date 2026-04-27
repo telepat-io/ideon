@@ -111,7 +111,7 @@ Do not use this skill when:
 3. Choose operation path:
    - Create content: `ideon write ...`
    - Resume interrupted run: `ideon write resume`
-  - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append]`
+  - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
    - Preview outputs: `ideon preview ...`
    - Delete outputs: `ideon delete <slug>`
    - Manage config: `ideon config ...`
@@ -147,6 +147,9 @@ ideon write "Your idea" --primary article=1 --secondary x-post=1 --secondary lin
 # Enable link enrichment during write (opt-in)
 ideon write "Your idea" --primary article=1 --enrich-links
 
+# Add custom links during write (requires --enrich-links)
+ideon write "Your idea" --primary article=1 --enrich-links --link "React->https://react.dev"
+
 # Use job file
 ideon write --job ./job.json
 
@@ -158,6 +161,15 @@ ideon links my-article-slug
 
 # Append new links into existing sidecar
 ideon links my-article-slug --mode append
+
+# Add a custom link to an article
+ideon links my-article-slug --link "OpenRouter->https://openrouter.ai"
+
+# Remove a custom link
+ideon links my-article-slug --unlink "OpenRouter"
+
+# Cap generated links at 5
+ideon links my-article-slug --max-links 5
 ```
 
 Monitoring / status:
@@ -318,8 +330,11 @@ Link enrichment behavior:
 - Enable write-time enrichment explicitly with `--enrich-links`.
 - For existing outputs, use `ideon links <slug>`.
 - Link enrichment applies to eligible long-form outputs and skips short-form channels like `x-post` and `x-thread`.
-- `ideon links --mode fresh` (default) replaces existing sidecar content.
-- `ideon links --mode append` merges into existing sidecar content (creates sidecar if missing).
+- `ideon links --mode fresh` (default) replaces existing **generated** sidecar links only. Custom links are always preserved.
+- `ideon links --mode append` merges into existing generated sidecar content (creates sidecar if missing).
+- **Custom links** (`--link "expression->url"`): user-specified mappings stored separately from generated links. They take precedence over LLM-generated ones and survive `--mode fresh`. Use `--unlink <expression>` to remove.
+- **Max links** (`--max-links <n>`): caps the number of generated links. Defaults: ≤700 words→5, ≤1150 words→8, >1150 words→12. Does not cap custom links.
+- Sidecar format is v2: `{ version: 2, customLinks: [...], links: [...] }`. v1 sidecars are read transparently.
 
 Signal/cancellation behavior:
 

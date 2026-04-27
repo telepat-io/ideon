@@ -2,6 +2,7 @@ import { mkdir, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
+import { resolveDefaultMaxLinks } from '../config/schema.js';
 import { enrichLinks } from '../generation/enrichLinks.js';
 import { planContentBrief } from '../generation/planContentBrief.js';
 import { planArticle } from '../generation/planArticle.js';
@@ -42,7 +43,7 @@ import {
   type WriteSessionState,
   type WriteStageId,
 } from './sessionStore.js';
-import type { ArticleImagePrompt } from '../types/article.js';
+import type { ArticleImagePrompt, LinkEntry } from '../types/article.js';
 
 export interface PipelineRunOptions {
   onUpdate?: (stages: StageViewModel[]) => void;
@@ -50,6 +51,9 @@ export interface PipelineRunOptions {
   runMode?: 'fresh' | 'resume';
   workingDir?: string;
   enrichLinks?: boolean;
+  customLinks?: string[];
+  unlinks?: string[];
+  maxLinks?: number;
 }
 
 export function createInitialStages(options: { isArticlePrimary: boolean } = { isArticlePrimary: true }): StageViewModel[] {
@@ -121,6 +125,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const shouldEnrichLinks = options.enrichLinks ?? false;
   const runMode = options.runMode ?? 'fresh';
   const workingDir = options.workingDir ?? process.cwd();
+  const pipelineCustomLinkRaws = options.customLinks ?? [];
+  const pipelineUnlinks = options.unlinks ?? [];
+  const pipelineMaxLinks = options.maxLinks;
   const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
   const hasArticlePrimary = isArticlePrimary;
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
@@ -1078,16 +1085,20 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       options.onUpdate?.(cloneStages(stages));
     } else if (linksResult) {
       const linksByFileId = new Map(linksResult.map((item) => [item.fileId, item.links]));
-      linksResult = eligibleOutputsForLinks.map((output) => ({
+      const customLinksByFileId = new Map(linksResult.map((item) => [item.fileId, item.customLinks]));
+      const resumedLinks = eligibleOutputsForLinks.map((output) => ({
         fileId: output.fileId,
         contentType: output.contentType,
         markdownPath: output.markdownPath,
         links: linksByFileId.get(output.fileId) ?? [],
+        customLinks: customLinksByFileId.get(output.fileId) ?? [],
       }));
+      linksResult = resumedLinks;
 
-      for (const item of linksResult) {
+      for (const item of resumedLinks) {
         await writeLinksFile(item.markdownPath, {
-          version: 1,
+          version: 2,
+          customLinks: item.customLinks,
           links: item.links,
         });
       }
@@ -1097,7 +1108,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         ...stages[6],
         status: 'succeeded',
         detail: 'Reused saved link metadata from .ideon/write.',
-        summary: `${linksResult.reduce((sum, item) => sum + item.links.length, 0)} links`,
+        summary: `${resumedLinks.reduce((sum, item) => sum + item.links.length, 0)} links`,
         items: (stages[6].items ?? []).map((item) => ({
           ...item,
           status: 'succeeded',
@@ -1122,6 +1133,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         openRouter,
         settings: input.config.settings,
         dryRun,
+        customLinks: parsePipelineCustomLinks(pipelineCustomLinkRaws, pipelineUnlinks),
+        maxLinks: pipelineMaxLinks ?? resolveDefaultMaxLinks(input.config.settings.targetLength),
         onInteraction(interaction) {
           onLlmInteraction(interaction);
         },
@@ -1171,7 +1184,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         });
 
         await writeLinksFile(item.markdownPath, {
-          version: 1,
+          version: 2,
+          customLinks: item.customLinks,
           links: item.links,
         });
       }
@@ -1783,6 +1797,29 @@ function asWriteStageId(stageId: string): WriteStageId | null {
   }
 
   return null;
+}
+
+function parsePipelineCustomLinks(rawLinks: string[], unlinks: string[]): LinkEntry[] {
+  const result = new Map<string, LinkEntry>();
+
+  for (const raw of rawLinks) {
+    const separatorIndex = raw.indexOf('->');
+    if (separatorIndex < 0) {
+      continue;
+    }
+
+    const expression = raw.slice(0, separatorIndex).trim();
+    const url = raw.slice(separatorIndex + 2).trim();
+    if (expression && url) {
+      result.set(expression.toLowerCase(), { expression, url, title: null });
+    }
+  }
+
+  for (const expr of unlinks) {
+    result.delete(expr.trim().toLowerCase());
+  }
+
+  return Array.from(result.values());
 }
 
 export const __testInternals = {
