@@ -30,19 +30,19 @@ Every guidance rule should use this structure:
 ## Directory Map
 
 - `general/`: universal writing advice across formats
-- `formats/`: medium-specific playbooks
-- `content-intent/`: purpose-specific playbooks (what the piece is trying to achieve)
-- `styles/`: voice and style playbooks
-- `references/`: reusable concept docs used by multiple documents
+- [`formats/`](formats/README.md): medium-specific playbooks
+- [`content-intent/`](content-intent/README.md): purpose-specific playbooks (what the piece is trying to achieve)
+- [`styles/`](styles/README.md): voice and style playbooks
+- [`references/`](references/README.md): reusable concept docs used by multiple documents
 
 ## Start Here
 
-1. Read `general/core-web-writing-rules.md`
-2. Read `general/idea-generation-systems.md`
-3. Pick your target medium in `formats/`
-4. Pick your content purpose in `content-intent/`
-5. Pick your primary voice in `styles/`
-6. Use shared standards in `references/`
+1. Read [general/core-web-writing-rules.md](general/core-web-writing-rules.md)
+2. Read [general/idea-generation-systems.md](general/idea-generation-systems.md)
+3. Pick your target medium in [`formats/`](formats/README.md)
+4. Pick your content purpose in [`content-intent/`](content-intent/README.md)
+5. Pick your primary voice in [`styles/`](styles/README.md)
+6. Use shared standards in [`references/`](references/README.md)
 
 ## Format vs Content-Intent vs Style
 
@@ -50,59 +50,58 @@ Every guidance rule should use this structure:
 - Content-intent: what the piece is trying to achieve (for example tutorial, case-study, opinion-piece)
 - Style: how the piece sounds (for example analytical, friendly, persuasive)
 
-Example: `article` format + `deep-dive-analysis` content-intent + `analytical` style.
+Example: [`article`](formats/article.md) format + [`deep-dive-analysis`](content-intent/deep-dive-analysis.md) content-intent + [`analytical`](styles/analytical.md) style.
 
 ## Required Formats
 
-- article
-- blog-post
-- newsletter
-- x-post
-- x-thread
-- reddit-post
-- linkedin-post
-- landing-page-copy
-- press-release
-- science-paper
+- [article](formats/article.md)
+- [blog-post](formats/blog-post.md)
+- [newsletter](formats/newsletter.md)
+- [x-post](formats/x-post.md)
+- [x-thread](formats/x-thread.md)
+- [reddit-post](formats/reddit-post.md)
+- [linkedin-post](formats/linkedin-post.md)
+- [press-release](formats/press-release.md)
+- [science-paper](formats/science-paper.md)
 
 ## Required Styles
 
-- professional
-- friendly
-- technical
-- academic
-- storytelling
-- persuasive
-- conversational
-- authoritative
-- analytical
-- playful
-- empathetic
-- journalistic
-- minimalist
+- [professional](styles/professional.md)
+- [friendly](styles/friendly.md)
+- [technical](styles/technical.md)
+- [academic](styles/academic.md)
+- [storytelling](styles/storytelling.md)
+- [persuasive](styles/persuasive.md)
+- [conversational](styles/conversational.md)
+- [authoritative](styles/authoritative.md)
+- [analytical](styles/analytical.md)
+- [playful](styles/playful.md)
+- [empathetic](styles/empathetic.md)
+- [journalistic](styles/journalistic.md)
+- [minimalist](styles/minimalist.md)
 
 ## Content Intent (V1)
 
-- tutorial
-- how-to-guide
-- opinion-piece
-- interview-q-and-a
-- case-study
-- roundup-curation
-- announcement
-- personal-essay
-- critique-review
-- deep-dive-analysis
-- listicle
-- counterargument
-- cornerstone
+- [tutorial](content-intent/tutorial.md)
+- [how-to-guide](content-intent/how-to-guide.md)
+- [opinion-piece](content-intent/opinion-piece.md)
+- [interview-q-and-a](content-intent/interview-q-and-a.md)
+- [case-study](content-intent/case-study.md)
+- [roundup-curation](content-intent/roundup-curation.md)
+- [announcement](content-intent/announcement.md)
+- [personal-essay](content-intent/personal-essay.md)
+- [critique-review](content-intent/critique-review.md)
+- [deep-dive-analysis](content-intent/deep-dive-analysis.md)
+- [listicle](content-intent/listicle.md)
+- [counterargument](content-intent/counterargument.md)
+- [cornerstone](content-intent/cornerstone.md)
 
 ## Quality Baselines
 
 - Default readability target: Flesch Reading Ease above 70 for web-first writing
 - Dense technical and strict academic contexts may run 60-70 when precision requires it
 - Science paper guidance prioritizes precision, while still encouraging readability improvements
-- Prose rules should align with plain-language checks and consistency checks defined in `references/prose-quality-checks.md`
+- Prose rules should align with plain-language checks and consistency checks defined in [references/prose-quality-checks.md](references/prose-quality-checks.md)
 
 ## Authoring Policy
 
@@ -125,13 +124,3 @@ Avoid:
 - workflow or operations advice (publishing cadence, post-publish analytics, feedback loops)
 - instructions to create multiple variants before choosing
 - platform growth tactics not directly tied to writing quality
-
-## Migration Notes
-
-The prompt-era rules that are most important for generation parity are now documented in:
-
-- `references/target-length-guidance.md`
-- `references/multi-channel-brief-strategy.md`
-- `references/image-planning-strategy.md`
-- `styles/storytelling.md`
-- `formats/landing-page-copy.md`

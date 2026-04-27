@@ -14,7 +14,6 @@ export const contentTypeOrder = [
   'linkedin-post',
   'reddit-post',
   'newsletter',
-  'landing-page-copy',
 ] as const;
 
 export const interactionStageOrder = [

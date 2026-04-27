@@ -17,7 +17,6 @@ describe('write target parsing', () => {
 
   it('rejects unsupported content type and invalid counts', () => {
     expect(() => parseTargetSpec('my-type=1')).toThrow('Unsupported content type');
-    expect(() => parseTargetSpec('landing-page-copy=1')).toThrow('Unsupported content type');
     expect(() => parseTargetSpec('article=0')).toThrow('Count must be a positive integer');
     expect(() => parseTargetSpec('article=-1')).toThrow('Count must be a positive integer');
   });

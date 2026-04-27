@@ -48,7 +48,6 @@ Supported content types:
 - `reddit-post`
 - `linkedin-post`
 - `newsletter`
-- `landing-page-copy`
 
 ### Style and length
 

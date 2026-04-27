@@ -442,16 +442,6 @@ html[data-theme='dark'] .preview-output-shell--newsletter {
   border-color: rgba(183, 121, 31, 0.35);
 }
 
-.preview-output-shell--landing-page-copy {
-  background: linear-gradient(145deg, #14365c 0%, #1f6b80 54%, #1e9ab2 100%);
-  color: #f5fbff;
-  border: 0;
-}
-
-.preview-output-shell--landing-page-copy .preview-output-header {
-  border-bottom-color: rgba(255, 255, 255, 0.18);
-}
-
 .preview-rendered-html {
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, serif;
   line-height: 1.72;
@@ -494,8 +484,7 @@ html[data-theme='dark'] .preview-rendered-html a {
 }
 
 .preview-output-shell--x-post .preview-rendered-html a,
-.preview-output-shell--x-thread .preview-rendered-html a,
-.preview-output-shell--landing-page-copy .preview-rendered-html a {
+.preview-output-shell--x-thread .preview-rendered-html a {
   color: #9fe6f6;
 }
 

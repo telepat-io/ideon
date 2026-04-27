@@ -60,7 +60,6 @@ const CONTENT_TYPE_ICONS: Record<string, React.ReactNode> = {
   'linkedin-post': <LinkedinOutlined />,
   'reddit-post': <GlobalOutlined />,
   'newsletter': <MailOutlined />,
-  'landing-page-copy': <GlobalOutlined />,
 };
 
 type TopView = 'content' | 'logs';

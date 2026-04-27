@@ -1641,7 +1641,6 @@ function toFilePrefix(contentType: string): string {
   if (contentType === 'reddit-post') return 'reddit';
   if (contentType === 'linkedin-post') return 'linkedin';
   if (contentType === 'newsletter') return 'newsletter';
-  if (contentType === 'landing-page-copy') return 'landing';
   return contentType.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'content';
 }
 

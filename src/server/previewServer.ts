@@ -682,10 +682,6 @@ function renderShell({
         --newsletter-bg: #fffdf4;
         --newsletter-header-bg: #fff5cc;
         --newsletter-border: #cfb95a;
-        --landing-bg: linear-gradient(155deg, #10395c 0%, #3d7fa0 100%);
-        --landing-text: #f8fdff;
-        --landing-link: #d7f0ff;
-        --landing-border: rgba(255, 255, 255, 0.3);
         color-scheme: light;
       }
 
@@ -725,10 +721,6 @@ function renderShell({
           --newsletter-bg: #2e291b;
           --newsletter-header-bg: #3b331e;
           --newsletter-border: #d6b25f;
-          --landing-bg: linear-gradient(155deg, #0f2236 0%, #245d7e 100%);
-          --landing-text: #e7f4ff;
-          --landing-link: #b8e4ff;
-          --landing-border: rgba(220, 239, 255, 0.35);
           color-scheme: dark;
         }
       }
@@ -768,10 +760,6 @@ function renderShell({
         --newsletter-bg: #fffdf4;
         --newsletter-header-bg: #fff5cc;
         --newsletter-border: #cfb95a;
-        --landing-bg: linear-gradient(155deg, #10395c 0%, #3d7fa0 100%);
-        --landing-text: #f8fdff;
-        --landing-link: #d7f0ff;
-        --landing-border: rgba(255, 255, 255, 0.3);
         color-scheme: light;
       }
 
@@ -810,10 +798,6 @@ function renderShell({
         --newsletter-bg: #2e291b;
         --newsletter-header-bg: #3b331e;
         --newsletter-border: #d6b25f;
-        --landing-bg: linear-gradient(155deg, #0f2236 0%, #245d7e 100%);
-        --landing-text: #e7f4ff;
-        --landing-link: #b8e4ff;
-        --landing-border: rgba(220, 239, 255, 0.35);
         color-scheme: dark;
       }
 
@@ -1333,21 +1317,6 @@ function renderShell({
         background: var(--newsletter-header-bg);
       }
 
-      .channel-landing-page-copy {
-        background: var(--landing-bg);
-        color: var(--landing-text);
-        border: none;
-      }
-
-      .channel-landing-page-copy .channel-header {
-        border-bottom: 1px solid var(--landing-border);
-      }
-
-      .channel-landing-page-copy .channel-meta,
-      .channel-landing-page-copy a {
-        color: var(--landing-link);
-      }
-
       .channel-article,
       .channel-blog-post {
         background: var(--paper);
@@ -1533,7 +1502,7 @@ function renderShell({
       const articleElement = document.getElementById('article');
       const articleListElement = document.getElementById('articleList');
       const themeToggleButton = document.getElementById('themeToggle');
-      const typeOrder = ['article', 'blog-post', 'x-thread', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter', 'landing-page-copy'];
+      const typeOrder = ['article', 'blog-post', 'x-thread', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter'];
       const stageOrder = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
 
       let currentGeneration = null;

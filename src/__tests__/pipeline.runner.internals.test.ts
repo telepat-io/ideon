@@ -113,7 +113,6 @@ describe('pipeline runner internals', () => {
 
   it('formats output labels and ids', () => {
     expect(__testInternals.toOutputItemId('x', 2)).toBe('x-2');
-    expect(__testInternals.formatOutputItemLabel('landing-page-copy', 1, 3)).toBe('landing page copy 1/3');
   });
 
   it('requires non-empty secrets', () => {
@@ -165,7 +164,6 @@ describe('pipeline runner internals', () => {
     expect(__testInternals.toFilePrefix('reddit-post')).toBe('reddit');
     expect(__testInternals.toFilePrefix('linkedin-post')).toBe('linkedin');
     expect(__testInternals.toFilePrefix('newsletter')).toBe('newsletter');
-    expect(__testInternals.toFilePrefix('landing-page-copy')).toBe('landing');
     expect(__testInternals.toFilePrefix('Custom Type')).toBe('custom-type');
     expect(__testInternals.toFilePrefix('!!!')).toBe('content');
   });
