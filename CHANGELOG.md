@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.14](https://github.com/telepat-io/ideon/compare/ideon-v0.1.13...ideon-v0.1.14) (2026-04-27)
+
+
+### Features
+
+* enhance link enrichment functionality with custom links and max links limit ([27d7e02](https://github.com/telepat-io/ideon/commit/27d7e02ba9b2567ae50662a27faa87c8ddcfe1a1))
+
 ## [0.1.13](https://github.com/telepat-io/ideon/compare/ideon-v0.1.12...ideon-v0.1.13) (2026-04-26)
 
 
