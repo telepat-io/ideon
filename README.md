@@ -1,4 +1,6 @@
-# Ideon
+<p align="center"><img src="./ideon.webp" width="128" alt="Ideon"></p>
+<h1 align="center">Ideon</h1>
+<p align="center"><em>One idea. Endless formats.</em></p>
 
 Ideon is an AI content writer that turns one idea into publish-ready content across multiple formats, styles, and channels.
 
