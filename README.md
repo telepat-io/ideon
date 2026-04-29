@@ -1,16 +1,22 @@
 <p align="center"><img src="./ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
+<hr>
 <p align="center"><em>One idea. Endless formats.</em></p>
 
+<p align="center">
+  <a href="https://docs.telepat.io/ideon">📖 Docs</a>
+  · <a href="./README.md">🇺🇸 English</a>
+  · <a href="./README.zh-Hans.md">🇨🇳 简体中文</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/telepat-io/ideon/actions/workflows/ci.yml"><img src="https://github.com/telepat-io/ideon/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build"></a>
+  <a href="https://codecov.io/gh/telepat-io/ideon"><img src="https://codecov.io/gh/telepat-io/ideon/graph/badge.svg" alt="Codecov"></a>
+  <a href="https://www.npmjs.com/package/@telepat/ideon"><img src="https://img.shields.io/npm/v/@telepat/ideon" alt="npm"></a>
+  <a href="https://github.com/telepat-io/ideon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License"></a>
+</p>
+
 Ideon is an AI content writer that turns one idea into publish-ready content across multiple formats, styles, and channels.
-
-[🇺🇸 English](./README.md) | [🇨🇳 简体中文](./README.zh-Hans.md)
-
-[![CI](https://github.com/telepat-io/ideon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/telepat-io/ideon/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/telepat-io/ideon/graph/badge.svg)](https://codecov.io/gh/telepat-io/ideon)
-[![npm version](https://img.shields.io/npm/v/%40telepat%2Fideon)](https://www.npmjs.com/package/@telepat/ideon)
-[![Docs](https://img.shields.io/badge/docs-live-1f6feb)](https://docs.telepat.io/ideon)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://github.com/telepat-io/ideon/blob/main/LICENSE)
 
 ## Why Teams Use Ideon
 
