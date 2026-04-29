@@ -102,7 +102,6 @@ Ideon 专为智能体工作流打造：
 - [配置指南](https://docs.telepat.io/ideon/guides/configuration)
 - [故障排查](https://docs.telepat.io/ideon/guides/troubleshooting)
 - [For Agents](https://docs.telepat.io/ideon/for-agents)
-- 语言支持：English 与 简体中文
 - [仓库](https://github.com/telepat-io/ideon)
 - [npm 包](https://www.npmjs.com/package/@telepat/ideon)
 

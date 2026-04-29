@@ -102,7 +102,6 @@ To report a security issue, open a private report through the repository securit
 - [Configuration guide](https://docs.telepat.io/ideon/guides/configuration)
 - [Troubleshooting](https://docs.telepat.io/ideon/guides/troubleshooting)
 - [For Agents](https://docs.telepat.io/ideon/for-agents)
-- Language support: English and Simplified Chinese
 - [Repository](https://github.com/telepat-io/ideon)
 - [npm package](https://www.npmjs.com/package/@telepat/ideon)
 
