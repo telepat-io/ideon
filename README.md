@@ -1,4 +1,4 @@
-<p align="center"><img src="./ideon.webp" width="128" alt="Ideon"></p>
+<p align="center"><img src="./ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
 <p align="center"><em>One idea. Endless formats.</em></p>
 
