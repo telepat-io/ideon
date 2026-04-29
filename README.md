@@ -1,6 +1,5 @@
 <p align="center"><img src="./ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
-<hr>
 <p align="center"><em>One idea. Endless formats.</em></p>
 
 <p align="center">
