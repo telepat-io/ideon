@@ -1,11 +1,12 @@
 <p align="center"><img src="./ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
+<hr>
 <p align="center"><em>One idea. Endless formats.</em></p>
 
 <p align="center">
   <a href="https://docs.telepat.io/ideon">📖 Docs</a>
   · <a href="./README.md">🇺🇸 English</a>
-  · <a href="./README.zh-Hans.md">🇨🇳 简体中文</a>
+  · <a href="./README.zh-CN.md">🇨🇳 简体中文</a>
 </p>
 
 <p align="center">
@@ -17,7 +18,7 @@
 
 Ideon is an AI content writer that turns one idea into publish-ready content across multiple formats, styles, and channels.
 
-## Why Teams Use Ideon
+## What It Solves
 
 Ideon helps teams move from idea to publishable content faster, with less manual rewriting between channels.
 
@@ -55,15 +56,6 @@ Expected outcome:
 - OpenRouter API key
 - Replicate API token
 
-## Core Capabilities
-
-- Multi-format writing from one idea: article, blog, newsletter, Reddit, LinkedIn, X thread, X post, landing-page copy.
-- Style control per run: choose one voice and apply it consistently across all outputs.
-- Research and enrichment: generate planning briefs and add relevant links via link enrichment.
-- Image generation: render cover and inline visuals for article-focused runs.
-- Iteration workflows: rerun with different targets/styles, resume interrupted jobs, and use job files for repeatable execution.
-- Local review: preview generated outputs and assets in a browser before publishing.
-
 ## How It Works
 
 Ideon runs a staged writing pipeline: planning, drafting, image prompt expansion, image rendering, channel output generation, and optional link enrichment.
@@ -81,14 +73,18 @@ ideon write --job ./job.json
 ideon write resume
 ideon delete my-article-slug
 ideon preview --no-open
-ideon mcp serve
-ideon agent status --json
 ```
 
-Agent integration scope:
+## Using With AI Agents
 
-- Supported: CLI and MCP runtime workflows.
-- Not supported: Cursor and VS Code runtime integrations.
+Ideon is built for agentic workflows:
+
+- **MCP server** — `ideon mcp serve` exposes 5 tools over stdio for content generation, resume, deletion, and config management. Compatible with Claude Code, ChatGPT, Gemini, and any generic MCP host.
+- **Agent runtime registration** — `ideon agent install <runtime>` registers integration profiles for supported platforms. Check status with `ideon agent status --json`.
+- **Non-interactive mode** — `ideon write --no-interactive ...` removes all prompts for CI and automation.
+- **Machine-readable config** — `ideon config list --json` and `ideon config get <key> --json` for agent inspection.
+- **Skill package** — Install `ideon-cli-skill/` into your agent host for a full lifecycle skill covering install, setup, operations, and debugging.
+- **Agent docs** — [For Agents](https://docs.telepat.io/ideon/for-agents) covers MCP servers, skills, and maintenance.
 
 ## Security And Trust
 
@@ -101,18 +97,19 @@ To report a security issue, open a private report through the repository securit
 
 ## Documentation And Support
 
-- Documentation site: https://docs.telepat.io/ideon
-- Language support: English and Simplified Chinese (`README.md` / `README.zh-Hans.md`, plus docs locales)
-- Getting started: `docs/getting-started/quickstart.md`
-- CLI reference: `docs/reference/cli-reference.md`
-- Configuration guide: `docs/guides/configuration.md`
-- Troubleshooting guide: `docs/guides/troubleshooting.md`
-- Repository: https://github.com/telepat-io/ideon
-- npm package: https://www.npmjs.com/package/@telepat/ideon
+- [Documentation site](https://docs.telepat.io/ideon)
+- [Quickstart](https://docs.telepat.io/ideon/getting-started/quickstart)
+- [CLI reference](https://docs.telepat.io/ideon/reference/cli-reference)
+- [Configuration guide](https://docs.telepat.io/ideon/guides/configuration)
+- [Troubleshooting](https://docs.telepat.io/ideon/guides/troubleshooting)
+- [For Agents](https://docs.telepat.io/ideon/for-agents)
+- Language support: English and Simplified Chinese
+- [Repository](https://github.com/telepat-io/ideon)
+- [npm package](https://www.npmjs.com/package/@telepat/ideon)
 
 ## Contributing
 
-Contributions are welcome. Start with `docs/contributing/development.md` for setup, workflow, and quality gates, then follow `docs/contributing/releasing-and-docs-deploy.md` for release and docs deployment details.
+Contributions are welcome. Start with [Development](https://docs.telepat.io/ideon/contributing/development) for setup, workflow, and quality gates, then follow [Releasing and Docs Deploy](https://docs.telepat.io/ideon/contributing/releasing-and-docs-deploy) for release and docs deployment details.
 
 For user-facing documentation changes, update both English and Simplified Chinese content in the same change.
 
