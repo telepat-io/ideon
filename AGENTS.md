@@ -4,6 +4,10 @@ Concise reference for AI agents (and humans) working on this codebase.
 
 ---
 
+## Commits and Releases
+
+Use Conventional Commits (`fix:`, `feat:`, `docs:`, etc.). This repo uses a release-please driven workflow, so commit messages directly affect changelogs and version bumps.
+
 ## Required checks — run before every commit
 
 ```bash
