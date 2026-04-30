@@ -239,8 +239,7 @@ ideon agent uninstall <runtime>
 ideon agent status --json
 ```
 
-Supported runtimes: `claude`, `chatgpt`, `gemini`, `generic-mcp`.
-Unsupported aliases: `cursor`, `vscode`.
+Supported runtimes: `claude`, `claude-desktop`, `chatgpt`, `gemini`, `codex`, `cursor`, `vscode`, `opencode`, `generic-mcp`.
 
 ## Argument semantics and constraints
 

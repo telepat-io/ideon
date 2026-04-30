@@ -12,8 +12,6 @@ import { ideonToolContracts } from '../../integrations/mcp/tools.js';
 import { ideonSkillRegistry } from '../../integrations/skills/registry.js';
 import { isConfigKey } from '../../config/manage.js';
 
-const unsupportedIdeRuntimeAliases = ['cursor', 'vscode'];
-
 interface AgentCommandDependencies {
   install: typeof installAgentIntegration;
   uninstall: typeof uninstallAgentIntegration;
@@ -130,12 +128,6 @@ async function collectAgentStatus(deps: AgentCommandDependencies): Promise<Agent
 
 function parseRuntime(rawRuntime: string): SupportedAgentRuntime {
   const runtime = rawRuntime.trim().toLowerCase();
-
-  if (unsupportedIdeRuntimeAliases.includes(runtime)) {
-    throw new ReportedError(
-      `Unsupported runtime \"${rawRuntime}\". Ideon agent integration does not support Cursor or VS Code runtimes.`,
-    );
-  }
 
   if (!(supportedAgentRuntimeValues as readonly string[]).includes(runtime)) {
     throw new ReportedError(

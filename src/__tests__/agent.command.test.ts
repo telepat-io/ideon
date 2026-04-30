@@ -59,30 +59,6 @@ describe('agent commands', () => {
     expect(logs[0]).toContain('[dry-run]');
   });
 
-  it('rejects IDE runtime aliases', async () => {
-    await expect(
-      runAgentInstallCommand(
-        { runtime: 'cursor', dryRun: false },
-        {
-          install: installMock as never,
-          uninstall: uninstallMock as never,
-          list: listMock as never,
-        },
-      ),
-    ).rejects.toBeInstanceOf(ReportedError);
-
-    await expect(
-      runAgentInstallCommand(
-        { runtime: 'vscode', dryRun: false },
-        {
-          install: installMock as never,
-          uninstall: uninstallMock as never,
-          list: listMock as never,
-        },
-      ),
-    ).rejects.toBeInstanceOf(ReportedError);
-  });
-
   it('rejects unsupported runtime names', async () => {
     await expect(
       runAgentInstallCommand(
@@ -94,6 +70,30 @@ describe('agent commands', () => {
         },
       ),
     ).rejects.toBeInstanceOf(ReportedError);
+  });
+
+  it('installs newly supported runtimes', async () => {
+    const logs: string[] = [];
+
+    for (const runtime of ['cursor', 'vscode', 'opencode', 'codex', 'claude-desktop']) {
+      logs.length = 0;
+      const runtimeInstallMock = jest.fn(async (rt: string) => ({
+        runtime: rt,
+        installedAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      }));
+      await runAgentInstallCommand(
+        { runtime, dryRun: false },
+        {
+          install: runtimeInstallMock as never,
+          uninstall: uninstallMock as never,
+          list: listMock as never,
+          log: (message) => logs.push(message),
+        },
+      );
+      expect(runtimeInstallMock).toHaveBeenCalledWith(runtime);
+      expect(logs).toContain(`Installed ${runtime} integration.`);
+    }
   });
 
   it('uninstalls a runtime', async () => {

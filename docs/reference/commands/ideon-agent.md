@@ -18,19 +18,19 @@ ideon agent uninstall <runtime> [--dry-run]
 ideon agent status [--json]
 ```
 
-## Supported and Unsupported Runtimes
+## Supported Runtimes
 
 Supported runtime ids:
 
 - `claude`
+- `claude-desktop`
 - `chatgpt`
 - `gemini`
-- `generic-mcp`
-
-Explicitly unsupported runtime ids:
-
+- `codex`
 - `cursor`
 - `vscode`
+- `opencode`
+- `generic-mcp`
 
 ## Subcommands
 

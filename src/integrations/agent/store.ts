@@ -3,7 +3,7 @@ import path from 'node:path';
 import envPaths from 'env-paths';
 import { z } from 'zod';
 
-export const supportedAgentRuntimeValues = ['claude', 'chatgpt', 'gemini', 'generic-mcp'] as const;
+export const supportedAgentRuntimeValues = ['claude', 'claude-desktop', 'chatgpt', 'gemini', 'codex', 'cursor', 'vscode', 'opencode', 'generic-mcp'] as const;
 export type SupportedAgentRuntime = (typeof supportedAgentRuntimeValues)[number];
 
 const integrationEntrySchema = z.object({
