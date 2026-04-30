@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.15](https://github.com/telepat-io/ideon/compare/ideon-v0.1.14...ideon-v0.1.15) (2026-04-30)
+
+
+### Features
+
+* add ideon_links and ideon_config_list commands, update MCP server and tools ([b8de288](https://github.com/telepat-io/ideon/commit/b8de288f7a9d4152f0ec87876c9d45fec692ad62))
+
 ## [0.1.14](https://github.com/telepat-io/ideon/compare/ideon-v0.1.13...ideon-v0.1.14) (2026-04-27)
 
 
