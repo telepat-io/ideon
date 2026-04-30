@@ -178,6 +178,8 @@ Docs update guardrails:
 - Keep multilingual support explicit and current in user-facing docs and README (English + Simplified Chinese).
 - Keep command examples executable as written (`ideon ...` or `npm run dev -- ...`) and avoid mixing styles in one example block.
 - After significant CLI, config, pipeline, preview, MCP, or agent-integration feature updates, refresh `ideon-cli-skill/` so `SKILL.md` and references stay aligned with current behavior.
+- When MCP tool surface changes, update in the same change: `src/integrations/mcp/tools.ts` (schemas and `ideonToolContracts`), `src/integrations/mcp/server.ts` (handlers), MCP-related docs, and `ideon-cli-skill/SKILL.md` MCP section.
+- Keep `ideon-cli-skill/references/command-catalog.md` enum lists (styles, intents, content types, config keys) synchronized with `src/config/schema.ts` and `src/config/manage.ts`.
 
 ---
 

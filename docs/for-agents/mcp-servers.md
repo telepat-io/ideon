@@ -17,8 +17,11 @@ Ideon publishes a first-party Model Context Protocol server over stdio transport
 	- `ideon_write`
 	- `ideon_write_resume`
 	- `ideon_delete`
+	- `ideon_links`
 	- `ideon_config_get`
 	- `ideon_config_set`
+	- `ideon_config_list`
+	- `ideon_config_unset`
 
 ## Contract Notes
 

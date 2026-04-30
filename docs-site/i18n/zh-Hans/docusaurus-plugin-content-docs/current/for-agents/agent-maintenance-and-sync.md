@@ -32,8 +32,9 @@ Out of scope:
 3. skill 契约元数据面。
 4. 命令参考文档与示例。
 5. 本地化文档对等页面。
+6. `ideon-cli-skill/` 技能包（`SKILL.md`、`references/command-catalog.md` 及其他配套参考）。
 
-若导出的 CLI、MCP 与 skill 契约不同步，则该变更不完整。
+若导出的 CLI、MCP、skill 契约与可安装技能包不同步，则该变更不完整。
 
 ## 必需校验
 

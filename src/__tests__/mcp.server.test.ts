@@ -16,8 +16,11 @@ class MockMcpServer {
 const resolveRunInputMock = jest.fn<(...args: any[]) => Promise<any>>();
 const runPipelineShellMock = jest.fn<(...args: any[]) => Promise<any>>();
 const runDeleteCommandMock = jest.fn<(...args: any[]) => Promise<any>>();
+const runLinksCommandMock = jest.fn<(...args: any[]) => Promise<any>>();
 const configGetMock = jest.fn<(...args: any[]) => Promise<any>>();
 const configSetMock = jest.fn<(...args: any[]) => Promise<any>>();
+const configListMock = jest.fn<(...args: any[]) => Promise<any>>();
+const configUnsetMock = jest.fn<(...args: any[]) => Promise<any>>();
 const isConfigKeyMock = jest.fn<(key: string) => boolean>();
 const parsePrimaryAndSecondarySpecsMock = jest.fn();
 const loadWriteSessionMock = jest.fn<(...args: any[]) => Promise<any>>();
@@ -42,9 +45,15 @@ jest.unstable_mockModule('../cli/commands/delete.js', () => ({
   runDeleteCommand: runDeleteCommandMock,
 }));
 
+jest.unstable_mockModule('../cli/commands/links.js', () => ({
+  runLinksCommand: runLinksCommandMock,
+}));
+
 jest.unstable_mockModule('../config/manage.js', () => ({
   configGet: configGetMock,
   configSet: configSetMock,
+  configList: configListMock,
+  configUnset: configUnsetMock,
   isConfigKey: isConfigKeyMock,
   configSettingKeys: [
     'model',
@@ -56,6 +65,7 @@ jest.unstable_mockModule('../config/manage.js', () => ({
     'markdownOutputDir',
     'assetOutputDir',
     'style',
+    'intent',
     'targetLength',
   ],
   configSecretKeys: ['openRouterApiKey', 'replicateApiToken'],
@@ -106,7 +116,13 @@ describe('ideon MCP server', () => {
     isConfigKeyMock.mockReturnValue(true);
     configGetMock.mockResolvedValue({ key: 'style', value: 'professional', isSecret: false });
     configSetMock.mockResolvedValue(undefined);
+    configListMock.mockResolvedValue({
+      settings: { style: 'professional' },
+      secrets: { openRouterApiKey: true },
+    });
+    configUnsetMock.mockResolvedValue(undefined);
     runDeleteCommandMock.mockResolvedValue(undefined);
+    runLinksCommandMock.mockResolvedValue(undefined);
     parsePrimaryAndSecondarySpecsMock.mockReturnValue(undefined);
     connectMock.mockResolvedValue(undefined);
     loadWriteSessionMock.mockResolvedValue({
@@ -127,8 +143,11 @@ describe('ideon MCP server', () => {
     expect(registeredTools.has('ideon_write')).toBe(true);
     expect(registeredTools.has('ideon_write_resume')).toBe(true);
     expect(registeredTools.has('ideon_delete')).toBe(true);
+    expect(registeredTools.has('ideon_links')).toBe(true);
     expect(registeredTools.has('ideon_config_get')).toBe(true);
     expect(registeredTools.has('ideon_config_set')).toBe(true);
+    expect(registeredTools.has('ideon_config_list')).toBe(true);
+    expect(registeredTools.has('ideon_config_unset')).toBe(true);
   });
 
   it('executes ideon_write tool handler', async () => {
@@ -162,6 +181,52 @@ describe('ideon MCP server', () => {
     });
 
     expect(resolveRunInputMock).toHaveBeenCalledWith(expect.objectContaining({ targetLength: 1200 }));
+  });
+
+  it('passes intent to resolveRunInput in ideon_write handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_write');
+
+    await tool?.handler({
+      idea: 'My idea',
+      intent: 'tutorial',
+      dryRun: true,
+    });
+
+    expect(resolveRunInputMock).toHaveBeenCalledWith(expect.objectContaining({ intent: 'tutorial' }));
+  });
+
+  it('passes link params through ideon_write handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_write');
+
+    await tool?.handler({
+      idea: 'My idea',
+      link: ['React->https://react.dev'],
+      unlink: ['Old'],
+      maxLinks: 5,
+      dryRun: true,
+    });
+
+    expect(runPipelineShellMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ customLinks: ['React->https://react.dev'], unlinks: ['Old'], maxLinks: 5 }),
+    );
+  });
+
+  it('defaults enrichLinks to false in ideon_write handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_write');
+
+    await tool?.handler({
+      idea: 'My idea',
+      dryRun: true,
+    });
+
+    expect(runPipelineShellMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ enrichLinks: false }),
+    );
   });
 
   it('returns tool error when config key is unsupported', async () => {
@@ -233,5 +298,81 @@ describe('ideon MCP server', () => {
 
     expect(result?.isError).toBe(true);
     expect(result?.content?.[0]?.text).toContain('delete failed');
+  });
+
+  it('executes ideon_links handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_links');
+
+    const result = await tool?.handler({
+      slug: 'my-article',
+      mode: 'append',
+      link: ['React->https://react.dev'],
+      maxLinks: 5,
+    });
+
+    expect(runLinksCommandMock).toHaveBeenCalledWith(
+      { slug: 'my-article', mode: 'append', links: ['React->https://react.dev'], unlinks: undefined, maxLinks: 5 },
+      expect.objectContaining({ cwd: expect.any(String), log: expect.any(Function) }),
+    );
+    expect(result?.structuredContent?.slug).toBe('my-article');
+  });
+
+  it('returns tool error when ideon_links fails', async () => {
+    runLinksCommandMock.mockRejectedValue(new Error('links failed'));
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_links');
+
+    const result = await tool?.handler({ slug: 'my-article' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('links failed');
+  });
+
+  it('executes ideon_config_list handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_config_list');
+
+    const result = await tool?.handler({});
+
+    expect(configListMock).toHaveBeenCalled();
+    expect(result?.structuredContent).toEqual({
+      settings: { style: 'professional' },
+      secrets: { openRouterApiKey: true },
+    });
+  });
+
+  it('returns tool error when ideon_config_list fails', async () => {
+    configListMock.mockRejectedValue(new Error('list failed'));
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_config_list');
+
+    const result = await tool?.handler({});
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('list failed');
+  });
+
+  it('executes ideon_config_unset handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_config_unset');
+
+    const result = await tool?.handler({ key: 'style' });
+
+    expect(configUnsetMock).toHaveBeenCalledWith('style');
+    expect(result?.structuredContent?.updated).toBe(true);
+  });
+
+  it('returns tool error when ideon_config_unset key is unsupported', async () => {
+    isConfigKeyMock.mockReturnValue(false);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_config_unset');
+
+    const result = await tool?.handler({ key: 'bad.key' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('Unsupported config key');
   });
 });

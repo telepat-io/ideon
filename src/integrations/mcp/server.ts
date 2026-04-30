@@ -5,19 +5,26 @@ import packageJson from '../../../package.json' with { type: 'json' };
 import { resolveRunInput } from '../../config/resolver.js';
 import { runPipelineShell } from '../../pipeline/runner.js';
 import { runDeleteCommand } from '../../cli/commands/delete.js';
-import { configGet, configSet, isConfigKey } from '../../config/manage.js';
+import { runLinksCommand } from '../../cli/commands/links.js';
+import { configGet, configList, configSet, configUnset, isConfigKey } from '../../config/manage.js';
 import { parsePrimaryAndSecondarySpecs } from '../../cli/commands/writeTargetSpecs.js';
 import { ReportedError } from '../../cli/reportedError.js';
 import { loadWriteSession } from '../../pipeline/sessionStore.js';
 import {
   type ConfigGetToolInput,
+  type ConfigListToolInput,
   type ConfigSetToolInput,
+  type ConfigUnsetToolInput,
   type DeleteToolInput,
+  type LinksToolInput,
   type WriteResumeToolInput,
   type WriteToolInput,
   configGetToolInputSchema,
+  configListToolInputSchema,
   configSetToolInputSchema,
+  configUnsetToolInputSchema,
   deleteToolInputSchema,
+  linksToolInputSchema,
   writeResumeToolInputSchema,
   writeToolInputSchema,
 } from './tools.js';
@@ -46,6 +53,7 @@ export async function startIdeonMcpServer(): Promise<void> {
           audience: input.audience,
           jobPath: input.jobPath,
           style: input.style,
+          intent: input.intent,
           targetLength: input.length,
           contentTargets: parsedTargets,
         });
@@ -53,7 +61,10 @@ export async function startIdeonMcpServer(): Promise<void> {
           workingDir: cwd(),
           runMode: 'fresh',
           dryRun: input.dryRun ?? false,
-          enrichLinks: input.enrichLinks ?? true,
+          enrichLinks: input.enrichLinks ?? false,
+          customLinks: input.link,
+          unlinks: input.unlink,
+          maxLinks: input.maxLinks,
         });
 
         return {
@@ -113,7 +124,10 @@ export async function startIdeonMcpServer(): Promise<void> {
           workingDir: cwd(),
           runMode: 'resume',
           dryRun: input.dryRun ?? false,
-          enrichLinks: input.enrichLinks ?? true,
+          enrichLinks: input.enrichLinks ?? false,
+          customLinks: input.link,
+          unlinks: input.unlink,
+          maxLinks: input.maxLinks,
         });
 
         return {
@@ -177,6 +191,50 @@ export async function startIdeonMcpServer(): Promise<void> {
   );
 
   server.registerTool(
+    'ideon_links',
+    {
+      title: 'Ideon Links',
+      description: 'Run link enrichment for a previously generated article by slug.',
+      inputSchema: linksToolInputSchema,
+    },
+    async (input: LinksToolInput) => {
+      try {
+        const messages: string[] = [];
+        await runLinksCommand(
+          {
+            slug: input.slug,
+            mode: input.mode ?? 'fresh',
+            links: input.link,
+            unlinks: input.unlink,
+            maxLinks: input.maxLinks,
+          },
+          {
+            cwd: cwd(),
+            log: (message) => {
+              messages.push(message);
+            },
+          },
+        );
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: messages.length > 0 ? messages.join('\n') : `Enriched links for ${input.slug}.`,
+            },
+          ],
+          structuredContent: {
+            slug: input.slug,
+            mode: input.mode ?? 'fresh',
+          },
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
     'ideon_config_get',
     {
       title: 'Ideon Config Get',
@@ -228,6 +286,63 @@ export async function startIdeonMcpServer(): Promise<void> {
             {
               type: 'text',
               text: `Set ${input.key}.`,
+            },
+          ],
+          structuredContent: {
+            key: input.key,
+            updated: true,
+          },
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'ideon_config_list',
+    {
+      title: 'Ideon Config List',
+      description: 'List current settings and secret availability flags.',
+      inputSchema: configListToolInputSchema,
+    },
+    async (_input: ConfigListToolInput) => {
+      try {
+        const result = await configList();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          structuredContent: result as unknown as Record<string, unknown>,
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'ideon_config_unset',
+    {
+      title: 'Ideon Config Unset',
+      description: 'Reset a setting to its default or delete a stored secret.',
+      inputSchema: configUnsetToolInputSchema,
+    },
+    async (input: ConfigUnsetToolInput) => {
+      try {
+        if (!isConfigKey(input.key)) {
+          throw new ReportedError(`Unsupported config key: ${input.key}`);
+        }
+
+        await configUnset(input.key);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Unset ${input.key}.`,
             },
           ],
           structuredContent: {

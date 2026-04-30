@@ -11,9 +11,10 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon config get <key>` | Read one config value/secret-presence key | `<key>` | `--json` | yes |
 | `ideon config set <key> <value>` | Set one setting or secret | `<key> <value>` | none | no |
 | `ideon config unset <key>` | Reset setting to default or delete stored secret | `<key>` | none | no |
-| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--length`, `--no-interactive`, `--dry-run`, `--no-enrich-links`, `--audience` | no |
-| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive` | no |
+| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--audience` | no |
+| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links` | no |
 | `ideon delete <slug>` | Delete generated output by slug | `<slug>` | `--force` | no |
+| `ideon links <slug>` | Run link enrichment for an existing article | `<slug>` | `--mode`, `--link`, `--unlink`, `--max-links` | no |
 | `ideon preview [markdownPath]` | Start local preview server/UI | none | `--port`, `--no-open`, `--watch` | no |
 | `ideon mcp serve` | Start first-party MCP server over stdio | none | none | MCP tool protocol output |
 | `ideon agent install <runtime>` | Register local runtime integration | `<runtime>` | `--dry-run` | no |
@@ -43,22 +44,31 @@ Supported content types:
 
 - `article`
 - `blog-post`
-- `x-thread`
-- `x-post`
-- `reddit-post`
 - `linkedin-post`
 - `newsletter`
+- `press-release`
+- `reddit-post`
+- `science-paper`
+- `x-post`
+- `x-thread`
 
 ### Style and length
 
 `--style` allowed values:
 
-- `professional`
-- `friendly`
-- `technical`
 - `academic`
-- `opinionated`
+- `analytical`
+- `authoritative`
+- `conversational`
+- `empathetic`
+- `friendly`
+- `journalistic`
+- `minimalist`
+- `persuasive`
+- `playful`
+- `professional`
 - `storytelling`
+- `technical`
 
 `--length` allowed values:
 
@@ -79,6 +89,7 @@ Settings keys:
 - `markdownOutputDir`
 - `assetOutputDir`
 - `style`
+- `intent`
 - `targetLength`
 
 Secret keys:
@@ -205,12 +216,11 @@ MCP tools currently registered:
 - `ideon_write`
 - `ideon_write_resume`
 - `ideon_delete`
+- `ideon_links`
 - `ideon_config_get`
 - `ideon_config_set`
-
-TODO:
-
-- External-host approval/trust prompts are not documented by Ideon; only stdio transport and tool registration are documented.
+- `ideon_config_list`
+- `ideon_config_unset`
 
 ## Source evidence index
 

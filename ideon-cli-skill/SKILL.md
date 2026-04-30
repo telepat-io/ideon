@@ -111,7 +111,7 @@ Do not use this skill when:
 3. Choose operation path:
    - Create content: `ideon write ...`
    - Resume interrupted run: `ideon write resume`
-  - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
+    - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
    - Preview outputs: `ideon preview ...`
    - Delete outputs: `ideon delete <slug>`
    - Manage config: `ideon config ...`
@@ -229,7 +229,7 @@ Documented MCP characteristics:
 
 - Transport: stdio
 - Intended usage: local process-spawned MCP clients
-- Tool set: `ideon_write`, `ideon_write_resume`, `ideon_delete`, `ideon_config_get`, `ideon_config_set`
+- Tool set: `ideon_write`, `ideon_write_resume`, `ideon_delete`, `ideon_links`, `ideon_config_get`, `ideon_config_set`, `ideon_config_list`, `ideon_config_unset`
 
 Agent runtime registration:
 
@@ -241,8 +241,6 @@ ideon agent status --json
 
 Supported runtimes: `claude`, `chatgpt`, `gemini`, `generic-mcp`.
 Unsupported aliases: `cursor`, `vscode`.
-
-TODO (evidence gap): explicit external trust/approval model for third-party MCP hosts is not documented in Ideon docs; assume host-local process trust and avoid claiming additional approval prompts.
 
 ## Argument semantics and constraints
 
@@ -463,4 +461,6 @@ Should not trigger:
 - Saved settings path: `src/config/settingsFile.ts`
 - Agent runtime store path and runtime IDs: `src/integrations/agent/store.ts`, `src/cli/commands/agent.ts`
 - MCP server transport and tools: `src/cli/commands/mcp.ts`, `src/integrations/mcp/server.ts`, `src/integrations/mcp/tools.ts`, `docs/reference/commands/ideon-mcp-serve.md`
+- Config key surface and management: `src/config/manage.ts`
+- Skill contract registry: `src/integrations/skills/registry.ts`
 - Command reference coverage: `docs/reference/commands/ideon-*.md`, `docs/reference/cli-reference.md`, `docs/for-agents/command-index.md`
