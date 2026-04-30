@@ -1,6 +1,6 @@
 <p align="center"><img src="./assets/avatar/ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
-<p align="center"><em>一个想法，无限格式。</em></p>
+<p align="center"><em>将一个创意转化为文章、话题串和社交媒体帖子——高质量内容，更低 token 成本。</em></p>
 
 <p align="center">
   <a href="https://docs.telepat.io/ideon">📖 文档</a>
@@ -15,20 +15,20 @@
   <a href="https://github.com/telepat-io/ideon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License"></a>
 </p>
 
-Ideon 是一款 AI 内容写作工具，可将一个想法转化为多格式、多风格、可发布的内容。
+Ideon 是一款 AI 内容写作工具，可将一个想法转化为多格式、多风格、可发布的内容。只需描述一次主题，Ideon 就为您生成文章，以及 X 话题串、LinkedIn 帖子、Reddit 帖子、新闻通讯和博客文章——共享同一种声音和策略。
 
-## 它能解决什么问题
+专为营销人员、创始人和精简团队打造，帮助他们大规模发布高质量内容，而无需为每个渠道手动重写同一创意。
 
-Ideon 帮助团队更快地从想法走到可发布内容，减少跨渠道重复改写的工作量。
+## 功能特性
 
-一次运行，Ideon 可以：
-
-- 基于同一核心想法生成多种输出类型：article、blog、newsletter、Reddit、LinkedIn、X thread、X post 等。
-- 在所有输出中统一应用写作风格（`professional`、`friendly`、`technical`、`academic`、`opinionated`、`storytelling`）。
-- 生成研究导向的内容 brief，补充相关链接，并在文章型任务中生成配图。
-- 通过作业文件、可配置参数与断点恢复能力支持持续迭代。
-
-这使 Ideon 适用于内容团队、开发者关系、产品营销、创始人以及需要按节奏进行多渠道写作的个人或团队。
+- **写一次，处处发布** — 一次运行将一个创意转化为文章、博客、新闻通讯、X、LinkedIn 和 Reddit 帖子。文章是核心，其余均为推广内容。
+- **风格与意图控制** — 13 种风格 × 13 种意图。所有输出共享同一种一致的声音。
+- **研究支撑的链接** — Ideon 浏览网络并像人类作者一样插入与上下文相关的外部链接。无需手动研究。
+- **通过 OpenRouter 接入任何模型** — 接入 Claude、GPT-4 或任何支持的模型。无需更改工作流程即可切换。
+- **写作指南驱动** — 提示词组合基于经过实践检验的写作原则汇编而成。没有通用 AI 套话。
+- **代码驱动的高效率** — 确定性流水线代码处理编排。您只需在起草正文时支付 token 费用。
+- **视觉叙事** — 通过 Replicate 为文章型运行自动生成封面和内嵌图片。
+- **Agent 与 CI 就绪** — MCP 服务器、非交互模式、机器可读配置、可恢复的运行。
 
 ## 快速开始
 
@@ -82,7 +82,7 @@ Ideon 专为智能体工作流打造：
 - **Agent 运行时注册** — `ideon agent install <runtime>` 为支持的平台注册集成配置文件。使用 `ideon agent status --json` 查看状态。
 - **非交互模式** — `ideon write --no-interactive ...` 移除所有提示，适用于 CI 和自动化场景。
 - **机器可读配置** — `ideon config list --json` 与 `ideon config get <key> --json` 供智能体 inspection。
-- **Skill 包** — 将 `ideon-cli-skill/` 安装到智能体主机，获得覆盖安装、配置、操作与调试的完整生命周期 skill。
+- **Skill 包** — 将 `skill/ideon-cli/` 安装到智能体主机，获得覆盖安装、配置、操作与调试的完整生命周期 skill。
 - **Agent 文档** — [For Agents](https://docs.telepat.io/ideon/for-agents) 涵盖 MCP 服务器、skill 与维护指南。
 
 ## 安全与信任

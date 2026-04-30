@@ -12,7 +12,7 @@ keywords: [ideon, agents, skills, 工作流, 契约]
 
 可安装技能包路径：
 
-- `ideon-cli-skill/`
+- `skill/ideon-cli/`
 
 当你希望 agent 以“内容写作平台”方式调用 Ideon 时，应优先使用该技能包。其覆盖完整生命周期：
 
@@ -24,13 +24,13 @@ keywords: [ideon, agents, skills, 工作流, 契约]
 
 核心文件：
 
-- `ideon-cli-skill/SKILL.md`
+- `skill/ideon-cli/SKILL.md`
 
 配套参考：
 
-- `ideon-cli-skill/references/command-catalog.md`
-- `ideon-cli-skill/references/troubleshooting.md`
-- `ideon-cli-skill/references/framework-patterns.md`
+- `skill/ideon-cli/references/command-catalog.md`
+- `skill/ideon-cli/references/troubleshooting.md`
+- `skill/ideon-cli/references/framework-patterns.md`
 
 ## 内部契约元数据（次级）
 

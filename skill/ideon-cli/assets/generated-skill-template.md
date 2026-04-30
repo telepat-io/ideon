@@ -5,7 +5,7 @@ Use this scaffold to refresh or clone a skill package for Ideon-style CLI workfl
 ## Directory template
 
 ```text
-ideon-cli-skill/
+skill/ideon-cli/
 ├── SKILL.md
 ├── references/
 │   ├── command-catalog.md

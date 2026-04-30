@@ -16,7 +16,7 @@ In scope:
 - MCP 工具契约
 - 一方 skill 契约元数据
 
-说明：这里的“skill 契约元数据”指 `src/integrations/skills/registry.ts` 中的内部标识（例如 `ideon-write-primary`），与外部可安装的 `ideon-cli-skill/` 包是两个不同概念。
+说明：这里的“skill 契约元数据”指 `src/integrations/skills/registry.ts` 中的内部标识（例如 `ideon-write-primary`），与外部可安装的 `skill/ideon-cli/` 包是两个不同概念。
 
 Out of scope:
 
@@ -32,7 +32,7 @@ Out of scope:
 3. skill 契约元数据面。
 4. 命令参考文档与示例。
 5. 本地化文档对等页面。
-6. `ideon-cli-skill/` 技能包（`SKILL.md`、`references/command-catalog.md` 及其他配套参考）。
+6. `skill/ideon-cli/` 技能包（`SKILL.md`、`references/command-catalog.md` 及其他配套参考）。
 
 若导出的 CLI、MCP、skill 契约与可安装技能包不同步，则该变更不完整。
 

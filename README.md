@@ -1,6 +1,6 @@
 <p align="center"><img src="./assets/avatar/ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
-<p align="center"><em>One idea. Endless formats.</em></p>
+<p align="center"><em>Turn one idea into articles, threads, and social posts — quality content without the token tax.</em></p>
 
 <p align="center">
   <a href="https://docs.telepat.io/ideon">📖 Docs</a>
@@ -15,20 +15,20 @@
   <a href="https://github.com/telepat-io/ideon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License"></a>
 </p>
 
-Ideon is an AI content writer that turns one idea into publish-ready content across multiple formats, styles, and channels.
+Ideon is an AI content writer that turns a single idea into publish-ready content across multiple formats, styles, and channels. Describe your topic once, and Ideon produces an article plus X threads, LinkedIn posts, Reddit posts, newsletters, and blog posts — all sharing one voice and one strategy.
 
-## What It Solves
+Built for marketers, founders, and lean teams who need to ship high-quality content at scale without manually rewriting one idea for every channel.
 
-Ideon helps teams move from idea to publishable content faster, with less manual rewriting between channels.
+## Features
 
-With one run, Ideon can:
-
-- Write multiple output types from the same core idea, including article, blog post, newsletter, Reddit post, LinkedIn post, X thread, and X post.
-- Apply a consistent writing style across outputs (`professional`, `friendly`, `technical`, `academic`, `opinionated`, `storytelling`).
-- Build research-informed briefs, enrich outputs with relevant links, and produce visuals for article-led runs.
-- Support iteration through repeatable job files, configurable settings, and resumable runs.
-
-This makes Ideon useful for content teams, developer advocates, product marketers, founders, and anyone shipping multi-channel writing on a schedule.
+- **Write once, publish everywhere** — One idea turns into article, blog, newsletter, X, LinkedIn, and Reddit posts in a single run. Your article anchors the campaign. Everything else promotes it.
+- **Style and intent control** — 13 styles × 13 intents. Every output shares one consistent voice across every channel.
+- **Research-backed links** — Ideon browses the web and inserts contextual external links like a human writer would. No manual research.
+- **Any model via OpenRouter** — Plug in Claude, GPT-4, or any supported model. Switch without changing your workflow.
+- **Writing guide-driven** — Prompt composition grounded in proven writing principles compiled from real advice. No generic AI filler.
+- **Code-driven efficiency** — Deterministic pipeline code handles orchestration. You pay for tokens only when drafting prose.
+- **Visual storytelling** — Auto-generated cover and inline images via Replicate for article-led runs.
+- **Agent and CI ready** — MCP server, non-interactive mode, machine-readable config, and resumable runs.
 
 ## Quick Start
 
@@ -82,7 +82,7 @@ Ideon is built for agentic workflows:
 - **Agent runtime registration** — `ideon agent install <runtime>` registers integration profiles for supported platforms. Check status with `ideon agent status --json`.
 - **Non-interactive mode** — `ideon write --no-interactive ...` removes all prompts for CI and automation.
 - **Machine-readable config** — `ideon config list --json` and `ideon config get <key> --json` for agent inspection.
-- **Skill package** — Install `ideon-cli-skill/` into your agent host for a full lifecycle skill covering install, setup, operations, and debugging.
+- **Skill package** — Install `skill/ideon-cli/` into your agent host for a full lifecycle skill covering install, setup, operations, and debugging.
 - **Agent docs** — [For Agents](https://docs.telepat.io/ideon/for-agents) covers MCP servers, skills, and maintenance.
 
 ## Security And Trust

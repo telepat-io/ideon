@@ -29,7 +29,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
   program
     .name('ideon')
-    .description('Turn ideas into rich Markdown articles with generated images.')
+    .description('Turn one idea into articles, threads, and social posts — quality content without the token tax.')
     .version(version);
 
   program

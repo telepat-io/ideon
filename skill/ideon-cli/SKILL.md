@@ -1,5 +1,5 @@
 ---
-name: ideon-cli-skill
+name: ideon-cli
 description: Use this skill when users need to install, configure, run, automate, preview, and troubleshoot the Ideon CLI (including MCP server workflows) from zero context.
 ---
 

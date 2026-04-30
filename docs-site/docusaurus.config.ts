@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Ideon Docs',
-  tagline: 'Turn ideas into rich Markdown articles with generated imagery.',
+  tagline: 'Turn one idea into articles, threads, and social posts — quality content without the token tax.',
   favicon: 'img/ideon-favicon.png',
 
   // Set the production url of your site here

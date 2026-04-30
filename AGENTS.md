@@ -19,7 +19,7 @@ npm run docs:build  # Docusaurus static build
 
 All four must pass clean. If you change a feature, update the relevant doc page(s) under `docs/` and confirm `docs:build` still succeeds.
 
-After any significant user-visible CLI/config/pipeline/preview/MCP/integration update, also refresh `ideon-cli-skill/SKILL.md` in the same change when behavior or guidance drifted.
+After any significant user-visible CLI/config/pipeline/preview/MCP/integration update, also refresh `skill/ideon-cli/SKILL.md` in the same change when behavior or guidance drifted.
 
 If changes touch the local preview server (`ideon preview`, `src/server/preview*`, preview docs), also run:
 
@@ -177,9 +177,9 @@ Docs update guardrails:
 - If the corresponding zh-Hans page does not exist yet, create it in the same change and include translated content rather than leaving locale drift.
 - Keep multilingual support explicit and current in user-facing docs and README (English + Simplified Chinese).
 - Keep command examples executable as written (`ideon ...` or `npm run dev -- ...`) and avoid mixing styles in one example block.
-- After significant CLI, config, pipeline, preview, MCP, or agent-integration feature updates, refresh `ideon-cli-skill/` so `SKILL.md` and references stay aligned with current behavior.
-- When MCP tool surface changes, update in the same change: `src/integrations/mcp/tools.ts` (schemas and `ideonToolContracts`), `src/integrations/mcp/server.ts` (handlers), MCP-related docs, and `ideon-cli-skill/SKILL.md` MCP section.
-- Keep `ideon-cli-skill/references/command-catalog.md` enum lists (styles, intents, content types, config keys) synchronized with `src/config/schema.ts` and `src/config/manage.ts`.
+- After significant CLI, config, pipeline, preview, MCP, or agent-integration feature updates, refresh `skill/ideon-cli/` so `SKILL.md` and references stay aligned with current behavior.
+- When MCP tool surface changes, update in the same change: `src/integrations/mcp/tools.ts` (schemas and `ideonToolContracts`), `src/integrations/mcp/server.ts` (handlers), MCP-related docs, and `skill/ideon-cli/SKILL.md` MCP section.
+- Keep `skill/ideon-cli/references/command-catalog.md` enum lists (styles, intents, content types, config keys) synchronized with `src/config/schema.ts` and `src/config/manage.ts`.
 
 ---
 

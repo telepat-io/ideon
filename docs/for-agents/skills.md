@@ -12,7 +12,7 @@ This page is primarily about the installable Ideon skill package for third-party
 
 Installable package:
 
-- `ideon-cli-skill/`
+- `skill/ideon-cli/`
 
 Use this package when you want an agent to run Ideon as a content writer across full lifecycle workflows:
 
@@ -24,13 +24,13 @@ Use this package when you want an agent to run Ideon as a content writer across 
 
 Core file:
 
-- `ideon-cli-skill/SKILL.md`
+- `skill/ideon-cli/SKILL.md`
 
 Companion references:
 
-- `ideon-cli-skill/references/command-catalog.md`
-- `ideon-cli-skill/references/troubleshooting.md`
-- `ideon-cli-skill/references/framework-patterns.md`
+- `skill/ideon-cli/references/command-catalog.md`
+- `skill/ideon-cli/references/troubleshooting.md`
+- `skill/ideon-cli/references/framework-patterns.md`
 
 ## Internal Contract Metadata (Secondary)
 

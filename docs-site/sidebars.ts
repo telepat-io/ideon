@@ -15,6 +15,7 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
   userSidebar: [
     'index',
+    'features',
     {
       type: 'category',
       label: 'Getting Started',
