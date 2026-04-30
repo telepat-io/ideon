@@ -1,4 +1,4 @@
-<p align="center"><img src="./ideon-logo.webp" width="128" alt="Ideon"></p>
+<p align="center"><img src="./assets/avatar/ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
 <p align="center"><em>一个想法，无限格式。</em></p>
 
