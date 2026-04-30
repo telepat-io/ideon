@@ -77,7 +77,7 @@ const config: Config = {
       title: 'Ideon',
       logo: {
         alt: 'Ideon Logo',
-        src: 'img/logo.svg',
+        src: 'img/ideon-avatar.webp',
       },
       items: [
         {
