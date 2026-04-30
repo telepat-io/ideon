@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.16](https://github.com/telepat-io/ideon/compare/ideon-v0.1.15...ideon-v0.1.16) (2026-04-30)
+
+
+### Features
+
+* expand supported runtimes for ideon agent and MCP server, update related tests ([f6f7c6c](https://github.com/telepat-io/ideon/commit/f6f7c6c6d666a4ba67617dda2756441336ad9c81))
+
 ## [0.1.15](https://github.com/telepat-io/ideon/compare/ideon-v0.1.14...ideon-v0.1.15) (2026-04-30)
 
 
