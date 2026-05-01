@@ -1,6 +1,6 @@
 <p align="center"><img src="./assets/avatar/ideon-logo.webp" width="128" alt="Ideon"></p>
 <h1 align="center">Ideon</h1>
-<p align="center"><em>Turn one idea into articles, threads, and social posts — quality content without the token tax.</em></p>
+<p align="center"><em>Turn one idea into articles, threads, and social posts. Quality content without the token tax.</em></p>
 
 <p align="center">
   <a href="https://docs.telepat.io/ideon">📖 Docs</a>
