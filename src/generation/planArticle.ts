@@ -58,7 +58,6 @@ export async function planArticle({
     slug: uniqueSlug,
     keywords: basePlan.keywords.slice(0, 8),
     inlineImages: basePlan.inlineImages
-      .filter((image) => image.anchorAfterSection <= basePlan.sections.length)
       .slice(0, 3),
   };
 }
@@ -104,11 +103,9 @@ function buildDryRunPlan(idea: string, contentBrief: ContentBrief): ArticlePlan 
     coverImageDescription: 'A refined editorial workspace with notebooks, sketches, and glowing structured outlines, cinematic but minimal.',
     inlineImages: [
       {
-        anchorAfterSection: 1,
         description: 'A rough idea evolving into a structured article outline on a desk full of notes.',
       },
       {
-        anchorAfterSection: 3,
         description: 'A collaborative editorial scene where human judgment and AI suggestions coexist.',
       },
     ],

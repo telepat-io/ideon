@@ -55,13 +55,13 @@ describe('pipeline runner', () => {
 
       expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
       expect(result.artifact.sectionCount).toBeGreaterThanOrEqual(4);
-      expect(result.artifact.imageCount).toBe(3);
+      expect(result.artifact.imageCount).toBe(2);
       expect(result.artifact.analyticsPath).toContain('.analytics.json');
       expect(result.artifact.interactionsPath).toContain('model.interactions.json');
       expect(result.analytics.summary.totalDurationMs).toBeGreaterThanOrEqual(0);
       expect(result.analytics.stages).toHaveLength(7);
-      expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(3);
-      expect(result.analytics.imageRenderCalls.length).toBeGreaterThanOrEqual(3);
+      expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(2);
+      expect(result.analytics.imageRenderCalls.length).toBeGreaterThanOrEqual(2);
 
       const markdown = await readFile(result.artifact.markdownPath, 'utf8');
       const analyticsRaw = await readFile(result.artifact.analyticsPath, 'utf8');
@@ -644,8 +644,8 @@ describe('pipeline runner', () => {
             ],
             coverImageDescription: 'Cover description',
             inlineImages: [
-              { anchorAfterSection: 1, description: 'Inline one' },
-              { anchorAfterSection: 3, description: 'Inline two' },
+              { description: 'Inline one' },
+              { description: 'Inline two' },
             ],
           },
         },
@@ -739,8 +739,8 @@ describe('pipeline runner', () => {
             ],
             coverImageDescription: 'Cover description',
             inlineImages: [
-              { anchorAfterSection: 1, description: 'Inline one' },
-              { anchorAfterSection: 3, description: 'Inline two' },
+              { description: 'Inline one' },
+              { description: 'Inline two' },
             ],
           },
           text: {
@@ -870,8 +870,8 @@ describe('pipeline runner', () => {
         ],
         coverImageDescription: 'cover',
         inlineImages: [
-          { anchorAfterSection: 1, description: 'inline one' },
-          { anchorAfterSection: 2, description: 'inline two' },
+          { description: 'inline one' },
+          { description: 'inline two' },
         ],
       };
 
@@ -1039,8 +1039,8 @@ describe('pipeline runner', () => {
             ],
             coverImageDescription: 'Cover description',
             inlineImages: [
-              { anchorAfterSection: 1, description: 'Inline one' },
-              { anchorAfterSection: 2, description: 'Inline two' },
+              { description: 'Inline one' },
+              { description: 'Inline two' },
             ],
           },
           text: {

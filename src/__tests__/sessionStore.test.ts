@@ -145,8 +145,8 @@ describe('sessionStore', () => {
             ],
             coverImageDescription: 'Cover image description with enough detail.',
             inlineImages: [
-              { anchorAfterSection: 1, description: 'Inline one description with enough detail.' },
-              { anchorAfterSection: 2, description: 'Inline two description with enough detail.' },
+              { description: 'Inline one description with enough detail.' },
+              { description: 'Inline two description with enough detail.' },
             ],
           },
           text: {

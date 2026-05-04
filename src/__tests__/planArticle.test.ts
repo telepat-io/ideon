@@ -76,10 +76,10 @@ describe('planArticle', () => {
       ],
       coverImageDescription: 'Cover image',
       inlineImages: [
-        { anchorAfterSection: 1, description: 'A' },
-        { anchorAfterSection: 2, description: 'B' },
-        { anchorAfterSection: 3, description: 'C should be removed' },
-        { anchorAfterSection: 1, description: 'D extra' },
+        { description: 'A' },
+        { description: 'B' },
+        { description: 'C should be removed' },
+        { description: 'D extra' },
       ],
     });
 
@@ -101,9 +101,9 @@ describe('planArticle', () => {
     expect(result.slug).toBe('unique-article-slug');
     expect(result.keywords).toHaveLength(8);
     expect(result.inlineImages).toEqual([
-      { anchorAfterSection: 1, description: 'A' },
-      { anchorAfterSection: 2, description: 'B' },
-      { anchorAfterSection: 1, description: 'D extra' },
+      { description: 'A' },
+      { description: 'B' },
+      { description: 'C should be removed' },
     ]);
   });
 
@@ -124,8 +124,8 @@ describe('planArticle', () => {
       ],
       coverImageDescription: 'Cover image description with enough detail.',
       inlineImages: [
-        { anchorAfterSection: 1, description: 'Inline description one with enough detail.' },
-        { anchorAfterSection: 2, description: 'Inline description two with enough detail.' },
+        { description: 'Inline description one with enough detail.' },
+        { description: 'Inline description two with enough detail.' },
       ],
     };
 

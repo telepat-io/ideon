@@ -10,7 +10,28 @@ export const imagePromptSchema = {
   },
 } as const;
 
-export function buildImagePromptMessages(plan: ArticlePlan, image: ArticleImagePrompt): ChatMessage[] {
+export function buildImagePromptMessages(
+  plan: Pick<ArticlePlan, 'title' | 'subtitle' | 'description'>,
+  image: ArticleImagePrompt,
+  section?: { title: string; body: string },
+): ChatMessage[] {
+  const userLines = [
+    `Article title: ${plan.title}`,
+    `Article subtitle: ${plan.subtitle}`,
+    `Article description: ${plan.description}`,
+    `Image kind: ${image.kind}`,
+    `Image description: ${image.description}`,
+  ];
+
+  if (section) {
+    userLines.push(
+      `Section title: ${section.title}`,
+      `Section excerpt: ${section.body.slice(0, 500)}`,
+    );
+  }
+
+  userLines.push('Write one strong prompt for a clean editorial illustration. Avoid text overlays or watermarks.');
+
   return [
     {
       role: 'system',
@@ -19,14 +40,7 @@ export function buildImagePromptMessages(plan: ArticlePlan, image: ArticleImageP
     },
     {
       role: 'user',
-      content: [
-        `Article title: ${plan.title}`,
-        `Article subtitle: ${plan.subtitle}`,
-        `Article description: ${plan.description}`,
-        `Image kind: ${image.kind}`,
-        `Image description: ${image.description}`,
-        'Write one strong prompt for a clean editorial illustration. Avoid text overlays or watermarks.',
-      ].join('\n'),
+      content: userLines.join('\n'),
     },
   ];
 }

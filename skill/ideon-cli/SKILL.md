@@ -154,6 +154,9 @@ ideon write "Your idea" --primary article=1 --enrich-links --link "React->https:
 # Use job file
 ideon write --job ./job.json
 
+# Cap images (1=cover only, 2=cover+1 inline, 3=cover+2 inline)
+ideon write "Your idea" --primary article=1 --max-images 1
+
 # Resume last failed/interrupted run
 ideon write resume
 
@@ -314,6 +317,16 @@ Mode behavior:
 
 - Interactive (TTY default): prompts for missing idea/style/intent/targets/length.
 - Non-interactive (`--no-interactive` or non-TTY): fails fast on missing required inputs.
+
+Image generation behavior:
+
+- Image count is determined by actual written section count, not by `--length`.
+- ≤3 sections → cover image only.
+- 4–6 sections → cover + 1 inline image.
+- ≥7 sections → cover + 2 inline images.
+- Inline image placement is decided automatically after writing, using evenly spaced positions.
+- `--max-images <n>` caps total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline). Cannot increase above the length-based default.
+- Image prompts are expanded using section content as context for inline images.
 
 What link enrichment means:
 

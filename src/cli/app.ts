@@ -197,6 +197,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
     .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
     .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
+    .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
     .action(async (ideaArg: string | undefined, options: {
       idea?: string;
       audience?: string;
@@ -212,6 +213,7 @@ export async function runCli(argv: string[]): Promise<void> {
       link?: string[];
       unlink?: string[];
       maxLinks?: number;
+      maxImages?: number;
     }) => {
       await runWriteCommand({
         idea: options.idea ?? ideaArg,
@@ -228,6 +230,7 @@ export async function runCli(argv: string[]): Promise<void> {
         links: options.link,
         unlinks: options.unlink,
         maxLinks: options.maxLinks,
+        maxImages: options.maxImages,
       });
     });
 
@@ -239,13 +242,15 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
     .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
     .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
-    .action(async (options: { noInteractive: boolean; enrichLinks: boolean; link?: string[]; unlink?: string[]; maxLinks?: number }) => {
+    .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
+    .action(async (options: { noInteractive: boolean; enrichLinks: boolean; link?: string[]; unlink?: string[]; maxLinks?: number; maxImages?: number }) => {
       await runWriteResumeCommand({
         noInteractive: options.noInteractive,
         enrichLinks: options.enrichLinks,
         links: options.link,
         unlinks: options.unlink,
         maxLinks: options.maxLinks,
+        maxImages: options.maxImages,
       });
     });
 

@@ -18,6 +18,7 @@ export const writeToolInputSchema = {
   link: z.array(z.string()).optional(),
   unlink: z.array(z.string()).optional(),
   maxLinks: z.coerce.number().int().positive().optional(),
+  maxImages: z.coerce.number().int().min(1).optional(),
 };
 export const writeToolInputZodSchema = z.object(writeToolInputSchema);
 export type WriteToolInput = z.infer<typeof writeToolInputZodSchema>;
@@ -28,6 +29,7 @@ export const writeResumeToolInputSchema = {
   link: z.array(z.string()).optional(),
   unlink: z.array(z.string()).optional(),
   maxLinks: z.coerce.number().int().positive().optional(),
+  maxImages: z.coerce.number().int().min(1).optional(),
 };
 export const writeResumeToolInputZodSchema = z.object(writeResumeToolInputSchema);
 export type WriteResumeToolInput = z.infer<typeof writeResumeToolInputZodSchema>;

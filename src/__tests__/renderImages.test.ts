@@ -3,7 +3,77 @@ import os from 'node:os';
 import path from 'node:path';
 import { jest } from '@jest/globals';
 import { defaultAppSettings } from '../config/schema.js';
-import { buildAndRenderImages, expandImagePrompts, renderExpandedImages, MIN_IMAGE_BYTES } from '../images/renderImages.js';
+import { buildAndRenderImages, expandImagePrompts, renderExpandedImages, selectImageSlots, MIN_IMAGE_BYTES } from '../images/renderImages.js';
+
+const basePlan = {
+  title: 'Test',
+  subtitle: 'Sub',
+  keywords: ['a'],
+  slug: 'test',
+  description: 'Desc',
+  introBrief: 'Intro',
+  outroBrief: 'Outro',
+  sections: [],
+  coverImageDescription: 'Cover scene',
+  inlineImages: [
+    { description: 'Inline A' },
+    { description: 'Inline B' },
+  ],
+};
+
+const makeSection = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({ title: `S${i + 1}`, body: `Body ${i + 1}.` }));
+
+describe('selectImageSlots', () => {
+  it('returns only cover slot for short articles (1-3 sections)', () => {
+    const slots = selectImageSlots(basePlan, makeSection(3));
+    expect(slots).toHaveLength(1);
+    expect(slots[0]?.kind).toBe('cover');
+  });
+
+  it('returns cover + 1 inline for medium articles (4-6 sections)', () => {
+    const slots = selectImageSlots(basePlan, makeSection(5));
+    expect(slots).toHaveLength(2);
+    expect(slots[1]?.kind).toBe('inline');
+    expect(slots[1]?.anchorAfterSection).toBeGreaterThanOrEqual(1);
+    expect(slots[1]?.anchorAfterSection).toBeLessThanOrEqual(5);
+  });
+
+  it('returns cover + 2 inline for long articles (7+ sections)', () => {
+    const slots = selectImageSlots(basePlan, makeSection(8));
+    expect(slots).toHaveLength(3);
+    expect(slots.filter((s) => s.kind === 'inline')).toHaveLength(2);
+  });
+
+  it('caps inline count when fewer plan descriptions than threshold', () => {
+    const planWithOneInline = { ...basePlan, inlineImages: [{ description: 'Only one' }] };
+    const slots = selectImageSlots(planWithOneInline, makeSection(8));
+    expect(slots).toHaveLength(2); // cover + 1 despite 7+ sections
+  });
+
+  it('respects maxImages=1 (cover only)', () => {
+    const slots = selectImageSlots(basePlan, makeSection(8), { maxImages: 1 });
+    expect(slots).toHaveLength(1);
+    expect(slots[0]?.kind).toBe('cover');
+  });
+
+  it('respects maxImages=2 (cover + 1 inline) even for long articles', () => {
+    const slots = selectImageSlots(basePlan, makeSection(8), { maxImages: 2 });
+    expect(slots).toHaveLength(2);
+  });
+
+  it('does not add more images than length-based default via maxImages', () => {
+    // Short article (3 sections) → default is 0 inline; maxImages=5 should not increase
+    const slots = selectImageSlots(basePlan, makeSection(3), { maxImages: 5 });
+    expect(slots).toHaveLength(1); // cover only
+  });
+
+  it('places inline anchor in the middle of sections for 1 inline', () => {
+    const slots = selectImageSlots(basePlan, makeSection(4));
+    const inline = slots.find((s) => s.kind === 'inline');
+    expect(inline?.anchorAfterSection).toBe(2); // round(1/2 * 4) = 2
+  });
+});
 
 describe('renderExpandedImages', () => {
   it('writes image bytes from a FileOutput-like object with blob()', async () => {
@@ -216,25 +286,11 @@ describe('renderExpandedImages', () => {
     const onPromptComplete = jest.fn();
 
     const prompts = await expandImagePrompts({
-      plan: {
-        title: 'Test Title',
-        subtitle: 'Test Subtitle',
-        keywords: ['a', 'b', 'c'],
-        slug: 'test-title',
-        description: 'Description',
-        introBrief: 'Intro brief',
-        outroBrief: 'Outro brief',
-        sections: [
-          { title: 'S1', description: 'D1' },
-          { title: 'S2', description: 'D2' },
-          { title: 'S3', description: 'D3' },
-          { title: 'S4', description: 'D4' },
-        ],
-        coverImageDescription: 'Cover scene',
-        inlineImages: [
-          { anchorAfterSection: 1, description: 'Inline one' },
-        ],
-      },
+      slots: [
+        { id: 'cover', kind: 'cover', prompt: '', description: 'Cover scene', anchorAfterSection: null },
+        { id: 'inline-1', kind: 'inline', prompt: '', description: 'Inline one', anchorAfterSection: 1 },
+      ],
+      planContext: { title: 'Test Title', subtitle: 'Test Subtitle', description: 'Description' },
       settings: defaultAppSettings,
       openRouter: null,
       dryRun: true,
@@ -282,23 +338,10 @@ describe('renderExpandedImages', () => {
     const onPromptComplete = jest.fn();
 
     const prompts = await expandImagePrompts({
-      plan: {
-        title: 'Test Title',
-        subtitle: 'Test Subtitle',
-        keywords: ['a', 'b', 'c'],
-        slug: 'test-title',
-        description: 'Description',
-        introBrief: 'Intro brief',
-        outroBrief: 'Outro brief',
-        sections: [
-          { title: 'S1', description: 'D1' },
-          { title: 'S2', description: 'D2' },
-          { title: 'S3', description: 'D3' },
-          { title: 'S4', description: 'D4' },
-        ],
-        coverImageDescription: 'Cover scene',
-        inlineImages: [],
-      },
+      slots: [
+        { id: 'cover', kind: 'cover', prompt: '', description: 'Cover scene', anchorAfterSection: null },
+      ],
+      planContext: { title: 'Test Title', subtitle: 'Test Subtitle', description: 'Description' },
       settings: defaultAppSettings,
       openRouter: openRouter as never,
       dryRun: false,
@@ -546,8 +589,14 @@ describe('renderExpandedImages', () => {
             { title: 'S4', description: 'D4' },
           ],
           coverImageDescription: 'Cover scene',
-          inlineImages: [{ anchorAfterSection: 1, description: 'Inline scene' }],
+          inlineImages: [{ description: 'Inline scene' }],
         },
+        writtenSections: [
+          { title: 'S1', body: 'Body one.' },
+          { title: 'S2', body: 'Body two.' },
+          { title: 'S3', body: 'Body three.' },
+          { title: 'S4', body: 'Body four.' },
+        ],
         settings: defaultAppSettings,
         openRouter: null,
         replicate: null,
@@ -570,23 +619,10 @@ describe('renderExpandedImages', () => {
     const onPromptComplete = jest.fn();
 
     await expandImagePrompts({
-      plan: {
-        title: 'Metrics Default',
-        subtitle: 'Subtitle',
-        keywords: ['a', 'b', 'c'],
-        slug: 'metrics-default',
-        description: 'Description',
-        introBrief: 'Intro brief',
-        outroBrief: 'Outro brief',
-        sections: [
-          { title: 'S1', description: 'D1' },
-          { title: 'S2', description: 'D2' },
-          { title: 'S3', description: 'D3' },
-          { title: 'S4', description: 'D4' },
-        ],
-        coverImageDescription: 'Cover scene',
-        inlineImages: [],
-      },
+      slots: [
+        { id: 'cover', kind: 'cover', prompt: '', description: 'Cover scene', anchorAfterSection: null },
+      ],
+      planContext: { title: 'Metrics Default', subtitle: 'Subtitle', description: 'Description' },
       settings: defaultAppSettings,
       openRouter: openRouter as never,
       dryRun: false,
@@ -644,23 +680,10 @@ describe('renderExpandedImages', () => {
 
     const onPromptComplete = jest.fn();
     await expandImagePrompts({
-      plan: {
-        title: 'Merge Metrics',
-        subtitle: 'Subtitle',
-        keywords: ['a', 'b', 'c'],
-        slug: 'merge-metrics',
-        description: 'Description',
-        introBrief: 'Intro brief',
-        outroBrief: 'Outro brief',
-        sections: [
-          { title: 'S1', description: 'D1' },
-          { title: 'S2', description: 'D2' },
-          { title: 'S3', description: 'D3' },
-          { title: 'S4', description: 'D4' },
-        ],
-        coverImageDescription: 'Cover scene',
-        inlineImages: [],
-      },
+      slots: [
+        { id: 'cover', kind: 'cover', prompt: '', description: 'Cover scene', anchorAfterSection: null },
+      ],
+      planContext: { title: 'Merge Metrics', subtitle: 'Subtitle', description: 'Description' },
       settings: defaultAppSettings,
       openRouter: openRouter as never,
       dryRun: false,

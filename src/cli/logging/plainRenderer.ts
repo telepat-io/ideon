@@ -86,6 +86,7 @@ export async function renderPlainPipeline(
   links?: string[],
   unlinks?: string[],
   maxLinks?: number,
+  maxImages?: number,
 ): Promise<void> {
   let previousStages = new Map<string, Pick<StageViewModel, 'status' | 'detail' | 'retryCount' | 'lastRetryError'>>();
   let previousItemStatuses = new Map<string, string>();
@@ -105,6 +106,7 @@ export async function renderPlainPipeline(
       customLinks: links,
       unlinks,
       maxLinks,
+      maxImages,
       onUpdate(stages) {
         for (const stage of stages) {
           const previous = previousStages.get(stage.id);

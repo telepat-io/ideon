@@ -70,9 +70,8 @@ export function buildArticlePlanJsonSchema(targetLengthWords: number) {
         items: {
           type: 'object',
           additionalProperties: false,
-          required: ['anchorAfterSection', 'description'],
+          required: ['description'],
           properties: {
-            anchorAfterSection: { type: 'integer', minimum: 1, maximum: 10 },
             description: { type: 'string' },
           },
         },
@@ -121,7 +120,7 @@ export function buildArticlePlanMessages(
         '- Sections are article-only structure and must not be treated as requirements for non-article channels.',
         '- Include a cover image description and 2 to 3 inline image descriptions.',
         '- Image descriptions must be concrete and contextual, not generic stock-photo phrasing.',
-        '- Inline images should be anchored after specific sections using 1-based indexes.',
+        '- Do not include section placement for inline images — placement is determined automatically after writing.',
         '',
         'Shared content brief context:',
         `- description: ${options.contentBrief.description}`,
@@ -140,7 +139,7 @@ export function buildArticlePlanMessages(
         '- outroBrief: string',
         `- sections: array of ${sectionCounts.label} objects, each with title and description strings`,
         '- coverImageDescription: string',
-        '- inlineImages: array of 2 to 3 objects, each with anchorAfterSection (integer 1 to 10) and description string',
+        '- inlineImages: array of 2 to 3 objects, each with a description string only',
         '',
         'Do not omit any required fields. Return strict JSON only.',
       ].join('\n'),

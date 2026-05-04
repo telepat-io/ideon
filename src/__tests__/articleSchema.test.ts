@@ -52,7 +52,6 @@ describe('articleSectionPlanSchema', () => {
 describe('inlineImagePlanSchema', () => {
   it('should validate correct inline image plan', () => {
     const image = {
-      anchorAfterSection: 2,
       description: 'A helpful diagram',
     };
 
@@ -60,39 +59,8 @@ describe('inlineImagePlanSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should enforce anchorAfterSection range 1-10', () => {
-    const image = {
-      anchorAfterSection: 0,
-      description: 'A helpful diagram',
-    };
-
-    const result = inlineImagePlanSchema.safeParse(image);
-    expect(result.success).toBe(false);
-  });
-
-  it('should enforce anchorAfterSection max 10', () => {
-    const image = {
-      anchorAfterSection: 11,
-      description: 'A helpful diagram',
-    };
-
-    const result = inlineImagePlanSchema.safeParse(image);
-    expect(result.success).toBe(false);
-  });
-
-  it('should reject non-integer anchorAfterSection', () => {
-    const image = {
-      anchorAfterSection: 2.5,
-      description: 'A helpful diagram',
-    };
-
-    const result = inlineImagePlanSchema.safeParse(image);
-    expect(result.success).toBe(false);
-  });
-
   it('should reject empty description', () => {
     const image = {
-      anchorAfterSection: 2,
       description: '',
     };
 

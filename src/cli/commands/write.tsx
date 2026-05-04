@@ -40,6 +40,7 @@ interface WriteCommandOptions {
   links?: string[];
   unlinks?: string[];
   maxLinks?: number;
+  maxImages?: number;
 }
 
 type WriteRunMode = 'fresh' | 'resume';
@@ -54,6 +55,7 @@ function WriteApp({
   links,
   unlinks,
   maxLinks,
+  maxImages,
   onError,
 }: {
   input: Awaited<ReturnType<typeof resolveRunInput>>;
@@ -63,6 +65,7 @@ function WriteApp({
   links?: string[];
   unlinks?: string[];
   maxLinks?: number;
+  maxImages?: number;
   onError: (error: Error) => void;
 }): React.JSX.Element {
   const { exit } = useApp();
@@ -92,6 +95,7 @@ function WriteApp({
           customLinks: links,
           unlinks,
           maxLinks,
+          maxImages,
           onUpdate(nextStages) {
             if (mounted) {
               setStages(nextStages);
@@ -128,7 +132,7 @@ function WriteApp({
     return () => {
       mounted = false;
     };
-  }, [dryRun, enrichLinks, input, links, unlinks, maxLinks, onError, runMode]);
+  }, [dryRun, enrichLinks, input, links, unlinks, maxLinks, maxImages, onError, runMode]);
 
   useEffect(() => {
     if (!result && !errorMessage) {
@@ -149,10 +153,10 @@ function WriteApp({
 
 export async function runWriteCommand(options: WriteCommandOptions): Promise<void> {
   const input = await resolveInputWithInteractiveIdeaFallback(options);
-  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive, options.links, options.unlinks, options.maxLinks);
+  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive, options.links, options.unlinks, options.maxLinks, options.maxImages);
 }
 
-export async function runWriteResumeCommand(options: { noInteractive?: boolean; enrichLinks?: boolean; links?: string[]; unlinks?: string[]; maxLinks?: number } = {}): Promise<void> {
+export async function runWriteResumeCommand(options: { noInteractive?: boolean; enrichLinks?: boolean; links?: string[]; unlinks?: string[]; maxLinks?: number; maxImages?: number } = {}): Promise<void> {
   const session = await loadWriteSession();
   if (!session) {
     throw new ReportedError('No resumable write session found in .ideon/write/state.json. Run ideon write <idea> first.');
@@ -174,7 +178,7 @@ export async function runWriteResumeCommand(options: { noInteractive?: boolean; 
       secrets: resolved.config.secrets,
     },
   };
-  await runWritePipeline(input, session.dryRun, options.enrichLinks ?? false, 'resume', options.noInteractive ?? false, options.links, options.unlinks, options.maxLinks);
+  await runWritePipeline(input, session.dryRun, options.enrichLinks ?? false, 'resume', options.noInteractive ?? false, options.links, options.unlinks, options.maxLinks, options.maxImages);
 }
 
 async function runWritePipeline(
@@ -186,6 +190,7 @@ async function runWritePipeline(
   links?: string[],
   unlinks?: string[],
   maxLinks?: number,
+  maxImages?: number,
 ): Promise<void> {
   let interruptHandled = false;
 
@@ -228,7 +233,7 @@ async function runWritePipeline(
   try {
 
     if (noInteractive || !process.stdout.isTTY) {
-      await renderPlainPipeline(input, dryRun, enrichLinks, runMode, links, unlinks, maxLinks);
+      await renderPlainPipeline(input, dryRun, enrichLinks, runMode, links, unlinks, maxLinks, maxImages);
       return;
     }
 
@@ -243,6 +248,7 @@ async function runWritePipeline(
         links={links}
         unlinks={unlinks}
         maxLinks={maxLinks}
+        maxImages={maxImages}
         onError={(error) => {
           commandError = error;
         }}

@@ -68,6 +68,7 @@ export async function startIdeonMcpServer(): Promise<void> {
           customLinks: input.link,
           unlinks: input.unlink,
           maxLinks: input.maxLinks,
+          maxImages: input.maxImages,
         });
 
         return {
@@ -131,6 +132,7 @@ export async function startIdeonMcpServer(): Promise<void> {
           customLinks: input.link,
           unlinks: input.unlink,
           maxLinks: input.maxLinks,
+          maxImages: input.maxImages,
         });
 
         return {

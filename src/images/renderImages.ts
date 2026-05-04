@@ -10,7 +10,7 @@ import { relativeAssetPath } from '../output/filesystem.js';
 import { estimateImageCostUsd, estimateLlmCostUsd, type LlmCallMetrics } from '../pipeline/analytics.js';
 import type { CostSource, LlmInteractionRecord, T2IInteractionRecord } from '../pipeline/events.js';
 import { getT2IModel } from '../models/t2i/registry.js';
-import type { ArticleImagePrompt, ArticlePlan, GeneratedArticle, RenderedArticleImage } from '../types/article.js';
+import type { ArticleImagePrompt, ArticlePlan, GeneratedArticle, GeneratedArticleSection, RenderedArticleImage } from '../types/article.js';
 import { imagePromptResultSchema } from '../types/articleSchema.js';
 import type { ReplicateClient } from './replicateClient.js';
 
@@ -42,8 +42,66 @@ export interface ImageRenderCallMetrics {
   costSource: CostSource;
 }
 
+export function selectImageSlots(
+  plan: ArticlePlan,
+  sections: GeneratedArticleSection[],
+  options?: { maxImages?: number },
+): ArticleImagePrompt[] {
+  const sectionCount = sections.length;
+
+  // Determine default inline count based on article length
+  let defaultInlineCount: number;
+  if (sectionCount <= 3) {
+    defaultInlineCount = 0;
+  } else if (sectionCount <= 6) {
+    defaultInlineCount = 1;
+  } else {
+    defaultInlineCount = 2;
+  }
+
+  // Cap by available plan descriptions and actual section count
+  const availableInlineCount = Math.min(defaultInlineCount, plan.inlineImages.length, sectionCount);
+
+  // Apply maxImages override (total count including cover)
+  let inlineCount: number;
+  const maxImages = options?.maxImages;
+  if (maxImages !== undefined && maxImages >= 1) {
+    inlineCount = Math.min(availableInlineCount, Math.max(0, maxImages - 1));
+  } else {
+    inlineCount = availableInlineCount;
+  }
+
+  const slots: ArticleImagePrompt[] = [
+    {
+      id: 'cover',
+      kind: 'cover',
+      prompt: '',
+      description: plan.coverImageDescription,
+      anchorAfterSection: null,
+    },
+  ];
+
+  for (let i = 0; i < inlineCount; i++) {
+    const anchorAfterSection = Math.max(
+      1,
+      Math.min(sectionCount, Math.round(((i + 1) / (inlineCount + 1)) * sectionCount)),
+    );
+    slots.push({
+      id: `inline-${i + 1}`,
+      kind: 'inline',
+      prompt: '',
+      description: plan.inlineImages[i]?.description ?? '',
+      anchorAfterSection,
+    });
+  }
+
+  return slots;
+}
+
 export async function expandImagePrompts({
-  plan,
+  slots,
+  planContext,
+  sections,
   settings,
   openRouter,
   dryRun,
@@ -51,7 +109,9 @@ export async function expandImagePrompts({
   onPromptComplete,
   onInteraction,
 }: {
-  plan: ArticlePlan;
+  slots: ArticleImagePrompt[];
+  planContext: Pick<ArticlePlan, 'title' | 'subtitle' | 'description'>;
+  sections?: GeneratedArticleSection[];
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
@@ -59,12 +119,15 @@ export async function expandImagePrompts({
   onPromptComplete?: (metrics: ImagePromptCallMetrics) => void;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<ArticleImagePrompt[]> {
-  const imageSlots = buildImageSlots(plan);
   const prompts: ArticleImagePrompt[] = [];
 
-  for (let index = 0; index < imageSlots.length; index += 1) {
-    const image = imageSlots[index];
-    onProgress?.(`Expanding prompt ${index + 1}/${imageSlots.length}: ${image.kind === 'cover' ? 'cover image' : image.description}`);
+  for (let index = 0; index < slots.length; index += 1) {
+    const image = slots[index];
+    onProgress?.(`Expanding prompt ${index + 1}/${slots.length}: ${image.kind === 'cover' ? 'cover image' : image.description}`);
+    const sectionForImage =
+      image.kind === 'inline' && image.anchorAfterSection != null && sections
+        ? sections[image.anchorAfterSection - 1]
+        : undefined;
     if (dryRun || !openRouter) {
       const dryRunStartMs = Date.now();
       prompts.push({
@@ -93,7 +156,7 @@ export async function expandImagePrompts({
     const response = await openRouter.requestStructured<{ prompt: string }>({
       schemaName: 'image_prompt',
       schema: imagePromptSchema,
-      messages: buildImagePromptMessages(plan, image),
+      messages: buildImagePromptMessages(planContext, image, sectionForImage),
       settings,
       interactionContext: {
         stageId: 'image-prompts',
@@ -307,6 +370,8 @@ export async function renderExpandedImages({
 
 export async function buildAndRenderImages({
   plan,
+  writtenSections,
+  maxImages,
   settings,
   openRouter,
   replicate,
@@ -316,6 +381,8 @@ export async function buildAndRenderImages({
   onProgress,
 }: {
   plan: ArticlePlan;
+  writtenSections: GeneratedArticleSection[];
+  maxImages?: number;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   replicate: ReplicateClient | null;
@@ -324,8 +391,11 @@ export async function buildAndRenderImages({
   dryRun: boolean;
   onProgress?: (detail: string) => void;
 }): Promise<Pick<GeneratedArticle, 'imagePrompts' | 'renderedImages'>> {
+  const slots = selectImageSlots(plan, writtenSections, { maxImages });
   const imagePrompts = await expandImagePrompts({
-    plan,
+    slots,
+    planContext: plan,
+    sections: writtenSections,
     settings,
     openRouter,
     dryRun,
@@ -373,25 +443,6 @@ function mergeLlmMetrics(left: LlmCallMetrics, right: LlmCallMetrics): LlmCallMe
       providerTotalCostUsd: sumNullable(left.usage.providerTotalCostUsd, right.usage.providerTotalCostUsd),
     },
   };
-}
-
-function buildImageSlots(plan: ArticlePlan): ArticleImagePrompt[] {
-  return [
-    {
-      id: 'cover',
-      kind: 'cover',
-      prompt: '',
-      description: plan.coverImageDescription,
-      anchorAfterSection: null,
-    },
-    ...plan.inlineImages.map((image, index) => ({
-      id: `inline-${index + 1}`,
-      kind: 'inline' as const,
-      prompt: '',
-      description: image.description,
-      anchorAfterSection: image.anchorAfterSection,
-    })),
-  ];
 }
 
 function createReplicateInput(settings: AppSettings, prompt: string, kind: 'cover' | 'inline'): Record<string, unknown> {

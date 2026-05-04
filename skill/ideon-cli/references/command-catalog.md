@@ -11,8 +11,8 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon config get <key>` | Read one config value/secret-presence key | `<key>` | `--json` | yes |
 | `ideon config set <key> <value>` | Set one setting or secret | `<key> <value>` | none | no |
 | `ideon config unset <key>` | Reset setting to default or delete stored secret | `<key>` | none | no |
-| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--audience` | no |
-| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links` | no |
+| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--audience` | no |
+| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images` | no |
 | `ideon delete <slug>` | Delete generated output by slug | `<slug>` | `--force` | no |
 | `ideon links <slug>` | Run link enrichment for an existing article | `<slug>` | `--mode`, `--link`, `--unlink`, `--max-links` | no |
 | `ideon export <generationId> <path>` | Export a generated article as a standalone markdown file with inline links and copied images | `<generationId> <path>` | `--index`, `--overwrite` | no |

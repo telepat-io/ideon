@@ -9,7 +9,7 @@ import { planArticle } from '../generation/planArticle.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 import { writeArticleSections } from '../generation/writeSections.js';
 import { ReplicateClient } from '../images/replicateClient.js';
-import { expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages } from '../images/renderImages.js';
+import { expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages, selectImageSlots } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
 import {
@@ -54,6 +54,7 @@ export interface PipelineRunOptions {
   customLinks?: string[];
   unlinks?: string[];
   maxLinks?: number;
+  maxImages?: number;
 }
 
 export function createInitialStages(options: { isArticlePrimary: boolean } = { isArticlePrimary: true }): StageViewModel[] {
@@ -497,7 +498,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         options.onUpdate?.(cloneStages(stages));
       } else {
         imagePrompts = await expandImagePrompts({
-          plan,
+          slots: selectImageSlots(plan, text.sections, { maxImages: options.maxImages }),
+          planContext: plan,
+          sections: text.sections,
           settings: input.config.settings,
           openRouter,
           dryRun,
