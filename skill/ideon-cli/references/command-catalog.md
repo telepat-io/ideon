@@ -15,6 +15,7 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links` | no |
 | `ideon delete <slug>` | Delete generated output by slug | `<slug>` | `--force` | no |
 | `ideon links <slug>` | Run link enrichment for an existing article | `<slug>` | `--mode`, `--link`, `--unlink`, `--max-links` | no |
+| `ideon export <generationId> <path>` | Export a generated article as a standalone markdown file with inline links and copied images | `<generationId> <path>` | `--index`, `--overwrite` | no |
 | `ideon preview [markdownPath]` | Start local preview server/UI | none | `--port`, `--no-open`, `--watch` | no |
 | `ideon mcp serve` | Start first-party MCP server over stdio | none | none | MCP tool protocol output |
 | `ideon agent install <runtime>` | Register local runtime integration | `<runtime>` | `--dry-run` | no |

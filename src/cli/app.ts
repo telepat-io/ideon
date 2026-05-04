@@ -13,6 +13,7 @@ import {
 } from './commands/config.js';
 import { runMcpServeCommand } from './commands/mcp.js';
 import { runLinksCommand } from './commands/links.js';
+import { runOutputCommand } from './commands/export.js';
 import { openSettings } from './commands/settings.js';
 import { runServeCommand } from './commands/serve.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
@@ -143,6 +144,22 @@ export async function runCli(argv: string[]): Promise<void> {
         links: options.link,
         unlinks: options.unlink,
         maxLinks: options.maxLinks,
+      });
+    });
+
+  program
+    .command('export')
+    .description('Export a generated article as a standalone markdown file with inline links and copied images.')
+    .argument('<generationId>', 'Generation id or article slug to export')
+    .argument('<path>', 'Destination directory for the exported file and images')
+    .option('--index <n>', 'Which primary article variant to export when multiple exist (default: 1)', (v) => Number.parseInt(v, 10))
+    .option('--overwrite', 'Overwrite the destination file if it already exists', false)
+    .action(async (generationId: string, destinationPath: string, options: { index?: number; overwrite: boolean }) => {
+      await runOutputCommand({
+        generationId,
+        destinationPath,
+        index: options.index,
+        overwrite: options.overwrite,
       });
     });
 

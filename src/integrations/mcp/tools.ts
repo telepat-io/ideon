@@ -61,6 +61,15 @@ export const linksToolInputSchema = {
 export const linksToolInputZodSchema = z.object(linksToolInputSchema);
 export type LinksToolInput = z.infer<typeof linksToolInputZodSchema>;
 
+export const exportToolInputSchema = {
+  generationId: z.string().min(1),
+  destinationPath: z.string().min(1),
+  index: z.coerce.number().int().positive().optional(),
+  overwrite: z.boolean().optional(),
+};
+export const exportToolInputZodSchema = z.object(exportToolInputSchema);
+export type ExportToolInput = z.infer<typeof exportToolInputZodSchema>;
+
 export const configListToolInputSchema = {};
 export const configListToolInputZodSchema = z.object(configListToolInputSchema);
 export type ConfigListToolInput = z.infer<typeof configListToolInputZodSchema>;
@@ -103,6 +112,11 @@ export const ideonToolContracts: ToolContract[] = [
     enums: {
       mode: ['fresh', 'append'],
     },
+  },
+  {
+    name: 'ideon_export',
+    required: ['generationId', 'destinationPath'],
+    enums: {},
   },
   {
     name: 'ideon_config_set',

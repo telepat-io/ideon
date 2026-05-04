@@ -112,6 +112,7 @@ Do not use this skill when:
    - Create content: `ideon write ...`
    - Resume interrupted run: `ideon write resume`
     - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
+   - Export generated articles: `ideon export <generationId> <path>`
    - Preview outputs: `ideon preview ...`
    - Delete outputs: `ideon delete <slug>`
    - Manage config: `ideon config ...`

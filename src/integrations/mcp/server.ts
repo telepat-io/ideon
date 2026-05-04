@@ -6,6 +6,7 @@ import { resolveRunInput } from '../../config/resolver.js';
 import { runPipelineShell } from '../../pipeline/runner.js';
 import { runDeleteCommand } from '../../cli/commands/delete.js';
 import { runLinksCommand } from '../../cli/commands/links.js';
+import { runOutputCommand } from '../../cli/commands/export.js';
 import { configGet, configList, configSet, configUnset, isConfigKey } from '../../config/manage.js';
 import { parsePrimaryAndSecondarySpecs } from '../../cli/commands/writeTargetSpecs.js';
 import { ReportedError } from '../../cli/reportedError.js';
@@ -16,6 +17,7 @@ import {
   type ConfigSetToolInput,
   type ConfigUnsetToolInput,
   type DeleteToolInput,
+  type ExportToolInput,
   type LinksToolInput,
   type WriteResumeToolInput,
   type WriteToolInput,
@@ -24,6 +26,7 @@ import {
   configSetToolInputSchema,
   configUnsetToolInputSchema,
   deleteToolInputSchema,
+  exportToolInputZodSchema,
   linksToolInputSchema,
   writeResumeToolInputSchema,
   writeToolInputSchema,
@@ -226,6 +229,52 @@ export async function startIdeonMcpServer(): Promise<void> {
           structuredContent: {
             slug: input.slug,
             mode: input.mode ?? 'fresh',
+          },
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'ideon_export',
+    {
+      title: 'Ideon Export',
+      description: 'Export a generated article as a standalone markdown file with inline links and copied images.',
+      inputSchema: exportToolInputZodSchema,
+    },
+    async (input) => {
+      try {
+        const messages: string[] = [];
+        await runOutputCommand(
+          {
+            generationId: input.generationId,
+            destinationPath: input.destinationPath,
+            index: input.index,
+            overwrite: input.overwrite,
+          },
+          {
+            cwd: cwd(),
+            log: (message) => {
+              messages.push(message);
+            },
+          },
+        );
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: messages.length > 0 ? messages.join('\n') : `Exported ${input.generationId}.`,
+            },
+          ],
+          structuredContent: {
+            generationId: input.generationId,
+            destinationPath: input.destinationPath,
+            index: input.index ?? 1,
+            overwrite: input.overwrite ?? false,
+            messages,
           },
         };
       } catch (error) {

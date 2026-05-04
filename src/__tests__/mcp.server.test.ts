@@ -17,6 +17,7 @@ const resolveRunInputMock = jest.fn<(...args: any[]) => Promise<any>>();
 const runPipelineShellMock = jest.fn<(...args: any[]) => Promise<any>>();
 const runDeleteCommandMock = jest.fn<(...args: any[]) => Promise<any>>();
 const runLinksCommandMock = jest.fn<(...args: any[]) => Promise<any>>();
+const runOutputCommandMock = jest.fn<(...args: any[]) => Promise<any>>();
 const configGetMock = jest.fn<(...args: any[]) => Promise<any>>();
 const configSetMock = jest.fn<(...args: any[]) => Promise<any>>();
 const configListMock = jest.fn<(...args: any[]) => Promise<any>>();
@@ -47,6 +48,10 @@ jest.unstable_mockModule('../cli/commands/delete.js', () => ({
 
 jest.unstable_mockModule('../cli/commands/links.js', () => ({
   runLinksCommand: runLinksCommandMock,
+}));
+
+jest.unstable_mockModule('../cli/commands/export.js', () => ({
+  runOutputCommand: runOutputCommandMock,
 }));
 
 jest.unstable_mockModule('../config/manage.js', () => ({
@@ -123,6 +128,7 @@ describe('ideon MCP server', () => {
     configUnsetMock.mockResolvedValue(undefined);
     runDeleteCommandMock.mockResolvedValue(undefined);
     runLinksCommandMock.mockResolvedValue(undefined);
+    runOutputCommandMock.mockResolvedValue(undefined);
     parsePrimaryAndSecondarySpecsMock.mockReturnValue(undefined);
     connectMock.mockResolvedValue(undefined);
     loadWriteSessionMock.mockResolvedValue({
@@ -144,6 +150,7 @@ describe('ideon MCP server', () => {
     expect(registeredTools.has('ideon_write_resume')).toBe(true);
     expect(registeredTools.has('ideon_delete')).toBe(true);
     expect(registeredTools.has('ideon_links')).toBe(true);
+    expect(registeredTools.has('ideon_export')).toBe(true);
     expect(registeredTools.has('ideon_config_get')).toBe(true);
     expect(registeredTools.has('ideon_config_set')).toBe(true);
     expect(registeredTools.has('ideon_config_list')).toBe(true);
@@ -316,6 +323,77 @@ describe('ideon MCP server', () => {
       expect.objectContaining({ cwd: expect.any(String), log: expect.any(Function) }),
     );
     expect(result?.structuredContent?.slug).toBe('my-article');
+  });
+
+  it('executes ideon_export handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_export');
+
+    const result = await tool?.handler({
+      generationId: '20260504-123000-my-article',
+      destinationPath: '/tmp/exports',
+      index: 2,
+      overwrite: true,
+    });
+
+    expect(runOutputCommandMock).toHaveBeenCalledWith(
+      {
+        generationId: '20260504-123000-my-article',
+        destinationPath: '/tmp/exports',
+        index: 2,
+        overwrite: true,
+      },
+      expect.objectContaining({ cwd: expect.any(String), log: expect.any(Function) }),
+    );
+    expect(result?.structuredContent).toEqual({
+      generationId: '20260504-123000-my-article',
+      destinationPath: '/tmp/exports',
+      index: 2,
+      overwrite: true,
+      messages: [],
+    });
+  });
+
+  it('defaults index and overwrite in ideon_export handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_export');
+
+    const result = await tool?.handler({
+      generationId: '20260504-123000-my-article',
+      destinationPath: '/tmp/exports',
+    });
+
+    expect(runOutputCommandMock).toHaveBeenCalledWith(
+      {
+        generationId: '20260504-123000-my-article',
+        destinationPath: '/tmp/exports',
+        index: undefined,
+        overwrite: undefined,
+      },
+      expect.objectContaining({ cwd: expect.any(String), log: expect.any(Function) }),
+    );
+    expect(result?.structuredContent).toEqual({
+      generationId: '20260504-123000-my-article',
+      destinationPath: '/tmp/exports',
+      index: 1,
+      overwrite: false,
+      messages: [],
+    });
+  });
+
+  it('returns tool error when ideon_export fails', async () => {
+    runOutputCommandMock.mockRejectedValue(new Error('export failed'));
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_export');
+
+    const result = await tool?.handler({
+      generationId: '20260504-123000-my-article',
+      destinationPath: '/tmp/exports',
+    });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('export failed');
   });
 
   it('returns tool error when ideon_links fails', async () => {
