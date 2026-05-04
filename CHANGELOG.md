@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.17](https://github.com/telepat-io/ideon/compare/ideon-v0.1.16...ideon-v0.1.17) (2026-05-04)
+
+
+### Features
+
+* add 'ideon export' command for exporting articles as markdown files ([831f253](https://github.com/telepat-io/ideon/commit/831f25348c338612d8abafcdebfb3161de0a8e3d))
+* add max-images option to ideon write command and update image handling ([25b0e6f](https://github.com/telepat-io/ideon/commit/25b0e6f1538d17ef9bc3c9156e655c688569ee86))
+
 ## [0.1.16](https://github.com/telepat-io/ideon/compare/ideon-v0.1.15...ideon-v0.1.16) (2026-04-30)
 
 
