@@ -1,23 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import type { AppSettings, SecretSettings } from '../../config/schema.js';
 import { getLimnGenerationModels } from '../../images/limnModelCatalog.js';
-
-type MenuAction =
-  | 'openrouter'
-  | 'replicate'
-  | 'llm-model'
-  | 'notifications-enabled'
-  | 'temperature'
-  | 'maxTokens'
-  | 'topP'
-  | 'markdownOutputDir'
-  | 'assetOutputDir'
-  | 't2i-model'
-  | 'save'
-  | 'cancel';
+import { applyEdit, handleMenuSelect, type EditingState, type MenuAction } from './settingsFlowLogic.js';
 
 interface SettingsFlowProps {
   initialSettings: AppSettings;
@@ -30,18 +17,13 @@ interface MenuItem {
   value: MenuAction;
 }
 
-interface EditingState {
-  key: MenuAction;
-  label: string;
-  value: string;
-}
-
 export function SettingsFlow({ initialSettings, initialSecrets, onDone }: SettingsFlowProps): React.JSX.Element {
   const { exit } = useApp();
   const [settings, setSettings] = useState<AppSettings>(initialSettings);
   const [secrets, setSecrets] = useState<SecretSettings>(initialSecrets);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [showModelSelect, setShowModelSelect] = useState(false);
+  const [menuMode, setMenuMode] = useState<'main' | 't2i'>('main');
   const currentModelEntry = getLimnGenerationModels().find((m) => m.family === settings.t2i.modelId) ?? getLimnGenerationModels()[0];
 
   useInput((input, key) => {
@@ -53,6 +35,12 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
 
       if (showModelSelect) {
         setShowModelSelect(false);
+        return;
+      }
+
+      if (menuMode === 't2i') {
+        setMenuMode('main');
+        return;
       }
     }
 
@@ -62,8 +50,30 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
     }
   });
 
+  const formatT2iOverridesSummary = (overrides: Record<string, unknown>): string => {
+    const count = Object.keys(overrides).length;
+    return count === 0 ? 'none' : `${count} override${count === 1 ? '' : 's'}`;
+  };
+
   const menuItems = useMemo<MenuItem[]>(() => {
-    const t2iItems: MenuItem[] = [];
+    const t2iSubmenu: MenuItem[] = [
+      {
+        label: `T2I model: ${currentModelEntry?.displayName ?? settings.t2i.modelId}`,
+        value: 't2i-model',
+      },
+      {
+        label: `T2I input overrides: ${formatT2iOverridesSummary(settings.t2i.inputOverrides)}`,
+        value: 't2i-input-overrides',
+      },
+      {
+        label: 'Back',
+        value: 't2i-back',
+      },
+    ];
+
+    if (menuMode === 't2i') {
+      return t2iSubmenu;
+    }
 
     return [
       {
@@ -103,10 +113,9 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
         value: 'assetOutputDir',
       },
       {
-        label: `T2I model: ${currentModelEntry?.displayName ?? settings.t2i.modelId}`,
-        value: 't2i-model',
+        label: `T2I settings: ${currentModelEntry?.displayName ?? settings.t2i.modelId}`,
+        value: 't2i-settings',
       },
-      ...t2iItems,
       {
         label: 'Save and exit',
         value: 'save',
@@ -116,7 +125,7 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
         value: 'cancel',
       },
     ];
-  }, [currentModelEntry, secrets.openRouterApiKey, secrets.replicateApiToken, settings]);
+  }, [currentModelEntry, menuMode, secrets.openRouterApiKey, secrets.replicateApiToken, settings]);
 
   if (showModelSelect) {
     const items = getLimnGenerationModels().map((model) => ({
@@ -152,8 +161,11 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
       <EditorView
         editing={editing}
         onSubmit={(value) => {
-          applyEdit(editing.key, value, settings, secrets, setSettings, setSecrets);
-          setEditing(null);
+          const accepted = applyEdit(editing.key, value, settings, secrets, setSettings, setSecrets);
+          if (accepted) {
+            setEditing(null);
+          }
+          return accepted;
         }}
         onCancel={() => {
           setEditing(null);
@@ -169,7 +181,10 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
       </Text>
       <Text color="gray">Enter to edit. Esc backs out of nested menus. Ctrl+C cancels.</Text>
       <Box marginTop={1} flexDirection="column">
-        <SelectInput items={menuItems} onSelect={(item) => handleMenuSelect(item.value, settings, secrets, setEditing, setShowModelSelect, onDone, exit)} />
+        <SelectInput
+          items={menuItems}
+          onSelect={(item) => handleMenuSelect(item.value, settings, secrets, setEditing, setShowModelSelect, setMenuMode, onDone, exit)}
+        />
       </Box>
     </Box>
   );
@@ -181,10 +196,16 @@ function EditorView({
   onCancel,
 }: {
   editing: EditingState;
-  onSubmit: (value: string) => void;
+  onSubmit: (value: string) => boolean;
   onCancel: () => void;
 }): React.JSX.Element {
   const [value, setValue] = useState(editing.value);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValue(editing.value);
+    setError(null);
+  }, [editing]);
 
   return (
     <Box flexDirection="column">
@@ -198,10 +219,18 @@ function EditorView({
           value={value}
           onChange={setValue}
           onSubmit={(nextValue) => {
-            onSubmit(nextValue);
+            const accepted = onSubmit(nextValue);
+            if (!accepted) {
+              setError('Invalid JSON. Please enter an object or leave blank to clear.');
+            }
           }}
         />
       </Box>
+      {error ? (
+        <Box marginTop={1}>
+          <Text color="red">{error}</Text>
+        </Box>
+      ) : null}
       <Box marginTop={1}>
         <Text color="gray">Current value: {editing.value || '(empty)'}</Text>
       </Box>
@@ -214,164 +243,3 @@ function EditorView({
   );
 }
 
-function handleMenuSelect(
-  action: MenuAction,
-  settings: AppSettings,
-  secrets: SecretSettings,
-  setEditing: React.Dispatch<React.SetStateAction<EditingState | null>>,
-  setShowModelSelect: React.Dispatch<React.SetStateAction<boolean>>,
-  onDone: (result: { settings: AppSettings; secrets: SecretSettings } | null) => void,
-  exit: () => void,
-): void {
-  switch (action) {
-    case 'openrouter':
-      setEditing({ key: action, label: 'OpenRouter API key', value: secrets.openRouterApiKey ?? '' });
-      return;
-    case 'replicate':
-      setEditing({ key: action, label: 'Replicate API token', value: secrets.replicateApiToken ?? '' });
-      return;
-    case 'llm-model':
-      setEditing({ key: action, label: 'LLM model', value: settings.model });
-      return;
-    case 'notifications-enabled':
-      setEditing({ key: action, label: 'Notifications > OS notifications enabled (true|false)', value: String(settings.notifications.enabled) });
-      return;
-    case 'temperature':
-      setEditing({ key: action, label: 'Temperature', value: String(settings.modelSettings.temperature) });
-      return;
-    case 'maxTokens':
-      setEditing({ key: action, label: 'Max tokens', value: String(settings.modelSettings.maxTokens) });
-      return;
-    case 'topP':
-      setEditing({ key: action, label: 'Top p', value: String(settings.modelSettings.topP) });
-      return;
-    case 'markdownOutputDir':
-      setEditing({ key: action, label: 'Markdown output directory', value: settings.markdownOutputDir });
-      return;
-    case 'assetOutputDir':
-      setEditing({ key: action, label: 'Asset output directory', value: settings.assetOutputDir });
-      return;
-    case 't2i-model':
-      setShowModelSelect(true);
-      return;
-    case 'save':
-      onDone({ settings, secrets });
-      exit();
-      return;
-    case 'cancel':
-      onDone(null);
-      exit();
-      return;
-  }
-}
-
-function applyEdit(
-  action: MenuAction,
-  value: string,
-  settings: AppSettings,
-  secrets: SecretSettings,
-  setSettings: React.Dispatch<React.SetStateAction<AppSettings>>,
-  setSecrets: React.Dispatch<React.SetStateAction<SecretSettings>>,
-): void {
-  if (action === 'openrouter') {
-    setSecrets({ ...secrets, openRouterApiKey: value.trim() || null });
-    return;
-  }
-
-  if (action === 'replicate') {
-    setSecrets({ ...secrets, replicateApiToken: value.trim() || null });
-    return;
-  }
-
-  if (action === 'llm-model') {
-    setSettings({ ...settings, model: value.trim() || settings.model });
-    return;
-  }
-
-  if (action === 'notifications-enabled') {
-    const parsed = parseBooleanOrFallback(value, settings.notifications.enabled);
-    setSettings({
-      ...settings,
-      notifications: {
-        ...settings.notifications,
-        enabled: parsed,
-      },
-    });
-    return;
-  }
-
-  if (action === 'temperature') {
-    const nextTemperature = clampNumber(parseNumberOrFallback(value, settings.modelSettings.temperature), 0, 2);
-    setSettings({
-      ...settings,
-      modelSettings: {
-        ...settings.modelSettings,
-        temperature: nextTemperature,
-      },
-    });
-    return;
-  }
-
-  if (action === 'maxTokens') {
-    const nextMaxTokens = Math.max(1, Math.round(parseNumberOrFallback(value, settings.modelSettings.maxTokens)));
-    setSettings({
-      ...settings,
-      modelSettings: {
-        ...settings.modelSettings,
-        maxTokens: nextMaxTokens,
-      },
-    });
-    return;
-  }
-
-  if (action === 'topP') {
-    const nextTopP = clampNumber(parseNumberOrFallback(value, settings.modelSettings.topP), 0, 1);
-    setSettings({
-      ...settings,
-      modelSettings: {
-        ...settings.modelSettings,
-        topP: nextTopP,
-      },
-    });
-    return;
-  }
-
-  if (action === 'markdownOutputDir') {
-    setSettings({ ...settings, markdownOutputDir: value.trim() || settings.markdownOutputDir });
-    return;
-  }
-
-  if (action === 'assetOutputDir') {
-    setSettings({ ...settings, assetOutputDir: value.trim() || settings.assetOutputDir });
-  }
-}
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined || value === '') {
-    return '(default)';
-  }
-
-  return String(value);
-}
-
-function parseNumberOrFallback(value: string, fallback: number): number {
-  const parsed = Number(value.trim());
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function clampNumber(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function parseBooleanOrFallback(value: string, fallback: boolean): boolean {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'true') {
-    return true;
-  }
-
-  if (normalized === 'false') {
-    return false;
-  }
-
-  return fallback;
-}
