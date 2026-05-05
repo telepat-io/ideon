@@ -1,4 +1,3 @@
-import { getT2IModel } from '../models/t2i/registry.js';
 import type { CostSource } from './events.js';
 
 export interface RetryStats {
@@ -52,76 +51,6 @@ export function estimateLlmCostUsd(modelId: string, usage: LlmUsage): CostEstima
   const completionTokens = usage.completionTokens ?? 0;
   const usd = (promptTokens / 1000) * pricing.input + (completionTokens / 1000) * pricing.output;
   return { usd, source: 'estimated' };
-}
-
-export function estimateImageCostUsd(modelId: string, input: Record<string, unknown>, imageCount: number): CostEstimate {
-  const model = getT2IModel(modelId);
-  const pricingRules = 'pricingRules' in model ? model.pricingRules : undefined;
-  if (!pricingRules) {
-    return { usd: null, source: 'unavailable' };
-  }
-
-  if (pricingRules.basis === 'output_image_count' && 'usdPerImage' in pricingRules && typeof pricingRules.usdPerImage === 'number') {
-    return {
-      usd: pricingRules.usdPerImage * imageCount,
-      source: 'estimated',
-    };
-  }
-
-  if (pricingRules.basis === 'output_image_resolution' && 'tiers' in pricingRules && Array.isArray(pricingRules.tiers)) {
-    const resolution = typeof input.resolution === 'string' ? input.resolution : 'fallback';
-    const tiers = pricingRules.tiers as Array<{ resolution: string; usdPerImage: number }>;
-    const tier = tiers.find((entry) => entry.resolution === resolution)
-      ?? tiers.find((entry) => entry.resolution === 'fallback');
-    if (tier?.usdPerImage !== undefined) {
-      return {
-        usd: tier.usdPerImage * imageCount,
-        source: 'estimated',
-      };
-    }
-  }
-
-  if (pricingRules.basis === 'output_image_megapixels' && 'tiers' in pricingRules && Array.isArray(pricingRules.tiers)) {
-    const megapixels = resolveMegapixels(input);
-    const tiers = pricingRules.tiers as Array<{ maxMegapixels: number; usdPerImage: number }>;
-    const tier = tiers.find((entry) => megapixels <= entry.maxMegapixels);
-    if (tier?.usdPerImage !== undefined) {
-      return {
-        usd: tier.usdPerImage * imageCount,
-        source: 'estimated',
-      };
-    }
-  }
-
-  return { usd: null, source: 'unavailable' };
-}
-
-function resolveMegapixels(input: Record<string, unknown>): number {
-  const explicit = toNumber(input.megapixels);
-  if (explicit !== null) {
-    return explicit;
-  }
-
-  const width = toNumber(input.width);
-  const height = toNumber(input.height);
-  if (width !== null && height !== null && width > 0 && height > 0) {
-    return (width * height) / 1_000_000;
-  }
-
-  return 1;
-}
-
-function toNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string' && value.trim() !== '') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  return null;
 }
 
 export function sumKnownCosts(values: Array<number | null>): CostEstimate {

@@ -64,7 +64,7 @@ export interface LlmInteractionRecord {
 export interface T2IInteractionRecord {
   stageId: 'images';
   operationId: string;
-  provider: 'replicate' | 'replicate-dry-run';
+  provider: 'replicate' | 'replicate-dry-run' | 'limn' | 'limn-dry-run';
   modelId: string;
   kind: 'cover' | 'inline';
   startedAt: string;

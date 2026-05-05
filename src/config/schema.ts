@@ -123,7 +123,7 @@ export const modelSettingsSchema = z.object({
 });
 
 export const baseT2ISettingsSchema = z.object({
-  modelId: z.string().default('black-forest-labs/flux-schnell'),
+  modelId: z.string().default('flux'),
   inputOverrides: z.record(z.string(), z.unknown()).default({}),
 });
 

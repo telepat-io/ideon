@@ -8,7 +8,7 @@ import { planContentBrief } from '../generation/planContentBrief.js';
 import { planArticle } from '../generation/planArticle.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 import { writeArticleSections } from '../generation/writeSections.js';
-import { ReplicateClient } from '../images/replicateClient.js';
+import { Limn } from '@telepat/limn';
 import { expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages, selectImageSlots } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
@@ -134,7 +134,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
   const stageRetryState = new Map<WriteStageId, { retries: number; lastError: string | null }>();
   const llmOperationRetryState = new Map<string, number>();
-  const imageOperationRetryState = new Map<string, number>();
   stageTracking.set('shared-brief', {
     startedAtMs: runStartedAtMs,
     endedAtMs: null,
@@ -224,7 +223,11 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const openRouter = dryRun ? null : new OpenRouterClient(requireSecret(input.config.secrets.openRouterApiKey, 'OpenRouter API key'));
     const canRenderImagesLive = Boolean(input.config.secrets.replicateApiToken);
     const imageDryRun = dryRun || !canRenderImagesLive;
-    const replicate = imageDryRun ? null : new ReplicateClient(requireSecret(input.config.secrets.replicateApiToken, 'Replicate API token'));
+    const limn = imageDryRun ? null : new Limn({
+      openrouterApiKey: input.config.secrets.openRouterApiKey ?? undefined,
+      replicateApiKey: requireSecret(input.config.secrets.replicateApiToken, 'Replicate API token'),
+      openrouterModel: input.config.settings.model,
+    });
     let contentBrief = writeSession.contentBrief;
     let plan = writeSession.plan;
     let text = writeSession.text;
@@ -695,7 +698,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         const renderedImages = await renderExpandedImages({
           prompts: imagePrompts,
           settings: input.config.settings,
-          replicate,
+          limn,
           markdownPath: primaryMarkdownPath,
           assetDir: sharedAssetDir,
           dryRun: imageDryRun,
@@ -717,16 +720,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             });
             recordStageCost(stageTracking, 'images', metrics.costUsd, metrics.costSource);
             addStageRetries(stageTracking, 'images', metrics.retries);
-          },
-          onRetry(event) {
-            const operationKey = `images:${event.imageId}`;
-            const previousRetries = imageOperationRetryState.get(operationKey) ?? 0;
-            if (event.retries <= previousRetries) {
-              return;
-            }
-
-            imageOperationRetryState.set(operationKey, event.retries);
-            applyRetryUpdate('images', event.retries - previousRetries, event.errorMessage);
           },
           onProgress(detail) {
             stages[4] = {
@@ -795,7 +788,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         const renderedImages = await renderExpandedImages({
           prompts: imagePrompts,
           settings: input.config.settings,
-          replicate,
+          limn,
           markdownPath: primaryMarkdownPath,
           assetDir: sharedAssetDir,
           dryRun: imageDryRun,
@@ -817,16 +810,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             });
             recordStageCost(stageTracking, 'images', metrics.costUsd, metrics.costSource);
             addStageRetries(stageTracking, 'images', metrics.retries);
-          },
-          onRetry(event) {
-            const operationKey = `images:${event.imageId}`;
-            const previousRetries = imageOperationRetryState.get(operationKey) ?? 0;
-            if (event.retries <= previousRetries) {
-              return;
-            }
-
-            imageOperationRetryState.set(operationKey, event.retries);
-            applyRetryUpdate('images', event.retries - previousRetries, event.errorMessage);
           },
           onProgress(detail) {
             stages[4] = {
@@ -1694,13 +1677,13 @@ function buildPrimaryCoverPrompt(
     description: `Cover image for ${primaryContentType}`,
     anchorAfterSection: null,
     prompt: [
-      `Editorial cover image for ${primaryContentType}.`,
+      `Cover image for ${primaryContentType}.`,
       `Core angle: ${contentBrief.description}`,
       `Audience: ${contentBrief.targetAudience}`,
       `Promise: ${contentBrief.corePromise}`,
       `Voice: ${contentBrief.voiceNotes}`,
       `Primary excerpt: ${markdownExcerpt}`,
-      'Cinematic composition, clear focal subject, no text overlays, high visual clarity.',
+      'Do not include any words, letters, numbers, logos, watermarks, or signage in the image.',
     ].join(' '),
   };
 }

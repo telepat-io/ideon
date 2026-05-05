@@ -3,8 +3,7 @@ import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import type { AppSettings, SecretSettings } from '../../config/schema.js';
-import { coerceT2IFieldValue, getT2IFieldDefault, sanitizeT2IOverrides } from '../../models/t2i/options.js';
-import { getSupportedT2IModels, getT2IModel } from '../../models/t2i/registry.js';
+import { getLimnGenerationModels } from '../../images/limnModelCatalog.js';
 
 type MenuAction =
   | 'openrouter'
@@ -17,7 +16,6 @@ type MenuAction =
   | 'markdownOutputDir'
   | 'assetOutputDir'
   | 't2i-model'
-  | `t2i:${string}`
   | 'save'
   | 'cancel';
 
@@ -44,7 +42,7 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
   const [secrets, setSecrets] = useState<SecretSettings>(initialSecrets);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [showModelSelect, setShowModelSelect] = useState(false);
-  const currentModel = getT2IModel(settings.t2i.modelId);
+  const currentModelEntry = getLimnGenerationModels().find((m) => m.family === settings.t2i.modelId) ?? getLimnGenerationModels()[0];
 
   useInput((input, key) => {
     if (key.escape) {
@@ -65,10 +63,7 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
   });
 
   const menuItems = useMemo<MenuItem[]>(() => {
-    const t2iItems = currentModel.inputOptions.userConfigurable.map((fieldName) => ({
-      label: `${fieldName}: ${formatValue(settings.t2i.inputOverrides[fieldName] ?? getT2IFieldDefault(settings.t2i.modelId, fieldName))}`,
-      value: `t2i:${fieldName}` as const,
-    }));
+    const t2iItems: MenuItem[] = [];
 
     return [
       {
@@ -108,7 +103,7 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
         value: 'assetOutputDir',
       },
       {
-        label: `T2I model: ${currentModel.displayName}`,
+        label: `T2I model: ${currentModelEntry?.displayName ?? settings.t2i.modelId}`,
         value: 't2i-model',
       },
       ...t2iItems,
@@ -121,12 +116,12 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
         value: 'cancel',
       },
     ];
-  }, [currentModel, secrets.openRouterApiKey, secrets.replicateApiToken, settings]);
+  }, [currentModelEntry, secrets.openRouterApiKey, secrets.replicateApiToken, settings]);
 
   if (showModelSelect) {
-    const items = getSupportedT2IModels().map((model) => ({
-      label: `${model.displayName} (${model.modelId})`,
-      value: model.modelId,
+    const items = getLimnGenerationModels().map((model) => ({
+      label: `${model.displayName} (${model.family})`,
+      value: model.family,
     }));
 
     return (
@@ -142,7 +137,7 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
               ...current,
               t2i: {
                 modelId: item.value,
-                inputOverrides: sanitizeT2IOverrides(item.value, current.t2i.inputOverrides),
+                inputOverrides: {},
               },
             }));
             setShowModelSelect(false);
@@ -267,16 +262,6 @@ function handleMenuSelect(
       onDone(null);
       exit();
       return;
-    default:
-      if (action.startsWith('t2i:')) {
-        const fieldName = action.slice(4);
-        const currentModel = getT2IModel(settings.t2i.modelId);
-        setEditing({
-          key: action,
-          label: `${currentModel.displayName} • ${fieldName}`,
-          value: formatEditorValue(settings.t2i.inputOverrides[fieldName] ?? getT2IFieldDefault(settings.t2i.modelId, fieldName)),
-        });
-      }
   }
 }
 
@@ -358,35 +343,7 @@ function applyEdit(
 
   if (action === 'assetOutputDir') {
     setSettings({ ...settings, assetOutputDir: value.trim() || settings.assetOutputDir });
-    return;
   }
-
-  if (action.startsWith('t2i:')) {
-    const fieldName = action.slice(4);
-    const parsedValue = coerceT2IFieldValue(settings.t2i.modelId, fieldName, value);
-    const nextOverrides = { ...settings.t2i.inputOverrides };
-    if (parsedValue === undefined) {
-      delete nextOverrides[fieldName];
-    } else {
-      nextOverrides[fieldName] = parsedValue;
-    }
-
-    setSettings({
-      ...settings,
-      t2i: {
-        ...settings.t2i,
-        inputOverrides: nextOverrides,
-      },
-    });
-  }
-}
-
-function formatEditorValue(value: unknown): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  return String(value);
 }
 
 function formatValue(value: unknown): string {

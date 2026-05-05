@@ -1,18 +1,16 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { Limn, ModelId } from '@telepat/limn';
 import type { AppSettings } from '../config/schema.js';
-
-export const MIN_IMAGE_BYTES = 1024;
 import { buildImagePromptMessages, imagePromptSchema } from '../llm/prompts/imagePrompt.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
-import { coerceT2IFieldValue, getT2IFieldDefault, sanitizeT2IOverrides } from '../models/t2i/options.js';
 import { relativeAssetPath } from '../output/filesystem.js';
-import { estimateImageCostUsd, estimateLlmCostUsd, type LlmCallMetrics } from '../pipeline/analytics.js';
+import { estimateLlmCostUsd, type LlmCallMetrics } from '../pipeline/analytics.js';
 import type { CostSource, LlmInteractionRecord, T2IInteractionRecord } from '../pipeline/events.js';
-import { getT2IModel } from '../models/t2i/registry.js';
 import type { ArticleImagePrompt, ArticlePlan, GeneratedArticle, GeneratedArticleSection, RenderedArticleImage } from '../types/article.js';
 import { imagePromptResultSchema } from '../types/articleSchema.js';
-import type { ReplicateClient } from './replicateClient.js';
+
+export const MIN_IMAGE_BYTES = 1024;
 
 export interface ImagePromptCallMetrics {
   imageId: string;
@@ -132,7 +130,7 @@ export async function expandImagePrompts({
       const dryRunStartMs = Date.now();
       prompts.push({
         ...image,
-        prompt: `${image.description}, editorial illustration, detailed lighting, modern magazine art direction`,
+        prompt: `${image.description}`,
       });
       onPromptComplete?.({
         imageId: image.id,
@@ -205,40 +203,36 @@ export async function expandImagePrompts({
 export async function renderExpandedImages({
   prompts,
   settings,
-  replicate,
+  limn,
   markdownPath,
   assetDir,
   dryRun,
   onProgress,
   onRenderComplete,
   onInteraction,
-  onRetry,
 }: {
   prompts: ArticleImagePrompt[];
   settings: AppSettings;
-  replicate: ReplicateClient | null;
+  limn: Limn | null;
   markdownPath: string;
   assetDir: string;
   dryRun: boolean;
   onProgress?: (detail: string) => void;
   onRenderComplete?: (metrics: ImageRenderCallMetrics) => void;
   onInteraction?: (interaction: T2IInteractionRecord) => void;
-  onRetry?: (event: { imageId: string; kind: 'cover' | 'inline'; retries: number; errorMessage: string }) => void;
 }): Promise<RenderedArticleImage[]> {
 
   const renderedImages: RenderedArticleImage[] = [];
   for (let index = 0; index < prompts.length; index += 1) {
     const prompt = prompts[index];
     onProgress?.(`Rendering image ${index + 1}/${prompts.length} with ${settings.t2i.modelId}`);
-    const fileName = `${prompt.kind === 'cover' ? 'cover' : `inline-${prompt.anchorAfterSection}`}-${index + 1}.${resolveOutputFormat(settings)}`;
+    const fileName = `${prompt.kind === 'cover' ? 'cover' : `inline-${prompt.anchorAfterSection}`}-${index + 1}.png`;
     const outputPath = path.join(assetDir, fileName);
 
-    if (dryRun || !replicate) {
+    if (dryRun || !limn) {
       const dryRunStartMs = Date.now();
       await writeFile(outputPath, `Placeholder image for: ${prompt.prompt}\n`, 'utf8');
       const outputBytes = Buffer.byteLength(`Placeholder image for: ${prompt.prompt}\n`, 'utf8');
-      const dryRunInput = createReplicateInput(settings, prompt.prompt, prompt.kind);
-      const dryRunCost = estimateImageCostUsd(settings.t2i.modelId, dryRunInput, 1);
       renderedImages.push({
         ...prompt,
         outputPath,
@@ -253,13 +247,13 @@ export async function renderExpandedImages({
         retries: 0,
         retryBackoffMs: 0,
         outputBytes,
-        costUsd: dryRunCost.usd,
-        costSource: dryRunCost.source,
+        costUsd: null,
+        costSource: 'unavailable',
       });
       onInteraction?.({
         stageId: 'images',
         operationId: `images:${prompt.id}`,
-        provider: 'replicate-dry-run',
+        provider: 'limn-dry-run',
         modelId: settings.t2i.modelId,
         kind: prompt.kind,
         startedAt: new Date(dryRunStartMs).toISOString(),
@@ -270,95 +264,84 @@ export async function renderExpandedImages({
         retryBackoffMs: 0,
         status: 'succeeded',
         prompt: prompt.prompt,
-        input: dryRunInput,
+        input: {},
         errorMessage: null,
       });
       continue;
     }
 
-    const input = createReplicateInput(settings, prompt.prompt, prompt.kind);
+    const family = settings.t2i.modelId as ModelId;
     const renderStartedAtMs = Date.now();
-    let runDurationMs = 0;
-    let runAttempts = 1;
-    let runRetries = 0;
-    let runRetryBackoffMs = 0;
     try {
-      const output = await replicate.runModel(settings.t2i.modelId, input, {
-        onMetrics(metrics) {
-          runDurationMs = metrics.durationMs;
-          runAttempts = metrics.attempts;
-          runRetries = metrics.retries;
-          runRetryBackoffMs = metrics.retryBackoffMs;
-        },
-        onRetry(event) {
-          onRetry?.({
-            imageId: prompt.id,
-            kind: prompt.kind,
-            retries: event.retries,
-            errorMessage: event.errorMessage,
-          });
-        },
+      const result = await limn.generate(prompt.prompt, family, {
+        replicateModel: settings.t2i.modelId,
+        aspectRatio: '16:9',
       });
-      const bytes = await normalizeReplicateOutput(output);
-      if (bytes.byteLength < MIN_IMAGE_BYTES) {
+
+      const ext = mimeTypeToExtension(result.mimeType);
+      const liveFileName = `${prompt.kind === 'cover' ? 'cover' : `inline-${prompt.anchorAfterSection}`}-${index + 1}.${ext}`;
+      const liveOutputPath = path.join(assetDir, liveFileName);
+
+      if (result.image.byteLength < MIN_IMAGE_BYTES) {
         throw new Error(
-          `Image ${index + 1} download appears corrupted: only ${bytes.byteLength} bytes received.`,
+          `Image ${index + 1} download appears corrupted: only ${result.image.byteLength} bytes received.`,
         );
       }
-      await writeFile(outputPath, bytes);
+      await writeFile(liveOutputPath, result.image);
 
       renderedImages.push({
         ...prompt,
-        outputPath,
-        relativePath: relativeAssetPath(markdownPath, outputPath),
+        outputPath: liveOutputPath,
+        relativePath: relativeAssetPath(markdownPath, liveOutputPath),
       });
 
-      const estimatedCost = estimateImageCostUsd(settings.t2i.modelId, input, 1);
+      const costSource: CostSource = result.analytics.costSource === 'unknown' ? 'unavailable' : 'estimated';
       onRenderComplete?.({
         imageId: prompt.id,
         kind: prompt.kind,
-        modelId: settings.t2i.modelId,
-        durationMs: runDurationMs,
-        attempts: runAttempts,
-        retries: runRetries,
-        retryBackoffMs: runRetryBackoffMs,
-        outputBytes: bytes.byteLength,
-        costUsd: estimatedCost.usd,
-        costSource: estimatedCost.source,
+        modelId: result.modelSlug,
+        durationMs: result.analytics.totalDurationMs,
+        attempts: 1,
+        retries: 0,
+        retryBackoffMs: 0,
+        outputBytes: result.image.byteLength,
+        costUsd: result.analytics.totalEstimatedCostUsd,
+        costSource,
       });
       onInteraction?.({
         stageId: 'images',
         operationId: `images:${prompt.id}`,
-        provider: 'replicate',
-        modelId: settings.t2i.modelId,
+        provider: 'limn',
+        modelId: result.modelSlug,
         kind: prompt.kind,
         startedAt: new Date(renderStartedAtMs).toISOString(),
         endedAt: new Date().toISOString(),
-        durationMs: runDurationMs || (Date.now() - renderStartedAtMs),
-        attempts: runAttempts,
-        retries: runRetries,
-        retryBackoffMs: runRetryBackoffMs,
+        durationMs: result.analytics.totalDurationMs,
+        attempts: 1,
+        retries: 0,
+        retryBackoffMs: 0,
         status: 'succeeded',
         prompt: prompt.prompt,
-        input,
+        input: {},
         errorMessage: null,
       });
     } catch (error) {
+      const durationMs = Date.now() - renderStartedAtMs;
       onInteraction?.({
         stageId: 'images',
         operationId: `images:${prompt.id}`,
-        provider: 'replicate',
+        provider: 'limn',
         modelId: settings.t2i.modelId,
         kind: prompt.kind,
         startedAt: new Date(renderStartedAtMs).toISOString(),
         endedAt: new Date().toISOString(),
-        durationMs: runDurationMs || (Date.now() - renderStartedAtMs),
-        attempts: runAttempts,
-        retries: runRetries,
-        retryBackoffMs: runRetryBackoffMs,
+        durationMs,
+        attempts: 1,
+        retries: 0,
+        retryBackoffMs: 0,
         status: 'failed',
         prompt: prompt.prompt,
-        input,
+        input: {},
         errorMessage: error instanceof Error ? error.message : 'Unknown image render error.',
       });
       throw error;
@@ -374,7 +357,7 @@ export async function buildAndRenderImages({
   maxImages,
   settings,
   openRouter,
-  replicate,
+  limn,
   markdownPath,
   assetDir,
   dryRun,
@@ -385,7 +368,7 @@ export async function buildAndRenderImages({
   maxImages?: number;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
-  replicate: ReplicateClient | null;
+  limn: Limn | null;
   markdownPath: string;
   assetDir: string;
   dryRun: boolean;
@@ -405,7 +388,7 @@ export async function buildAndRenderImages({
   const renderedImages = await renderExpandedImages({
     prompts: imagePrompts,
     settings,
-    replicate,
+    limn,
     markdownPath,
     assetDir,
     dryRun,
@@ -445,158 +428,8 @@ function mergeLlmMetrics(left: LlmCallMetrics, right: LlmCallMetrics): LlmCallMe
   };
 }
 
-function createReplicateInput(settings: AppSettings, prompt: string, kind: 'cover' | 'inline'): Record<string, unknown> {
-  const model = getT2IModel(settings.t2i.modelId);
-  const overrides = sanitizeT2IOverrides(settings.t2i.modelId, settings.t2i.inputOverrides);
-  const input: Record<string, unknown> = { ...overrides, prompt };
-
-  if (model.inputOptions.pipelineManaged.includes('aspect_ratio')) {
-    input.aspect_ratio = kind === 'cover' ? '16:9' : '16:9';
-  }
-
-  if (model.inputOptions.pipelineManaged.includes('width')) {
-    input.width = 1536;
-  }
-
-  if (model.inputOptions.pipelineManaged.includes('height')) {
-    input.height = 864;
-  }
-
-  if (!('output_format' in input)) {
-    const fallback = getT2IFieldDefault(settings.t2i.modelId, 'output_format');
-    if (typeof fallback === 'string') {
-      input.output_format = fallback;
-    }
-  }
-
-  if (!('num_outputs' in input) && 'num_outputs' in model.inputOptions.fields) {
-    input.num_outputs = coerceT2IFieldValue(settings.t2i.modelId, 'num_outputs', getT2IFieldDefault(settings.t2i.modelId, 'num_outputs')) ?? 1;
-  }
-
-  if (!('max_images' in input) && 'max_images' in model.inputOptions.fields) {
-    input.max_images = coerceT2IFieldValue(settings.t2i.modelId, 'max_images', getT2IFieldDefault(settings.t2i.modelId, 'max_images')) ?? 1;
-  }
-
-  return input;
-}
-
-function resolveOutputFormat(settings: AppSettings): string {
-  const outputFormat = coerceT2IFieldValue(settings.t2i.modelId, 'output_format', settings.t2i.inputOverrides.output_format);
-  if (typeof outputFormat === 'string') {
-    return outputFormat === 'jpeg' ? 'jpg' : outputFormat;
-  }
-
-  const fallback = getT2IFieldDefault(settings.t2i.modelId, 'output_format');
-  const normalizedFallback = typeof fallback === 'string' ? fallback : 'png';
-  return normalizedFallback === 'jpeg' ? 'jpg' : normalizedFallback;
-}
-
-async function normalizeReplicateOutput(output: unknown): Promise<Uint8Array> {
-  const first = Array.isArray(output) ? output[0] : output;
-  if (!first) {
-    throw new Error('Replicate returned no image output.');
-  }
-
-  if (typeof first === 'string') {
-    return fetchBytes(first);
-  }
-
-  if (first instanceof URL) {
-    return fetchBytes(first.toString());
-  }
-
-  if (first instanceof Uint8Array) {
-    return first;
-  }
-
-  if (first instanceof ArrayBuffer) {
-    return new Uint8Array(first);
-  }
-
-  if (typeof Blob !== 'undefined' && first instanceof Blob) {
-    return new Uint8Array(await first.arrayBuffer());
-  }
-
-  if (typeof ReadableStream !== 'undefined' && first instanceof ReadableStream) {
-    return new Uint8Array(await new Response(first).arrayBuffer());
-  }
-
-  const fromBlobMethod = await maybeBytesFromBlobMethod(first);
-  if (fromBlobMethod) {
-    return fromBlobMethod;
-  }
-
-  const fromUrlMethod = await maybeBytesFromUrlMethod(first);
-  if (fromUrlMethod) {
-    return fromUrlMethod;
-  }
-
-  const fromArrayBufferMethod = await maybeBytesFromArrayBufferMethod(first);
-  if (fromArrayBufferMethod) {
-    return fromArrayBufferMethod;
-  }
-
-  throw new Error('Unsupported Replicate output format.');
-}
-
-async function maybeBytesFromBlobMethod(value: unknown): Promise<Uint8Array | null> {
-  if (!isRecord(value) || typeof value.blob !== 'function') {
-    return null;
-  }
-
-  const blobLike = await value.blob();
-  if (typeof Blob === 'undefined' || !(blobLike instanceof Blob)) {
-    return null;
-  }
-
-  return new Uint8Array(await blobLike.arrayBuffer());
-}
-
-async function maybeBytesFromUrlMethod(value: unknown): Promise<Uint8Array | null> {
-  if (!isRecord(value) || typeof value.url !== 'function') {
-    return null;
-  }
-
-  const urlLike = value.url();
-  if (typeof urlLike === 'string') {
-    return fetchBytes(urlLike);
-  }
-
-  if (urlLike instanceof URL) {
-    return fetchBytes(urlLike.toString());
-  }
-
-  return null;
-}
-
-async function maybeBytesFromArrayBufferMethod(value: unknown): Promise<Uint8Array | null> {
-  if (!isRecord(value) || typeof value.arrayBuffer !== 'function') {
-    return null;
-  }
-
-  const data = await value.arrayBuffer();
-  if (data instanceof ArrayBuffer) {
-    return new Uint8Array(data);
-  }
-
-  return null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-async function fetchBytes(url: string): Promise<Uint8Array> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 60_000);
-  timer.unref();
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) {
-      throw new Error(`Failed to download generated asset from ${url}`);
-    }
-    return new Uint8Array(await response.arrayBuffer());
-  } finally {
-    clearTimeout(timer);
-  }
+function mimeTypeToExtension(mimeType: string): string {
+  if (mimeType === 'image/jpeg') return 'jpg';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'png';
 }

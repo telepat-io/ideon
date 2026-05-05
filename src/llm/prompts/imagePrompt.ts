@@ -30,13 +30,13 @@ export function buildImagePromptMessages(
     );
   }
 
-  userLines.push('Write one strong prompt for a clean editorial illustration. Avoid text overlays or watermarks.');
+  userLines.push('Write one strong visual prompt describing the image in natural language.');
 
   return [
     {
       role: 'system',
       content:
-        'You write concise, high-signal prompts for text-to-image models. The prompt should be vivid, compositionally clear, and suitable for editorial illustration. Return only the requested JSON.',
+        'You write concise, high-signal prompts for text-to-image models. The prompt should be vivid and compositionally clear. Do not include any words, letters, numbers, logos, watermarks, or signage in the image, unless text in the image was explicitly requested. Return only the requested JSON.',
     },
     {
       role: 'user',
