@@ -2,7 +2,7 @@ import { estimateImageCostUsd, estimateLlmCostUsd, sumKnownCosts } from '../pipe
 
 describe('estimateLlmCostUsd', () => {
   it('uses provider cost when available', () => {
-    const result = estimateLlmCostUsd('moonshotai/kimi-k2.5', {
+    const result = estimateLlmCostUsd('deepseek/deepseek-v4-pro', {
       promptTokens: 100,
       completionTokens: 200,
       totalTokens: 300,
@@ -13,7 +13,7 @@ describe('estimateLlmCostUsd', () => {
   });
 
   it('estimates from known model pricing', () => {
-    const result = estimateLlmCostUsd('moonshotai/kimi-k2.5', {
+    const result = estimateLlmCostUsd('deepseek/deepseek-v4-pro', {
       promptTokens: 1000,
       completionTokens: 1000,
       totalTokens: 2000,
@@ -21,11 +21,11 @@ describe('estimateLlmCostUsd', () => {
     });
 
     expect(result.source).toBe('estimated');
-    expect(result.usd).toBeCloseTo(0.00265, 8);
+    expect(result.usd).toBeCloseTo(0.001305, 8);
   });
 
   it('coalesces null token counts to zero', () => {
-    const result = estimateLlmCostUsd('moonshotai/kimi-k2.5', {
+    const result = estimateLlmCostUsd('deepseek/deepseek-v4-pro', {
       promptTokens: null,
       completionTokens: null,
       totalTokens: null,

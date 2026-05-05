@@ -117,7 +117,7 @@ JSON 包含：
   "prompt": "How teams can operationalize content systems",
   "targetAudience": "Content operators building repeatable publishing systems",
   "settings": {
-    "model": "moonshotai/kimi-k2.5",
+    "model": "deepseek/deepseek-v4-pro",
     "modelSettings": { "temperature": 0.7, "maxTokens": 4000, "topP": 1 },
     "modelRequestTimeoutMs": 90000,
     "t2i": { "modelId": "black-forest-labs/flux-schnell", "inputOverrides": {} },

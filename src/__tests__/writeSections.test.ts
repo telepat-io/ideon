@@ -23,7 +23,7 @@ const llmMetrics = {
   attempts: 1,
   retries: 0,
   retryBackoffMs: 0,
-  modelId: 'moonshotai/kimi-k2.5',
+  modelId: 'deepseek/deepseek-v4-pro',
   usage: {
     promptTokens: 10,
     completionTokens: 20,

@@ -52,7 +52,7 @@ describe('readEnvSettings', () => {
     const result = readEnvSettings({
       IDEON_OPENROUTER_API_KEY: 'openrouter-key',
       IDEON_REPLICATE_API_TOKEN: 'replicate-token',
-      IDEON_MODEL: 'moonshotai/kimi-k2.5',
+      IDEON_MODEL: 'deepseek/deepseek-v4-pro',
       IDEON_NOTIFICATIONS_ENABLED: 'true',
       IDEON_MARKDOWN_OUTPUT_DIR: '/tmp/out',
       IDEON_ASSET_OUTPUT_DIR: '/tmp/out/assets',
@@ -64,7 +64,7 @@ describe('readEnvSettings', () => {
     expect(result).toMatchObject({
       openRouterApiKey: 'openrouter-key',
       replicateApiToken: 'replicate-token',
-      model: 'moonshotai/kimi-k2.5',
+      model: 'deepseek/deepseek-v4-pro',
       notificationsEnabled: true,
       markdownOutputDir: '/tmp/out',
       assetOutputDir: '/tmp/out/assets',

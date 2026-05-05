@@ -34,7 +34,7 @@ describe('config manage', () => {
     jest.clearAllMocks();
 
     loadSavedSettingsMock.mockResolvedValue({
-      model: 'moonshotai/kimi-k2.5',
+      model: 'deepseek/deepseek-v4-pro',
       modelSettings: { temperature: 0.7, maxTokens: 4000, topP: 1 },
       modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
@@ -58,7 +58,7 @@ describe('config manage', () => {
   it('lists settings values and secret availability', async () => {
     const result = await configList();
 
-    expect(result.settings.model).toBe('moonshotai/kimi-k2.5');
+    expect(result.settings.model).toBe('deepseek/deepseek-v4-pro');
     expect(result.settings.style).toBe('professional');
     expect(result.settings.intent).toBe('tutorial');
     expect(result.secrets.openRouterApiKey).toBe(true);

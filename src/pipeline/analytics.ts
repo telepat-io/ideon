@@ -28,11 +28,12 @@ export interface CostEstimate {
 const LLM_USD_PER_1K_TOKENS: Readonly<Record<string, { input: number; output: number }>> = {
   // AUTO-GENERATED:OPENROUTER_PRICING_START
 
-  // Last refreshed: 2026-03-27
+  // Last refreshed: 2026-05-05
   // Source: https://openrouter.ai/api/v1/models (per-token USD converted to per-1k-token USD)
   'anthropic/claude-3.5-sonnet': { input: 0.006, output: 0.03 },
   'deepseek/deepseek-chat': { input: 0.00032, output: 0.00089 },
-  'moonshotai/kimi-k2.5': { input: 0.00045, output: 0.0022 },
+  'deepseek/deepseek-v4-pro': { input: 0.000435, output: 0.00087 },
+  'moonshotai/kimi-k2.5': { input: 0.00044, output: 0.002 },
   'openai/gpt-4o-mini': { input: 0.00015, output: 0.0006 },
 // AUTO-GENERATED:OPENROUTER_PRICING_END
 };

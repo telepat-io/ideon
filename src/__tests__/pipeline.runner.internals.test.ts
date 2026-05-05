@@ -45,7 +45,7 @@ describe('pipeline runner internals', () => {
       attempts: 1,
       retries: 1,
       retryBackoffMs: 200,
-      modelId: 'moonshotai/kimi-k2.5',
+      modelId: 'deepseek/deepseek-v4-pro',
       usage: {
         promptTokens: 10,
         completionTokens: 20,

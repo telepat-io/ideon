@@ -354,7 +354,7 @@ describe('preview server resilience', () => {
               operationId: 'planning:article-plan',
               requestType: 'structured',
               provider: 'openrouter',
-              modelId: 'moonshotai/kimi-k2.5',
+              modelId: 'deepseek/deepseek-v4-pro',
               startedAt: '2026-03-27T18:00:01.000Z',
               endedAt: '2026-03-27T18:00:02.000Z',
               durationMs: 1000,

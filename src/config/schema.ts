@@ -132,7 +132,7 @@ export const notificationsSettingsSchema = z.object({
 });
 
 export const appSettingsSchema = z.object({
-  model: z.string().default('moonshotai/kimi-k2.5'),
+  model: z.string().default('deepseek/deepseek-v4-pro'),
   modelSettings: modelSettingsSchema.default(modelSettingsSchema.parse({})),
   modelRequestTimeoutMs: z.number().int().positive().default(90000),
   t2i: baseT2ISettingsSchema.default(baseT2ISettingsSchema.parse({})),

@@ -29,7 +29,7 @@ ideon write --job ./job.json
   "idea": "How editorial teams can ship weekly explainers",
   "targetAudience": "Content leads at small SaaS teams building repeatable thought-leadership motions",
   "settings": {
-    "model": "moonshotai/kimi-k2.5",
+    "model": "deepseek/deepseek-v4-pro",
     "modelSettings": {
       "temperature": 0.7,
       "maxTokens": 2500,

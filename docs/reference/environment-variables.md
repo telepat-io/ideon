@@ -41,7 +41,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 IDEON_OPENROUTER_API_KEY=... \
 IDEON_REPLICATE_API_TOKEN=... \
 IDEON_DISABLE_KEYTAR=true \
-IDEON_MODEL=moonshotai/kimi-k2.5 \
+IDEON_MODEL=deepseek/deepseek-v4-pro \
 IDEON_TEMPERATURE=0.7 \
 IDEON_MAX_TOKENS=2000 \
 IDEON_TOP_P=1 \
