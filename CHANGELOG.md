@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.18](https://github.com/telepat-io/ideon/compare/ideon-v0.1.17...ideon-v0.1.18) (2026-05-05)
+
+
+### Features
+
+* update default model from moonshotai/kimi-k2.5 to deepseek/deepseek-v4-pro across documentation and tests ([5c3f2e6](https://github.com/telepat-io/ideon/commit/5c3f2e6dc1cf20a6b1f946d64c8a5f2b2c98d41d))
+
 ## [0.1.17](https://github.com/telepat-io/ideon/compare/ideon-v0.1.16...ideon-v0.1.17) (2026-05-04)
 
 
