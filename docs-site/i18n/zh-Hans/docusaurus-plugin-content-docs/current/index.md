@@ -34,6 +34,7 @@ ideon write "Why async Rust is worth learning" --primary article=1 --secondary x
 - 每次运行一个生成目录（时间戳 + slug）
 - 一个或多个 Markdown 输出（`article-1.md`、`x-thread-1.md`、`x-post-1.md` 等）
 - 用于复现运行定义的 `job.json`
+- 包含文章计划的 `plan.md`（仅文章主目标运行）
 - 包含阶段与全局指标的 `generation.analytics.json`
 - 通过 Replicate T2I 模型渲染的共享图片资源（主目标为 article 时包含文内配图）
 

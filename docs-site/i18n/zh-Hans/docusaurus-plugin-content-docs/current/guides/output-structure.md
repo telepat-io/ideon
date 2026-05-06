@@ -16,6 +16,7 @@ Ideon 还会在 `.ideon/write/`（已加入 gitignore）保存本地写作会话
 - Asset directory: `/output/assets`
 - Analytics file: `generation.analytics.json` inside each generation directory
 - Model interactions file: `model.interactions.json` inside each generation directory
+- Article plan file: `plan.md` inside each generation directory (for article-primary runs)
 
 以 `/output` 开头的路径会相对于当前工作目录解析。
 
@@ -31,6 +32,7 @@ output/
     x-post-1.md
     linkedin-1.md
     job.json
+    plan.md
     generation.analytics.json
     model.interactions.json
     practical-ai-workflows-cover.webp

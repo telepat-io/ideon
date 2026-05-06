@@ -49,6 +49,7 @@ Each run writes a generation directory:
 
 - numbered markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` with resolved run definition metadata
+- `plan.md` with the article plan (for article-primary runs)
 - `generation.analytics.json`
 - shared assets for that generation
 

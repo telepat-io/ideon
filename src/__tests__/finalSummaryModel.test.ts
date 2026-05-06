@@ -15,6 +15,7 @@ describe('buildFinalSummaryRows', () => {
         assetDir: '/tmp/example-title/assets',
         analyticsPath: '/tmp/example-title/generation.analytics.json',
         interactionsPath: '/tmp/example-title/model.interactions.json',
+        planPath: '/tmp/example-title/plan.md',
       },
       analytics: {
         runId: 'run-1',
@@ -90,6 +91,7 @@ describe('buildFinalSummaryRows', () => {
         assetDir: '/tmp/example-title/assets',
         analyticsPath: '/tmp/example-title/generation.analytics.json',
         interactionsPath: '/tmp/example-title/model.interactions.json',
+        planPath: '/tmp/example-title/plan.md',
       },
       analytics: {
         runId: 'run-2',

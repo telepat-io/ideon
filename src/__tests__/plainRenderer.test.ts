@@ -114,6 +114,7 @@ describe('renderPlainPipeline', () => {
           assetDir: '/tmp/run',
           analyticsPath: '/tmp/run/generation.analytics.json',
           interactionsPath: '/tmp/run/model.interactions.json',
+          planPath: null,
         },
         analytics: {
           runId: 'run-1',
@@ -255,6 +256,7 @@ describe('renderPlainPipeline', () => {
           assetDir: '/tmp/run',
           analyticsPath: '/tmp/run/generation.analytics.json',
           interactionsPath: '/tmp/run/model.interactions.json',
+          planPath: null,
         },
         analytics: {
           runId: 'run-1',

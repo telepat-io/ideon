@@ -43,7 +43,7 @@ import {
   type WriteSessionState,
   type WriteStageId,
 } from './sessionStore.js';
-import type { ArticleImagePrompt, LinkEntry } from '../types/article.js';
+import type { ArticleImagePrompt, ArticlePlan, LinkEntry } from '../types/article.js';
 
 export interface PipelineRunOptions {
   onUpdate?: (stages: StageViewModel[]) => void;
@@ -676,6 +676,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         sourceJob: input.job,
       }),
     );
+
+    const planPath = plan ? path.join(generationDir, 'plan.md') : null;
+    if (plan && planPath) {
+      await writeUtf8File(planPath, renderPlanMarkdown(plan));
+    }
+
     const primaryFilePrefix = toFilePrefix(primaryTarget.contentType);
     const primaryMarkdownPath = path.join(generationDir, `${primaryFilePrefix}-1.md`);
     const sharedAssetDir = generationDir;
@@ -1248,6 +1254,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       assetDir: sharedAssetDir,
       analyticsPath,
       interactionsPath,
+      planPath,
     };
 
     writeSession = await patchWriteSession(
@@ -1766,6 +1773,50 @@ function buildRunJobDefinition(input: {
       runMode: input.runMode,
     },
   };
+}
+
+function renderPlanMarkdown(plan: ArticlePlan): string {
+  const yamlKeywords = plan.keywords.map((kw) => `  - "${kw}"`).join('\n');
+  const sectionsRows = plan.sections
+    .map((section, index) => `| ${index + 1} | ${section.title} | ${section.description} |`)
+    .join('\n');
+  const inlineImageRows = plan.inlineImages
+    .map((img, index) => `| Inline ${index + 1} | ${img.description} |`)
+    .join('\n');
+  const imageRows = `| Cover | ${plan.coverImageDescription} |\n${inlineImageRows}`;
+
+  return `---
+title: "${plan.title.replace(/"/g, '\\"')}"
+subtitle: "${plan.subtitle.replace(/"/g, '\\"')}"
+slug: "${plan.slug}"
+keywords:
+${yamlKeywords}
+---
+
+## Description
+
+${plan.description}
+
+## Introduction Brief
+
+${plan.introBrief}
+
+## Sections
+
+| # | Title | Description |
+|---|-------|-------------|
+${sectionsRows}
+
+## Outro Brief
+
+${plan.outroBrief}
+
+## Image Plan
+
+| Type | Description |
+|------|-------------|
+${imageRows}
+`;
 }
 
 function asWriteStageId(stageId: string): WriteStageId | null {

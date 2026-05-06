@@ -16,6 +16,7 @@ Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) f
 - Asset directory: `/output/assets`
 - Analytics file: `generation.analytics.json` inside each generation directory
 - Model interactions file: `model.interactions.json` inside each generation directory
+- Article plan file: `plan.md` inside each generation directory (for article-primary runs)
 
 Paths beginning with `/output` are resolved relative to current working directory.
 
@@ -31,6 +32,7 @@ output/
     x-post-1.md
     linkedin-1.md
     job.json
+    plan.md
     generation.analytics.json
     model.interactions.json
     practical-ai-workflows-cover.webp

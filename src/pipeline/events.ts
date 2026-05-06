@@ -41,6 +41,7 @@ export interface PipelineArtifactSummary {
   assetDir: string;
   analyticsPath: string;
   interactionsPath: string;
+  planPath: string | null;
 }
 
 export interface LlmInteractionRecord {

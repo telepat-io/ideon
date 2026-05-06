@@ -54,6 +54,7 @@ const pipelineArtifactSummarySchema = z.object({
   assetDir: z.string().min(1),
   analyticsPath: z.string().min(1).default('unknown.analytics.json'),
   interactionsPath: z.string().min(1).default('unknown.interactions.json'),
+  planPath: z.string().min(1).nullable().default(null),
 });
 
 const resolvedPathsSchema = z.object({

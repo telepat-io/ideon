@@ -29,7 +29,7 @@ This documentation explains what Ideon is, why teams use it, and how to run it e
 
 - Content targets: choose exactly one primary output type plus optional secondary output types per run
 - Style overlay: apply one run-level style to all outputs
-- Generation directory: each run writes markdown outputs, shared assets, `job.json`, and `generation.analytics.json`
+- Generation directory: each run writes markdown outputs, shared assets, `job.json`, `plan.md`, and `generation.analytics.json`
 - Conditional stages: article primary runs use structured article flow; non-article primary runs use generic primary generation with one cover image
 
 ## Recommended Reading Order

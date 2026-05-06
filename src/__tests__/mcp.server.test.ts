@@ -113,9 +113,10 @@ describe('ideon MCP server', () => {
         outputCount: 1,
         markdownPath: '/tmp/out.md',
         markdownPaths: ['/tmp/out.md'],
-        generationDir: '/tmp/gen',
-        analyticsPath: '/tmp/a.json',
-      },
+      generationDir: '/tmp/gen',
+      analyticsPath: '/tmp/a.json',
+      planPath: null,
+    },
     });
 
     isConfigKeyMock.mockReturnValue(true);

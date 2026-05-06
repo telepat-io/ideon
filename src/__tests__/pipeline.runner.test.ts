@@ -58,6 +58,7 @@ describe('pipeline runner', () => {
       expect(result.artifact.imageCount).toBe(2);
       expect(result.artifact.analyticsPath).toContain('.analytics.json');
       expect(result.artifact.interactionsPath).toContain('model.interactions.json');
+      expect(result.artifact.planPath).toContain('plan.md');
       expect(result.analytics.summary.totalDurationMs).toBeGreaterThanOrEqual(0);
       expect(result.analytics.stages).toHaveLength(7);
       expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(2);
@@ -374,6 +375,7 @@ describe('pipeline runner', () => {
       expect(generationEntries.some((entry) => entry.endsWith('.md'))).toBe(true);
       expect(generationEntries.some((entry) => entry.endsWith('.jpg') || entry.endsWith('.png') || entry.endsWith('.webp'))).toBe(true);
       expect(generationEntries).toContain('job.json');
+      expect(generationEntries).toContain('plan.md');
 
       const jobRaw = await readFile(path.join(result.artifact.generationDir, 'job.json'), 'utf8');
       const job = JSON.parse(jobRaw) as {
@@ -394,6 +396,13 @@ describe('pipeline runner', () => {
       expect(job.style).toBe('professional');
       expect(job.settings.markdownOutputDir).toBe(markdownDir);
       expect(job.settings.assetOutputDir).toBe(assetDir);
+
+      const planMarkdown = await readFile(path.join(result.artifact.generationDir, 'plan.md'), 'utf8');
+      expect(planMarkdown).toContain('---');
+      expect(planMarkdown).toContain('## Sections');
+      expect(planMarkdown).toContain('## Image Plan');
+      expect(planMarkdown).toContain('| # | Title | Description |');
+      expect(result.artifact.planPath).toContain('plan.md');
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -440,6 +449,7 @@ describe('pipeline runner', () => {
       expect(result.artifact.outputCount).toBe(2);
       expect(result.artifact.imageCount).toBe(1);
       expect(result.artifact.sectionCount).toBe(0);
+      expect(result.artifact.planPath).toBeNull();
       expect(result.analytics.outputItemCalls).toHaveLength(1);
 
       const planningStage = result.stages.find((stage) => stage.id === 'planning');

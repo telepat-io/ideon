@@ -50,6 +50,7 @@ ideon write "How small editorial teams can productionize AI writing" --primary a
 - 生成目录：`output/<timestamp>-<slug>/`
 - Markdown 文件：`article-1.md`、`x-thread-1.md`、`x-post-1.md` 等
 - 运行元数据：`job.json`
+- 文章计划：`plan.md`
 - 运行分析数据：`generation.analytics.json`
 - 共享资源：同一生成目录中的图片文件
 
