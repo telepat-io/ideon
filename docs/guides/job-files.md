@@ -59,7 +59,7 @@ ideon write --job ./job.json
 
 - `settings.contentTargets` must include exactly one primary target and optional secondary targets.
 - If `settings.style` is omitted, Ideon defaults to `professional`.
-- If `targetAudience` is omitted, Ideon seeds shared-brief planning with a general non-specific audience.
+- If `targetAudience` is omitted, Ideon seeds shared-plan planning with a general non-specific audience.
 - CLI arguments override job-file settings for `idea`, `targetAudience`, `style`, and `contentTargets`.
 - Environment variables override matching job-file fields where supported.
 - After each run, Ideon writes a generated `job.json` inside the generation directory that captures the resolved run definition and metadata for that specific execution.

@@ -63,7 +63,7 @@ You can set one run-level style. Ideon uses this value to select the matching st
 
 Ideon composes writing instructions by loading stage-specific guide bundles plus run metadata:
 
-1. Stage bundle guides (planning, section writing, shared brief, channel adaptation)
+1. Stage bundle guides (planning, section writing, shared plan, channel adaptation)
 2. Selected style guide (`writing-guide/styles/<style>.md`)
 3. Selected intent guide (`writing-guide/content-intent/<intent>.md`)
 4. Selected format guide(s) (`writing-guide/formats/<content-type>.md`)

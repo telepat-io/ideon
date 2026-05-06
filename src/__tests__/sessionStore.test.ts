@@ -37,7 +37,7 @@ describe('sessionStore', () => {
       expect(state.status).toBe('running');
       expect(state.idea).toBe('my idea');
       expect(state.lastCompletedStage).toBeNull();
-      expect(state.contentBrief).toBeNull();
+      expect(state.contentPlan).toBeNull();
 
       const loaded = await loadWriteSession(dir);
       expect(loaded).not.toBeNull();
@@ -81,13 +81,13 @@ describe('sessionStore', () => {
           status: 'failed',
           failedStage: 'sections',
           errorMessage: 'boom',
-          contentBrief: {
+          contentPlan: {
             title: 'Reliable Editorial Workflows At Scale',
-            description: 'A practical and specific brief for building reliable editorial workflows at scale.',
+            description: 'A practical and specific plan for building reliable editorial workflows at scale.',
             targetAudience: 'Operators and content teams',
             corePromise: 'Readers leave with concrete tactics they can apply in production this week.',
             keyPoints: [
-              'Start with a structured brief before drafting.',
+              'Start with a structured plan before drafting.',
               'Keep outputs concrete with examples and constraints.',
               'Iterate on clarity before publishing.',
             ],
@@ -103,14 +103,14 @@ describe('sessionStore', () => {
       expect(firstPatch.status).toBe('failed');
       expect(firstPatch.failedStage).toBe('sections');
       expect(firstPatch.errorMessage).toBe('boom');
-      expect(firstPatch.contentBrief?.description).toContain('practical and specific brief');
+      expect(firstPatch.contentPlan?.description).toContain('practical and specific plan');
 
       const secondPatch = await patchWriteSession(
         {
           status: 'running',
           failedStage: null,
           errorMessage: null,
-          contentBrief: null,
+          contentPlan: null,
         },
         dir,
       );
@@ -118,7 +118,7 @@ describe('sessionStore', () => {
       expect(secondPatch.status).toBe('running');
       expect(secondPatch.failedStage).toBeNull();
       expect(secondPatch.errorMessage).toBeNull();
-      expect(secondPatch.contentBrief).toBeNull();
+      expect(secondPatch.contentPlan).toBeNull();
     });
   });
 

@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../openRouterClient.js';
-import type { ContentBrief } from '../../types/contentBrief.js';
+import type { ContentPlan } from '../../types/contentPlan.js';
 import {
   buildRunContextDirective,
   buildTargetLengthDirective,
@@ -86,7 +86,7 @@ export function buildArticlePlanMessages(
   options: {
     intent: string;
     contentTypes: string[];
-    contentBrief: ContentBrief;
+    contentPlan: ContentPlan;
     targetLength: number;
   },
 ): ChatMessage[] {
@@ -114,7 +114,7 @@ export function buildArticlePlanMessages(
         '- The article should feel authoritative, practical, and clearly structured for scanning and deep reading.',
         '- Generate a memorable title and a sharp subtitle that promise a concrete benefit, mechanism, or outcome.',
         '- The slug must be lowercase kebab-case and publication-ready.',
-        '- The description should work as a concise meta description and align with the shared content brief.',
+        '- The description should work as a concise meta description and align with the shared content plan.',
         `- Plan ${sectionCounts.label} strong sections with distinct focus areas and logical progression (no repetitive section intent).`,
         '- Frame section titles to reflect likely search intent or practical reader questions when appropriate.',
         '- Each section description should name the mechanism, evidence type, or practical action that makes the section useful.',
@@ -124,12 +124,12 @@ export function buildArticlePlanMessages(
         '- Image descriptions should capture the general concept and mood — the exact text-to-image prompt will be refined later using the actual section content.',
         '- Image descriptions must be concrete and contextual, not generic stock-photo phrasing.',
         '',
-        'Shared content brief context:',
-        `- description: ${options.contentBrief.description}`,
-        `- targetAudience: ${options.contentBrief.targetAudience}`,
-        `- corePromise: ${options.contentBrief.corePromise}`,
-        `- keyPoints: ${options.contentBrief.keyPoints.join(' | ')}`,
-        `- voiceNotes: ${options.contentBrief.voiceNotes}`,
+        'Shared content plan context:',
+        `- description: ${options.contentPlan.description}`,
+        `- targetAudience: ${options.contentPlan.targetAudience}`,
+        `- corePromise: ${options.contentPlan.corePromise}`,
+        `- keyPoints: ${options.contentPlan.keyPoints.join(' | ')}`,
+        `- voiceNotes: ${options.contentPlan.voiceNotes}`,
         '',
         'Return JSON with all required fields:',
         '- title: string',

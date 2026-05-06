@@ -42,7 +42,7 @@ ideon preview
 
 ### 日志视图
 
-- 按阶段分组的交互列表（`shared-brief`、`planning`、`sections`、`image-prompts`、`images`、`output`、`links`）
+- 按阶段分组的交互列表（`shared-plan`、`planning`、`sections`、`image-prompts`、`images`、`output`、`links`）
 - 单次调用检查器，显示元数据（模型、状态、耗时）
 - `Prompt / Response` 与 `Full JSON` 模式切换
 

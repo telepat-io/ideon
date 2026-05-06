@@ -3,12 +3,12 @@ import path from 'node:path';
 import { z } from 'zod';
 import { appSettingsSchema, jobInputSchema, type AppSettings, type JobInput, type ResolvedPaths } from '../config/schema.js';
 import { articlePlanSchema } from '../types/articleSchema.js';
-import { contentBriefSchema } from '../types/contentBriefSchema.js';
+import { contentPlanSchema } from '../types/contentPlanSchema.js';
 import type { ArticleImagePrompt, ContentItemLinks, GeneratedArticleSection, RenderedArticleImage } from '../types/article.js';
-import type { ContentBrief } from '../types/contentBrief.js';
+import type { ContentPlan } from '../types/contentPlan.js';
 import type { PipelineArtifactSummary } from './events.js';
 
-const STAGE_IDS = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'] as const;
+const STAGE_IDS = ['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'] as const;
 
 const generatedArticleSectionSchema = z.object({
   title: z.string().min(1),
@@ -76,7 +76,7 @@ const writeSessionStateSchema = z.object({
   lastCompletedStage: z.enum(STAGE_IDS).nullable(),
   failedStage: z.enum(STAGE_IDS).nullable(),
   errorMessage: z.string().nullable(),
-  contentBrief: contentBriefSchema.nullable().default(null),
+  contentPlan: contentPlanSchema.nullable().default(null),
   plan: articlePlanSchema.nullable(),
   text: z
     .object({
@@ -112,7 +112,7 @@ export interface WriteSessionPatch {
   lastCompletedStage?: WriteStageId | null;
   failedStage?: WriteStageId | null;
   errorMessage?: string | null;
-  contentBrief?: WriteSessionState['contentBrief'] | null;
+  contentPlan?: WriteSessionState['contentPlan'] | null;
   plan?: WriteSessionState['plan'] | null;
   text?: WriteSessionState['text'] | null;
   imagePrompts?: WriteSessionState['imagePrompts'] | null;
@@ -124,7 +124,7 @@ export interface WriteSessionPatch {
 export type WriteStageId = (typeof STAGE_IDS)[number];
 
 export interface WriteSessionState extends WriteSessionStateSchema {
-  contentBrief: ContentBrief | null;
+  contentPlan: ContentPlan | null;
   plan: z.infer<typeof articlePlanSchema> | null;
   text: {
     intro: string;
@@ -168,7 +168,7 @@ export async function startFreshWriteSession(seed: WriteSessionSeed, workingDir:
     lastCompletedStage: null,
     failedStage: null,
     errorMessage: null,
-    contentBrief: null,
+    contentPlan: null,
     plan: null,
     text: null,
     imagePrompts: null,
@@ -223,7 +223,7 @@ export async function patchWriteSession(patch: WriteSessionPatch, workingDir: st
     lastCompletedStage: has('lastCompletedStage') ? patch.lastCompletedStage ?? null : existing.lastCompletedStage,
     failedStage: has('failedStage') ? patch.failedStage ?? null : existing.failedStage,
     errorMessage: has('errorMessage') ? patch.errorMessage ?? null : existing.errorMessage,
-    contentBrief: has('contentBrief') ? patch.contentBrief ?? null : existing.contentBrief,
+    contentPlan: has('contentPlan') ? patch.contentPlan ?? null : existing.contentPlan,
     plan: has('plan') ? patch.plan ?? null : existing.plan,
     text: has('text') ? patch.text ?? null : existing.text,
     imagePrompts: has('imagePrompts') ? patch.imagePrompts ?? null : existing.imagePrompts,

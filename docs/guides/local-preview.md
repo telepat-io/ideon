@@ -42,7 +42,7 @@ This command:
 
 ### Logs View
 
-- stage-grouped interaction list (`shared-brief`, `planning`, `sections`, `image-prompts`, `images`, `output`, `links`)
+- stage-grouped interaction list (`shared-plan`, `planning`, `sections`, `image-prompts`, `images`, `output`, `links`)
 - per-call inspector with metadata (model, status, duration)
 - mode toggle for `Prompt / Response` and `Full JSON`
 

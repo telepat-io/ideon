@@ -14,7 +14,7 @@ describe('pipeline runner', () => {
   it('creates initial stages with expected order and states', () => {
     const stages = createInitialStages();
 
-    expect(stages.map((stage) => stage.id)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
+    expect(stages.map((stage) => stage.id)).toEqual(['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
     expect(stages[0]?.status).toBe('running');
     expect(stages.slice(1).every((stage) => stage.status === 'pending')).toBe(true);
   });
@@ -83,7 +83,7 @@ describe('pipeline runner', () => {
       expect(interactions.runId.length).toBeGreaterThan(0);
       expect(interactions.llmCalls).toHaveLength(0);
       expect(interactions.t2iCalls.some((call) => call.stageId === 'images' && call.provider === 'limn-dry-run')).toBe(true);
-      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
+      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
       expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);
 
       const terminalUpdate = updates.at(-1);
@@ -114,7 +114,7 @@ describe('pipeline runner', () => {
 
       globalThis.fetch = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
         const body = typeof init?.body === 'string' ? init.body : '';
-        if (body.includes('"name":"content_brief"')) {
+        if (body.includes('"name":"content_plan"')) {
           return {
             ok: true,
             status: 200,
@@ -122,7 +122,7 @@ describe('pipeline runner', () => {
               choices: [{
                 message: {
                   content: JSON.stringify({
-                    description: 'A practical shared brief for testing reliable output and links behavior.',
+                    description: 'A practical shared plan for testing reliable output and links behavior.',
                       title: 'Reliable Output And Links Behavior',
                     targetAudience: 'Operators and content teams',
                     corePromise: 'Get reusable process clarity.',
@@ -188,7 +188,7 @@ describe('pipeline runner', () => {
       };
 
       expect(interactions.llmCalls.length).toBeGreaterThanOrEqual(3);
-      expect(interactions.llmCalls.some((call) => call.stageId === 'shared-brief' && call.requestType === 'structured')).toBe(true);
+      expect(interactions.llmCalls.some((call) => call.stageId === 'shared-plan' && call.requestType === 'structured')).toBe(true);
       expect(interactions.llmCalls.some((call) => call.stageId === 'output' && call.requestType === 'text')).toBe(true);
       expect(interactions.llmCalls.some((call) => call.stageId === 'links' && call.requestType === 'structured')).toBe(true);
       expect(interactions.llmCalls.every((call) => typeof call.requestBody === 'string' && call.requestBody.length > 0)).toBe(true);
@@ -203,7 +203,7 @@ describe('pipeline runner', () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-live-retry-state-'));
     const updates: StageViewModel[][] = [];
     const originalFetch = globalThis.fetch;
-    let failedSharedBriefOnce = false;
+    let failedSharedPlanOnce = false;
 
     try {
       const markdownDir = path.join(tempRoot, 'out');
@@ -211,9 +211,9 @@ describe('pipeline runner', () => {
 
       globalThis.fetch = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
         const body = typeof init?.body === 'string' ? init.body : '';
-        if (body.includes('"name":"content_brief"')) {
-          if (!failedSharedBriefOnce) {
-            failedSharedBriefOnce = true;
+        if (body.includes('"name":"content_plan"')) {
+          if (!failedSharedPlanOnce) {
+            failedSharedPlanOnce = true;
             return {
               ok: false,
               status: 503,
@@ -232,8 +232,8 @@ describe('pipeline runner', () => {
               choices: [{
                 message: {
                   content: JSON.stringify({
-                    description: 'A practical shared brief for retry visibility tests.',
-                    title: 'Retry Visibility Shared Brief',
+                    description: 'A practical shared plan for retry visibility tests.',
+                    title: 'Retry Visibility Shared Plan',
                     targetAudience: 'Operators and content teams',
                     corePromise: 'Understand in-flight retries clearly.',
                     keyPoints: ['Point one', 'Point two', 'Point three'],
@@ -293,12 +293,12 @@ describe('pipeline runner', () => {
         },
       );
 
-      const sharedBriefSnapshots = updates
-        .map((snapshot) => snapshot.find((stage) => stage.id === 'shared-brief'))
+      const sharedPlanSnapshots = updates
+        .map((snapshot) => snapshot.find((stage) => stage.id === 'shared-plan'))
         .filter((stage): stage is StageViewModel => Boolean(stage));
 
-      expect(sharedBriefSnapshots.some((stage) => stage.status === 'running' && (stage.retryCount ?? 0) >= 1)).toBe(true);
-      expect(sharedBriefSnapshots.some((stage) => (stage.lastRetryError ?? '').includes('Temporary upstream failure'))).toBe(true);
+      expect(sharedPlanSnapshots.some((stage) => stage.status === 'running' && (stage.retryCount ?? 0) >= 1)).toBe(true);
+      expect(sharedPlanSnapshots.some((stage) => (stage.lastRetryError ?? '').includes('Temporary upstream failure'))).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
       await rm(tempRoot, { recursive: true, force: true });
@@ -458,8 +458,8 @@ describe('pipeline runner', () => {
       const sectionsStage = result.stages.find((stage) => stage.id === 'sections');
       expect(sectionsStage?.title).toContain('Generating Primary Content');
 
-      const sharedBriefStage = result.stages.find((stage) => stage.id === 'shared-brief');
-      expect(sharedBriefStage?.detail).toContain('Shared brief generated successfully');
+      const sharedPlanStage = result.stages.find((stage) => stage.id === 'shared-plan');
+      expect(sharedPlanStage?.detail).toContain('Shared plan generated successfully');
 
       const firstOutput = await readFile(result.artifact.markdownPaths[0]!, 'utf8');
       expect(firstOutput).toContain('# Launch Update For Workflow Automation');
@@ -512,10 +512,10 @@ describe('pipeline runner', () => {
 
       const latest = updates.at(-1);
       expect(latest).toBeDefined();
-      const sharedBrief = latest?.find((stage) => stage.id === 'shared-brief');
-      expect(sharedBrief?.status).toBe('failed');
-      expect(sharedBrief?.detail).toContain('Missing OpenRouter API key');
-      expect(sharedBrief?.stageAnalytics).toBeUndefined();
+      const sharedPlan = latest?.find((stage) => stage.id === 'shared-plan');
+      expect(sharedPlan?.status).toBe('failed');
+      expect(sharedPlan?.detail).toContain('Missing OpenRouter API key');
+      expect(sharedPlan?.stageAnalytics).toBeUndefined();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -986,7 +986,7 @@ describe('pipeline runner', () => {
     }
   });
 
-  it('resumes from a completed session and reuses shared brief, plan, text, and image artifacts', async () => {
+  it('resumes from a completed session and reuses shared plan, plan, text, and image artifacts', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-completed-resume-'));
 
     try {
@@ -1022,12 +1022,12 @@ describe('pipeline runner', () => {
           lastCompletedStage: 'output',
           failedStage: null,
           errorMessage: null,
-          contentBrief: {
+          contentPlan: {
             title: 'Completed Session Reuse Flow',
-            description: 'Persisted shared brief for resume reuse testing.',
+            description: 'Persisted shared plan for resume reuse testing.',
             targetAudience: 'Content operators',
             corePromise: 'Resume should reuse persisted artifacts safely.',
-            keyPoints: ['Reuse shared brief.', 'Reuse plan.', 'Reuse section drafts.'],
+            keyPoints: ['Reuse shared plan.', 'Reuse plan.', 'Reuse section drafts.'],
             voiceNotes: 'Direct and practical.',
             primaryContentType: 'article',
             secondaryContentTypes: ['blog-post'],
@@ -1209,14 +1209,14 @@ describe('pipeline runner', () => {
         },
       );
 
-      expect(result.artifact.slug).toBe('generated-content-brief');
-      expect(result.artifact.title).toBe('Generated Content Brief');
+      expect(result.artifact.slug).toBe('generated-content-plan');
+      expect(result.artifact.title).toBe('Generated Content Plan');
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
 
-  it('uses contentBrief title instead of full idea for directory slug when primary is not article', async () => {
+  it('uses contentPlan title instead of full idea for directory slug when primary is not article', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-long-idea-'));
 
     try {

@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../openRouterClient.js';
-import type { ContentBrief } from '../../types/contentBrief.js';
+import type { ContentPlan } from '../../types/contentPlan.js';
 import {
   buildTargetLengthDirective,
 } from './writingFramework.js';
@@ -26,7 +26,7 @@ export function buildSingleShotContentMessages(options: {
   intent: string;
   outputIndex: number;
   outputCountForType: number;
-  contentBrief: ContentBrief;
+  contentPlan: ContentPlan;
   articleReferenceMarkdown?: string;
   targetLength: number;
 }): ChatMessage[] {
@@ -68,16 +68,16 @@ export function buildSingleShotContentMessages(options: {
         `Primary content type: ${options.primaryContentType}`,
         `Output index: ${options.outputIndex} of ${options.outputCountForType}`,
         '',
-        'Shared content brief (must guide this output):',
-        `- title: ${options.contentBrief.title}`,
-        `- description: ${options.contentBrief.description}`,
-        `- targetAudience: ${options.contentBrief.targetAudience}`,
-        `- corePromise: ${options.contentBrief.corePromise}`,
-        `- keyPoints: ${options.contentBrief.keyPoints.join(' | ')}`,
-        `- voiceNotes: ${options.contentBrief.voiceNotes}`,
-        `- primaryContentType: ${options.contentBrief.primaryContentType}`,
-        `- secondaryContentTypes: ${options.contentBrief.secondaryContentTypes.join(' | ') || 'none'}`,
-        `- secondaryContentStrategy: ${options.contentBrief.secondaryContentStrategy}`,
+        'Shared content plan (must guide this output):',
+        `- title: ${options.contentPlan.title}`,
+        `- description: ${options.contentPlan.description}`,
+        `- targetAudience: ${options.contentPlan.targetAudience}`,
+        `- corePromise: ${options.contentPlan.corePromise}`,
+        `- keyPoints: ${options.contentPlan.keyPoints.join(' | ')}`,
+        `- voiceNotes: ${options.contentPlan.voiceNotes}`,
+        `- primaryContentType: ${options.contentPlan.primaryContentType}`,
+        `- secondaryContentTypes: ${options.contentPlan.secondaryContentTypes.join(' | ') || 'none'}`,
+        `- secondaryContentStrategy: ${options.contentPlan.secondaryContentStrategy}`,
         '',
         articleContext,
         '',

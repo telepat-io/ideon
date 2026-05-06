@@ -1,6 +1,6 @@
-import { contentBriefSchema, type ParsedContentBrief } from '../types/contentBriefSchema.js';
+import { contentPlanSchema, type ParsedContentPlan } from '../types/contentPlanSchema.js';
 
-describe('contentBriefSchema', () => {
+describe('contentPlanSchema', () => {
   const validBrief = {
     title: 'Practical Multi-Channel Content System',
     description:
@@ -18,13 +18,13 @@ describe('contentBriefSchema', () => {
     secondaryContentStrategy: 'Each secondary output should stand alone and create clear motivation to consume the primary piece.',
   };
 
-  it('validates a complete shared brief', () => {
-    const result = contentBriefSchema.safeParse(validBrief);
+  it('validates a complete shared plan', () => {
+    const result = contentPlanSchema.safeParse(validBrief);
     expect(result.success).toBe(true);
   });
 
   it('rejects too-short description', () => {
-    const result = contentBriefSchema.safeParse({
+    const result = contentPlanSchema.safeParse({
       ...validBrief,
       description: 'Too short.',
     });
@@ -32,7 +32,7 @@ describe('contentBriefSchema', () => {
   });
 
   it('rejects too-short title', () => {
-    const result = contentBriefSchema.safeParse({
+    const result = contentPlanSchema.safeParse({
       ...validBrief,
       title: 'Short',
     });
@@ -41,14 +41,14 @@ describe('contentBriefSchema', () => {
 
   it('enforces 3-6 key points', () => {
     expect(
-      contentBriefSchema.safeParse({
+      contentPlanSchema.safeParse({
         ...validBrief,
         keyPoints: ['Only one point that is long enough'],
       }).success,
     ).toBe(false);
 
     expect(
-      contentBriefSchema.safeParse({
+      contentPlanSchema.safeParse({
         ...validBrief,
         keyPoints: [
           'Point one with enough detail',
@@ -63,7 +63,7 @@ describe('contentBriefSchema', () => {
   });
 
   it('rejects too-short secondary strategy when secondary content exists', () => {
-    const result = contentBriefSchema.safeParse({
+    const result = contentPlanSchema.safeParse({
       ...validBrief,
       secondaryContentStrategy: 'too short',
     });
@@ -72,7 +72,7 @@ describe('contentBriefSchema', () => {
   });
 
   it('allows empty secondary strategy when no secondary content is requested', () => {
-    const result = contentBriefSchema.safeParse({
+    const result = contentPlanSchema.safeParse({
       ...validBrief,
       secondaryContentTypes: [],
       secondaryContentStrategy: '',
@@ -82,7 +82,7 @@ describe('contentBriefSchema', () => {
   });
 
   it('treats sentinel secondary type values as no secondary outputs', () => {
-    const result = contentBriefSchema.safeParse({
+    const result = contentPlanSchema.safeParse({
       ...validBrief,
       secondaryContentTypes: ['none'],
       secondaryContentStrategy: '',
@@ -95,7 +95,7 @@ describe('contentBriefSchema', () => {
   });
 
   it('normalizes trimmed sentinel secondary type values', () => {
-    const result = contentBriefSchema.safeParse({
+    const result = contentPlanSchema.safeParse({
       ...validBrief,
       secondaryContentTypes: ['N/A', '  no secondary outputs  '],
       secondaryContentStrategy: '',
@@ -108,10 +108,10 @@ describe('contentBriefSchema', () => {
   });
 
   it('returns typed result with infer', () => {
-    const result = contentBriefSchema.safeParse(validBrief);
+    const result = contentPlanSchema.safeParse(validBrief);
     expect(result.success).toBe(true);
     if (result.success) {
-      const typed: ParsedContentBrief = result.data;
+      const typed: ParsedContentPlan = result.data;
       expect(typed.keyPoints).toHaveLength(3);
     }
   });

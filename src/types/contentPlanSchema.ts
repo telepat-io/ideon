@@ -10,7 +10,7 @@ const secondaryTypeSentinelValues = new Set([
   'no secondary outputs',
 ]);
 
-export const contentBriefSchema = z.object({
+export const contentPlanSchema = z.object({
   title: z.string().min(8),
   description: z.string().min(40),
   targetAudience: z.string().min(10),
@@ -23,13 +23,13 @@ export const contentBriefSchema = z.object({
     .filter((value) => value.length > 0)
     .filter((value) => !secondaryTypeSentinelValues.has(value.toLowerCase()))),
   secondaryContentStrategy: z.string(),
-}).superRefine((brief, ctx) => {
-  const hasSecondaryTargets = brief.secondaryContentTypes.length > 0;
+}).superRefine((plan, ctx) => {
+  const hasSecondaryTargets = plan.secondaryContentTypes.length > 0;
   if (!hasSecondaryTargets) {
     return;
   }
 
-  if (brief.secondaryContentStrategy.trim().length < 20) {
+  if (plan.secondaryContentStrategy.trim().length < 20) {
     ctx.addIssue({
       code: z.ZodIssueCode.too_small,
       minimum: 20,
@@ -42,4 +42,4 @@ export const contentBriefSchema = z.object({
   }
 });
 
-export type ParsedContentBrief = z.infer<typeof contentBriefSchema>;
+export type ParsedContentPlan = z.infer<typeof contentPlanSchema>;

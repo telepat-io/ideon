@@ -24,11 +24,11 @@ Stage execution depends on primary content type:
 
 Always-on stage before primary planning:
 
-1. Planning Shared Brief
+1. Planning Shared Plan
 
 Non-article primary path:
 
-- `shared-brief`: runs
+- `shared-plan`: runs
 - `planning`: sets primary direction for non-article type
 - `sections`: performs generic primary generation
 - `image-prompts`, `images`: prepare and render one primary cover image

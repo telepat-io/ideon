@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { defaultAppSettings } from '../config/schema.js';
-import type { ContentBrief } from '../types/contentBrief.js';
+import type { ContentPlan } from '../types/contentPlan.js';
 
 const resolveUniqueSlugMock = jest.fn<(markdownOutputDir: string, baseSlug: string) => Promise<string>>();
 
@@ -10,7 +10,7 @@ jest.unstable_mockModule('../output/filesystem.js', () => ({
 
 const { planArticle } = await import('../generation/planArticle.js');
 
-const contentBrief: ContentBrief = {
+const contentPlan: ContentPlan = {
   title: 'Practical Workflow Guide For Builders',
   description: 'A practical workflow guide.',
   targetAudience: 'Builders',
@@ -31,7 +31,7 @@ describe('planArticle', () => {
   it('uses dry-run plan when no OpenRouter client is provided', async () => {
     const result = await planArticle({
       idea: '  building better publishing systems  ',
-      contentBrief,
+      contentPlan,
       settings: defaultAppSettings,
       markdownOutputDir: '/tmp/out',
       openRouter: null,
@@ -51,7 +51,7 @@ describe('planArticle', () => {
 
     await planArticle({
       idea: 'dry run wins',
-      contentBrief,
+      contentPlan,
       settings: defaultAppSettings,
       markdownOutputDir: '/tmp/out',
       openRouter: openRouter as never,
@@ -89,7 +89,7 @@ describe('planArticle', () => {
 
     const result = await planArticle({
       idea: 'ignored when model output exists',
-      contentBrief,
+      contentPlan,
       settings: defaultAppSettings,
       markdownOutputDir: '/tmp/out',
       openRouter: openRouter as never,
@@ -140,7 +140,7 @@ describe('planArticle', () => {
 
     await planArticle({
       idea: 'parse callback check',
-      contentBrief,
+      contentPlan,
       settings: defaultAppSettings,
       markdownOutputDir: '/tmp/out',
       openRouter: { requestStructured } as never,

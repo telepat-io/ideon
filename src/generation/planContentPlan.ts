@@ -1,17 +1,17 @@
 import type { AppSettings } from '../config/schema.js';
 import {
-  buildContentBriefMessages,
-  contentBriefSchema,
-} from '../llm/prompts/contentBrief.js';
+  buildContentPlanMessages,
+  contentPlanSchema,
+} from '../llm/prompts/contentPlan.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { LlmInteractionRecord } from '../pipeline/events.js';
-import type { ContentBrief } from '../types/contentBrief.js';
-import { contentBriefSchema as contentBriefResultSchema } from '../types/contentBriefSchema.js';
+import type { ContentPlan } from '../types/contentPlan.js';
+import { contentPlanSchema as contentPlanResultSchema } from '../types/contentPlanSchema.js';
 
-const SHARED_BRIEF_MAX_TOKENS = 8000;
+const SHARED_PLAN_MAX_TOKENS = 8000;
 
-export async function planContentBrief({
+export async function planContentPlan({
   idea,
   targetAudienceHint,
   settings,
@@ -27,23 +27,23 @@ export async function planContentBrief({
   dryRun: boolean;
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
-}): Promise<ContentBrief> {
+}): Promise<ContentPlan> {
   if (dryRun || !openRouter) {
-    return buildDryRunContentBrief(idea, targetAudienceHint);
+    return buildDryRunContentPlan(idea, targetAudienceHint);
   }
 
-  const sharedBriefSettings: AppSettings = {
+  const sharedPlanSettings: AppSettings = {
     ...settings,
     modelSettings: {
       ...settings.modelSettings,
-      maxTokens: Math.max(settings.modelSettings.maxTokens, SHARED_BRIEF_MAX_TOKENS),
+      maxTokens: Math.max(settings.modelSettings.maxTokens, SHARED_PLAN_MAX_TOKENS),
     },
   };
 
-  return await openRouter.requestStructured<ContentBrief>({
-    schemaName: 'content_brief',
-    schema: contentBriefSchema,
-    messages: buildContentBriefMessages(idea, {
+  return await openRouter.requestStructured<ContentPlan>({
+    schemaName: 'content_plan',
+    schema: contentPlanSchema,
+    messages: buildContentPlanMessages(idea, {
       intent: settings.intent,
       targetAudienceHint,
       primaryContentType: settings.contentTargets.find((target) => target.role === 'primary')?.contentType ?? 'article',
@@ -51,20 +51,20 @@ export async function planContentBrief({
         .filter((target) => target.role === 'secondary')
         .map((target) => target.contentType),
     }),
-    settings: sharedBriefSettings,
+    settings: sharedPlanSettings,
     interactionContext: {
-      stageId: 'shared-brief',
-      operationId: 'shared-brief:content-brief',
+      stageId: 'shared-plan',
+      operationId: 'shared-plan:content-plan',
     },
     onInteraction,
     onMetrics: onLlmMetrics,
     parse(data) {
-      return contentBriefResultSchema.parse(data);
+      return contentPlanResultSchema.parse(data);
     },
   });
 }
 
-function buildDryRunContentBrief(idea: string, targetAudienceHint?: string): ContentBrief {
+function buildDryRunContentPlan(idea: string, targetAudienceHint?: string): ContentPlan {
   const normalizedIdea = idea.trim();
   const normalizedAudience = targetAudienceHint?.trim();
   const targetAudience = normalizedAudience && normalizedAudience.length > 0
@@ -90,7 +90,7 @@ function buildDryRunContentBrief(idea: string, targetAudienceHint?: string): Con
 
 function deriveTitleFromIdea(idea: string): string {
   if (!idea) {
-    return 'Generated Content Brief';
+    return 'Generated Content Plan';
   }
 
   return idea

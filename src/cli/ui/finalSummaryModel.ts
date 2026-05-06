@@ -46,7 +46,7 @@ function formatStageCost(costUsd: number | null, costSource: PipelineRunAnalytic
 }
 
 function formatStageId(stageId: string): string {
-  if (stageId === 'shared-brief') return 'shared-brief';
+  if (stageId === 'shared-plan') return 'shared-plan';
   if (stageId === 'planning') return 'planning';
   if (stageId === 'sections') return 'sections';
   if (stageId === 'image-prompts') return 'image-prompts';

@@ -59,7 +59,7 @@ ideon write --job ./job.json
 
 - `settings.contentTargets` 必须包含且仅包含一个主目标，并可包含若干次目标。
 - 若省略 `settings.style`，Ideon 默认使用 `professional`。
-- 若省略 `targetAudience`，Ideon 会在 shared-brief 规划阶段使用通用受众。
+- 若省略 `targetAudience`，Ideon 会在 shared-plan 规划阶段使用通用受众。
 - CLI 参数会覆盖作业文件中的 `idea`、`targetAudience`、`style` 与 `contentTargets`。
 - 在支持的字段上，环境变量会覆盖作业文件值。
 - 每次运行后，Ideon 会在生成目录写入一个解析后的 `job.json`，记录该次执行的最终运行定义与元数据。

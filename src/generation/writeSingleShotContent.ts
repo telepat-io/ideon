@@ -3,7 +3,7 @@ import { buildSingleShotContentMessages } from '../llm/prompts/channelContent.js
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { LlmInteractionRecord } from '../pipeline/events.js';
-import type { ContentBrief } from '../types/contentBrief.js';
+import type { ContentPlan } from '../types/contentPlan.js';
 
 export async function writeSingleShotContent({
   idea,
@@ -15,7 +15,7 @@ export async function writeSingleShotContent({
   outputIndex,
   outputCountForType,
   articleReferenceMarkdown,
-  contentBrief,
+  contentPlan,
   settings,
   openRouter,
   dryRun,
@@ -31,7 +31,7 @@ export async function writeSingleShotContent({
   outputIndex: number;
   outputCountForType: number;
   articleReferenceMarkdown?: string;
-  contentBrief: ContentBrief;
+  contentPlan: ContentPlan;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
@@ -46,7 +46,7 @@ export async function writeSingleShotContent({
       primaryContentType,
       outputIndex,
       outputCountForType,
-      contentBrief,
+      contentPlan,
       articleReferenceMarkdown,
     });
   }
@@ -61,7 +61,7 @@ export async function writeSingleShotContent({
       intent,
       outputIndex,
       outputCountForType,
-      contentBrief,
+      contentPlan,
       articleReferenceMarkdown,
       targetLength: settings.targetLength,
     }),
@@ -82,7 +82,7 @@ function buildDryRunContent(options: {
   outputCountForType: number;
   role: 'primary' | 'secondary';
   primaryContentType: string;
-  contentBrief: ContentBrief;
+  contentPlan: ContentPlan;
   articleReferenceMarkdown?: string;
 }): string {
   const anchorNote = options.articleReferenceMarkdown
@@ -96,7 +96,7 @@ function buildDryRunContent(options: {
     `Variant: ${options.outputIndex}/${options.outputCountForType}`,
     `Role: ${options.role}`,
     `Primary content type: ${options.primaryContentType}`,
-    `Shared brief: ${options.contentBrief.description}`,
+    `Shared plan: ${options.contentPlan.description}`,
     anchorNote,
     '',
     'This is a dry-run placeholder for single-prompt channel generation.',

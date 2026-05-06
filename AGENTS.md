@@ -21,7 +21,7 @@ Concise reference for AI agents working on this codebase.
 ## Architecture
 
 - Config: CLI > env > settings file > defaults. Key files: `src/config/schema.ts`, `resolver.ts`, `env.ts`, `secretStore.ts`.
-- Pipeline: `runPipelineShell()` in `src/pipeline/runner.ts`; stages run from `shared-brief` to `links`.
+- Pipeline: `runPipelineShell()` in `src/pipeline/runner.ts`; stages run from `shared-plan` to `links`.
 - LLM: `OpenRouterClient`, prompt templates in `src/llm/prompts/`, response validation via `src/types/articleSchema.ts`.
 - Images: `ReplicateClient`; model definitions in `src/models/t2i/definitions/`; registry and option resolution in `registry.ts` and `options.ts`.
 - Output: `renderMarkdownDocument()` and filesystem helpers in `src/output/filesystem.ts`.

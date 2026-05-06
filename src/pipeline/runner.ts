@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
 import { resolveDefaultMaxLinks } from '../config/schema.js';
 import { enrichLinks } from '../generation/enrichLinks.js';
-import { planContentBrief } from '../generation/planContentBrief.js';
+import { planContentPlan } from '../generation/planContentPlan.js';
 import { planArticle } from '../generation/planArticle.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 import { writeArticleSections } from '../generation/writeSections.js';
@@ -69,8 +69,8 @@ export function createInitialStages(options: { isArticlePrimary: boolean } = { i
 
   return [
     {
-      id: 'shared-brief',
-      title: 'Planning Shared Brief',
+      id: 'shared-plan',
+      title: 'Planning Shared Plan',
       status: 'running',
       detail: 'Generating explicit cross-channel content guidance.',
     },
@@ -134,7 +134,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
   const stageRetryState = new Map<WriteStageId, { retries: number; lastError: string | null }>();
   const llmOperationRetryState = new Map<string, number>();
-  stageTracking.set('shared-brief', {
+  stageTracking.set('shared-plan', {
     startedAtMs: runStartedAtMs,
     endedAtMs: null,
     retries: 0,
@@ -228,7 +228,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       replicateApiKey: requireSecret(input.config.secrets.replicateApiToken, 'Replicate API token'),
       openrouterModel: input.config.settings.model,
     });
-    let contentBrief = writeSession.contentBrief;
+    let contentPlan = writeSession.contentPlan;
     let plan = writeSession.plan;
     let text = writeSession.text;
     let imagePrompts = writeSession.imagePrompts ?? writeSession.imageArtifacts?.imagePrompts ?? null;
@@ -236,17 +236,17 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     let linksResult = writeSession.links;
     let primaryMarkdownTemplate: string | null = null;
 
-    if (contentBrief) {
-      markStageCompleted(stageTracking, 'shared-brief');
+    if (contentPlan) {
+      markStageCompleted(stageTracking, 'shared-plan');
       stages[0] = {
         ...stages[0],
         status: 'succeeded',
-        detail: 'Reused saved shared brief from .ideon/write.',
-        summary: contentBrief.title,
-        stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-brief'),
+        detail: 'Reused saved shared plan from .ideon/write.',
+        summary: contentPlan.title,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-plan'),
       };
     } else {
-      contentBrief = await planContentBrief({
+      contentPlan = await planContentPlan({
         idea: input.idea,
         targetAudienceHint: input.targetAudienceHint,
         settings: input.config.settings,
@@ -256,25 +256,25 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           onLlmInteraction(interaction);
         },
         onLlmMetrics(metrics) {
-          recordLlmMetrics(stageTracking, 'shared-brief', metrics);
+          recordLlmMetrics(stageTracking, 'shared-plan', metrics);
         },
       });
 
-      markStageCompleted(stageTracking, 'shared-brief');
+      markStageCompleted(stageTracking, 'shared-plan');
       stages[0] = {
         ...stages[0],
         status: 'succeeded',
-        detail: 'Shared brief generated successfully.',
-        summary: contentBrief.title,
-        stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-brief'),
+        detail: 'Shared plan generated successfully.',
+        summary: contentPlan.title,
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-plan'),
       };
       writeSession = await patchWriteSession(
         {
           status: 'running',
-          lastCompletedStage: 'shared-brief',
+          lastCompletedStage: 'shared-plan',
           failedStage: null,
           errorMessage: null,
-          contentBrief,
+          contentPlan,
         },
         workingDir,
       );
@@ -299,13 +299,13 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
         };
       } else {
-        if (!contentBrief) {
-          throw new Error('Shared content brief is missing for article planning stage.');
+        if (!contentPlan) {
+          throw new Error('Shared content plan is missing for article planning stage.');
         }
 
         plan = await planArticle({
           idea: input.idea,
-          contentBrief,
+          contentPlan,
           settings: input.config.settings,
           markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
           openRouter,
@@ -333,7 +333,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             lastCompletedStage: 'planning',
             failedStage: null,
             errorMessage: null,
-            contentBrief,
+            contentPlan,
             plan,
           },
           workingDir,
@@ -565,8 +565,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         );
       }
     } else {
-      if (!contentBrief) {
-        throw new Error('Shared content brief is missing for primary content planning stage.');
+      if (!contentPlan) {
+        throw new Error('Shared content plan is missing for primary content planning stage.');
       }
 
       stages[1] = {
@@ -604,7 +604,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         outputIndex: 1,
         outputCountForType: 1,
         articleReferenceMarkdown: undefined,
-        contentBrief,
+        contentPlan,
         settings: input.config.settings,
         openRouter,
         dryRun,
@@ -633,7 +633,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       markStageStarted(stageTracking, 'image-prompts');
       options.onUpdate?.(cloneStages(stages));
 
-      imagePrompts = [buildPrimaryCoverPrompt(contentBrief, primaryTarget.contentType, primaryMarkdownTemplate)];
+      imagePrompts = [buildPrimaryCoverPrompt(contentPlan, primaryTarget.contentType, primaryMarkdownTemplate)];
 
       markStageCompleted(stageTracking, 'image-prompts');
       stages[3] = {
@@ -658,7 +658,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       options.onUpdate?.(cloneStages(stages));
     }
 
-    const baseSlug = plan?.slug ?? resolveGenerationSlug(input.idea, contentBrief?.title);
+    const baseSlug = plan?.slug ?? resolveGenerationSlug(input.idea, contentPlan?.title);
     const generationDir = path.join(
       writeSession.outputPaths.markdownOutputDir,
       buildGenerationDirectoryName(baseSlug),
@@ -864,7 +864,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       primaryMarkdownTemplate = applyPrimaryTitleHeading(
         primaryMarkdownTemplate,
-        contentBrief.title || deriveTitleFromIdea(input.idea),
+        contentPlan.title || deriveTitleFromIdea(input.idea),
       );
     }
     const markdownPaths: string[] = [];
@@ -901,8 +901,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     markStageStarted(stageTracking, 'output');
     options.onUpdate?.(cloneStages(stages));
 
-    if (!contentBrief) {
-      throw new Error('Shared content brief is missing for output generation stage.');
+    if (!contentPlan) {
+      throw new Error('Shared content plan is missing for output generation stage.');
     }
 
     for (const output of requestedOutputs) {
@@ -941,7 +941,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           outputIndex: output.index,
           outputCountForType: output.outputCountForType,
           articleReferenceMarkdown: primaryMarkdownTemplate ?? undefined,
-          contentBrief,
+          contentPlan,
           settings: input.config.settings,
           openRouter,
           dryRun,
@@ -1120,8 +1120,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       linksResult = await enrichLinks({
         markdownFiles: eligibleOutputsForLinks,
-        articleTitle: plan?.title ?? contentBrief.title ?? deriveTitleFromIdea(input.idea),
-        articleDescription: plan?.description ?? contentBrief.description,
+        articleTitle: plan?.title ?? contentPlan.title ?? deriveTitleFromIdea(input.idea),
+        articleDescription: plan?.description ?? contentPlan.description,
         openRouter,
         settings: input.config.settings,
         dryRun,
@@ -1243,8 +1243,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const primaryMarkdownPathForArtifact = markdownPaths[0] ?? primaryMarkdownPath;
 
     const artifact = {
-      title: plan?.title ?? contentBrief.title ?? deriveTitleFromIdea(input.idea),
-      slug: plan?.slug ?? resolveGenerationSlug(input.idea, contentBrief?.title),
+      title: plan?.title ?? contentPlan.title ?? deriveTitleFromIdea(input.idea),
+      slug: plan?.slug ?? resolveGenerationSlug(input.idea, contentPlan?.title),
       sectionCount: text?.sections.length ?? 0,
       imageCount: imageArtifacts?.renderedImages.length ?? 0,
       outputCount: markdownPaths.length,
@@ -1398,7 +1398,7 @@ function buildRunAnalytics({
   linkEnrichmentCalls: LinkEnrichmentItemAnalytics[];
 }): PipelineRunAnalytics {
   const runEndedAtMs = Date.now();
-  const orderedStageIds: WriteStageId[] = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
+  const orderedStageIds: WriteStageId[] = ['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
   const stages: PipelineStageAnalytics[] = orderedStageIds.map((stageId) => {
     const tracked = stageTracking.get(stageId);
     const startedAtMs = tracked?.startedAtMs ?? runEndedAtMs;
@@ -1669,7 +1669,7 @@ function getSecondaryTargets(
 }
 
 function buildPrimaryCoverPrompt(
-  contentBrief: { description: string; targetAudience: string; corePromise: string; voiceNotes: string },
+  contentPlan: { description: string; targetAudience: string; corePromise: string; voiceNotes: string },
   primaryContentType: string,
   primaryMarkdown: string,
 ): ArticleImagePrompt {
@@ -1685,10 +1685,10 @@ function buildPrimaryCoverPrompt(
     anchorAfterSection: null,
     prompt: [
       `Cover image for ${primaryContentType}.`,
-      `Core angle: ${contentBrief.description}`,
-      `Audience: ${contentBrief.targetAudience}`,
-      `Promise: ${contentBrief.corePromise}`,
-      `Voice: ${contentBrief.voiceNotes}`,
+      `Core angle: ${contentPlan.description}`,
+      `Audience: ${contentPlan.targetAudience}`,
+      `Promise: ${contentPlan.corePromise}`,
+      `Voice: ${contentPlan.voiceNotes}`,
       `Primary excerpt: ${markdownExcerpt}`,
       'Do not include any words, letters, numbers, logos, watermarks, or signage in the image.',
     ].join(' '),
@@ -1742,9 +1742,9 @@ function slugifyIdea(idea: string, maxLength?: number): string {
   return slug;
 }
 
-function resolveGenerationSlug(idea: string, briefTitle?: string | null): string {
-  if (briefTitle) {
-    return slugifyIdea(briefTitle);
+function resolveGenerationSlug(idea: string, planTitle?: string | null): string {
+  if (planTitle) {
+    return slugifyIdea(planTitle);
   }
   return slugifyIdea(idea, 80);
 }
@@ -1832,7 +1832,7 @@ ${imageRows}
 
 function asWriteStageId(stageId: string): WriteStageId | null {
   if (
-    stageId === 'shared-brief' ||
+    stageId === 'shared-plan' ||
     stageId === 'planning' ||
     stageId === 'sections' ||
     stageId === 'image-prompts' ||

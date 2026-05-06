@@ -9,11 +9,11 @@ import {
   buildRunContextDirective,
   buildTargetLengthDirective,
 } from '../llm/prompts/writingFramework.js';
-import { buildContentBriefMessages } from '../llm/prompts/contentBrief.js';
+import { buildContentPlanMessages } from '../llm/prompts/contentPlan.js';
 import type { ArticlePlan } from '../types/article.js';
-import type { ContentBrief } from '../types/contentBrief.js';
+import type { ContentPlan } from '../types/contentPlan.js';
 
-function mockBrief(): ContentBrief {
+function mockBrief(): ContentPlan {
   return {
     title: 'Shipping AI-Assisted Workflows Across Channels',
     description: 'A practical cross-channel content body about shipping AI-assisted workflows with clear operational guidance.',
@@ -71,7 +71,7 @@ describe('article prompt builders', () => {
     const messages = buildArticlePlanMessages('Ship better docs with AI', {
       intent: 'tutorial',
       contentTypes: ['article', 'x-thread'],
-      contentBrief: mockBrief(),
+      contentPlan: mockBrief(),
       targetLength: 900,
     });
 
@@ -90,14 +90,14 @@ describe('article prompt builders', () => {
     expect(messages[1]?.content).not.toContain('Avoid AI giveaway phrasing');
   });
 
-  it('builds content brief prompt with shared-brief guide bundle', () => {
-    const messages = buildContentBriefMessages('Ship better docs with AI', {
+  it('builds content plan prompt with shared-plan guide bundle', () => {
+    const messages = buildContentPlanMessages('Ship better docs with AI', {
       intent: 'tutorial',
       primaryContentType: 'article',
       secondaryContentTypes: ['x-thread', 'linkedin-post'],
     });
 
-    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/multi-channel-brief-strategy.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/multi-channel-plan-strategy.md');
     expect(messages[0]?.content).toContain('Guide source: writing-guide/references/target-length-guidance.md');
     expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/article.md');
     expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/x-thread.md');
@@ -107,7 +107,7 @@ describe('article prompt builders', () => {
     const messages = buildArticlePlanMessages('Fallback sizing test', {
       intent: 'how-to-guide',
       contentTypes: ['article'],
-      contentBrief: mockBrief(),
+      contentPlan: mockBrief(),
       targetLength: Number.NaN,
     });
 
@@ -212,7 +212,7 @@ describe('channel prompt builder', () => {
       intent: 'announcement',
       outputIndex: 1,
       outputCountForType: 1,
-      contentBrief: mockBrief(),
+      contentPlan: mockBrief(),
       articleReferenceMarkdown: '# Anchor\n\nReference body',
       targetLength: 1400,
     });
@@ -223,7 +223,7 @@ describe('channel prompt builder', () => {
     expect(messages[0]?.content).not.toContain('Style directive (authoritative)');
     expect(messages[0]?.content).not.toContain('Intent directive (announcement)');
     expect(messages[0]?.content).not.toContain('LinkedIn-native post');
-    expect(messages[1]?.content).toContain('Shared content brief');
+    expect(messages[1]?.content).toContain('Shared content plan');
     expect(messages[1]?.content).toContain('Reference primary context');
     expect(messages[1]?.content).toContain('Target length (large linkedin post)');
     expect(messages[1]?.content).toContain('Overall run target is about 1400 words.');
@@ -239,7 +239,7 @@ describe('channel prompt builder', () => {
       intent: 'tutorial',
       outputIndex: 2,
       outputCountForType: 3,
-      contentBrief: mockBrief(),
+      contentPlan: mockBrief(),
       targetLength: 500,
     });
 
@@ -259,7 +259,7 @@ describe('channel prompt builder', () => {
       intent: 'tutorial',
       outputIndex: 1,
       outputCountForType: 1,
-      contentBrief: mockBrief(),
+      contentPlan: mockBrief(),
       targetLength: 500,
     });
 
@@ -277,7 +277,7 @@ describe('channel prompt builder', () => {
       intent: 'tutorial',
       outputIndex: 1,
       outputCountForType: 1,
-      contentBrief: mockBrief(),
+      contentPlan: mockBrief(),
       targetLength: 900,
     });
 

@@ -1503,7 +1503,7 @@ function renderShell({
       const articleListElement = document.getElementById('articleList');
       const themeToggleButton = document.getElementById('themeToggle');
       const typeOrder = ['article', 'blog-post', 'x-thread', 'x-post', 'linkedin-post', 'reddit-post', 'newsletter'];
-      const stageOrder = ['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
+      const stageOrder = ['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
 
       let currentGeneration = null;
       let activeType = '';

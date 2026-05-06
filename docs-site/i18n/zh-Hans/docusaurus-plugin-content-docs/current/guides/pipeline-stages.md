@@ -24,11 +24,11 @@ Ideon 运行一个七阶段流水线，提供实时状态更新与阶段级 anal
 
 在主内容规划前始终执行：
 
-1. Planning Shared Brief
+1. Planning Shared Plan
 
 非 article 主路径：
 
-- `shared-brief`：执行
+- `shared-plan`：执行
 - `planning`：确定非文章主类型的主方向
 - `sections`：执行通用主输出生成
 - `image-prompts`、`images`：准备并渲染一张主封面图

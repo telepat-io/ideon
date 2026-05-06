@@ -31,7 +31,7 @@ describe('buildFinalSummaryRows', () => {
         },
         stages: [
           {
-            stageId: 'shared-brief',
+            stageId: 'shared-plan',
             durationMs: 1000,
             startedAt: new Date().toISOString(),
             endedAt: new Date().toISOString(),
@@ -56,7 +56,7 @@ describe('buildFinalSummaryRows', () => {
       },
     });
 
-    expect(rows.map((row) => row.id)).toEqual(['slug', 'counts', 'generation', 'metrics', 'stage-cost:shared-brief', 'stage-cost:planning']);
+    expect(rows.map((row) => row.id)).toEqual(['slug', 'counts', 'generation', 'metrics', 'stage-cost:shared-plan', 'stage-cost:planning']);
 
     const flattenedText = rows.flatMap((row) => row.segments.map((segment) => segment.text)).join('');
     expect(flattenedText).not.toContain('markdown');
@@ -71,7 +71,7 @@ describe('buildFinalSummaryRows', () => {
     expect(rows[3]?.segments[4]).toMatchObject({ text: 'retries', color: 'yellowBright', bold: true });
     expect(rows[3]?.segments[8]).toMatchObject({ text: 'cost', color: 'greenBright', bold: true });
     expect(rows[3]?.segments[10]).toMatchObject({ text: '$0.0123', color: 'white' });
-    expect(rows[4]?.segments[0]).toMatchObject({ text: 'cost/shared-brief', color: 'greenBright', bold: true });
+    expect(rows[4]?.segments[0]).toMatchObject({ text: 'cost/shared-plan', color: 'greenBright', bold: true });
     expect(rows[4]?.segments[2]).toMatchObject({ text: '~$0.0010', color: 'white' });
     expect(rows[5]?.segments[0]).toMatchObject({ text: 'cost/planning', color: 'greenBright', bold: true });
     expect(rows[5]?.segments[2]).toMatchObject({ text: '$0.0020', color: 'white' });
@@ -107,7 +107,7 @@ describe('buildFinalSummaryRows', () => {
         },
         stages: [
           {
-            stageId: 'shared-brief',
+            stageId: 'shared-plan',
             durationMs: 100,
             startedAt: new Date().toISOString(),
             endedAt: new Date().toISOString(),

@@ -23,7 +23,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | --- | --- | --- | --- | --- | --- | --- |
 | `[idea]` | None | No | string | n/a | Any natural-language text | Positional idea prompt when `--idea` is not provided. |
 | `--idea <idea>` | `-i` | No | string | n/a | Any natural-language text | Explicit idea prompt. Takes precedence over positional idea. |
-| `--audience <description>` | None | No | string | general non-specific audience | Any natural-language text | Audience hint used by shared-brief planning. |
+| `--audience <description>` | None | No | string | general non-specific audience | Any natural-language text | Audience hint used by shared-plan planning. |
 | `--job <path>` | `-j` | No | string (path) | n/a | Valid JSON file path | Loads job definition from file. |
 | `--primary <type=1>` | None | Yes in non-interactive mode | string | TTY prompt in interactive mode | `article`, `blog-post`, `linkedin-post`, `newsletter`, `press-release`, `reddit-post`, `science-paper`, `x-post`, `x-thread` with count `1` | Required primary target. Primary count must be exactly `1`. |
 | `--secondary <type=count>` | None | No | repeatable string | none | Same target types as primary, count >= `1` | Optional repeatable secondary targets. |

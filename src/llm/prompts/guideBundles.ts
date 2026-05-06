@@ -86,13 +86,13 @@ export function buildArticleSectionGuideInstruction(style: string, intent: strin
   ]);
 }
 
-export function buildContentBriefGuideInstruction(
+export function buildContentPlanGuideInstruction(
   intent: string,
   primaryContentType: string,
   secondaryContentTypes: string[],
 ): string {
   return buildGuideBundle([
-    'writing-guide/references/multi-channel-brief-strategy.md',
+    'writing-guide/references/multi-channel-plan-strategy.md',
     'writing-guide/references/content-frameworks.md',
     'writing-guide/references/target-length-guidance.md',
     intentToGuidePath(intent),

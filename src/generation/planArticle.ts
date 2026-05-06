@@ -5,12 +5,12 @@ import { resolveUniqueSlug } from '../output/filesystem.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ArticlePlan } from '../types/article.js';
-import type { ContentBrief } from '../types/contentBrief.js';
+import type { ContentPlan } from '../types/contentPlan.js';
 import { articlePlanSchema as articlePlanResultSchema } from '../types/articleSchema.js';
 
 export async function planArticle({
   idea,
-  contentBrief,
+  contentPlan,
   settings,
   markdownOutputDir,
   openRouter,
@@ -19,7 +19,7 @@ export async function planArticle({
   onInteraction,
 }: {
   idea: string;
-  contentBrief: ContentBrief;
+  contentPlan: ContentPlan;
   settings: AppSettings;
   markdownOutputDir: string;
   openRouter: OpenRouterClient | null;
@@ -28,14 +28,14 @@ export async function planArticle({
   onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<ArticlePlan> {
   const basePlan = dryRun || !openRouter
-    ? buildDryRunPlan(idea, contentBrief)
+    ? buildDryRunPlan(idea, contentPlan)
     : await openRouter.requestStructured<ArticlePlan>({
         schemaName: 'article_plan',
         schema: buildArticlePlanJsonSchema(settings.targetLength),
         messages: buildArticlePlanMessages(idea, {
           intent: settings.intent,
           contentTypes: settings.contentTargets.map((target) => target.contentType),
-          contentBrief,
+          contentPlan,
           targetLength: settings.targetLength,
         }),
         settings,
@@ -68,7 +68,7 @@ export async function planArticle({
   };
 }
 
-function buildDryRunPlan(idea: string, contentBrief: ContentBrief): ArticlePlan {
+function buildDryRunPlan(idea: string, contentPlan: ContentPlan): ArticlePlan {
   const title = idea
     .trim()
     .split(/\s+/)
@@ -81,7 +81,7 @@ function buildDryRunPlan(idea: string, contentBrief: ContentBrief): ArticlePlan 
     subtitle: 'A practical editorial blueprint for turning a good idea into a strong article',
     keywords: ['writing', 'editorial workflow', 'ai tools', 'content strategy'],
     slug: slugify(title),
-    description: contentBrief.description,
+    description: contentPlan.description,
     introBrief: 'Frame the tension between having ideas and actually shaping them into useful published work.',
     outroBrief: 'End by emphasizing disciplined workflows, taste, and iteration.',
     sections: [

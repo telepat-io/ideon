@@ -130,7 +130,7 @@ describe('renderPlainPipeline', () => {
           },
           stages: [
             {
-              stageId: 'shared-brief',
+              stageId: 'shared-plan',
               durationMs: 1000,
               startedAt: new Date().toISOString(),
               endedAt: new Date().toISOString(),
@@ -174,7 +174,7 @@ describe('renderPlainPipeline', () => {
     expect(itemLogs[2]).toContain('[succeeded]');
     expect(itemLogs[2]).toContain('analytics: 1.5s • cost: ~$0.0123');
     expect(allLogs).toContain('  cost_by_stage:');
-    expect(allLogs).toContain('    shared-brief: ~$0.0010');
+    expect(allLogs).toContain('    shared-plan: ~$0.0010');
     expect(allLogs).toContain('    planning: $0.0020');
     expect(notifyWriteStartedMock).toHaveBeenCalledWith({
       enabled: true,
@@ -193,8 +193,8 @@ describe('renderPlainPipeline', () => {
     runPipelineShellMock.mockImplementation(async (_input, options) => {
       options?.onUpdate?.([
         {
-          id: 'shared-brief',
-          title: 'Planning Shared Brief',
+          id: 'shared-plan',
+          title: 'Planning Shared Plan',
           status: 'running',
           detail: 'Generating explicit cross-channel content guidance.',
         },
@@ -202,8 +202,8 @@ describe('renderPlainPipeline', () => {
 
       options?.onUpdate?.([
         {
-          id: 'shared-brief',
-          title: 'Planning Shared Brief',
+          id: 'shared-plan',
+          title: 'Planning Shared Plan',
           status: 'running',
           detail: 'Generating explicit cross-channel content guidance.',
           retryCount: 1,
@@ -213,10 +213,10 @@ describe('renderPlainPipeline', () => {
 
       options?.onUpdate?.([
         {
-          id: 'shared-brief',
-          title: 'Planning Shared Brief',
+          id: 'shared-plan',
+          title: 'Planning Shared Plan',
           status: 'running',
-          detail: 'Retrying shared brief request.',
+          detail: 'Retrying shared plan request.',
           retryCount: 2,
           lastRetryError: 'OpenRouter temporarily unavailable',
         },
@@ -224,10 +224,10 @@ describe('renderPlainPipeline', () => {
 
       options?.onUpdate?.([
         {
-          id: 'shared-brief',
-          title: 'Planning Shared Brief',
+          id: 'shared-plan',
+          title: 'Planning Shared Plan',
           status: 'succeeded',
-          detail: 'Shared brief generated successfully.',
+          detail: 'Shared plan generated successfully.',
           retryCount: 2,
           lastRetryError: 'OpenRouter temporarily unavailable',
         },
@@ -236,10 +236,10 @@ describe('renderPlainPipeline', () => {
       return {
         stages: [
           {
-            id: 'shared-brief',
-            title: 'Planning Shared Brief',
+            id: 'shared-plan',
+            title: 'Planning Shared Plan',
             status: 'succeeded',
-            detail: 'Shared brief generated successfully.',
+            detail: 'Shared plan generated successfully.',
             retryCount: 2,
             lastRetryError: 'OpenRouter temporarily unavailable',
           },
@@ -289,7 +289,7 @@ describe('renderPlainPipeline', () => {
     } as ResolvedRunInput, true, true, 'fresh');
 
     const allLogs = (console.log as jest.Mock).mock.calls.map((call) => String(call[0]));
-    const stageLogs = allLogs.filter((line) => line.includes('Planning Shared Brief'));
+    const stageLogs = allLogs.filter((line) => line.includes('Planning Shared Plan'));
 
     expect(stageLogs.length).toBeGreaterThanOrEqual(4);
     expect(stageLogs.some((line) => line.includes('[running]') && line.includes('retried 1x'))).toBe(true);

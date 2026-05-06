@@ -1,6 +1,6 @@
-# Multi-Channel Brief Strategy
+# Multi-Channel Plan Strategy
 
-Use one shared brief for all outputs in a run, then adapt execution by channel.
+Use one shared plan for all outputs in a run, then adapt execution by channel.
 
 This keeps ideas coherent across article, social, and newsletter outputs without copy-pasting structure.
 
@@ -9,9 +9,9 @@ This keeps ideas coherent across article, social, and newsletter outputs without
 - Primary output: delivers full canonical value for the idea.
 - Secondary output: promotes interest in the primary narrative while still helping a reader immediately.
 
-## Shared Brief Fields
+## Shared Plan Fields
 
-Every brief should define:
+Every plan should define:
 
 - Title: user-facing title for the primary output.
 - Description: explicit summary of angle and utility.

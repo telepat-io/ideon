@@ -9,8 +9,8 @@ describe('pipeline presenter visibility helpers', () => {
   it('hides pending stages from the live list', () => {
     const stages: StageViewModel[] = [
       {
-        id: 'shared-brief',
-        title: 'Shared Brief',
+        id: 'shared-plan',
+        title: 'Shared Plan',
         status: 'running',
         detail: 'Working',
       },
@@ -30,7 +30,7 @@ describe('pipeline presenter visibility helpers', () => {
 
     const visible = getVisibleStages(stages);
 
-    expect(visible.map((stage) => stage.id)).toEqual(['shared-brief', 'output']);
+    expect(visible.map((stage) => stage.id)).toEqual(['shared-plan', 'output']);
   });
 
   it('returns only non-pending items and truncates to latest history', () => {

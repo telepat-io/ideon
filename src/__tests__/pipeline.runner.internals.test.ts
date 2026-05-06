@@ -189,7 +189,7 @@ describe('pipeline runner internals', () => {
     expect(__testInternals.slugifyIdea('no-limit')).toBe('no-limit');
   });
 
-  it('resolveGenerationSlug uses contentBrief title when available', () => {
+  it('resolveGenerationSlug uses contentPlan title when available', () => {
     expect(__testInternals.resolveGenerationSlug('long idea text', 'My Great Title'))
       .toBe('my-great-title');
   });
@@ -210,7 +210,7 @@ describe('pipeline runner internals', () => {
   });
 
   it('recognizes valid write stage ids only', () => {
-    expect(__testInternals.asWriteStageId('shared-brief')).toBe('shared-brief');
+    expect(__testInternals.asWriteStageId('shared-plan')).toBe('shared-plan');
     expect(__testInternals.asWriteStageId('planning')).toBe('planning');
     expect(__testInternals.asWriteStageId('sections')).toBe('sections');
     expect(__testInternals.asWriteStageId('image-prompts')).toBe('image-prompts');

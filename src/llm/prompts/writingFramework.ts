@@ -2,7 +2,7 @@ import { resolveTargetLengthAlias } from '../../config/schema.js';
 
 export function buildRunContextDirective(contentTypes: string[]): string {
   const normalizedTypes = contentTypes.length > 0 ? contentTypes.join(', ') : 'article';
-  return `Run context: requested content types are ${normalizedTypes}. Keep output aligned with this distribution plan, maintain one shared content brief, and adapt structure per channel without duplicating article-only scaffolding.`;
+  return `Run context: requested content types are ${normalizedTypes}. Keep output aligned with this distribution plan, maintain one shared content plan, and adapt structure per channel without duplicating article-only scaffolding.`;
 }
 
 type TargetLengthTier = {

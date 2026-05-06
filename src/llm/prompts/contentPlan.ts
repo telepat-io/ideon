@@ -2,9 +2,9 @@ import type { ChatMessage } from '../openRouterClient.js';
 import {
   buildRunContextDirective,
 } from './writingFramework.js';
-import { buildContentBriefGuideInstruction } from './guideBundles.js';
+import { buildContentPlanGuideInstruction } from './guideBundles.js';
 
-export const contentBriefSchema = {
+export const contentPlanSchema = {
   type: 'object',
   additionalProperties: false,
   required: [
@@ -39,7 +39,7 @@ export const contentBriefSchema = {
   },
 } as const;
 
-export function buildContentBriefMessages(
+export function buildContentPlanMessages(
   idea: string,
   options: {
     intent: string;
@@ -53,10 +53,10 @@ export function buildContentBriefMessages(
 
   const systemInstruction = [
     'You are a senior editorial strategist.',
-    'Produce a shared content brief that can guide all requested content types in this run.',
-    buildContentBriefGuideInstruction(options.intent, options.primaryContentType, options.secondaryContentTypes),
+    'Produce a shared content plan that can guide all requested content types in this run.',
+    buildContentPlanGuideInstruction(options.intent, options.primaryContentType, options.secondaryContentTypes),
     buildRunContextDirective([options.primaryContentType, ...options.secondaryContentTypes]),
-    'The brief must be specific, concrete, and directly usable by writers without extra clarification.',
+    'The plan must be specific, concrete, and directly usable by writers without extra clarification.',
     'This run has one explicit primary output and optional secondary outputs that should promote or incite interest in the primary while remaining independently valuable.',
     'Return only the requested JSON.',
   ].join(' ');
@@ -69,7 +69,7 @@ export function buildContentBriefMessages(
     {
       role: 'user',
       content: [
-        'Create a shared content brief from this idea:',
+        'Create a shared content plan from this idea:',
         idea,
         '',
         `Audience seed (optional user guidance): ${audienceSeed}`,

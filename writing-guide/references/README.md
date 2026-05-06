@@ -15,7 +15,7 @@ This directory contains reusable concept docs referenced by multiple format and 
 - `emotional-resonance.md`: emotion-first framing patterns for shareable but useful writing
 - `bibliography-and-influence-map.md`: source synthesis and thematic mapping
 - `target-length-guidance.md`: size tiers by channel and proportional structure rules
-- `multi-channel-brief-strategy.md`: shared-brief model for primary and secondary outputs
+- `multi-channel-plan-strategy.md`: shared-plan model for primary and secondary outputs
 
 ## Usage Rule
 

@@ -2,9 +2,9 @@ import { jest } from '@jest/globals';
 import { defaultAppSettings } from '../config/schema.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 
-const contentBrief = {
-  title: 'Shared Campaign Brief Title',
-  description: 'Shared campaign brief',
+const contentPlan = {
+  title: 'Shared Campaign Plan Title',
+  description: 'Shared campaign plan',
   targetAudience: 'Builders',
   corePromise: 'Clear execution',
   keyPoints: ['point one', 'point two', 'point three'],
@@ -25,7 +25,7 @@ describe('writeSingleShotContent', () => {
       outputIndex: 1,
       outputCountForType: 3,
       articleReferenceMarkdown: '# Article context',
-      contentBrief,
+      contentPlan,
       settings: defaultAppSettings,
       openRouter: null,
       dryRun: true,
@@ -46,7 +46,7 @@ describe('writeSingleShotContent', () => {
       outputIndex: 2,
       outputCountForType: 2,
       articleReferenceMarkdown: undefined,
-      contentBrief,
+      contentPlan,
       settings: defaultAppSettings,
       openRouter: null,
       dryRun: false,
@@ -68,7 +68,7 @@ describe('writeSingleShotContent', () => {
       outputIndex: 1,
       outputCountForType: 1,
       articleReferenceMarkdown: undefined,
-      contentBrief,
+      contentPlan,
       settings: defaultAppSettings,
       openRouter: { requestText } as never,
       dryRun: false,

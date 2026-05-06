@@ -17,7 +17,7 @@ export const contentTypeOrder = [
 ] as const;
 
 export const interactionStageOrder = [
-  'shared-brief',
+  'shared-plan',
   'planning',
   'sections',
   'image-prompts',

@@ -1,14 +1,14 @@
 import { jest } from '@jest/globals';
 import { defaultAppSettings } from '../config/schema.js';
-import { planContentBrief } from '../generation/planContentBrief.js';
+import { planContentPlan } from '../generation/planContentPlan.js';
 
-describe('planContentBrief', () => {
-  it('uses dry-run content brief when dryRun=true', async () => {
+describe('planContentPlan', () => {
+  it('uses dry-run content plan when dryRun=true', async () => {
     const openRouter = {
       requestStructured: jest.fn(),
     };
 
-    const result = await planContentBrief({
+    const result = await planContentPlan({
       idea: '   ai editorial system   ',
       settings: defaultAppSettings,
       openRouter: openRouter as never,
@@ -19,8 +19,8 @@ describe('planContentBrief', () => {
     expect(result.description).toContain('ai editorial system');
   });
 
-  it('uses dry-run content brief when OpenRouter is unavailable', async () => {
-    const result = await planContentBrief({
+  it('uses dry-run content plan when OpenRouter is unavailable', async () => {
+    const result = await planContentPlan({
       idea: 'fallback idea',
       settings: defaultAppSettings,
       openRouter: null,
@@ -31,7 +31,7 @@ describe('planContentBrief', () => {
     expect(result.keyPoints.length).toBeGreaterThan(0);
   });
 
-  it('requests structured brief from OpenRouter when enabled', async () => {
+  it('requests structured plan from OpenRouter when enabled', async () => {
     const expected = {
       title: 'Reliable Output And Links Behavior',
       description: 'Generated brief with concrete execution details and practical examples for teams.',
@@ -68,7 +68,7 @@ describe('planContentBrief', () => {
       },
     );
 
-    const result = await planContentBrief({
+    const result = await planContentPlan({
       idea: 'model idea',
       settings: defaultAppSettings,
       openRouter: { requestStructured } as never,
@@ -96,7 +96,7 @@ describe('planContentBrief', () => {
     expect(result).toEqual(expected);
   });
 
-  it('injects provided audience seed into prompt and dry-run brief', async () => {
+  it('injects provided audience seed into prompt and dry-run plan', async () => {
     const requestStructured = jest
       .fn<
         (args: {
@@ -122,7 +122,7 @@ describe('planContentBrief', () => {
 
     const audienceSeed = 'Romanian startup operators building thought leadership from scratch';
 
-    await planContentBrief({
+    await planContentPlan({
       idea: 'model idea with audience',
       targetAudienceHint: audienceSeed,
       settings: defaultAppSettings,
@@ -137,7 +137,7 @@ describe('planContentBrief', () => {
     expect(userMessage?.content).toContain(`Audience seed (optional user guidance): ${audienceSeed}`);
     expect(userMessage?.content).toContain('Enrich it with concrete context');
 
-    const dryRunResult = await planContentBrief({
+    const dryRunResult = await planContentPlan({
       idea: 'dry-run audience propagation',
       targetAudienceHint: audienceSeed,
       settings: defaultAppSettings,
@@ -157,7 +157,7 @@ describe('planContentBrief', () => {
       >()
       .mockImplementation(async ({ parse }) => {
         const payload = {
-          title: 'Primary-Only Shared Brief',
+          title: 'Primary-Only Shared Plan',
           description: 'Primary-only run where no secondary content guidance is required in the brief output.',
           targetAudience: 'Operators publishing one long-form piece with no social derivatives this run.',
           corePromise: 'Readers gain concrete execution guidance for a single, primary output workflow.',
@@ -171,7 +171,7 @@ describe('planContentBrief', () => {
         return parse ? parse(payload) : payload;
       });
 
-    const result = await planContentBrief({
+    const result = await planContentPlan({
       idea: 'primary-only generation',
       settings: defaultAppSettings,
       openRouter: { requestStructured } as never,

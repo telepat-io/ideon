@@ -184,7 +184,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Generate one primary content output plus optional secondary outputs from a prompt or job file.')
     .argument('[idea]', 'Natural-language idea for the generation run')
     .option('-i, --idea <idea>', 'Natural-language idea for the generation run')
-    .option('--audience <description>', 'Optional natural-language audience description for shared-brief targeting')
+    .option('--audience <description>', 'Optional natural-language audience description for shared-plan targeting')
     .option('-j, --job <path>', 'Path to a JSON job definition')
     .option('--primary <type=count>', 'Required primary output target (for example: article=1 or x-post=1)')
     .option('--secondary <type=count>', 'Secondary output target, repeatable (for example: x-thread=3, linkedin-post=2)', collectOptionValue)

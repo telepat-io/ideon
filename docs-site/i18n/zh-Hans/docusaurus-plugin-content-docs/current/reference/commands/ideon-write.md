@@ -23,7 +23,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | --- | --- | --- | --- | --- | --- | --- |
 | `[idea]` | 无 | 否 | string | n/a | 任意自然语言文本 | 未提供 `--idea` 时使用的位置参数。 |
 | `--idea <idea>` | `-i` | 否 | string | n/a | 任意自然语言文本 | 显式 idea，优先级高于位置参数。 |
-| `--audience <description>` | 无 | 否 | string | 泛化受众 | 任意自然语言文本 | 用于 shared-brief 规划的受众提示。 |
+| `--audience <description>` | 无 | 否 | string | 泛化受众 | 任意自然语言文本 | 用于 shared-plan 规划的受众提示。 |
 | `--job <path>` | `-j` | 否 | string (path) | n/a | 有效 JSON 文件路径 | 从文件加载 job 定义。 |
 | `--primary <type=1>` | 无 | 非交互模式必填 | string | 交互模式下会提示 | `article`、`blog-post`、`linkedin-post`、`newsletter`、`press-release`、`reddit-post`、`science-paper`、`x-post`、`x-thread`，且 count 必须为 `1` | 必需主目标，数量必须是 `1`。 |
 | `--secondary <type=count>` | 无 | 否 | 可重复 string | 无 | 与主目标相同的类型，count >= `1` | 可重复的次级目标。 |

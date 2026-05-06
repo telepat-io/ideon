@@ -194,7 +194,7 @@
 * implement enrichMarkdownWithLinks function and add tests for link injection ([58d0bef](https://github.com/telepat-io/ideon/commit/58d0bef368943b0a58c916192cd997d8ecd412d5))
 * implement OS-level dark mode support and theme toggle functionality ([3dcc55f](https://github.com/telepat-io/ideon/commit/3dcc55fe3ba4f8ddf5d1974c003ec023b0272d85))
 * Implement write session management with resume support ([953d3fb](https://github.com/telepat-io/ideon/commit/953d3fb5c852c458678faa359666708efca64ad0))
-* introduce content brief functionality and related schema ([092b5fd](https://github.com/telepat-io/ideon/commit/092b5fdf74bf9dcf25aa20c954f0d6d53103b2de))
+* introduce content plan functionality and related schema ([092b5fd](https://github.com/telepat-io/ideon/commit/092b5fdf74bf9dcf25aa20c954f0d6d53103b2de))
 * introduce writing framework and content type guidelines ([00a9d4f](https://github.com/telepat-io/ideon/commit/00a9d4f8adeb6cf3e6b34dd19864284411300634))
 * Introduce x-thread content type and update related functionalities ([0508885](https://github.com/telepat-io/ideon/commit/0508885bc66c483e52898344fac3a329305cdb40))
 * prevent browser launch during unit tests ([f54e183](https://github.com/telepat-io/ideon/commit/f54e18388c5754e790a4000ad5ffec0f82a46953))

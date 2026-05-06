@@ -1,4 +1,4 @@
-export interface ContentBrief {
+export interface ContentPlan {
   title: string;
   description: string;
   targetAudience: string;
