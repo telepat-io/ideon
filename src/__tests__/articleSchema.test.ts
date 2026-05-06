@@ -53,6 +53,7 @@ describe('inlineImagePlanSchema', () => {
   it('should validate correct inline image plan', () => {
     const image = {
       description: 'A helpful diagram',
+      anchorAfterSection: 2,
     };
 
     const result = inlineImagePlanSchema.safeParse(image);

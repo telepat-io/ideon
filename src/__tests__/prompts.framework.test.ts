@@ -48,8 +48,8 @@ function mockPlan(): ArticlePlan {
     ],
     coverImageDescription: 'A product team planning board with workflow swimlanes and checklists.',
     inlineImages: [
-      { description: 'Workflow boundary diagram with human and AI handoffs.' },
-      { description: 'Quality dashboard showing trend lines and defect categories.' },
+      { description: 'Workflow boundary diagram with human and AI handoffs.', anchorAfterSection: 2 },
+      { description: 'Quality dashboard showing trend lines and defect categories.', anchorAfterSection: 4 },
     ],
   };
 }

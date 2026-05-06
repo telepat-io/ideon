@@ -55,7 +55,7 @@ describe('pipeline runner', () => {
 
       expect(result.stages.every((stage) => stage.status === 'succeeded')).toBe(true);
       expect(result.artifact.sectionCount).toBeGreaterThanOrEqual(4);
-      expect(result.artifact.imageCount).toBe(2);
+      expect(result.artifact.imageCount).toBe(3);
       expect(result.artifact.analyticsPath).toContain('.analytics.json');
       expect(result.artifact.interactionsPath).toContain('model.interactions.json');
       expect(result.artifact.planPath).toContain('plan.md');
@@ -654,8 +654,8 @@ describe('pipeline runner', () => {
             ],
             coverImageDescription: 'Cover description',
             inlineImages: [
-              { description: 'Inline one' },
-              { description: 'Inline two' },
+              { description: 'Inline one', anchorAfterSection: 2 },
+              { description: 'Inline two', anchorAfterSection: 4 },
             ],
           },
         },
@@ -749,8 +749,8 @@ describe('pipeline runner', () => {
             ],
             coverImageDescription: 'Cover description',
             inlineImages: [
-              { description: 'Inline one' },
-              { description: 'Inline two' },
+              { description: 'Inline one', anchorAfterSection: 2 },
+              { description: 'Inline two', anchorAfterSection: 4 },
             ],
           },
           text: {
@@ -880,8 +880,8 @@ describe('pipeline runner', () => {
         ],
         coverImageDescription: 'cover',
         inlineImages: [
-          { description: 'inline one' },
-          { description: 'inline two' },
+          { description: 'inline one', anchorAfterSection: 2 },
+          { description: 'inline two', anchorAfterSection: 4 },
         ],
       };
 
@@ -1049,8 +1049,8 @@ describe('pipeline runner', () => {
             ],
             coverImageDescription: 'Cover description',
             inlineImages: [
-              { description: 'Inline one' },
-              { description: 'Inline two' },
+              { description: 'Inline one', anchorAfterSection: 2 },
+              { description: 'Inline two', anchorAfterSection: 4 },
             ],
           },
           text: {

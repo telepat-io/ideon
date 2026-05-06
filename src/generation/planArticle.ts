@@ -53,12 +53,18 @@ export async function planArticle({
   const normalizedSlug = slugify(basePlan.slug || basePlan.title);
   const uniqueSlug = await resolveUniqueSlug(markdownOutputDir, normalizedSlug);
 
+  const sectionCount = basePlan.sections.length;
+
   return {
     ...basePlan,
     slug: uniqueSlug,
     keywords: basePlan.keywords.slice(0, 8),
     inlineImages: basePlan.inlineImages
-      .slice(0, 3),
+      .slice(0, 3)
+      .map((img) => ({
+        ...img,
+        anchorAfterSection: Math.max(1, Math.min(sectionCount, img.anchorAfterSection)),
+      })),
   };
 }
 
@@ -104,9 +110,11 @@ function buildDryRunPlan(idea: string, contentBrief: ContentBrief): ArticlePlan 
     inlineImages: [
       {
         description: 'A rough idea evolving into a structured article outline on a desk full of notes.',
+        anchorAfterSection: 2,
       },
       {
         description: 'A collaborative editorial scene where human judgment and AI suggestions coexist.',
+        anchorAfterSection: 4,
       },
     ],
   };

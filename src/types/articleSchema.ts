@@ -7,6 +7,7 @@ export const articleSectionPlanSchema = z.object({
 
 export const inlineImagePlanSchema = z.object({
   description: z.string().min(1),
+  anchorAfterSection: z.number().int().min(1),
 });
 
 export const articlePlanSchema = z.object({

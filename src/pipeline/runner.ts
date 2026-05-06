@@ -9,7 +9,7 @@ import { planArticle } from '../generation/planArticle.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 import { writeArticleSections } from '../generation/writeSections.js';
 import { Limn } from '@telepat/limn';
-import { expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages, selectImageSlots } from '../images/renderImages.js';
+import { buildImageSlots, expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
 import {
@@ -501,7 +501,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         options.onUpdate?.(cloneStages(stages));
       } else {
         imagePrompts = await expandImagePrompts({
-          slots: selectImageSlots(plan, text.sections, { maxImages: options.maxImages }),
+          slots: buildImageSlots(plan, text.sections, { maxImages: options.maxImages }),
           planContext: plan,
           sections: text.sections,
           settings: input.config.settings,

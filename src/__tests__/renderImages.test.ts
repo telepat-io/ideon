@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { jest } from '@jest/globals';
 import { defaultAppSettings } from '../config/schema.js';
-import { buildAndRenderImages, expandImagePrompts, renderExpandedImages, selectImageSlots, MIN_IMAGE_BYTES } from '../images/renderImages.js';
+import { buildAndRenderImages, expandImagePrompts, renderExpandedImages, buildImageSlots, MIN_IMAGE_BYTES } from '../images/renderImages.js';
 
 const basePlan = {
   title: 'Test',
@@ -16,62 +16,58 @@ const basePlan = {
   sections: [],
   coverImageDescription: 'Cover scene',
   inlineImages: [
-    { description: 'Inline A' },
-    { description: 'Inline B' },
+    { description: 'Inline A', anchorAfterSection: 2 },
+    { description: 'Inline B', anchorAfterSection: 4 },
   ],
 };
 
 const makeSection = (n: number) =>
   Array.from({ length: n }, (_, i) => ({ title: `S${i + 1}`, body: `Body ${i + 1}.` }));
 
-describe('selectImageSlots', () => {
-  it('returns only cover slot for short articles (1-3 sections)', () => {
-    const slots = selectImageSlots(basePlan, makeSection(3));
-    expect(slots).toHaveLength(1);
-    expect(slots[0]?.kind).toBe('cover');
-  });
-
-  it('returns cover + 1 inline for medium articles (4-6 sections)', () => {
-    const slots = selectImageSlots(basePlan, makeSection(5));
-    expect(slots).toHaveLength(2);
-    expect(slots[1]?.kind).toBe('inline');
-    expect(slots[1]?.anchorAfterSection).toBeGreaterThanOrEqual(1);
-    expect(slots[1]?.anchorAfterSection).toBeLessThanOrEqual(5);
-  });
-
-  it('returns cover + 2 inline for long articles (7+ sections)', () => {
-    const slots = selectImageSlots(basePlan, makeSection(8));
+describe('buildImageSlots', () => {
+  it('includes cover + all inline images regardless of section count', () => {
+    const slots = buildImageSlots(basePlan, makeSection(3));
     expect(slots).toHaveLength(3);
-    expect(slots.filter((s) => s.kind === 'inline')).toHaveLength(2);
+    expect(slots[0]?.kind).toBe('cover');
+    expect(slots[1]?.kind).toBe('inline');
+    expect(slots[2]?.kind).toBe('inline');
   });
 
-  it('caps inline count when fewer plan descriptions than threshold', () => {
-    const planWithOneInline = { ...basePlan, inlineImages: [{ description: 'Only one' }] };
-    const slots = selectImageSlots(planWithOneInline, makeSection(8));
-    expect(slots).toHaveLength(2); // cover + 1 despite 7+ sections
+  it('preserves plan anchorAfterSection values', () => {
+    const slots = buildImageSlots(basePlan, makeSection(8));
+    expect(slots[1]?.anchorAfterSection).toBe(2);
+    expect(slots[2]?.anchorAfterSection).toBe(4);
+  });
+
+  it('clamps anchorAfterSection to section count', () => {
+    const slots = buildImageSlots(basePlan, makeSection(3));
+    expect(slots[1]?.anchorAfterSection).toBe(2);
+    expect(slots[2]?.anchorAfterSection).toBe(3);
+  });
+
+  it('clamps anchorAfterSection to minimum 1', () => {
+    const plan = { ...basePlan, inlineImages: [{ description: 'Early', anchorAfterSection: 0 }] };
+    const slots = buildImageSlots(plan, makeSection(5));
+    expect(slots[1]?.anchorAfterSection).toBe(1);
   });
 
   it('respects maxImages=1 (cover only)', () => {
-    const slots = selectImageSlots(basePlan, makeSection(8), { maxImages: 1 });
+    const slots = buildImageSlots(basePlan, makeSection(8), { maxImages: 1 });
     expect(slots).toHaveLength(1);
     expect(slots[0]?.kind).toBe('cover');
   });
 
-  it('respects maxImages=2 (cover + 1 inline) even for long articles', () => {
-    const slots = selectImageSlots(basePlan, makeSection(8), { maxImages: 2 });
+  it('respects maxImages=2 (cover + 1 inline)', () => {
+    const slots = buildImageSlots(basePlan, makeSection(8), { maxImages: 2 });
     expect(slots).toHaveLength(2);
+    expect(slots[0]?.kind).toBe('cover');
+    expect(slots[1]?.kind).toBe('inline');
+    expect(slots[1]?.id).toBe('inline-1');
   });
 
-  it('does not add more images than length-based default via maxImages', () => {
-    // Short article (3 sections) → default is 0 inline; maxImages=5 should not increase
-    const slots = selectImageSlots(basePlan, makeSection(3), { maxImages: 5 });
-    expect(slots).toHaveLength(1); // cover only
-  });
-
-  it('places inline anchor in the middle of sections for 1 inline', () => {
-    const slots = selectImageSlots(basePlan, makeSection(4));
-    const inline = slots.find((s) => s.kind === 'inline');
-    expect(inline?.anchorAfterSection).toBe(2); // round(1/2 * 4) = 2
+  it('does not cap inline count below plan count via maxImages when not limiting', () => {
+    const slots = buildImageSlots(basePlan, makeSection(8), { maxImages: 10 });
+    expect(slots).toHaveLength(3);
   });
 });
 
@@ -416,7 +412,7 @@ describe('renderExpandedImages', () => {
             { title: 'S4', description: 'D4' },
           ],
           coverImageDescription: 'Cover scene',
-          inlineImages: [{ description: 'Inline scene' }],
+          inlineImages: [{ description: 'Inline scene', anchorAfterSection: 2 }],
         },
         writtenSections: [
           { title: 'S1', body: 'Body one.' },

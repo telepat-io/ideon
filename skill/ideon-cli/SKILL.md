@@ -320,13 +320,11 @@ Mode behavior:
 
 Image generation behavior:
 
-- Image count is determined by actual written section count, not by `--length`.
-- ≤3 sections → cover image only.
-- 4–6 sections → cover + 1 inline image.
-- ≥7 sections → cover + 2 inline images.
-- Inline image placement is decided automatically after writing, using evenly spaced positions.
-- `--max-images <n>` caps total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline). Cannot increase above the length-based default.
-- Image prompts are expanded using section content as context for inline images.
+- Image count and placement are decided at plan time by the LLM, not after writing.
+- The plan always includes a cover image and 2–3 inline images, each with an explicit `anchorAfterSection` (1-based section index).
+- All planned images are rendered — no images are dropped based on section count.
+- `--max-images <n>` caps total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline). Cannot increase above the plan's count.
+- After sections are written, image prompts are expanded by blending the plan's general direction with the actual section content for each anchor position.
 
 What link enrichment means:
 

@@ -40,34 +40,12 @@ export interface ImageRenderCallMetrics {
   costSource: CostSource;
 }
 
-export function selectImageSlots(
+export function buildImageSlots(
   plan: ArticlePlan,
   sections: GeneratedArticleSection[],
   options?: { maxImages?: number },
 ): ArticleImagePrompt[] {
   const sectionCount = sections.length;
-
-  // Determine default inline count based on article length
-  let defaultInlineCount: number;
-  if (sectionCount <= 3) {
-    defaultInlineCount = 0;
-  } else if (sectionCount <= 6) {
-    defaultInlineCount = 1;
-  } else {
-    defaultInlineCount = 2;
-  }
-
-  // Cap by available plan descriptions and actual section count
-  const availableInlineCount = Math.min(defaultInlineCount, plan.inlineImages.length, sectionCount);
-
-  // Apply maxImages override (total count including cover)
-  let inlineCount: number;
-  const maxImages = options?.maxImages;
-  if (maxImages !== undefined && maxImages >= 1) {
-    inlineCount = Math.min(availableInlineCount, Math.max(0, maxImages - 1));
-  } else {
-    inlineCount = availableInlineCount;
-  }
 
   const slots: ArticleImagePrompt[] = [
     {
@@ -79,17 +57,24 @@ export function selectImageSlots(
     },
   ];
 
+  let inlineCount = plan.inlineImages.length;
+  const maxImages = options?.maxImages;
+  if (maxImages !== undefined && maxImages >= 1) {
+    inlineCount = Math.min(inlineCount, Math.max(0, maxImages - 1));
+  }
+
   for (let i = 0; i < inlineCount; i++) {
-    const anchorAfterSection = Math.max(
-      1,
-      Math.min(sectionCount, Math.round(((i + 1) / (inlineCount + 1)) * sectionCount)),
-    );
+    const img = plan.inlineImages[i];
+    if (!img) {
+      continue;
+    }
+
     slots.push({
       id: `inline-${i + 1}`,
       kind: 'inline',
       prompt: '',
-      description: plan.inlineImages[i]?.description ?? '',
-      anchorAfterSection,
+      description: img.description,
+      anchorAfterSection: Math.max(1, Math.min(sectionCount, img.anchorAfterSection)),
     });
   }
 
@@ -374,7 +359,7 @@ export async function buildAndRenderImages({
   dryRun: boolean;
   onProgress?: (detail: string) => void;
 }): Promise<Pick<GeneratedArticle, 'imagePrompts' | 'renderedImages'>> {
-  const slots = selectImageSlots(plan, writtenSections, { maxImages });
+  const slots = buildImageSlots(plan, writtenSections, { maxImages });
   const imagePrompts = await expandImagePrompts({
     slots,
     planContext: plan,

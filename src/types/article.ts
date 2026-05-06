@@ -5,6 +5,7 @@ export interface ArticleSectionPlan {
 
 export interface InlineImagePlan {
   description: string;
+  anchorAfterSection: number;
 }
 
 export interface ArticlePlan {

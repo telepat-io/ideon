@@ -55,11 +55,12 @@ For multi-target runs, article outputs may be used as anchor context for social/
 
 ## Image Rendering Path
 
-1. Build image slots from plan (cover + inline)
-2. Expand each slot description to final prompt
-3. Build Replicate input from model registry and sanitized overrides
-4. Execute model and normalize output bytes
-5. Write image files and compute markdown-relative paths
+1. Plan generates cover image description and 2–3 inline image descriptions, each with explicit `anchorAfterSection` placement
+2. Build image slots from plan (all inline images preserved; `--max-images` caps if needed)
+3. Expand each slot description to final prompt, blending plan direction with actual section content
+4. Build Replicate input from model registry and sanitized overrides
+5. Execute model and normalize output bytes
+6. Write image files and compute markdown-relative paths
 
 ## Dry-Run Behavior
 
