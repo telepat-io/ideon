@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.20](https://github.com/telepat-io/ideon/compare/ideon-v0.1.19...ideon-v0.1.20) (2026-05-06)
+
+
+### Features
+
+* add article plan file support in output structure and related documentation ([e8acb8b](https://github.com/telepat-io/ideon/commit/e8acb8b2a27b82b8e29d90b77625ab703cf36878))
+* enhance image planning ([f36c19d](https://github.com/telepat-io/ideon/commit/f36c19d489c2fb21cbd175c8f7ba3e72e8fbc277))
+
 ## [0.1.19](https://github.com/telepat-io/ideon/compare/ideon-v0.1.18...ideon-v0.1.19) (2026-05-06)
 
 
