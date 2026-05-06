@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.19](https://github.com/telepat-io/ideon/compare/ideon-v0.1.18...ideon-v0.1.19) (2026-05-06)
+
+
+### Features
+
+* enhance settings flow with T2I submenu and input overrides handling ([c12d1e9](https://github.com/telepat-io/ideon/commit/c12d1e9df035b7479e89c2872c255e3111656df1))
+* remove ReplicateClient and related model definitions, use Limn instead ([be76e59](https://github.com/telepat-io/ideon/commit/be76e59112cda96fda5b990c466009245d410e1e))
+* update @telepat/limn dependency to version 0.1.5 ([cb7ee22](https://github.com/telepat-io/ideon/commit/cb7ee22ad8d3959c38099c0469cc0cb72cdb670a))
+* update t2iCalls provider from 'replicate-dry-run' to 'limn-dry-run' ([62a470d](https://github.com/telepat-io/ideon/commit/62a470d63b557189ba10e2ba1718eaba0dfb5b6f))
+
 ## [0.1.18](https://github.com/telepat-io/ideon/compare/ideon-v0.1.17...ideon-v0.1.18) (2026-05-05)
 
 
