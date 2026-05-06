@@ -8,7 +8,7 @@ keywords: [ideon, cli, resume, 检查点, 写作]
 
 ## 命令作用
 
-`ideon write resume` 会从 `.ideon/write/state.json` 恢复最近一次失败或中断的写作运行。
+`ideon write resume` 会从会话状态文件恢复最近一次失败或中断的写作运行。
 
 ## 用法
 

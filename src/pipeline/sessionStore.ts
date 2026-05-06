@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import envPaths from 'env-paths';
 import { z } from 'zod';
 import { appSettingsSchema, jobInputSchema, type AppSettings, type JobInput, type ResolvedPaths } from '../config/schema.js';
 import { articlePlanSchema } from '../types/articleSchema.js';
@@ -140,12 +142,23 @@ export interface WriteSessionState extends WriteSessionStateSchema {
   artifact: PipelineArtifactSummary | null;
 }
 
+const ideonPaths = envPaths('ideon', { suffix: '' });
+const sessionsDir = path.join(ideonPaths.config, 'sessions');
+
+function hashProjectPath(workingDir: string): string {
+  return createHash('sha256').update(path.resolve(workingDir)).digest('hex').slice(0, 16);
+}
+
 function resolveWriteRoot(workingDir: string): string {
-  return path.join(workingDir, '.ideon', 'write');
+  return path.join(sessionsDir, hashProjectPath(workingDir));
 }
 
 function resolveStateFilePath(workingDir: string): string {
   return path.join(resolveWriteRoot(workingDir), 'state.json');
+}
+
+function resolveLegacyStatePath(workingDir: string): string {
+  return path.join(workingDir, '.ideon', 'write', 'state.json');
 }
 
 export async function startFreshWriteSession(seed: WriteSessionSeed, workingDir: string = process.cwd()): Promise<WriteSessionState> {
@@ -188,6 +201,18 @@ export async function loadWriteSession(workingDir: string = process.cwd()): Prom
     const raw = await readFile(statePath, 'utf8');
     return writeSessionStateSchema.parse(JSON.parse(raw));
   } catch (error) {
+    if (!isNotFoundError(error)) {
+      throw error;
+    }
+  }
+
+  const legacyPath = resolveLegacyStatePath(workingDir);
+  try {
+    const raw = await readFile(legacyPath, 'utf8');
+    const state = writeSessionStateSchema.parse(JSON.parse(raw));
+    await saveWriteSession(state, workingDir);
+    return state;
+  } catch (error) {
     if (isNotFoundError(error)) {
       return null;
     }
@@ -211,7 +236,7 @@ export async function saveWriteSession(state: WriteSessionState, workingDir: str
 export async function patchWriteSession(patch: WriteSessionPatch, workingDir: string = process.cwd()): Promise<WriteSessionState> {
   const existing = await loadWriteSession(workingDir);
   if (!existing) {
-    throw new Error('No active write session found in .ideon/write/state.json. Start a fresh write first.');
+    throw new Error('No active write session found. Start a fresh write first.');
   }
 
   const has = <K extends keyof WriteSessionPatch>(key: K): boolean => Object.hasOwn(patch, key);

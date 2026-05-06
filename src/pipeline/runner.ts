@@ -207,7 +207,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   } else {
     const existing = await loadWriteSession(workingDir);
     if (!existing) {
-      throw new Error('No resumable write session found in .ideon/write/state.json. Start a fresh write first.');
+      throw new Error('No resumable write session found. Start a fresh write first.');
     }
 
     if (existing.status === 'completed') {
@@ -241,7 +241,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       stages[0] = {
         ...stages[0],
         status: 'succeeded',
-        detail: 'Reused saved shared plan from .ideon/write.',
+        detail: 'Reused saved shared plan from cached session.',
         summary: contentPlan.title,
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'shared-plan'),
       };
@@ -294,7 +294,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         stages[1] = {
           ...stages[1],
           status: 'succeeded',
-          detail: 'Reused saved plan from .ideon/write.',
+          detail: 'Reused saved plan from cached session.',
           summary: `${plan.title} • ${plan.slug} • ${plan.sections.length} sections • ${plan.inlineImages.length + 1} images`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
         };
@@ -354,12 +354,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         stages[2] = {
           ...stages[2],
           status: 'succeeded',
-          detail: 'Reused saved section drafts from .ideon/write.',
+          detail: 'Reused saved section drafts from cached session.',
           summary: `Intro + ${text.sections.length} sections + conclusion`,
           items: (stages[2].items ?? []).map((item) => ({
             ...item,
             status: 'succeeded',
-            detail: 'Reused saved section draft from .ideon/write.',
+            detail: 'Reused saved section draft from cached session.',
           })),
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
         };
@@ -488,7 +488,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         stages[3] = {
           ...stages[3],
           status: 'succeeded',
-          detail: 'Reused saved image prompts from .ideon/write.',
+          detail: 'Reused saved image prompts from cached session.',
           summary: `${imagePrompts.length} prompts ready`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
         };
@@ -692,7 +692,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         stages[4] = {
           ...stages[4],
           status: 'succeeded',
-          detail: 'Reused previously rendered images from .ideon/write.',
+          detail: 'Reused previously rendered images from cached session.',
           summary: sharedAssetDir,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'images'),
         };
@@ -786,7 +786,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         stages[4] = {
           ...stages[4],
           status: 'succeeded',
-          detail: 'Reused previously rendered primary cover image from .ideon/write.',
+          detail: 'Reused previously rendered primary cover image from cached session.',
           summary: sharedAssetDir,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'images'),
         };
@@ -1099,7 +1099,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       stages[6] = {
         ...stages[6],
         status: 'succeeded',
-        detail: 'Reused saved link metadata from .ideon/write.',
+        detail: 'Reused saved link metadata from cached session.',
         summary: `${resumedLinks.reduce((sum, item) => sum + item.links.length, 0)} links`,
         items: (stages[6].items ?? []).map((item) => ({
           ...item,

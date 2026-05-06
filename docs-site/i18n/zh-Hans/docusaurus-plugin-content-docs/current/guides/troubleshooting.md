@@ -58,14 +58,14 @@ keywords: [ideon, 故障排查, cli, 错误, 恢复]
 
 错误表现：
 
-- `No resumable write session found in .ideon/write/state.json...`
+- `No resumable write session found...`
 
 修复方式：
 
 - 先执行 `ideon write "your idea"` 产生一次新会话
-- 确认当前工作目录与原运行目录一致
-- 注意每个目录都有独立的 `.ideon/write/state.json`，切换目录后无法读取原会话
-- 如果项目目录被移动，请连同 `.ideon/` 一起移动；否则请在新目录重新执行一次写作后再恢复
+- 会话状态存储在用户配置目录，按项目路径索引
+- 如果项目目录下存在旧版 `.ideon/write/state.json`，会在首次恢复时自动迁移
+- 如果项目目录被移动，会话仍可通过配置目录访问
 
 ## 写作运行被中断
 
@@ -77,7 +77,7 @@ keywords: [ideon, 故障排查, cli, 错误, 恢复]
 
 1. Run `ideon write resume`
 2. 若找不到可恢复会话，先确认当前目录与原始 `ideon write` 运行目录一致
-3. 若多次恢复失败，检查并移除 `.ideon/write/state.json` 后重新开始
+3. 若多次恢复失败，执行一次新的 `ideon write "your idea"` 后再恢复
 
 ## 未找到已生成内容
 

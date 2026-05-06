@@ -1,13 +1,22 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { jest } from '@jest/globals';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { defaultAppSettings } from '../config/schema.js';
-import {
+
+const testConfigDir = path.join(os.tmpdir(), `ideon-test-config-${Date.now()}`);
+
+jest.unstable_mockModule('env-paths', () => ({
+  default: () => ({ config: testConfigDir }),
+}));
+
+const {
   loadWriteSession,
   patchWriteSession,
   saveWriteSession,
   startFreshWriteSession,
-} from '../pipeline/sessionStore.js';
+} = await import('../pipeline/sessionStore.js');
 
 describe('sessionStore', () => {
   async function withTempDir<T>(run: (dir: string) => Promise<T>): Promise<T> {
@@ -18,6 +27,15 @@ describe('sessionStore', () => {
       await rm(dir, { recursive: true, force: true });
     }
   }
+
+  function sessionPath(workingDir: string): string {
+    const hash = createHash('sha256').update(path.resolve(workingDir)).digest('hex').slice(0, 16);
+    return path.join(testConfigDir, 'sessions', hash, 'state.json');
+  }
+
+  afterAll(async () => {
+    await rm(testConfigDir, { recursive: true, force: true });
+  });
 
   const seed = {
     idea: 'my idea',
@@ -223,11 +241,65 @@ describe('sessionStore', () => {
 
   it('throws on malformed session JSON', async () => {
     await withTempDir(async (dir) => {
-      const statePath = path.join(dir, '.ideon', 'write', 'state.json');
+      const statePath = sessionPath(dir);
       await mkdir(path.dirname(statePath), { recursive: true });
       await writeFile(statePath, '{invalid json', 'utf8');
 
       await expect(loadWriteSession(dir)).rejects.toThrow();
+    });
+  });
+
+  it('stores session in home-dir sessions directory', async () => {
+    await withTempDir(async (dir) => {
+      await startFreshWriteSession(seed, dir);
+
+      const statePath = sessionPath(dir);
+      const raw = await readFile(statePath, 'utf8');
+      const parsed = JSON.parse(raw);
+
+      expect(parsed.idea).toBe('my idea');
+      expect(parsed.status).toBe('running');
+    });
+  });
+
+  it('migrates legacy CWD-based session to home-dir', async () => {
+    await withTempDir(async (dir) => {
+      const legacyPath = path.join(dir, '.ideon', 'write', 'state.json');
+      await mkdir(path.dirname(legacyPath), { recursive: true });
+
+      const legacyState = {
+        version: 1,
+        status: 'failed',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        idea: 'legacy idea',
+        targetAudienceHint: null,
+        job: null,
+        settings: defaultAppSettings,
+        dryRun: false,
+        outputPaths: { markdownOutputDir: '/tmp/output', assetOutputDir: '/tmp/output/assets' },
+        lastCompletedStage: 'shared-plan',
+        failedStage: 'planning',
+        errorMessage: 'interrupted',
+        contentPlan: null,
+        plan: null,
+        text: null,
+        imagePrompts: null,
+        imageArtifacts: null,
+        links: null,
+        artifact: null,
+      };
+      await writeFile(legacyPath, JSON.stringify(legacyState, null, 2), 'utf8');
+
+      const loaded = await loadWriteSession(dir);
+      expect(loaded).not.toBeNull();
+      expect(loaded?.idea).toBe('legacy idea');
+      expect(loaded?.status).toBe('failed');
+
+      const newPath = sessionPath(dir);
+      const migratedRaw = await readFile(newPath, 'utf8');
+      const migrated = JSON.parse(migratedRaw);
+      expect(migrated.idea).toBe('legacy idea');
     });
   });
 });

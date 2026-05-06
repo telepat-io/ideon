@@ -8,7 +8,7 @@ keywords: [ideon, cli, resume, checkpoints, write]
 
 ## What This Command Does
 
-`ideon write resume` continues the most recent failed or interrupted write run from `.ideon/write/state.json`.
+`ideon write resume` continues the most recent failed or interrupted write run from the session state file.
 
 ## Usage
 

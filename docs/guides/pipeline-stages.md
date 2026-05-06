@@ -99,10 +99,10 @@ When a stage fails:
 
 ## Resume Semantics
 
-- Each completed stage checkpoint is persisted to `.ideon/write/state.json`.
-- Checkpoints are scoped to the working directory where `ideon write` was executed.
+- Each completed stage checkpoint is persisted to the session state file.
+- Checkpoints are stored in the user's config directory, keyed by project path.
 - `ideon write resume` reloads saved artifacts and skips already-completed stages.
-- Run resume from the same project directory, or restore that directory's `.ideon/` folder, to access prior checkpoints.
+- Resume works from any directory — session state is no longer tied to the working directory.
 - Resume currently checkpoints at stage boundaries, so in-progress work inside a stage is retried from that stage.
 - Resume is also allowed after a completed session to regenerate missing downstream artifacts from cached state.
 

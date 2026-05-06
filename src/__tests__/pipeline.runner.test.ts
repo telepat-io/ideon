@@ -2,15 +2,27 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { createHash } from 'node:crypto';
 import { jest } from '@jest/globals';
-import { runPipelineShell, createInitialStages } from '../pipeline/runner.js';
 import { defaultAppSettings, type ResolvedConfig } from '../config/schema.js';
 import type { StageViewModel } from '../pipeline/events.js';
 import { resolveLinksPath } from '../output/filesystem.js';
-import { patchWriteSession, startFreshWriteSession } from '../pipeline/sessionStore.js';
 import { MIN_IMAGE_BYTES } from '../images/renderImages.js';
 
+const testConfigDir = path.join(os.tmpdir(), `ideon-test-config-${Date.now()}`);
+
+jest.unstable_mockModule('env-paths', () => ({
+  default: () => ({ config: testConfigDir }),
+}));
+
+const { runPipelineShell, createInitialStages } = await import('../pipeline/runner.js');
+const { patchWriteSession, startFreshWriteSession } = await import('../pipeline/sessionStore.js');
+
 describe('pipeline runner', () => {
+  afterAll(async () => {
+    await rm(testConfigDir, { recursive: true, force: true });
+  });
+
   it('creates initial stages with expected order and states', () => {
     const stages = createInitialStages();
 
@@ -827,7 +839,8 @@ describe('pipeline runner', () => {
       );
       expect(imageRenderingRan).toBe(true);
 
-      const savedStateRaw = await readFile(path.join(tempRoot, '.ideon', 'write', 'state.json'), 'utf8');
+      const sessionHash = createHash('sha256').update(path.resolve(tempRoot)).digest('hex').slice(0, 16);
+      const savedStateRaw = await readFile(path.join(testConfigDir, 'sessions', sessionHash, 'state.json'), 'utf8');
       const savedState = JSON.parse(savedStateRaw) as {
         imageArtifacts: { imagePrompts: Array<{ id: string; prompt: string }> } | null;
       };

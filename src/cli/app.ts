@@ -236,7 +236,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
   writeCommand
     .command('resume')
-    .description('Resume the last failed or interrupted write session from .ideon/write.')
+    .description('Resume the last failed or interrupted write session.')
     .option('--no-interactive', 'Force plain non-interactive output even in TTY mode', false)
     .option('--enrich-links', 'Run link enrichment after markdown generation', false)
     .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)

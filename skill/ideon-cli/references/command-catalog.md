@@ -141,7 +141,7 @@ Secrets precedence:
 
 Specific behavior:
 
-- `ideon write`: catches SIGINT/SIGTERM, patches `.ideon/write/state.json`, exits `130`.
+- `ideon write`: catches SIGINT/SIGTERM, patches session state, exits `130`.
 - `ideon preview --watch`: kills watcher process on SIGINT/SIGTERM.
 
 ## Data flow and filesystem touch points
@@ -150,8 +150,8 @@ Config and state:
 
 - Settings file: OS config directory, `settings.json`.
 - Agent integration store: OS config directory, `agent-integrations.json`.
-- Resume state: current working directory, `.ideon/write/state.json` (per-directory, not shared across project directories).
-- Resume lookup must run from the same directory that created the write session, unless that directory's `.ideon/` state is restored.
+- Resume state: OS config directory, `sessions/<project-hash>/state.json` (keyed by project path).
+- Resume works from any directory — session state is stored in the user's config directory.
 
 Output artifacts:
 

@@ -369,7 +369,7 @@ Key paths:
 
 - Saved settings: OS config path via env-paths, file name `settings.json`
 - Agent runtime store: `agent-integrations.json` in same config directory
-- Resume state: `.ideon/write/state.json` in current working directory (directory-scoped per project)
+- Resume state: `~/.ideon/sessions/<project-hash>/state.json` (OS config directory, keyed by project path)
 
 ## Output and exit semantics
 
@@ -390,7 +390,7 @@ Write artifacts and sidecars:
 - Markdown outputs (`*.md`)
 - Link metadata sidecars (`*.links.json`, when `--enrich-links` is enabled or `ideon links` is run)
 - Analytics sidecars (`*.analytics.json`)
-- Session state (`.ideon/write/state.json`, read/written in the directory where the command runs)
+- Session state (`~/.ideon/sessions/<project-hash>/state.json`, read/written from the OS config directory)
 
 ## Gotchas and sharp edges
 
@@ -402,8 +402,8 @@ Write artifacts and sidecars:
   Mitigation: set `IDEON_DISABLE_KEYTAR=true` and inject env secrets.
 - Legacy `xMode` fields in content targets are rejected.
   Mitigation: use explicit `x-post` or `x-thread` content types.
-- Resume is directory-scoped and can fail when run from a different directory.
-  Mitigation: run `ideon write resume` from the same project directory as the original run, or restore that directory's `.ideon/` folder.
+- Resume works from any directory — session state is stored in the user's config directory, keyed by project path.
+  Mitigation: legacy `.ideon/write/state.json` files are automatically migrated on first resume.
 - Link enrichment is opt-in for write/resume runs.
   Mitigation: pass `--enrich-links` during write/resume, or run `ideon links <slug>` afterward.
 
@@ -431,7 +431,7 @@ Credentials:
 | No idea provided | Ask for idea or require `--job` with `idea`/`prompt`. |
 | Missing required options in non-interactive mode | Add `--primary`, `--style`, `--intent`, and `--length` (or equivalent in job settings). |
 | Keychain unavailable | Set `IDEON_DISABLE_KEYTAR=true` and use env secrets. |
-| No resumable session found | Verify the current directory matches the original run directory; if state was moved/deleted, restore `.ideon/` or start a fresh `ideon write ...` run. |
+| No resumable session found | Start a fresh `ideon write ...` run. Legacy `.ideon/write/state.json` files are automatically migrated. |
 | Preview cannot find markdown | Run write first or pass explicit `.md` path. |
 | Invalid target spec | Use `<content-type=count>` and keep primary count exactly `1`. |
 

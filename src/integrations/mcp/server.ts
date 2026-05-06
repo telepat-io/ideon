@@ -105,7 +105,7 @@ export async function startIdeonMcpServer(): Promise<void> {
       try {
         const session = await loadWriteSession(cwd());
         if (!session) {
-          throw new ReportedError('No resumable write session found in .ideon/write/state.json.');
+          throw new ReportedError('No resumable write session found.');
         }
 
         if (session.status === 'completed') {

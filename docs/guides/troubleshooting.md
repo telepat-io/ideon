@@ -58,14 +58,14 @@ Fix:
 
 Error pattern:
 
-- `No resumable write session found in .ideon/write/state.json...`
+- `No resumable write session found...`
 
 Fix:
 
 - Start a fresh run first with `ideon write "your idea"`
-- Verify you are in the same working directory used for the original run
-- Remember each directory has its own `.ideon/write/state.json`; another directory cannot see this session
-- If the project was moved, move the `.ideon/` directory with it, or start a fresh run and resume from the new state
+- Session state is stored in the user's config directory, keyed by project path
+- If a legacy `.ideon/write/state.json` exists in your project directory, it will be automatically migrated on resume
+- If the project was moved, the session is still accessible from the config directory
 
 ## Interrupted Write Run
 
@@ -77,7 +77,7 @@ Recovery:
 
 1. Run `ideon write resume`
 2. If resume is not found, verify you are running in the same directory as the original `ideon write`
-3. If resume fails repeatedly, inspect and remove `.ideon/write/state.json` to start fresh
+3. If resume fails repeatedly, start a fresh run with `ideon write "your idea"`
 
 ## No Generated Content Found
 

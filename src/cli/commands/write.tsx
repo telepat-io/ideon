@@ -159,7 +159,7 @@ export async function runWriteCommand(options: WriteCommandOptions): Promise<voi
 export async function runWriteResumeCommand(options: { noInteractive?: boolean; enrichLinks?: boolean; links?: string[]; unlinks?: string[]; maxLinks?: number; maxImages?: number } = {}): Promise<void> {
   const session = await loadWriteSession();
   if (!session) {
-    throw new ReportedError('No resumable write session found in .ideon/write/state.json. Run ideon write <idea> first.');
+    throw new ReportedError('No resumable write session found. Run ideon write <idea> first.');
   }
 
   if (session.status === 'completed') {
