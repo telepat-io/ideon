@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.21](https://github.com/telepat-io/ideon/compare/ideon-v0.1.20...ideon-v0.1.21) (2026-05-06)
+
+
+### Features
+
+* enhance slug generation and directory naming for non-article primary types ([88f86dd](https://github.com/telepat-io/ideon/commit/88f86ddfa5c95fa99efccd447e92d6764496005c))
+* migrate session state management to user home directory and update related documentation ([b0de613](https://github.com/telepat-io/ideon/commit/b0de613a56b638665fa8551b95829df755737b7c))
+* rename content brief to content plan across the codebase ([8046ccc](https://github.com/telepat-io/ideon/commit/8046ccc9f0f4bd45bccc69b589d20dd19ecf6758))
+
 ## [0.1.20](https://github.com/telepat-io/ideon/compare/ideon-v0.1.19...ideon-v0.1.20) (2026-05-06)
 
 
