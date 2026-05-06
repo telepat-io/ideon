@@ -658,7 +658,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       options.onUpdate?.(cloneStages(stages));
     }
 
-    const baseSlug = plan?.slug ?? slugifyIdea(input.idea);
+    const baseSlug = plan?.slug ?? resolveGenerationSlug(input.idea, contentBrief?.title);
     const generationDir = path.join(
       writeSession.outputPaths.markdownOutputDir,
       buildGenerationDirectoryName(baseSlug),
@@ -1244,7 +1244,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
     const artifact = {
       title: plan?.title ?? contentBrief.title ?? deriveTitleFromIdea(input.idea),
-      slug: plan?.slug ?? slugifyIdea(input.idea),
+      slug: plan?.slug ?? resolveGenerationSlug(input.idea, contentBrief?.title),
       sectionCount: text?.sections.length ?? 0,
       imageCount: imageArtifacts?.renderedImages.length ?? 0,
       outputCount: markdownPaths.length,
@@ -1731,11 +1731,22 @@ function deriveTitleFromIdea(idea: string): string {
     .join(' ');
 }
 
-function slugifyIdea(idea: string): string {
-  return idea
+function slugifyIdea(idea: string, maxLength?: number): string {
+  const slug = idea
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'generated-content';
+  if (maxLength !== undefined && slug.length > maxLength) {
+    return slug.slice(0, maxLength).replace(/-+$/, '');
+  }
+  return slug;
+}
+
+function resolveGenerationSlug(idea: string, briefTitle?: string | null): string {
+  if (briefTitle) {
+    return slugifyIdea(briefTitle);
+  }
+  return slugifyIdea(idea, 80);
 }
 
 function buildRunJobDefinition(input: {
@@ -1876,6 +1887,7 @@ export const __testInternals = {
   toFilePrefix,
   deriveTitleFromIdea,
   slugifyIdea,
+  resolveGenerationSlug,
   asWriteStageId,
   chooseStageCostSource,
   getPrimaryTarget,

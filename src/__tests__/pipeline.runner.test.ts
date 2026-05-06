@@ -1209,8 +1209,49 @@ describe('pipeline runner', () => {
         },
       );
 
-      expect(result.artifact.slug).toBe('generated-content');
+      expect(result.artifact.slug).toBe('generated-content-brief');
       expect(result.artifact.title).toBe('Generated Content Brief');
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('uses contentBrief title instead of full idea for directory slug when primary is not article', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-long-idea-'));
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+      const longIdea = 'Write a tactical walk-through that starts with the Redditor\'s Looker Studio + Coupler.io stack and shows how the same single-pane philosophy unlocks even faster insights when you duplicate the dashboard for Snapchat Ads. Highlight three under-used Snapchat metrics snap-centric conversion swipe-up CPI and AR Lens engagement that Meta doesn\'t natively surface then demonstrate how to pipe Snapchat data into the same Looker template via Snap\'s free API connector. Close by explaining that diversifying 20% of spend to Snapchat lets marketers beta-test creative with quicker feedback loops without rebuilding the whole reporting workflow so readers can validate incremental ROAS before they even touch their Meta budgets';
+
+      const result = await runPipelineShell(
+        {
+          idea: longIdea,
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              markdownOutputDir: markdownDir,
+              assetOutputDir: assetDir,
+              contentTargets: [{ contentType: 'blog-post', role: 'primary', count: 1 }],
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          workingDir: tempRoot,
+        },
+      );
+
+      expect(result.artifact.slug.length).toBeLessThanOrEqual(80);
+      expect(result.artifact.generationDir).toContain(result.artifact.slug);
+
+      const dirName = path.basename(result.artifact.generationDir);
+      expect(dirName.length).toBeLessThanOrEqual(100);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

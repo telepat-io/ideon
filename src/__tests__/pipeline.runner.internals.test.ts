@@ -176,6 +176,39 @@ describe('pipeline runner internals', () => {
     expect(__testInternals.slugifyIdea('!!!')).toBe('generated-content');
   });
 
+  it('truncates slugified idea when maxLength is provided', () => {
+    const long = 'This is a really long idea that talks about many different topics and should be truncated at some point';
+    expect(__testInternals.slugifyIdea(long, 40).length).toBeLessThanOrEqual(40);
+    expect(__testInternals.slugifyIdea(long, 40)).toBe('this-is-a-really-long-idea-that-talks-ab');
+
+    expect(__testInternals.slugifyIdea('short', 80)).toBe('short');
+    expect(__testInternals.slugifyIdea('short', 5)).toBe('short');
+
+    expect(__testInternals.slugifyIdea('trailing-dash-test---', 15)).toBe('trailing-dash-t');
+
+    expect(__testInternals.slugifyIdea('no-limit')).toBe('no-limit');
+  });
+
+  it('resolveGenerationSlug uses contentBrief title when available', () => {
+    expect(__testInternals.resolveGenerationSlug('long idea text', 'My Great Title'))
+      .toBe('my-great-title');
+  });
+
+  it('resolveGenerationSlug falls back to truncated idea when briefTitle is absent', () => {
+    const longIdea = 'Write a tactical walk-through that starts with the Redditor\'s Looker Studio + Coupler.io stack and shows how the same single-pane philosophy unlocks even faster insights';
+    const slug = __testInternals.resolveGenerationSlug(longIdea, null);
+    expect(slug.length).toBeLessThanOrEqual(80);
+    expect(slug).toContain('write-a-tactical-walk-through');
+
+    expect(__testInternals.resolveGenerationSlug('fallback', undefined).length).toBeLessThanOrEqual(80);
+    expect(__testInternals.resolveGenerationSlug('fallback', '')).toBe('fallback');
+  });
+
+  it('resolveGenerationSlug caps idea-derived slugs at 80 characters by default', () => {
+    const veryLong = 'a'.repeat(500);
+    expect(__testInternals.resolveGenerationSlug(veryLong, null).length).toBeLessThanOrEqual(80);
+  });
+
   it('recognizes valid write stage ids only', () => {
     expect(__testInternals.asWriteStageId('shared-brief')).toBe('shared-brief');
     expect(__testInternals.asWriteStageId('planning')).toBe('planning');
