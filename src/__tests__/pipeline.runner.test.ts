@@ -81,7 +81,7 @@ describe('pipeline runner', () => {
       expect(analytics.runId.length).toBeGreaterThan(0);
       expect(interactions.runId.length).toBeGreaterThan(0);
       expect(interactions.llmCalls).toHaveLength(0);
-      expect(interactions.t2iCalls.some((call) => call.stageId === 'images' && call.provider === 'replicate-dry-run')).toBe(true);
+      expect(interactions.t2iCalls.some((call) => call.stageId === 'images' && call.provider === 'limn-dry-run')).toBe(true);
       expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-brief', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
       expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);
 
