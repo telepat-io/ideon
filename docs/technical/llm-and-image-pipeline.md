@@ -55,7 +55,7 @@ For multi-target runs, article outputs may be used as anchor context for social/
 
 ## Image Rendering Path
 
-1. Plan generates cover image description and 2–3 inline image descriptions, each with explicit `anchorAfterSection` placement
+1. Plan generates cover image description and inline image descriptions (count proportional to article length: 1–2 for small, 2–3 for medium, 3–4 for large), each with explicit `anchorAfterSection` placement
 2. Build image slots from plan (all inline images preserved; `--max-images` caps if needed)
 3. Expand each slot description to final prompt, blending plan direction with actual section content
 4. Build Replicate input from model registry and sanitized overrides

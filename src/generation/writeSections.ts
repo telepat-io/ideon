@@ -167,11 +167,36 @@ function buildArticleSoFarContext(intro: string, sections: GeneratedArticleSecti
   return parts.join('\n\n').trim();
 }
 
+function normalizeWhitespaceForHeadingMatch(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function stripMatchingLeadingHeading(content: string, label: string): string {
+  const headingMatch = content.match(/^#{1,6}\s+(.+?)(?:\r?\n|$)/);
+  if (!headingMatch) {
+    return content;
+  }
+
+  const headingText = normalizeWhitespaceForHeadingMatch(headingMatch[1] ?? '');
+  const expectedLabel = normalizeWhitespaceForHeadingMatch(label);
+
+  if (headingText !== expectedLabel) {
+    return content;
+  }
+
+  return content.slice(headingMatch[0].length).trimStart();
+}
+
 function normalizeGeneratedSection(content: string, label: string): string {
   const normalized = content.trim();
   if (!normalized) {
     throw new Error(`The model returned an empty ${label} draft.`);
   }
 
-  return normalized.replace(/^```(?:markdown)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  const withoutFences = normalized
+    .replace(/^```(?:markdown)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  return stripMatchingLeadingHeading(withoutFences, label).trim();
 }

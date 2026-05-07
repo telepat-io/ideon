@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentPlan } from '../../types/contentPlan.js';
+import { resolveDefaultInlineImageCount } from '../../config/schema.js';
 import {
   buildRunContextDirective,
   buildTargetLengthDirective,
@@ -20,6 +21,7 @@ function deriveArticleSectionCounts(targetLengthWords: number): { min: number; m
 
 export function buildArticlePlanJsonSchema(targetLengthWords: number) {
   const sectionCounts = deriveArticleSectionCounts(targetLengthWords);
+  const imageCounts = resolveDefaultInlineImageCount(targetLengthWords);
   return {
     type: 'object',
     additionalProperties: false,
@@ -65,8 +67,8 @@ export function buildArticlePlanJsonSchema(targetLengthWords: number) {
       coverImageDescription: { type: 'string' },
       inlineImages: {
         type: 'array',
-        minItems: 2,
-        maxItems: 3,
+        minItems: imageCounts.min,
+        maxItems: imageCounts.max,
         items: {
           type: 'object',
           additionalProperties: false,
@@ -91,6 +93,7 @@ export function buildArticlePlanMessages(
   },
 ): ChatMessage[] {
   const sectionCounts = deriveArticleSectionCounts(options.targetLength);
+  const imageCounts = resolveDefaultInlineImageCount(options.targetLength);
   const systemInstruction = [
     'You are a senior editorial strategist. Produce a rigorous article plan for a polished long-form Markdown article.',
     buildArticlePlanGuideInstruction(options.intent, 'article'),
@@ -119,7 +122,7 @@ export function buildArticlePlanMessages(
         '- Frame section titles to reflect likely search intent or practical reader questions when appropriate.',
         '- Each section description should name the mechanism, evidence type, or practical action that makes the section useful.',
         '- Sections are article-only structure and must not be treated as requirements for non-article channels.',
-        '- Include a cover image description and 2 to 3 inline image descriptions.',
+        `- Include a cover image description and ${imageCounts.min} to ${imageCounts.max} inline image descriptions.`,
         '- Each inline image must specify which section it follows (anchorAfterSection, 1-based index). Choose sections where visual reinforcement adds the most value.',
         '- Image descriptions should capture the general concept and mood — the exact text-to-image prompt will be refined later using the actual section content.',
         '- Image descriptions must be concrete and contextual, not generic stock-photo phrasing.',
@@ -141,7 +144,7 @@ export function buildArticlePlanMessages(
         '- outroBrief: string',
         `- sections: array of ${sectionCounts.label} objects, each with title and description strings`,
         '- coverImageDescription: string',
-        '- inlineImages: array of 2 to 3 objects, each with a description string and an anchorAfterSection number (1-based section index)',
+        `- inlineImages: array of ${imageCounts.min} to ${imageCounts.max} objects, each with a description string and an anchorAfterSection number (1-based section index)`,
         '',
         'Do not omit any required fields. Return strict JSON only.',
       ].join('\n'),

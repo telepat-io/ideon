@@ -115,6 +115,13 @@ export function resolveDefaultMaxLinks(targetLengthWords: number): number {
   return 12;
 }
 
+export function resolveDefaultInlineImageCount(targetLengthWords: number): { min: number; max: number } {
+  const alias = resolveTargetLengthAlias(targetLengthWords);
+  if (alias === 'small') return { min: 1, max: 2 };
+  if (alias === 'medium') return { min: 2, max: 3 };
+  return { min: 3, max: 4 };
+}
+
 export const contentTargetRoleValues = ['primary', 'secondary'] as const;
 
 const contentTargetSchema = z.object({

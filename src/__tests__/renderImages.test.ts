@@ -132,7 +132,8 @@ describe('renderExpandedImages', () => {
           aspectRatio: '16:9',
         }),
       );
-      const firstCallOptions = limn.generate.mock.calls[0]?.[2] as Record<string, unknown>;
+      const firstCall = limn.generate.mock.calls[0] as unknown[] | undefined;
+      const firstCallOptions = (firstCall?.[2] ?? {}) as Record<string, unknown>;
       expect(firstCallOptions).not.toHaveProperty('replicateModel');
       expect(rendered).toHaveLength(1);
       expect(rendered[0]?.outputPath.endsWith('.png')).toBe(true);

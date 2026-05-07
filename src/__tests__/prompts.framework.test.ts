@@ -88,6 +88,33 @@ describe('article prompt builders', () => {
     expect(messages[0]?.content).not.toContain('Quality bar:');
     expect(messages[0]?.content).not.toContain('Avoid generic filler');
     expect(messages[1]?.content).not.toContain('Avoid AI giveaway phrasing');
+    // Verify medium article gets 2-3 inline image instruction
+    expect(messages[1]?.content).toContain('Include a cover image description and 2 to 3 inline image descriptions');
+    expect(messages[1]?.content).toContain('inlineImages: array of 2 to 3 objects');
+  });
+
+  it('uses proportional image count instructions by article length', () => {
+    const smallMessages = buildArticlePlanMessages('Small article idea', {
+      intent: 'how-to-guide',
+      contentTypes: ['article'],
+      contentPlan: mockBrief(),
+      targetLength: 500,
+    });
+
+    const largeMessages = buildArticlePlanMessages('Large article idea', {
+      intent: 'deep-dive-analysis',
+      contentTypes: ['article'],
+      contentPlan: mockBrief(),
+      targetLength: 1400,
+    });
+
+    // small (500 words) → 1-2 inline images
+    expect(smallMessages[1]?.content).toContain('Include a cover image description and 1 to 2 inline image descriptions');
+    expect(smallMessages[1]?.content).toContain('inlineImages: array of 1 to 2 objects');
+
+    // large (1400 words) → 3-4 inline images
+    expect(largeMessages[1]?.content).toContain('Include a cover image description and 3 to 4 inline image descriptions');
+    expect(largeMessages[1]?.content).toContain('inlineImages: array of 3 to 4 objects');
   });
 
   it('builds content plan prompt with shared-plan guide bundle', () => {
@@ -129,6 +156,29 @@ describe('article prompt builders', () => {
     expect(largeSchema.properties.sections.maxItems).toBe(7);
     expect(fallbackSchema.properties.sections.minItems).toBe(3);
     expect(fallbackSchema.properties.sections.maxItems).toBe(5);
+  });
+
+  it('generates proportional inline image counts by target length', () => {
+    const smallSchema = buildArticlePlanJsonSchema(500);
+    const mediumSchema = buildArticlePlanJsonSchema(900);
+    const largeSchema = buildArticlePlanJsonSchema(1400);
+    const fallbackSchema = buildArticlePlanJsonSchema(Number.NaN);
+
+    // small: 1-2 inline images (+ 1 cover = 2-3 total)
+    expect(smallSchema.properties.inlineImages.minItems).toBe(1);
+    expect(smallSchema.properties.inlineImages.maxItems).toBe(2);
+
+    // medium: 2-3 inline images (+ 1 cover = 3-4 total)
+    expect(mediumSchema.properties.inlineImages.minItems).toBe(2);
+    expect(mediumSchema.properties.inlineImages.maxItems).toBe(3);
+
+    // large: 3-4 inline images (+ 1 cover = 4-5 total)
+    expect(largeSchema.properties.inlineImages.minItems).toBe(3);
+    expect(largeSchema.properties.inlineImages.maxItems).toBe(4);
+
+    // fallback (medium): 2-3 inline images
+    expect(fallbackSchema.properties.inlineImages.minItems).toBe(2);
+    expect(fallbackSchema.properties.inlineImages.maxItems).toBe(3);
   });
 
   it('builds intro, section, and outro prompts with guide bundles and operational constraints', () => {

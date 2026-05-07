@@ -116,4 +116,50 @@ describe('writeArticleSections', () => {
       }),
     ).rejects.toThrow('The model returned an empty introduction draft.');
   });
+
+  it('strips a duplicated leading section heading when it matches the section title', async () => {
+    const responses = [
+      'Generated intro',
+      'Generated section one body',
+      '## Section Two\n\nGenerated section two body',
+      'Generated outro',
+    ];
+    let index = 0;
+
+    const requestText = jest.fn<() => Promise<string>>().mockImplementation(async () => {
+      const next = responses[index] ?? 'fallback';
+      index += 1;
+      return next;
+    });
+
+    const result = await writeArticleSections({
+      plan,
+      settings: defaultAppSettings,
+      openRouter: { requestText } as never,
+      dryRun: false,
+    });
+
+    expect(result.sections[1]?.body).toBe('Generated section two body');
+    expect(result.sections[1]?.body).not.toMatch(/^##\s+Section Two/i);
+  });
+
+  it('does not strip a leading heading when it does not match the section title', async () => {
+    let index = 0;
+    const requestText = jest.fn<() => Promise<string>>().mockImplementation(async () => {
+      index += 1;
+      if (index === 2) {
+        return '## Different Heading\n\nSection body with subheading.';
+      }
+      return 'Generated body';
+    });
+
+    const result = await writeArticleSections({
+      plan,
+      settings: defaultAppSettings,
+      openRouter: { requestText } as never,
+      dryRun: false,
+    });
+
+    expect(result.sections[0]?.body).toContain('## Different Heading');
+  });
 });
