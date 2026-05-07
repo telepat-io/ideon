@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.22](https://github.com/telepat-io/ideon/compare/ideon-v0.1.21...ideon-v0.1.22) (2026-05-07)
+
+
+### Features
+
+* add support for T2I replicate model ID management and validation across settings and rendering ([29a96f9](https://github.com/telepat-io/ideon/commit/29a96f9e25afbd2acaf676f1bb5f141d6bf431ba))
+* implement proportional inline image count based on article length and update related documentation ([4feb706](https://github.com/telepat-io/ideon/commit/4feb706f7792a096d47082caf74ecaf5c264734e))
+
 ## [0.1.21](https://github.com/telepat-io/ideon/compare/ideon-v0.1.20...ideon-v0.1.21) (2026-05-06)
 
 
