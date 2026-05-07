@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { jest } from '@jest/globals';
@@ -8,6 +8,7 @@ import type { LinkEntry } from '../types/article.js';
 
 const resolveRunInputMock = jest.fn<(input: ResolveConfigInput) => Promise<ResolvedRunInput>>();
 const enrichLinksMock = jest.fn<typeof import('../generation/enrichLinks.js').enrichLinks>();
+let mockedOutputPaths = { markdownOutputDir: '', assetOutputDir: '' };
 
 jest.unstable_mockModule('../config/resolver.js', () => ({
   resolveRunInput: resolveRunInputMock,
@@ -15,6 +16,46 @@ jest.unstable_mockModule('../config/resolver.js', () => ({
 
 jest.unstable_mockModule('../generation/enrichLinks.js', () => ({
   enrichLinks: enrichLinksMock,
+}));
+
+jest.unstable_mockModule('../output/filesystem.js', () => ({
+  resolveOutputPaths: () => mockedOutputPaths,
+  resolveLinksPath: (markdownPath: string) => markdownPath.replace(/\.md$/, '.links.json'),
+  writeLinksFile: async (markdownPath: string, links: unknown) => {
+    const linksPath = markdownPath.replace(/\.md$/, '.links.json');
+    await writeFile(linksPath, `${JSON.stringify(links, null, 2)}\n`, 'utf8');
+  },
+  listMarkdownFilesRecursively: async (rootDir: string) => {
+    const matches: string[] = [];
+    const stack = [rootDir];
+    while (stack.length > 0) {
+      const current = stack.pop();
+      if (!current) {
+        continue;
+      }
+
+      let entries: Array<{ name: string; isDirectory: () => boolean; isFile: () => boolean }>;
+      try {
+        entries = await readdir(current, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+
+      for (const entry of entries) {
+        const fullPath = path.join(current, entry.name);
+        if (entry.isDirectory()) {
+          stack.push(fullPath);
+          continue;
+        }
+
+        if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
+          matches.push(fullPath);
+        }
+      }
+    }
+
+    return matches;
+  },
 }));
 
 const { runLinksCommand } = await import('../cli/commands/links.js');
@@ -360,6 +401,7 @@ async function seedArticle(
   const assetDir = path.join(markdownDir, 'assets');
   const generationDir = path.join(markdownDir, `20260418-120000-${slug}`);
   const markdownPath = path.join(generationDir, 'article-1.md');
+  mockedOutputPaths = { markdownOutputDir: markdownDir, assetOutputDir: assetDir };
 
   await mkdir(generationDir, { recursive: true });
   await writeFile(

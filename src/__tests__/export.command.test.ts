@@ -5,15 +5,20 @@ import { jest } from '@jest/globals';
 import { defaultAppSettings } from '../config/schema.js';
 import type { ResolveConfigInput, ResolvedRunInput } from '../config/resolver.js';
 import type { LinkEntry } from '../types/article.js';
-import { extractLocalImagePaths } from '../cli/commands/export.js';
 
 const resolveRunInputMock = jest.fn<(input: ResolveConfigInput) => Promise<ResolvedRunInput>>();
+let mockedOutputPaths = { markdownOutputDir: '', assetOutputDir: '' };
 
 jest.unstable_mockModule('../config/resolver.js', () => ({
   resolveRunInput: resolveRunInputMock,
 }));
 
-const { runOutputCommand } = await import('../cli/commands/export.js');
+jest.unstable_mockModule('../output/filesystem.js', () => ({
+  resolveOutputPaths: () => mockedOutputPaths,
+  resolveLinksPath: (markdownPath: string) => markdownPath.replace(/\.md$/, '.links.json'),
+}));
+
+const { runOutputCommand, extractLocalImagePaths } = await import('../cli/commands/export.js');
 
 describe('runOutputCommand', () => {
   beforeEach(() => {
@@ -208,6 +213,7 @@ describe('runOutputCommand', () => {
       const outputDir = path.join(tempRoot, 'output');
       const generationDir = path.join(outputDir, '20260418-120000-multi');
       const exportDir = path.join(tempRoot, 'export');
+      mockedOutputPaths = { markdownOutputDir: outputDir, assetOutputDir: path.join(outputDir, 'assets') };
 
       await mkdir(generationDir, { recursive: true });
 
@@ -306,6 +312,7 @@ async function seedGeneration(
   const generationDir = path.join(outputDir, `20260418-120000-${slug}`);
   const markdownPath = path.join(generationDir, 'article-1.md');
   const exportDir = path.join(tempRoot, 'export');
+  mockedOutputPaths = { markdownOutputDir: outputDir, assetOutputDir: path.join(outputDir, 'assets') };
 
   await mkdir(generationDir, { recursive: true });
 

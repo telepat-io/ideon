@@ -395,7 +395,8 @@ describe('pipeline runner', () => {
         { contentType: 'x-post', role: 'secondary', count: 1 },
       ]);
       expect(job.style).toBe('professional');
-      expect(job.settings).toEqual({});
+      expect(job.settings).not.toHaveProperty('markdownOutputDir');
+      expect(job.settings).not.toHaveProperty('assetOutputDir');
 
       const planMarkdown = await readFile(path.join(result.artifact.generationDir, 'plan.md'), 'utf8');
       expect(planMarkdown).toContain('---');

@@ -6,6 +6,7 @@ import type { AppSettings, EnvSettings } from '../config/schema.js';
 
 const loadSavedSettingsMock = jest.fn<() => Promise<Partial<AppSettings>>>();
 const readEnvSettingsMock = jest.fn<() => EnvSettings>();
+let mockedOutputPaths = { markdownOutputDir: '', assetOutputDir: '' };
 
 jest.unstable_mockModule('../config/settingsFile.js', () => ({
   loadSavedSettings: loadSavedSettingsMock,
@@ -13,6 +14,11 @@ jest.unstable_mockModule('../config/settingsFile.js', () => ({
 
 jest.unstable_mockModule('../config/env.js', () => ({
   readEnvSettings: readEnvSettingsMock,
+}));
+
+jest.unstable_mockModule('../output/filesystem.js', () => ({
+  resolveOutputPaths: () => mockedOutputPaths,
+  resolveAnalyticsPath: (markdownPath: string) => markdownPath.replace(/\.md$/, '.analytics.json'),
 }));
 
 const { runDeleteCommand } = await import('../cli/commands/delete.js');
@@ -28,6 +34,7 @@ describe('runDeleteCommand', () => {
 
     try {
       const paths = await seedArticle(tempRoot, 'delete-me', { analytics: true, assets: true });
+      mockedOutputPaths = { markdownOutputDir: paths.markdownDir, assetOutputDir: paths.assetRoot };
       const logs: string[] = [];
 
       loadSavedSettingsMock.mockResolvedValue(makeSettings());
@@ -55,6 +62,7 @@ describe('runDeleteCommand', () => {
 
     try {
       const paths = await seedArticle(tempRoot, 'keep-me', { analytics: true, assets: true });
+      mockedOutputPaths = { markdownOutputDir: paths.markdownDir, assetOutputDir: paths.assetRoot };
       const confirmDeletion = jest.fn(async () => false);
       const logs: string[] = [];
 
@@ -86,6 +94,7 @@ describe('runDeleteCommand', () => {
 
     try {
       const paths = await seedArticle(tempRoot, 'needs-force', { analytics: true, assets: true });
+      mockedOutputPaths = { markdownOutputDir: paths.markdownDir, assetOutputDir: paths.assetRoot };
       loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
       await expect(runDeleteCommand({ slug: 'needs-force', force: false }, { cwd: tempRoot })).rejects.toThrow(
@@ -106,6 +115,7 @@ describe('runDeleteCommand', () => {
       const markdownDir = path.join(tempRoot, 'output');
       const assetRoot = path.join(markdownDir, 'assets');
       await mkdir(assetRoot, { recursive: true });
+      mockedOutputPaths = { markdownOutputDir: markdownDir, assetOutputDir: assetRoot };
 
       loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
@@ -122,6 +132,7 @@ describe('runDeleteCommand', () => {
 
     try {
       const paths = await seedArticle(tempRoot, 'partial-state', { analytics: false, assets: false });
+      mockedOutputPaths = { markdownOutputDir: paths.markdownDir, assetOutputDir: paths.assetRoot };
       loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
       await runDeleteCommand({ slug: 'partial-state', force: true }, { cwd: tempRoot, log: () => undefined });
