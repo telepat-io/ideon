@@ -61,8 +61,9 @@ Ideon supports these generation targets:
 
 - Every run has exactly one primary output and optional secondary outputs.
 - Secondary outputs can use generated primary content as anchor context.
-- If primary is `article`, Ideon uses structured article planning/writing.
-- If primary is non-article, Ideon uses generic primary generation and still renders a primary cover image.
+- Long-form primaries (`article`, `blog-post`, `newsletter`, `press-release`, `science-paper`) use structured section-based planning and writing.
+- Short-form primaries (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`) use reduced planning (title, description, angle) and single-shot generation.
+- All primaries render a cover image; long-form primaries also include inline images.
 
 ## Selection Tips
 

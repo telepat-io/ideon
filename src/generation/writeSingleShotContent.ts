@@ -3,6 +3,7 @@ import { buildSingleShotContentMessages } from '../llm/prompts/channelContent.js
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { LlmInteractionRecord } from '../pipeline/events.js';
+import type { PrimaryPlan } from '../types/article.js';
 import type { ContentPlan } from '../types/contentPlan.js';
 
 export async function writeSingleShotContent({
@@ -16,6 +17,7 @@ export async function writeSingleShotContent({
   outputCountForType,
   articleReferenceMarkdown,
   contentPlan,
+  plan,
   settings,
   openRouter,
   dryRun,
@@ -32,6 +34,7 @@ export async function writeSingleShotContent({
   outputCountForType: number;
   articleReferenceMarkdown?: string;
   contentPlan: ContentPlan;
+  plan?: PrimaryPlan | null;
   settings: AppSettings;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
@@ -47,6 +50,7 @@ export async function writeSingleShotContent({
       outputIndex,
       outputCountForType,
       contentPlan,
+      plan,
       articleReferenceMarkdown,
     });
   }
@@ -62,6 +66,7 @@ export async function writeSingleShotContent({
       outputIndex,
       outputCountForType,
       contentPlan,
+      plan,
       articleReferenceMarkdown,
       targetLength: settings.targetLength,
     }),
@@ -83,11 +88,16 @@ function buildDryRunContent(options: {
   role: 'primary' | 'secondary';
   primaryContentType: string;
   contentPlan: ContentPlan;
+  plan?: PrimaryPlan | null;
   articleReferenceMarkdown?: string;
 }): string {
   const anchorNote = options.articleReferenceMarkdown
     ? 'Anchored to generated primary context from this run.'
     : 'No primary anchor available; generated directly from idea.';
+
+  const planNote = options.plan
+    ? `Plan title: ${options.plan.title}\nPlan description: ${options.plan.description}${options.plan.angle ? `\nAngle: ${options.plan.angle}` : ''}`
+    : 'No primary plan available.';
 
   return [
     `# ${options.contentType} draft ${options.outputIndex}`,
@@ -97,6 +107,7 @@ function buildDryRunContent(options: {
     `Role: ${options.role}`,
     `Primary content type: ${options.primaryContentType}`,
     `Shared plan: ${options.contentPlan.description}`,
+    planNote,
     anchorNote,
     '',
     'This is a dry-run placeholder for single-prompt channel generation.',

@@ -9,6 +9,7 @@ describe('renderMarkdownDocument', () => {
         subtitle: 'Trends to watch in 2026',
         keywords: ['AI', 'technology', 'innovation'],
         slug: 'future-of-ai',
+        contentType: 'article',
         description: 'An article about AI trends',
         introBrief: 'Introduction brief',
         outroBrief: 'Conclusion brief',

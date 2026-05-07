@@ -31,12 +31,13 @@ function buildSystemInstruction(
   intent: string,
   contentTypes: string[],
   targetLengthWords: number,
+  contentType: string,
 ): string {
   return [
     base,
-    buildArticleSectionGuideInstruction(style, intent, 'article'),
+    buildArticleSectionGuideInstruction(style, intent, contentType),
     buildRunContextDirective(contentTypes),
-    buildTargetLengthDirective('article', targetLengthWords),
+    buildTargetLengthDirective(contentType, targetLengthWords),
   ].join(' ');
 }
 
@@ -81,6 +82,7 @@ export function buildIntroMessages(
     intent,
     contentTypes,
     targetLengthWords,
+    plan.contentType,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = INTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? INTRO_PARAGRAPH_COUNTS['medium']!;
@@ -122,6 +124,7 @@ export function buildSectionMessages(
     intent,
     contentTypes,
     targetLengthWords,
+    plan.contentType,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = SECTION_PARAGRAPH_COUNTS[targetLengthAlias] ?? SECTION_PARAGRAPH_COUNTS['medium']!;
@@ -165,6 +168,7 @@ export function buildOutroMessages(
     intent,
     contentTypes,
     targetLengthWords,
+    plan.contentType,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = OUTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? OUTRO_PARAGRAPH_COUNTS['medium']!;

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { isLongFormContentType } from '../../types/article.js';
 
 const guideCache = new Map<string, string>();
 
@@ -63,14 +64,24 @@ function buildGuideBundle(relativePaths: string[]): string {
   ].join('\n\n');
 }
 
-export function buildArticlePlanGuideInstruction(intent: string, contentType: string): string {
-  return buildGuideBundle([
+export function buildPrimaryPlanGuideInstruction(intent: string, contentType: string): string {
+  const baseGuides = [
     'writing-guide/references/headline-writing-systems.md',
     'writing-guide/references/ideation-and-credibility-systems.md',
     'writing-guide/references/content-frameworks.md',
     intentToGuidePath(intent),
     formatToGuidePath(contentType),
-  ]);
+  ];
+
+  if (!isLongFormContentType(contentType)) {
+    return buildGuideBundle([
+      'writing-guide/references/headline-writing-systems.md',
+      intentToGuidePath(intent),
+      formatToGuidePath(contentType),
+    ]);
+  }
+
+  return buildGuideBundle(baseGuides);
 }
 
 export function buildArticleSectionGuideInstruction(style: string, intent: string, contentType: string): string {

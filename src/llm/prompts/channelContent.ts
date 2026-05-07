@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentPlan } from '../../types/contentPlan.js';
+import type { PrimaryPlan } from '../../types/article.js';
 import {
   buildTargetLengthDirective,
 } from './writingFramework.js';
@@ -27,6 +28,7 @@ export function buildSingleShotContentMessages(options: {
   outputIndex: number;
   outputCountForType: number;
   contentPlan: ContentPlan;
+  plan?: PrimaryPlan | null;
   articleReferenceMarkdown?: string;
   targetLength: number;
 }): ChatMessage[] {
@@ -47,6 +49,17 @@ export function buildSingleShotContentMessages(options: {
         `This output is secondary content and must promote or incite interest in the primary ${options.primaryContentType} content.`,
         'Keep it independently useful, avoid sounding like an ad, and include channel-native cues that point back to the primary narrative.',
       ].join(' ');
+
+  const planContext = options.plan
+    ? [
+        '',
+        'Primary content plan (use to guide tone, angle, and structure):',
+        `- title: ${options.plan.title}`,
+        `- description: ${options.plan.description}`,
+        `- coverImageDescription: ${options.plan.coverImageDescription}`,
+        ...(options.plan.angle ? [`- angle: ${options.plan.angle}`] : []),
+      ].join('\n')
+    : '';
 
   return [
     {
@@ -78,6 +91,7 @@ export function buildSingleShotContentMessages(options: {
         `- primaryContentType: ${options.contentPlan.primaryContentType}`,
         `- secondaryContentTypes: ${options.contentPlan.secondaryContentTypes.join(' | ') || 'none'}`,
         `- secondaryContentStrategy: ${options.contentPlan.secondaryContentStrategy}`,
+        planContext,
         '',
         articleContext,
         '',

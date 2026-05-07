@@ -7,6 +7,7 @@ const plan = {
   subtitle: 'Subtitle',
   keywords: ['a', 'b', 'c'],
   slug: 'test-plan',
+  contentType: 'article',
   description: 'Description',
   introBrief: 'Intro brief',
   outroBrief: 'Outro brief',

@@ -70,9 +70,7 @@ function WriteApp({
 }): React.JSX.Element {
   const { exit } = useApp();
   const [stages, setStages] = useState<StageViewModel[]>(() =>
-    createInitialStages({
-      isArticlePrimary: input.config.settings.contentTargets.some((target) => target.role === 'primary' && target.contentType === 'article'),
-    }),
+    createInitialStages(),
   );
   const [result, setResult] = useState<PipelineRunResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

@@ -148,6 +148,40 @@ describe('pipeline runner', () => {
           } as Response;
         }
 
+        if (body.includes('"name":"primary_plan"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    contentType: 'article',
+                    title: 'Mock Primary Plan',
+                    subtitle: 'A subtitle',
+                    keywords: ['keyword1', 'keyword2', 'keyword3'],
+                    slug: 'mock-primary-plan',
+                    description: 'A mock primary plan for testing.',
+                    introBrief: 'Write an engaging intro.',
+                    outroBrief: 'Write a strong conclusion.',
+                    sections: [
+                      { title: 'Section One', description: 'First section description.' },
+                      { title: 'Section Two', description: 'Second section description.' },
+                      { title: 'Section Three', description: 'Third section description.' },
+                      { title: 'Section Four', description: 'Fourth section description.' },
+                    ],
+                    coverImageDescription: 'A cover image description.',
+                    inlineImages: [
+                      { description: 'Inline image one.', anchorAfterSection: 2 },
+                      { description: 'Inline image two.', anchorAfterSection: 4 },
+                    ],
+                  }),
+                },
+              }],
+            }),
+          } as Response;
+        }
+
         if (body.includes('"name":"link_candidates"')) {
           return {
             ok: true,
@@ -249,6 +283,40 @@ describe('pipeline runner', () => {
                     primaryContentType: 'article',
                     secondaryContentTypes: ['linkedin-post'],
                     secondaryContentStrategy: 'Secondary outputs should be valuable and invite readers to the primary article.',
+                  }),
+                },
+              }],
+            }),
+          } as Response;
+        }
+
+        if (body.includes('"name":"primary_plan"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    contentType: 'article',
+                    title: 'Mock Primary Plan',
+                    subtitle: 'A subtitle',
+                    keywords: ['keyword1', 'keyword2', 'keyword3'],
+                    slug: 'mock-primary-plan',
+                    description: 'A mock primary plan for testing.',
+                    introBrief: 'Write an engaging intro.',
+                    outroBrief: 'Write a strong conclusion.',
+                    sections: [
+                      { title: 'Section One', description: 'First section description.' },
+                      { title: 'Section Two', description: 'Second section description.' },
+                      { title: 'Section Three', description: 'Third section description.' },
+                      { title: 'Section Four', description: 'Fourth section description.' },
+                    ],
+                    coverImageDescription: 'A cover image description.',
+                    inlineImages: [
+                      { description: 'Inline image one.', anchorAfterSection: 2 },
+                      { description: 'Inline image two.', anchorAfterSection: 4 },
+                    ],
                   }),
                 },
               }],
@@ -448,14 +516,14 @@ describe('pipeline runner', () => {
       expect(result.artifact.outputCount).toBe(2);
       expect(result.artifact.imageCount).toBe(1);
       expect(result.artifact.sectionCount).toBe(0);
-      expect(result.artifact.planPath).toBeNull();
+      expect(result.artifact.planPath).toContain('plan.md');
       expect(result.analytics.outputItemCalls).toHaveLength(1);
 
       const planningStage = result.stages.find((stage) => stage.id === 'planning');
-      expect(planningStage?.detail).toContain('Primary direction');
+      expect(planningStage?.detail).toContain('Plan generated successfully');
 
       const sectionsStage = result.stages.find((stage) => stage.id === 'sections');
-      expect(sectionsStage?.title).toContain('Generating Primary Content');
+      expect(sectionsStage?.title).toContain('Writing Primary Content');
 
       const sharedPlanStage = result.stages.find((stage) => stage.id === 'shared-plan');
       expect(sharedPlanStage?.detail).toContain('Shared plan generated successfully');
@@ -470,6 +538,131 @@ describe('pipeline runner', () => {
       expect(outputStageSnapshots.some((stage) => (stage.items ?? []).length === 1)).toBe(true);
       expect(outputStageSnapshots.some((stage) => (stage.items ?? []).every((item) => item.status !== 'pending'))).toBe(true);
     } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('runs short-form primary through live plan and single-shot generation', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-short-primary-live-'));
+    const updates: StageViewModel[][] = [];
+    const originalFetch = globalThis.fetch;
+
+    try {
+      const markdownDir = path.join(tempRoot, 'out');
+      const assetDir = path.join(markdownDir, 'assets');
+
+      globalThis.fetch = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+        const body = typeof init?.body === 'string' ? init.body : '';
+        if (body.includes('"name":"content_plan"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    description: 'A practical shared plan for short-form primary testing.',
+                    title: 'Short Form Primary Test',
+                    targetAudience: 'Social media managers',
+                    corePromise: 'Clear, actionable post.',
+                    keyPoints: ['Point one', 'Point two', 'Point three'],
+                    voiceNotes: 'Direct, punchy, and to-the-point social voice.',
+                    primaryContentType: 'x-post',
+                    secondaryContentTypes: ['linkedin-post'],
+                    secondaryContentStrategy: 'Secondary outputs should stand alone.',
+                  }),
+                },
+              }],
+            }),
+          } as Response;
+        }
+
+        if (body.includes('"name":"primary_plan"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    contentType: 'x-post',
+                    title: 'Mock Short Plan',
+                    slug: 'mock-short-plan',
+                    description: 'A mock short plan for testing.',
+                    coverImageDescription: 'A cover image description.',
+                    angle: 'Direct, practical framing.',
+                  }),
+                },
+              }],
+            }),
+          } as Response;
+        }
+
+        if (body.includes('"name":"link_candidates"')) {
+          return {
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({
+              choices: [{ message: { content: JSON.stringify({ expressions: [] }) } }],
+            }),
+          } as Response;
+        }
+
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({
+            choices: [{ message: { content: 'Generated x-post body with punchy tips.' } }],
+          }),
+        } as Response;
+      }) as typeof fetch;
+
+      const result = await runPipelineShell(
+        {
+          idea: 'short form primary live test',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+              contentTargets: [
+                { contentType: 'x-post', role: 'primary', count: 1 },
+                { contentType: 'linkedin-post', role: 'secondary', count: 1 },
+              ],
+              style: 'professional',
+            },
+            secrets: {
+              openRouterApiKey: 'test-openrouter-key',
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: false,
+          workingDir: tempRoot,
+          onUpdate(stages) {
+            updates.push(stages);
+          },
+        },
+      );
+
+      expect(result.artifact.outputCount).toBe(2);
+      expect(result.artifact.sectionCount).toBe(0);
+      expect(result.artifact.planPath).toContain('plan.md');
+
+      const planningStage = result.stages.find((stage) => stage.id === 'planning');
+      expect(planningStage?.status).toBe('succeeded');
+      expect(planningStage?.detail).toContain('Plan generated successfully');
+
+      const sectionsStage = result.stages.find((stage) => stage.id === 'sections');
+      expect(sectionsStage?.status).toBe('succeeded');
+      expect(sectionsStage?.title).toContain('Writing Primary Content');
+
+      const planMarkdown = await readFile(result.artifact.planPath!, 'utf8');
+      expect(planMarkdown).toContain('# Mock Short Plan');
+      expect(planMarkdown).not.toContain('## Sections');
+      expect(planMarkdown).toContain('## Angle');
+    } finally {
+      globalThis.fetch = originalFetch;
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
@@ -634,6 +827,7 @@ describe('pipeline runner', () => {
             subtitle: 'Persisted plan',
             keywords: ['resume', 'checkpoint', 'pipeline'],
             slug: 'resume-checkpoint-flow',
+            contentType: 'article',
             description: 'Persisted plan for resume testing.',
             introBrief: 'Persist intro brief',
             outroBrief: 'Persist outro brief',
@@ -725,6 +919,7 @@ describe('pipeline runner', () => {
             subtitle: 'Persisted prompt checkpoint',
             keywords: ['resume', 'prompts', 'checkpoint'],
             slug: 'resume-with-saved-prompts',
+            contentType: 'article',
             description: 'Persisted image prompt checkpoint for resume testing.',
             introBrief: 'Persist intro brief',
             outroBrief: 'Persist outro brief',
@@ -853,6 +1048,7 @@ describe('pipeline runner', () => {
         subtitle: 'subtitle',
         keywords: ['test', 'resume', 'assets'],
         slug: 'bad-assets-resume-flow',
+        contentType: 'article',
         description: 'desc',
         introBrief: 'intro',
         outroBrief: 'outro',
@@ -1016,6 +1212,7 @@ describe('pipeline runner', () => {
             subtitle: 'Resume should skip heavy stages',
             keywords: ['resume', 'reuse', 'pipeline'],
             slug: 'completed-session-reuse-flow',
+            contentType: 'article',
             description: 'Persisted plan',
             introBrief: 'Intro brief',
             outroBrief: 'Outro brief',

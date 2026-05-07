@@ -152,6 +152,7 @@ describe('sessionStore', () => {
             subtitle: 'Generated Subtitle',
             keywords: ['alpha', 'beta', 'gamma'],
             slug: 'generated-title',
+            contentType: 'article',
             description: 'Generated description with enough detail for schema validation.',
             introBrief: 'Intro brief with enough detail for schema validation in tests.',
             outroBrief: 'Outro brief with enough detail for schema validation in tests.',

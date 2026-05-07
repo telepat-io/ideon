@@ -12,8 +12,8 @@ Ideon is organized as a modular CLI pipeline with generation-directory outputs a
 
 1. Resolve config and secrets
 2. Build generation directory and run metadata (`job.json`)
-3. Conditionally run article planning + section writing
-4. Conditionally expand image prompts + render assets
+3. Run primary content planning + writing (section-based for long-form, single-shot for short-form)
+4. Expand image prompts + render assets
 5. Write one or more output markdown files + analytics
 
 ## Module Boundaries
@@ -22,7 +22,7 @@ Ideon is organized as a modular CLI pipeline with generation-directory outputs a
 - `src/cli`: command layer and rendering
 - `src/config`: schema, env parsing, merging, persistence
 - `src/pipeline`: orchestration and stage state
-- `src/generation`: article planning/writing + non-article single-shot generation
+- `src/generation`: primary content planning/writing (section-based long-form + single-shot short-form) + secondary channel generation
 - `src/llm`: OpenRouter client and prompt builders
 - `src/images`: Replicate client + image pipeline
 - `src/models/t2i`: model registry + override coercion
@@ -49,7 +49,7 @@ Each run writes a generation directory:
 
 - numbered markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` with resolved run definition metadata
-- `plan.md` with the article plan (for article-primary runs)
+- `plan.md` with the primary content plan
 - `generation.analytics.json`
 - shared assets for that generation
 

@@ -5,7 +5,7 @@ import type { ResolvedRunInput } from '../config/resolver.js';
 import { resolveDefaultMaxLinks } from '../config/schema.js';
 import { enrichLinks } from '../generation/enrichLinks.js';
 import { planContentPlan } from '../generation/planContentPlan.js';
-import { planArticle } from '../generation/planArticle.js';
+import { planPrimaryContent } from '../generation/planPrimaryContent.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 import { writeArticleSections } from '../generation/writeSections.js';
 import { Limn } from '@telepat/limn';
@@ -43,7 +43,8 @@ import {
   type WriteSessionState,
   type WriteStageId,
 } from './sessionStore.js';
-import type { ArticleImagePrompt, ArticlePlan, LinkEntry } from '../types/article.js';
+import type { ArticleImagePrompt, ArticlePlan, LinkEntry, PrimaryPlan } from '../types/article.js';
+import { isLongFormPlan } from '../types/article.js';
 
 export interface PipelineRunOptions {
   onUpdate?: (stages: StageViewModel[]) => void;
@@ -57,16 +58,7 @@ export interface PipelineRunOptions {
   maxImages?: number;
 }
 
-export function createInitialStages(options: { isArticlePrimary: boolean } = { isArticlePrimary: true }): StageViewModel[] {
-  const planningTitle = options.isArticlePrimary ? 'Planning Primary Article' : 'Planning Primary Content';
-  const planningDetail = options.isArticlePrimary
-    ? 'Generating title, slug, section plan, and image slots.'
-    : 'Defining the primary angle and output intent.';
-  const sectionsTitle = options.isArticlePrimary ? 'Writing Sections' : 'Generating Primary Content';
-  const sectionsDetail = options.isArticlePrimary
-    ? 'Waiting for the approved article plan.'
-    : 'Waiting for primary content generation to begin.';
-
+export function createInitialStages(): StageViewModel[] {
   return [
     {
       id: 'shared-plan',
@@ -76,15 +68,15 @@ export function createInitialStages(options: { isArticlePrimary: boolean } = { i
     },
     {
       id: 'planning',
-      title: planningTitle,
+      title: 'Planning Primary Content',
       status: 'pending',
-      detail: planningDetail,
+      detail: 'Generating title, slug, and content plan for the primary output.',
     },
     {
       id: 'sections',
-      title: sectionsTitle,
+      title: 'Writing Primary Content',
       status: 'pending',
-      detail: sectionsDetail,
+      detail: 'Waiting for the approved primary plan.',
     },
     {
       id: 'image-prompts',
@@ -119,8 +111,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const runId = randomUUID();
   const primaryTarget = getPrimaryTarget(input.config.settings.contentTargets);
   const secondaryTargets = getSecondaryTargets(input.config.settings.contentTargets);
-  const isArticlePrimary = primaryTarget.contentType === 'article';
-  const stages: StageViewModel[] = createInitialStages({ isArticlePrimary });
+  const stages: StageViewModel[] = createInitialStages();
   options.onUpdate?.(cloneStages(stages));
   const dryRun = options.dryRun ?? false;
   const shouldEnrichLinks = options.enrichLinks ?? false;
@@ -130,7 +121,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const pipelineUnlinks = options.unlinks ?? [];
   const pipelineMaxLinks = options.maxLinks;
   const outputPaths = resolveOutputPaths();
-  const hasArticlePrimary = isArticlePrimary;
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
   const stageRetryState = new Map<WriteStageId, { retries: number; lastError: string | null }>();
   const llmOperationRetryState = new Map<string, number>();
@@ -280,71 +270,74 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       );
     }
 
-    if (hasArticlePrimary) {
+    stages[1] = {
+      ...stages[1],
+      status: 'running',
+      detail: `Planning primary ${primaryTarget.contentType} content.`,
+    };
+    markStageStarted(stageTracking, 'planning');
+    options.onUpdate?.(cloneStages(stages));
+
+    if (plan) {
+      markStageCompleted(stageTracking, 'planning');
       stages[1] = {
         ...stages[1],
-        status: 'running',
-        detail: 'Generating title, slug, section plan, and image slots.',
+        status: 'succeeded',
+        detail: 'Reused saved plan from cached session.',
+        summary: buildPlanSummary(plan),
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
       };
-      markStageStarted(stageTracking, 'planning');
-      options.onUpdate?.(cloneStages(stages));
-
-      if (plan) {
-        markStageCompleted(stageTracking, 'planning');
-        stages[1] = {
-          ...stages[1],
-          status: 'succeeded',
-          detail: 'Reused saved plan from cached session.',
-          summary: `${plan.title} • ${plan.slug} • ${plan.sections.length} sections • ${plan.inlineImages.length + 1} images`,
-          stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
-        };
-      } else {
-        if (!contentPlan) {
-          throw new Error('Shared content plan is missing for article planning stage.');
-        }
-
-        plan = await planArticle({
-          idea: input.idea,
-          contentPlan,
-          settings: input.config.settings,
-          markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
-          openRouter,
-          dryRun,
-          onInteraction(interaction) {
-            onLlmInteraction(interaction);
-          },
-          onLlmMetrics(metrics) {
-            recordLlmMetrics(stageTracking, 'planning', metrics);
-          },
-        });
-
-        markStageCompleted(stageTracking, 'planning');
-
-        stages[1] = {
-          ...stages[1],
-          status: 'succeeded',
-          detail: 'Plan generated successfully.',
-          summary: `${plan.title} • ${plan.slug} • ${plan.sections.length} sections • ${plan.inlineImages.length + 1} images`,
-          stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
-        };
-        writeSession = await patchWriteSession(
-          {
-            status: 'running',
-            lastCompletedStage: 'planning',
-            failedStage: null,
-            errorMessage: null,
-            contentPlan,
-            plan,
-          },
-          workingDir,
-        );
+    } else {
+      if (!contentPlan) {
+        throw new Error('Shared content plan is missing for primary planning stage.');
       }
 
+      plan = await planPrimaryContent({
+        idea: input.idea,
+        contentType: primaryTarget.contentType,
+        contentPlan,
+        settings: input.config.settings,
+        markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
+        openRouter,
+        dryRun,
+        onInteraction(interaction) {
+          onLlmInteraction(interaction);
+        },
+        onLlmMetrics(metrics) {
+          recordLlmMetrics(stageTracking, 'planning', metrics);
+        },
+      });
+
+      markStageCompleted(stageTracking, 'planning');
+      stages[1] = {
+        ...stages[1],
+        status: 'succeeded',
+        detail: 'Plan generated successfully.',
+        summary: buildPlanSummary(plan),
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
+      };
+      writeSession = await patchWriteSession(
+        {
+          status: 'running',
+          lastCompletedStage: 'planning',
+          failedStage: null,
+          errorMessage: null,
+          contentPlan,
+          plan,
+        },
+        workingDir,
+      );
+    }
+
+    const isLongForm = isLongFormPlan(plan);
+
+    if (isLongForm) {
+      const longPlan = plan as ArticlePlan;
       stages[2] = {
         ...stages[2],
         status: 'running',
         detail: 'Writing introduction.',
-        items: buildSectionItems(plan.sections.map((section) => section.title)),
+        items: buildSectionItems(longPlan.sections.map((section) => section.title)),
       };
       markStageStarted(stageTracking, 'sections');
       options.onUpdate?.(cloneStages(stages));
@@ -380,7 +373,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         }>();
 
         text = await writeArticleSections({
-          plan,
+          plan: longPlan,
           settings: input.config.settings,
           openRouter,
           dryRun,
@@ -501,8 +494,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         options.onUpdate?.(cloneStages(stages));
       } else {
         imagePrompts = await expandImagePrompts({
-          slots: buildImageSlots(plan, text.sections, { maxImages: options.maxImages }),
-          planContext: plan,
+          slots: buildImageSlots(longPlan, text.sections, { maxImages: options.maxImages }),
+          planContext: longPlan,
           sections: text.sections,
           settings: input.config.settings,
           openRouter,
@@ -565,27 +558,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         );
       }
     } else {
-      if (!contentPlan) {
-        throw new Error('Shared content plan is missing for primary content planning stage.');
-      }
-
-      stages[1] = {
-        ...stages[1],
-        status: 'running',
-        detail: `Defining primary direction for ${primaryTarget.contentType}.`,
-      };
-      markStageStarted(stageTracking, 'planning');
-      options.onUpdate?.(cloneStages(stages));
-
-      markStageCompleted(stageTracking, 'planning');
-      stages[1] = {
-        ...stages[1],
-        status: 'succeeded',
-        detail: `Primary direction locked for ${primaryTarget.contentType}.`,
-        summary: `Primary: ${primaryTarget.contentType}`,
-        stageAnalytics: snapshotStageAnalytics(stageTracking, 'planning'),
-      };
-
       stages[2] = {
         ...stages[2],
         status: 'running',
@@ -605,6 +577,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         outputCountForType: 1,
         articleReferenceMarkdown: undefined,
         contentPlan,
+        plan,
         settings: input.config.settings,
         openRouter,
         dryRun,
@@ -633,7 +606,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       markStageStarted(stageTracking, 'image-prompts');
       options.onUpdate?.(cloneStages(stages));
 
-      imagePrompts = [buildPrimaryCoverPrompt(contentPlan, primaryTarget.contentType, primaryMarkdownTemplate)];
+      imagePrompts = [buildPrimaryCoverPrompt(plan, contentPlan, primaryTarget.contentType)];
 
       markStageCompleted(stageTracking, 'image-prompts');
       stages[3] = {
@@ -686,7 +659,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const primaryMarkdownPath = path.join(generationDir, `${primaryFilePrefix}-1.md`);
     const sharedAssetDir = generationDir;
 
-    if (hasArticlePrimary) {
+    if (isLongForm) {
+      const longPlan = plan as ArticlePlan;
       if (imageArtifacts) {
         markStageCompleted(stageTracking, 'images');
         stages[4] = {
@@ -768,7 +742,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       }
 
       const article = {
-        plan,
+        plan: longPlan,
         intro: text.intro,
         sections: text.sections,
         outro: text.outro,
@@ -859,12 +833,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       const coverImage = imageArtifacts?.renderedImages.find((image) => image.kind === 'cover') ?? null;
       if (coverImage) {
-        primaryMarkdownTemplate = withCoverImage(primaryMarkdownTemplate, coverImage.relativePath, deriveTitleFromIdea(input.idea));
+        primaryMarkdownTemplate = withCoverImage(primaryMarkdownTemplate, coverImage.relativePath, plan.title || deriveTitleFromIdea(input.idea));
       }
 
       primaryMarkdownTemplate = applyPrimaryTitleHeading(
         primaryMarkdownTemplate,
-        contentPlan.title || deriveTitleFromIdea(input.idea),
+        plan.title || contentPlan.title || deriveTitleFromIdea(input.idea),
       );
     }
     const markdownPaths: string[] = [];
@@ -942,6 +916,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           outputCountForType: output.outputCountForType,
           articleReferenceMarkdown: primaryMarkdownTemplate ?? undefined,
           contentPlan,
+          plan,
           settings: input.config.settings,
           openRouter,
           dryRun,
@@ -1669,27 +1644,22 @@ function getSecondaryTargets(
 }
 
 function buildPrimaryCoverPrompt(
+  plan: PrimaryPlan,
   contentPlan: { description: string; targetAudience: string; corePromise: string; voiceNotes: string },
   primaryContentType: string,
-  primaryMarkdown: string,
 ): ArticleImagePrompt {
-  const markdownExcerpt = primaryMarkdown
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 240);
-
   return {
     id: 'cover',
     kind: 'cover',
-    description: `Cover image for ${primaryContentType}`,
+    description: plan.coverImageDescription,
     anchorAfterSection: null,
     prompt: [
-      `Cover image for ${primaryContentType}.`,
+      plan.coverImageDescription,
+      `Content type: ${primaryContentType}`,
       `Core angle: ${contentPlan.description}`,
       `Audience: ${contentPlan.targetAudience}`,
       `Promise: ${contentPlan.corePromise}`,
       `Voice: ${contentPlan.voiceNotes}`,
-      `Primary excerpt: ${markdownExcerpt}`,
       'Do not include any words, letters, numbers, logos, watermarks, or signage in the image.',
     ].join(' '),
   };
@@ -1786,48 +1756,70 @@ function buildRunJobDefinition(input: {
   };
 }
 
-function renderPlanMarkdown(plan: ArticlePlan): string {
-  const yamlKeywords = plan.keywords.map((kw) => `  - "${kw}"`).join('\n');
-  const sectionsRows = plan.sections
-    .map((section, index) => `| ${index + 1} | ${section.title} | ${section.description} |`)
-    .join('\n');
-  const inlineImageRows = plan.inlineImages
-    .map((img, index) => `| Inline ${index + 1} | ${img.description} |`)
-    .join('\n');
-  const imageRows = `| Cover | ${plan.coverImageDescription} |\n${inlineImageRows}`;
+function renderPlanMarkdown(plan: PrimaryPlan): string {
+  const lines: string[] = [
+    `# ${plan.title}`,
+    '',
+    `**Content type:** ${plan.contentType}`,
+    `**Slug:** ${plan.slug}`,
+    '',
+    '## Description',
+    '',
+    plan.description,
+    '',
+  ];
 
-  return `---
-title: "${plan.title.replace(/"/g, '\\"')}"
-subtitle: "${plan.subtitle.replace(/"/g, '\\"')}"
-slug: "${plan.slug}"
-keywords:
-${yamlKeywords}
----
+  if (plan.subtitle) {
+    lines.push('## Subtitle', '', plan.subtitle, '');
+  }
 
-## Description
+  if (plan.keywords && plan.keywords.length > 0) {
+    lines.push('## Keywords', '', ...plan.keywords.map((kw) => `- ${kw}`), '');
+  }
 
-${plan.description}
+  if (plan.introBrief) {
+    lines.push('## Introduction Brief', '', plan.introBrief, '');
+  }
 
-## Introduction Brief
+  if (plan.sections && plan.sections.length > 0) {
+    lines.push('## Sections', '', '| # | Title | Description |', '|---|-------|-------------|');
+    plan.sections.forEach((section, index) => {
+      lines.push(`| ${index + 1} | ${section.title} | ${section.description} |`);
+    });
+    lines.push('');
+  }
 
-${plan.introBrief}
+  if (plan.outroBrief) {
+    lines.push('## Outro Brief', '', plan.outroBrief, '');
+  }
 
-## Sections
+  if (plan.angle) {
+    lines.push('## Angle', '', plan.angle, '');
+  }
 
-| # | Title | Description |
-|---|-------|-------------|
-${sectionsRows}
+  lines.push('## Image Plan', '');
+  lines.push(`- **Cover:** ${plan.coverImageDescription}`);
+  if (plan.inlineImages && plan.inlineImages.length > 0) {
+    plan.inlineImages.forEach((img, index) => {
+      lines.push(`- **Inline ${index + 1}:** ${img.description} (after section ${img.anchorAfterSection})`);
+    });
+  }
+  lines.push('');
 
-## Outro Brief
+  return lines.join('\n');
+}
 
-${plan.outroBrief}
-
-## Image Plan
-
-| Type | Description |
-|------|-------------|
-${imageRows}
-`;
+function buildPlanSummary(plan: PrimaryPlan): string {
+  const parts = [plan.title, plan.slug];
+  if (plan.sections && plan.sections.length > 0) {
+    parts.push(`${plan.sections.length} sections`);
+  }
+  if (plan.inlineImages && plan.inlineImages.length > 0) {
+    parts.push(`${plan.inlineImages.length + 1} images`);
+  } else {
+    parts.push('1 image');
+  }
+  return parts.join(' • ');
 }
 
 function asWriteStageId(stageId: string): WriteStageId | null {
@@ -1893,5 +1885,6 @@ export const __testInternals = {
   getPrimaryTarget,
   getSecondaryTargets,
   buildPrimaryCoverPrompt,
+  buildPlanSummary,
   withCoverImage,
 };

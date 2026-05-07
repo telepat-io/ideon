@@ -12,8 +12,8 @@ Ideon 采用模块化 CLI 流水线架构，支持生成目录输出与阶段产
 
 1. Resolve config and secrets
 2. Build generation directory and run metadata (`job.json`)
-3. Conditionally run article planning + section writing
-4. Conditionally expand image prompts + render assets
+3. 运行主要内容规划与撰写（长格式使用章节式，短格式使用单次生成）
+4. 扩展图像提示词并渲染资源
 5. Write one or more output markdown files + analytics
 
 ## 模块边界
@@ -22,7 +22,7 @@ Ideon 采用模块化 CLI 流水线架构，支持生成目录输出与阶段产
 - `src/cli`: command layer and rendering
 - `src/config`: schema, env parsing, merging, persistence
 - `src/pipeline`: orchestration and stage state
-- `src/generation`: article planning/writing + non-article single-shot generation
+- `src/generation`: 主要内容规划/撰写（长格式章节式 + 短格式单次生成）+ 次要渠道生成
 - `src/llm`: OpenRouter client and prompt builders
 - `src/images`: Replicate client + image pipeline
 - `src/models/t2i`: model registry + override coercion
@@ -49,7 +49,7 @@ Ideon 采用模块化 CLI 流水线架构，支持生成目录输出与阶段产
 
 - numbered markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` with resolved run definition metadata
-- `plan.md` with the article plan (for article-primary runs)
+- `plan.md` 主要内容计划
 - `generation.analytics.json`
 - shared assets for that generation
 

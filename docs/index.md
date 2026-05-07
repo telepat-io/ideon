@@ -34,7 +34,7 @@ See [Installation](./getting-started/installation.md) and [Quickstart](./getting
 - One generation directory per run (timestamp + slug)
 - One or more markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` run definition metadata for reproducibility
-- `plan.md` with the article plan (for article-primary runs)
+- `plan.md` with the primary content plan
 - `generation.analytics.json` with stage and run metrics
 - Shared image assets rendered via a Replicate T2I model for the primary output (article primary includes inline images)
 

@@ -31,17 +31,17 @@ Inside settings, configure:
 ideon write "How small editorial teams can productionize AI writing" --primary article=1 --secondary x-thread=1 --secondary x-post=1 --style professional
 ```
 
-Expected stages for article primary:
+Expected stages:
 
-1. Planning Shared Brief
-2. Planning Primary Article
-3. Writing Sections
+1. Planning Shared Plan
+2. Planning Primary Content
+3. Writing Primary Content
 4. Expanding Image Prompts
 5. Rendering Images
 6. Generating Channel Content
 7. Enriching Links
 
-If primary is not `article`, Ideon uses `Planning Primary Content` and `Generating Primary Content`, renders one primary cover image, and then generates secondary outputs.
+Long-form primaries (`article`, `blog-post`, `newsletter`, `press-release`, `science-paper`) use structured section-based writing in stage 3. Short-form primaries (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`) use single-shot generation in stage 3. All primaries render a cover image.
 
 ## 3. Check Outputs
 

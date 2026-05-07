@@ -21,7 +21,7 @@ Structured requests support parse callbacks for runtime validation.
 
 Ideon validates:
 
-- article plans (`articleSchema` constraints)
+- primary content plans (`articleSchema` constraints for long-form types, reduced schema for short-form types)
 - image prompt payloads (`prompt` required)
 - run configuration via Zod schema defaults and constraints
 
@@ -47,11 +47,11 @@ Prompt composition is guide-first:
 
 For multi-target runs, article outputs may be used as anchor context for social/channel outputs.
 
-## Non-Article Output Path
+## Short-Form Output Path
 
-- Non-article content types are generated in single-shot prompts.
-- This path runs in the output stage and does not require section-based generation.
-- For no-article runs, planning/sections/image stages are skipped.
+- Short-form content types (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`) are generated in single-shot prompts.
+- They still go through the unified planning stage, but the plan is reduced (title, description, angle, cover image) and does not include sections or inline images.
+- Stage 3 uses single-shot generation instead of section-based writing.
 
 ## Image Rendering Path
 

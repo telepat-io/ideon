@@ -8,32 +8,24 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 Ideon runs a seven-stage pipeline with live status updates and per-stage analytics.
 
-Stage execution depends on primary content type:
-
-- Article primary: full structured article flow (plan -> sections -> image prompts -> image rendering), then secondary generation.
-- Non-article primary: generic primary flow (`Planning Primary Content` and `Generating Primary Content`), one primary cover image render, then secondary generation.
-
 ## Stage Flow
 
-1. Planning Primary Article or Planning Primary Content
-2. Writing Sections or Generating Primary Content
-3. Expanding Image Prompts
-4. Rendering Images
-5. Generating Channel Content
-6. Enriching Links
+All runs follow the same seven stages:
 
-Always-on stage before primary planning:
+1. **Planning Shared Plan**
+2. **Planning Primary Content**
+3. **Writing Primary Content**
+4. **Expanding Image Prompts**
+5. **Rendering Images**
+6. **Generating Channel Content**
+7. **Enriching Links**
 
-1. Planning Shared Plan
+Stage behavior depends on content type:
 
-Non-article primary path:
-
-- `shared-plan`: runs
-- `planning`: sets primary direction for non-article type
-- `sections`: performs generic primary generation
-- `image-prompts`, `images`: prepare and render one primary cover image
-- `output`: generates only secondary outputs from primary anchor context
-- `links`: runs only when `--enrich-links` is enabled and writes sidecar link metadata for eligible outputs
+- Long-form primary (`article`, `blog-post`, `newsletter`, `press-release`, `science-paper`): the plan includes sections and inline images, and stage 3 writes intro, sections, and conclusion.
+- Short-form primary (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`): the plan includes title, description, and angle, and stage 3 generates single-shot primary content.
+- For all primaries, stages 4–5 prepare and render the primary cover image.
+- `links`: runs only when `--enrich-links` is enabled and writes sidecar link metadata for eligible long-form outputs
 
 ## Stage UI Signals
 
@@ -121,7 +113,7 @@ When a stage fails:
 
 - The primary output is always generated first and written as `<primary-prefix>-1.md`.
 - Secondary targets are expanded into numbered files by content type (`x-thread-1.md`, `x-post-1.md`, etc.).
-- Article primary uses section-generation artifacts; non-article primary uses single-shot primary generation.
+- Long-form primaries use section-generation artifacts; short-form primaries use single-shot primary generation.
 - Secondary outputs are anchored to generated primary context.
 - The output stage also writes `job.json` with the resolved run definition.
 - Output progress is itemized in the CLI and persisted in analytics under `outputItemCalls`.

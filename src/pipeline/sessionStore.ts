@@ -4,9 +4,9 @@ import path from 'node:path';
 import envPaths from 'env-paths';
 import { z } from 'zod';
 import { appSettingsSchema, jobInputSchema, type AppSettings, type JobInput, type ResolvedPaths } from '../config/schema.js';
-import { articlePlanSchema } from '../types/articleSchema.js';
+import { primaryPlanSchema } from '../types/articleSchema.js';
 import { contentPlanSchema } from '../types/contentPlanSchema.js';
-import type { ArticleImagePrompt, ContentItemLinks, GeneratedArticleSection, RenderedArticleImage } from '../types/article.js';
+import type { ArticleImagePrompt, ContentItemLinks, GeneratedArticleSection, PrimaryPlan, RenderedArticleImage } from '../types/article.js';
 import type { ContentPlan } from '../types/contentPlan.js';
 import type { PipelineArtifactSummary } from './events.js';
 
@@ -79,7 +79,7 @@ const writeSessionStateSchema = z.object({
   failedStage: z.enum(STAGE_IDS).nullable(),
   errorMessage: z.string().nullable(),
   contentPlan: contentPlanSchema.nullable().default(null),
-  plan: articlePlanSchema.nullable(),
+  plan: primaryPlanSchema.nullable(),
   text: z
     .object({
       intro: z.string().min(1),
@@ -127,7 +127,7 @@ export type WriteStageId = (typeof STAGE_IDS)[number];
 
 export interface WriteSessionState extends WriteSessionStateSchema {
   contentPlan: ContentPlan | null;
-  plan: z.infer<typeof articlePlanSchema> | null;
+  plan: PrimaryPlan | null;
   text: {
     intro: string;
     sections: GeneratedArticleSection[];

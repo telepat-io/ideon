@@ -3,6 +3,9 @@ import {
   articleSectionPlanSchema,
   inlineImagePlanSchema,
   imagePromptResultSchema,
+  primaryPlanSchema,
+  shortFormPlanSchema,
+  longFormPlanSchema,
   type ParsedArticlePlan,
   type ParsedImagePromptResult,
 } from '../types/articleSchema.js';
@@ -76,6 +79,7 @@ describe('articlePlanSchema', () => {
     subtitle: 'Trends to watch in 2026',
     keywords: ['AI', 'technology', 'innovation', 'future'],
     slug: 'future-of-ai',
+    contentType: 'article',
     description: 'An article about AI trends',
     introBrief: 'Introduction here',
     outroBrief: 'Conclusion here',
@@ -287,6 +291,172 @@ describe('imagePromptResultSchema', () => {
   it('should reject non-string prompt', () => {
     const result = imagePromptResultSchema.safeParse({
       prompt: 123,
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('primaryPlanSchema', () => {
+  it('should validate a minimal long-form plan', () => {
+    const result = primaryPlanSchema.safeParse({
+      title: 'Test',
+      slug: 'test',
+      description: 'Description',
+      coverImageDescription: 'Cover',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.contentType).toBe('article');
+    }
+  });
+
+  it('should default contentType to article when omitted', () => {
+    const result = primaryPlanSchema.safeParse({
+      title: 'Test',
+      slug: 'test',
+      description: 'Description',
+      coverImageDescription: 'Cover',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.contentType).toBe('article');
+    }
+  });
+
+  it('should accept a short-form plan with angle', () => {
+    const result = primaryPlanSchema.safeParse({
+      contentType: 'x-post',
+      title: 'Test',
+      slug: 'test',
+      description: 'Description',
+      coverImageDescription: 'Cover',
+      angle: 'Sharp angle',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.angle).toBe('Sharp angle');
+      expect(result.data.sections).toBeUndefined();
+    }
+  });
+
+  it('should reject missing required fields', () => {
+    const result = primaryPlanSchema.safeParse({
+      title: 'Test',
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('shortFormPlanSchema', () => {
+  it('should validate a complete short-form plan', () => {
+    const result = shortFormPlanSchema.safeParse({
+      contentType: 'x-post',
+      title: 'Test',
+      slug: 'test',
+      description: 'Description',
+      coverImageDescription: 'Cover',
+      angle: 'Sharp angle',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('strips unknown fields like sections rather than rejecting', () => {
+    const result = shortFormPlanSchema.safeParse({
+      contentType: 'x-post',
+      title: 'Test',
+      slug: 'test',
+      description: 'Description',
+      coverImageDescription: 'Cover',
+      sections: [{ title: 'Section', description: 'Desc' }],
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).not.toHaveProperty('sections');
+    }
+  });
+
+  it('should reject missing required fields', () => {
+    const result = shortFormPlanSchema.safeParse({
+      contentType: 'x-post',
+      title: 'Test',
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should allow optional angle', () => {
+    const result = shortFormPlanSchema.safeParse({
+      contentType: 'linkedin-post',
+      title: 'Test',
+      slug: 'test',
+      description: 'Description',
+      coverImageDescription: 'Cover',
+    });
+
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('longFormPlanSchema', () => {
+  const validLongFormPlan = {
+    contentType: 'article',
+    title: 'The Future of AI',
+    subtitle: 'Trends to watch',
+    keywords: ['AI', 'technology', 'innovation'],
+    slug: 'future-of-ai',
+    description: 'An article about AI trends',
+    introBrief: 'Introduction here',
+    outroBrief: 'Conclusion here',
+    sections: [
+      { title: 'Trend 1', description: 'Description' },
+      { title: 'Trend 2', description: 'Description' },
+      { title: 'Trend 3', description: 'Description' },
+      { title: 'Trend 4', description: 'Description' },
+    ],
+    coverImageDescription: 'A futuristic banner',
+    inlineImages: [
+      { anchorAfterSection: 1, description: 'First inline image' },
+      { anchorAfterSection: 3, description: 'Second inline image' },
+    ],
+  };
+
+  it('should validate a complete long-form plan', () => {
+    const result = longFormPlanSchema.safeParse(validLongFormPlan);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.sections).toHaveLength(4);
+    }
+  });
+
+  it('should reject less than 2 sections', () => {
+    const result = longFormPlanSchema.safeParse({
+      ...validLongFormPlan,
+      sections: [{ title: 'Only', description: 'One' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject less than 3 keywords', () => {
+    const result = longFormPlanSchema.safeParse({
+      ...validLongFormPlan,
+      keywords: ['AI'],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject less than 2 inline images', () => {
+    const result = longFormPlanSchema.safeParse({
+      ...validLongFormPlan,
+      inlineImages: [{ anchorAfterSection: 1, description: 'Only one' }],
     });
 
     expect(result.success).toBe(false);

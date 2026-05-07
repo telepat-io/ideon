@@ -1,4 +1,7 @@
-import { buildArticlePlanJsonSchema, buildArticlePlanMessages } from '../llm/prompts/articlePlan.js';
+import {
+  buildPrimaryPlanJsonSchema,
+  buildPrimaryPlanMessages,
+} from '../llm/prompts/primaryPlan.js';
 import {
   buildIntroMessages,
   buildOutroMessages,
@@ -10,7 +13,8 @@ import {
   buildTargetLengthDirective,
 } from '../llm/prompts/writingFramework.js';
 import { buildContentPlanMessages } from '../llm/prompts/contentPlan.js';
-import type { ArticlePlan } from '../types/article.js';
+import { buildPrimaryPlanGuideInstruction } from '../llm/prompts/guideBundles.js';
+import type { ArticlePlan, PrimaryPlan } from '../types/article.js';
 import type { ContentPlan } from '../types/contentPlan.js';
 
 function mockBrief(): ContentPlan {
@@ -37,6 +41,7 @@ function mockPlan(): ArticlePlan {
     subtitle: 'How teams ship faster with guardrails',
     keywords: ['ai', 'workflows', 'delivery'],
     slug: 'practical-ai-workflows',
+    contentType: 'article',
     description: 'A guide to practical AI workflow design.',
     introBrief: 'Open with the delivery gap and why it matters.',
     outroBrief: 'Close with a practical rollout checklist.',
@@ -54,6 +59,17 @@ function mockPlan(): ArticlePlan {
   };
 }
 
+function mockShortPlan(): PrimaryPlan {
+  return {
+    title: 'Ship Faster with AI',
+    slug: 'ship-faster-with-ai',
+    contentType: 'x-post',
+    description: 'A concise post about AI-assisted shipping.',
+    coverImageDescription: 'A fast-moving delivery drone over a city skyline.',
+    angle: 'Concrete wins over hype: show how small AI workflows compound.',
+  };
+}
+
 describe('writing framework helpers', () => {
   it('includes normalized run context when no content types are provided', () => {
     expect(buildRunContextDirective([])).toContain('requested content types are article');
@@ -66,9 +82,10 @@ describe('writing framework helpers', () => {
   });
 });
 
-describe('article prompt builders', () => {
-  it('builds article plan prompt with guide bundle and run context only', () => {
-    const messages = buildArticlePlanMessages('Ship better docs with AI', {
+describe('primary plan prompt builders', () => {
+  it('builds long-form plan prompt with guide bundle and run context', () => {
+    const messages = buildPrimaryPlanMessages('Ship better docs with AI', {
+      contentType: 'article',
       intent: 'tutorial',
       contentTypes: ['article', 'x-thread'],
       contentPlan: mockBrief(),
@@ -88,20 +105,23 @@ describe('article prompt builders', () => {
     expect(messages[0]?.content).not.toContain('Quality bar:');
     expect(messages[0]?.content).not.toContain('Avoid generic filler');
     expect(messages[1]?.content).not.toContain('Avoid AI giveaway phrasing');
+    expect(messages[1]?.content).toContain('contentType: set to "article" exactly');
     // Verify medium article gets 2-3 inline image instruction
     expect(messages[1]?.content).toContain('Include a cover image description and 2 to 3 inline image descriptions');
     expect(messages[1]?.content).toContain('inlineImages: array of 2 to 3 objects');
   });
 
-  it('uses proportional image count instructions by article length', () => {
-    const smallMessages = buildArticlePlanMessages('Small article idea', {
+  it('uses proportional image count instructions by target length for long-form', () => {
+    const smallMessages = buildPrimaryPlanMessages('Small article idea', {
+      contentType: 'article',
       intent: 'how-to-guide',
       contentTypes: ['article'],
       contentPlan: mockBrief(),
       targetLength: 500,
     });
 
-    const largeMessages = buildArticlePlanMessages('Large article idea', {
+    const largeMessages = buildPrimaryPlanMessages('Large article idea', {
+      contentType: 'article',
       intent: 'deep-dive-analysis',
       contentTypes: ['article'],
       contentPlan: mockBrief(),
@@ -117,21 +137,29 @@ describe('article prompt builders', () => {
     expect(largeMessages[1]?.content).toContain('inlineImages: array of 3 to 4 objects');
   });
 
-  it('builds content plan prompt with shared-plan guide bundle', () => {
-    const messages = buildContentPlanMessages('Ship better docs with AI', {
-      intent: 'tutorial',
-      primaryContentType: 'article',
-      secondaryContentTypes: ['x-thread', 'linkedin-post'],
+  it('builds short-form plan prompt without sections or keywords', () => {
+    const messages = buildPrimaryPlanMessages('Ship better docs with AI', {
+      contentType: 'x-post',
+      intent: 'announcement',
+      contentTypes: ['x-post', 'linkedin-post'],
+      contentPlan: mockBrief(),
+      targetLength: 500,
     });
 
-    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/multi-channel-plan-strategy.md');
-    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/target-length-guidance.md');
-    expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/article.md');
-    expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/x-thread.md');
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.role).toBe('system');
+    expect(messages[1]?.content).toContain('contentType: set to "x-post" exactly');
+    expect(messages[1]?.content).toContain('angle: string');
+    expect(messages[1]?.content).not.toContain('sections:');
+    expect(messages[1]?.content).not.toContain('keywords:');
+    expect(messages[1]?.content).not.toContain('introBrief:');
+    expect(messages[1]?.content).not.toContain('outroBrief:');
+    expect(messages[1]?.content).not.toContain('subtitle:');
   });
 
-  it('falls back to medium section ranges for unknown targetLength in messages', () => {
-    const messages = buildArticlePlanMessages('Fallback sizing test', {
+  it('falls back to medium section ranges for unknown targetLength in long-form messages', () => {
+    const messages = buildPrimaryPlanMessages('Fallback sizing test', {
+      contentType: 'article',
       intent: 'how-to-guide',
       contentTypes: ['article'],
       contentPlan: mockBrief(),
@@ -142,45 +170,77 @@ describe('article prompt builders', () => {
     expect(messages[1]?.content).toContain('sections: array of 3 to 5 objects');
   });
 
-  it('builds article plan schema ranges by target length', () => {
-    const smallSchema = buildArticlePlanJsonSchema(500);
-    const mediumSchema = buildArticlePlanJsonSchema(900);
-    const largeSchema = buildArticlePlanJsonSchema(1400);
-    const fallbackSchema = buildArticlePlanJsonSchema(Number.NaN);
+  it('builds long-form plan schema ranges by target length', () => {
+    const smallSchema = buildPrimaryPlanJsonSchema('article', 500);
+    const mediumSchema = buildPrimaryPlanJsonSchema('article', 900);
+    const largeSchema = buildPrimaryPlanJsonSchema('article', 1400);
+    const fallbackSchema = buildPrimaryPlanJsonSchema('article', Number.NaN);
 
-    expect(smallSchema.properties.sections.minItems).toBe(2);
-    expect(smallSchema.properties.sections.maxItems).toBe(3);
-    expect(mediumSchema.properties.sections.minItems).toBe(3);
-    expect(mediumSchema.properties.sections.maxItems).toBe(5);
-    expect(largeSchema.properties.sections.minItems).toBe(5);
-    expect(largeSchema.properties.sections.maxItems).toBe(7);
-    expect(fallbackSchema.properties.sections.minItems).toBe(3);
-    expect(fallbackSchema.properties.sections.maxItems).toBe(5);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((smallSchema as any).properties.sections.minItems).toBe(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((smallSchema as any).properties.sections.maxItems).toBe(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((mediumSchema as any).properties.sections.minItems).toBe(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((mediumSchema as any).properties.sections.maxItems).toBe(5);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((largeSchema as any).properties.sections.minItems).toBe(5);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((largeSchema as any).properties.sections.maxItems).toBe(7);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((fallbackSchema as any).properties.sections.minItems).toBe(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((fallbackSchema as any).properties.sections.maxItems).toBe(5);
   });
 
-  it('generates proportional inline image counts by target length', () => {
-    const smallSchema = buildArticlePlanJsonSchema(500);
-    const mediumSchema = buildArticlePlanJsonSchema(900);
-    const largeSchema = buildArticlePlanJsonSchema(1400);
-    const fallbackSchema = buildArticlePlanJsonSchema(Number.NaN);
+  it('generates proportional inline image counts by target length for long-form', () => {
+    const smallSchema = buildPrimaryPlanJsonSchema('article', 500);
+    const mediumSchema = buildPrimaryPlanJsonSchema('article', 900);
+    const largeSchema = buildPrimaryPlanJsonSchema('article', 1400);
+    const fallbackSchema = buildPrimaryPlanJsonSchema('article', Number.NaN);
 
     // small: 1-2 inline images (+ 1 cover = 2-3 total)
-    expect(smallSchema.properties.inlineImages.minItems).toBe(1);
-    expect(smallSchema.properties.inlineImages.maxItems).toBe(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((smallSchema as any).properties.inlineImages.minItems).toBe(1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((smallSchema as any).properties.inlineImages.maxItems).toBe(2);
 
     // medium: 2-3 inline images (+ 1 cover = 3-4 total)
-    expect(mediumSchema.properties.inlineImages.minItems).toBe(2);
-    expect(mediumSchema.properties.inlineImages.maxItems).toBe(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((mediumSchema as any).properties.inlineImages.minItems).toBe(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((mediumSchema as any).properties.inlineImages.maxItems).toBe(3);
 
     // large: 3-4 inline images (+ 1 cover = 4-5 total)
-    expect(largeSchema.properties.inlineImages.minItems).toBe(3);
-    expect(largeSchema.properties.inlineImages.maxItems).toBe(4);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((largeSchema as any).properties.inlineImages.minItems).toBe(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((largeSchema as any).properties.inlineImages.maxItems).toBe(4);
 
     // fallback (medium): 2-3 inline images
-    expect(fallbackSchema.properties.inlineImages.minItems).toBe(2);
-    expect(fallbackSchema.properties.inlineImages.maxItems).toBe(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((fallbackSchema as any).properties.inlineImages.minItems).toBe(2);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((fallbackSchema as any).properties.inlineImages.maxItems).toBe(3);
   });
 
+  it('builds short-form plan schema without sections or inlineImages', () => {
+    const schema = buildPrimaryPlanJsonSchema('x-post', 500);
+
+    expect(schema.required).not.toContain('sections');
+    expect(schema.required).not.toContain('inlineImages');
+    expect(schema.required).not.toContain('keywords');
+    expect(schema.required).not.toContain('introBrief');
+    expect(schema.required).not.toContain('outroBrief');
+    expect(schema.required).not.toContain('subtitle');
+    expect(schema.properties).not.toHaveProperty('sections');
+    expect(schema.properties).not.toHaveProperty('inlineImages');
+    expect(schema.required).toContain('angle');
+  });
+});
+
+describe('article section prompt builders', () => {
   it('builds intro, section, and outro prompts with guide bundles and operational constraints', () => {
     const plan = mockPlan();
 
@@ -248,6 +308,43 @@ describe('article prompt builders', () => {
     expect(intro[1]?.content).toContain('2 to 4 paragraphs.');
     expect(section[1]?.content).toContain('3 to 6 paragraphs.');
     expect(outro[1]?.content).toContain('2 to 3 paragraphs.');
+  });
+});
+
+describe('content plan prompt builder', () => {
+  it('builds content plan prompt with shared-plan guide bundle', () => {
+    const messages = buildContentPlanMessages('Ship better docs with AI', {
+      intent: 'tutorial',
+      primaryContentType: 'article',
+      secondaryContentTypes: ['x-thread', 'linkedin-post'],
+    });
+
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/multi-channel-plan-strategy.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/references/target-length-guidance.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/article.md');
+    expect(messages[0]?.content).toContain('Guide source: writing-guide/formats/x-thread.md');
+  });
+});
+
+describe('primary plan guide instruction', () => {
+  it('returns full guide bundle for long-form content types', () => {
+    const instruction = buildPrimaryPlanGuideInstruction('tutorial', 'article');
+
+    expect(instruction).toContain('Guide source: writing-guide/references/headline-writing-systems.md');
+    expect(instruction).toContain('Guide source: writing-guide/references/ideation-and-credibility-systems.md');
+    expect(instruction).toContain('Guide source: writing-guide/references/content-frameworks.md');
+    expect(instruction).toContain('Guide source: writing-guide/content-intent/tutorial.md');
+    expect(instruction).toContain('Guide source: writing-guide/formats/article.md');
+  });
+
+  it('returns reduced guide bundle for short-form content types', () => {
+    const instruction = buildPrimaryPlanGuideInstruction('announcement', 'x-post');
+
+    expect(instruction).toContain('Guide source: writing-guide/references/headline-writing-systems.md');
+    expect(instruction).not.toContain('Guide source: writing-guide/references/ideation-and-credibility-systems.md');
+    expect(instruction).not.toContain('Guide source: writing-guide/references/content-frameworks.md');
+    expect(instruction).toContain('Guide source: writing-guide/content-intent/announcement.md');
+    expect(instruction).toContain('Guide source: writing-guide/formats/x-post.md');
   });
 });
 
@@ -332,5 +429,43 @@ describe('channel prompt builder', () => {
     });
 
     expect(messages[0]?.content).not.toContain('Write channel-native Markdown content.');
+  });
+
+  it('embeds primary plan context when plan is provided', () => {
+    const messages = buildSingleShotContentMessages({
+      idea: 'Announce workflow automation update',
+      contentType: 'linkedin-post',
+      role: 'secondary',
+      primaryContentType: 'x-post',
+      style: 'authoritative',
+      intent: 'announcement',
+      outputIndex: 1,
+      outputCountForType: 1,
+      contentPlan: mockBrief(),
+      plan: mockShortPlan(),
+      targetLength: 500,
+    });
+
+    expect(messages[1]?.content).toContain('Primary content plan (use to guide tone, angle, and structure)');
+    expect(messages[1]?.content).toContain('title: Ship Faster with AI');
+    expect(messages[1]?.content).toContain('description: A concise post about AI-assisted shipping.');
+    expect(messages[1]?.content).toContain('angle: Concrete wins over hype: show how small AI workflows compound.');
+  });
+
+  it('omits primary plan context when plan is not provided', () => {
+    const messages = buildSingleShotContentMessages({
+      idea: 'Announce workflow automation update',
+      contentType: 'linkedin-post',
+      role: 'secondary',
+      primaryContentType: 'article',
+      style: 'authoritative',
+      intent: 'announcement',
+      outputIndex: 1,
+      outputCountForType: 1,
+      contentPlan: mockBrief(),
+      targetLength: 500,
+    });
+
+    expect(messages[1]?.content).not.toContain('Primary content plan (use to guide tone, angle, and structure)');
   });
 });

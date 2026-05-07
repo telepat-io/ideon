@@ -77,4 +77,91 @@ describe('writeSingleShotContent', () => {
     expect(requestText).toHaveBeenCalledTimes(1);
     expect(result).toBe('generated channel copy');
   });
+
+  it('includes plan context in dry-run content when plan is provided', async () => {
+    const result = await writeSingleShotContent({
+      idea: 'Idea',
+      contentType: 'x-post',
+      primaryContentType: 'x-post',
+      role: 'primary',
+      style: 'professional',
+      intent: 'announcement',
+      outputIndex: 1,
+      outputCountForType: 1,
+      articleReferenceMarkdown: undefined,
+      contentPlan,
+      plan: {
+        contentType: 'x-post',
+        title: 'Ship Faster',
+        slug: 'ship-faster',
+        description: 'A concise post about shipping.',
+        coverImageDescription: 'Cover description',
+        angle: 'Concrete wins over hype.',
+      },
+      settings: defaultAppSettings,
+      openRouter: null,
+      dryRun: true,
+    });
+
+    expect(result).toContain('Plan title: Ship Faster');
+    expect(result).toContain('Plan description: A concise post about shipping.');
+    expect(result).toContain('Angle: Concrete wins over hype.');
+  });
+
+  it('omits plan context in dry-run content when plan is not provided', async () => {
+    const result = await writeSingleShotContent({
+      idea: 'Idea',
+      contentType: 'x-post',
+      primaryContentType: 'x-post',
+      role: 'primary',
+      style: 'professional',
+      intent: 'announcement',
+      outputIndex: 1,
+      outputCountForType: 1,
+      articleReferenceMarkdown: undefined,
+      contentPlan,
+      settings: defaultAppSettings,
+      openRouter: null,
+      dryRun: true,
+    });
+
+    expect(result).toContain('No primary plan available.');
+    expect(result).not.toContain('Plan title:');
+  });
+
+  it('passes plan context to OpenRouter messages when provided', async () => {
+    const requestText = jest.fn<() => Promise<string>>().mockResolvedValue('generated copy with plan');
+
+    await writeSingleShotContent({
+      idea: 'Idea',
+      contentType: 'linkedin-post',
+      primaryContentType: 'x-post',
+      role: 'secondary',
+      style: 'professional',
+      intent: 'tutorial',
+      outputIndex: 1,
+      outputCountForType: 1,
+      articleReferenceMarkdown: undefined,
+      contentPlan,
+      plan: {
+        contentType: 'x-post',
+        title: 'Ship Faster',
+        slug: 'ship-faster',
+        description: 'A concise post about shipping.',
+        coverImageDescription: 'Cover description',
+        angle: 'Concrete wins over hype.',
+      },
+      settings: defaultAppSettings,
+      openRouter: { requestText } as never,
+      dryRun: false,
+    });
+
+    expect(requestText).toHaveBeenCalledTimes(1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const messages = ((requestText.mock.calls[0] as any)[0] as { messages: Array<{ role: string; content: string }> }).messages;
+    const userMessage = messages.find((m) => m.role === 'user');
+    expect(userMessage?.content).toContain('Primary content plan (use to guide tone, angle, and structure)');
+    expect(userMessage?.content).toContain('title: Ship Faster');
+    expect(userMessage?.content).toContain('angle: Concrete wins over hype.');
+  });
 });

@@ -1,15 +1,17 @@
 import type { AppSettings } from '../config/schema.js';
-import { buildArticlePlanMessages, buildArticlePlanJsonSchema } from '../llm/prompts/articlePlan.js';
+import { buildPrimaryPlanMessages, buildPrimaryPlanJsonSchema } from '../llm/prompts/primaryPlan.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { resolveUniqueSlug } from '../output/filesystem.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { LlmInteractionRecord } from '../pipeline/events.js';
-import type { ArticlePlan } from '../types/article.js';
+import type { ArticlePlan, PrimaryPlan } from '../types/article.js';
+import { isLongFormContentType } from '../types/article.js';
 import type { ContentPlan } from '../types/contentPlan.js';
-import { articlePlanSchema as articlePlanResultSchema } from '../types/articleSchema.js';
+import { primaryPlanSchema, longFormPlanSchema, shortFormPlanSchema } from '../types/articleSchema.js';
 
-export async function planArticle({
+export async function planPrimaryContent({
   idea,
+  contentType,
   contentPlan,
   settings,
   markdownOutputDir,
@@ -19,6 +21,7 @@ export async function planArticle({
   onInteraction,
 }: {
   idea: string;
+  contentType: string;
   contentPlan: ContentPlan;
   settings: AppSettings;
   markdownOutputDir: string;
@@ -26,13 +29,16 @@ export async function planArticle({
   dryRun: boolean;
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
-}): Promise<ArticlePlan> {
+}): Promise<PrimaryPlan> {
+  const isLongForm = isLongFormContentType(contentType);
+
   const basePlan = dryRun || !openRouter
-    ? buildDryRunPlan(idea, contentPlan)
-    : await openRouter.requestStructured<ArticlePlan>({
-        schemaName: 'article_plan',
-        schema: buildArticlePlanJsonSchema(settings.targetLength),
-        messages: buildArticlePlanMessages(idea, {
+    ? buildDryRunPlan(idea, contentType, contentPlan)
+    : await openRouter.requestStructured<PrimaryPlan>({
+        schemaName: 'primary_plan',
+        schema: buildPrimaryPlanJsonSchema(contentType, settings.targetLength),
+        messages: buildPrimaryPlanMessages(idea, {
+          contentType,
           intent: settings.intent,
           contentTypes: settings.contentTargets.map((target) => target.contentType),
           contentPlan,
@@ -41,44 +47,67 @@ export async function planArticle({
         settings,
         interactionContext: {
           stageId: 'planning',
-          operationId: 'planning:article-plan',
+          operationId: `planning:${contentType}-plan`,
         },
         onInteraction,
         onMetrics: onLlmMetrics,
         parse(data) {
-          return articlePlanResultSchema.parse(data);
+          if (isLongForm) {
+            return longFormPlanSchema.parse(data);
+          }
+          return shortFormPlanSchema.parse(data);
         },
       });
 
   const normalizedSlug = slugify(basePlan.slug || basePlan.title);
   const uniqueSlug = await resolveUniqueSlug(markdownOutputDir, normalizedSlug);
 
-  const sectionCount = basePlan.sections.length;
+  if (isLongForm) {
+    const longPlan = basePlan as ArticlePlan;
+    const sectionCount = longPlan.sections.length;
+
+    return {
+      ...longPlan,
+      slug: uniqueSlug,
+      keywords: longPlan.keywords.slice(0, 8),
+      inlineImages: longPlan.inlineImages
+        .slice(0, 3)
+        .map((img) => ({
+          ...img,
+          anchorAfterSection: Math.max(1, Math.min(sectionCount, img.anchorAfterSection)),
+        })),
+    };
+  }
 
   return {
     ...basePlan,
     slug: uniqueSlug,
-    keywords: basePlan.keywords.slice(0, 8),
-    inlineImages: basePlan.inlineImages
-      .slice(0, 3)
-      .map((img) => ({
-        ...img,
-        anchorAfterSection: Math.max(1, Math.min(sectionCount, img.anchorAfterSection)),
-      })),
   };
 }
 
-function buildDryRunPlan(idea: string, contentPlan: ContentPlan): ArticlePlan {
+function buildDryRunPlan(idea: string, contentType: string, contentPlan: ContentPlan): PrimaryPlan {
   const title = idea
     .trim()
     .split(/\s+/)
     .slice(0, 7)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .join(' ') || contentPlan.title;
+
+  if (!isLongFormContentType(contentType)) {
+    return {
+      contentType,
+      title,
+      slug: slugify(title),
+      description: contentPlan.description,
+      coverImageDescription: `A visually striking cover image for a ${contentType} about ${idea.trim().split(/\s+/).slice(0, 5).join(' ')}.`,
+      angle: `Direct, practical framing that hooks the audience immediately with a clear value proposition tied to ${contentPlan.corePromise}`,
+    };
+  }
 
   return {
+    contentType,
     title,
-    subtitle: 'A practical editorial blueprint for turning a good idea into a strong article',
+    subtitle: 'A practical editorial blueprint for turning a good idea into strong published content',
     keywords: ['writing', 'editorial workflow', 'ai tools', 'content strategy'],
     slug: slugify(title),
     description: contentPlan.description,
@@ -87,10 +116,10 @@ function buildDryRunPlan(idea: string, contentPlan: ContentPlan): ArticlePlan {
     sections: [
       {
         title: 'Why raw ideas are not enough',
-        description: 'Explain why strong articles need structure, intent, and editorial judgment.',
+        description: 'Explain why strong content needs structure, intent, and editorial judgment.',
       },
       {
-        title: 'Designing the article before drafting',
+        title: 'Designing the content before drafting',
         description: 'Show how planning title, sections, and narrative flow improves the final result.',
       },
       {
@@ -109,7 +138,7 @@ function buildDryRunPlan(idea: string, contentPlan: ContentPlan): ArticlePlan {
     coverImageDescription: 'A refined editorial workspace with notebooks, sketches, and glowing structured outlines, cinematic but minimal.',
     inlineImages: [
       {
-        description: 'A rough idea evolving into a structured article outline on a desk full of notes.',
+        description: 'A rough idea evolving into a structured content outline on a desk full of notes.',
         anchorAfterSection: 2,
       },
       {
@@ -124,5 +153,5 @@ function slugify(value: string): string {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'untitled-article';
+    .replace(/^-+|-+$/g, '') || 'untitled-content';
 }

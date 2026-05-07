@@ -21,7 +21,7 @@ OpenRouter 请求策略包括：
 
 Ideon 会校验：
 
-- article plans (`articleSchema` constraints)
+- 主要内容计划（长格式类型使用 `articleSchema` 约束，短格式类型使用简化模式）
 - image prompt payloads (`prompt` required)
 - run configuration via Zod schema defaults and constraints
 
@@ -47,11 +47,11 @@ Ideon 会校验：
 
 在多目标运行中，文章输出可作为社交/渠道输出的锚定上下文。
 
-## 非文章输出路径
+## 短格式输出路径
 
-- 非文章内容类型通过单次提示生成。
-- 该路径在 output 阶段执行，不依赖章节式生成。
-- 对于无文章运行，会跳过 planning/sections/image 阶段。
+- 短格式内容类型（`x-post`、`x-thread`、`linkedin-post`、`reddit-post`）通过单次提示生成。
+- 它们仍经过统一的规划阶段，但计划是简化的（标题、描述、角度、封面图），不包含章节或内联图像。
+- 第 3 阶段使用单次生成，而不是章节式撰写。
 
 ## 图像渲染路径
 

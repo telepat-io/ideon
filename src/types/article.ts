@@ -8,17 +8,50 @@ export interface InlineImagePlan {
   anchorAfterSection: number;
 }
 
-export interface ArticlePlan {
+export const LONG_FORM_CONTENT_TYPES = [
+  'article',
+  'blog-post',
+  'newsletter',
+  'press-release',
+  'science-paper',
+] as const;
+
+export type LongFormContentType = (typeof LONG_FORM_CONTENT_TYPES)[number];
+
+export function isLongFormContentType(contentType: string): contentType is LongFormContentType {
+  return (LONG_FORM_CONTENT_TYPES as readonly string[]).includes(contentType);
+}
+
+export interface PrimaryPlan {
+  contentType: string;
   title: string;
-  subtitle: string;
-  keywords: string[];
   slug: string;
   description: string;
+  coverImageDescription: string;
+  subtitle?: string;
+  keywords?: string[];
+  introBrief?: string;
+  outroBrief?: string;
+  sections?: ArticleSectionPlan[];
+  inlineImages?: InlineImagePlan[];
+  angle?: string;
+}
+
+export type ArticlePlan = PrimaryPlan & {
+  subtitle: string;
+  keywords: string[];
   introBrief: string;
   outroBrief: string;
   sections: ArticleSectionPlan[];
-  coverImageDescription: string;
   inlineImages: InlineImagePlan[];
+};
+
+export function isLongFormPlan(plan: PrimaryPlan): plan is ArticlePlan {
+  return (
+    isLongFormContentType(plan.contentType) &&
+    plan.sections !== undefined &&
+    plan.sections.length > 0
+  );
 }
 
 export interface ArticleImagePrompt {
