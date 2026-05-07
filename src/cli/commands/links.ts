@@ -4,7 +4,6 @@ import { resolveRunInput } from '../../config/resolver.js';
 import { enrichLinks, type LinkEnrichmentProgressEvent } from '../../generation/enrichLinks.js';
 import { OpenRouterClient } from '../../llm/openRouterClient.js';
 import { listMarkdownFilesRecursively, resolveLinksPath, resolveOutputPaths, writeLinksFile } from '../../output/filesystem.js';
-import type { AppSettings } from '../../config/schema.js';
 import type { LinkEntry } from '../../types/article.js';
 import { ReportedError } from '../reportedError.js';
 
@@ -48,7 +47,7 @@ export async function runLinksCommand(
     idea: `Enrich links for ${slug}`,
   });
 
-  const markdownPath = await resolveMarkdownPathForSlug(resolved.config.settings, slug, cwd);
+  const markdownPath = await resolveMarkdownPathForSlug(slug, cwd);
   const frontmatter = await readFrontmatter(markdownPath);
   const fileId = path.parse(markdownPath).name;
   const articleTitle = frontmatter.title ?? toTitleFromSlug(slug);
@@ -137,8 +136,8 @@ function normalizeSlug(rawSlug: string): string {
   return slug;
 }
 
-async function resolveMarkdownPathForSlug(settings: AppSettings, slug: string, cwd: string): Promise<string> {
-  const outputPaths = resolveOutputPaths(settings, cwd);
+async function resolveMarkdownPathForSlug(slug: string, cwd: string): Promise<string> {
+  const outputPaths = resolveOutputPaths();
   const directPath = path.join(outputPaths.markdownOutputDir, `${slug}.md`);
   if (await isReadableFile(directPath)) {
     return directPath;

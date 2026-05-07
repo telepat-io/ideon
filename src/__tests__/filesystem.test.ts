@@ -14,26 +14,13 @@ import {
   writeJsonFile,
   writeUtf8File,
 } from '../output/filesystem.js';
-import { defaultAppSettings } from '../config/schema.js';
 
 describe('output filesystem helpers', () => {
-  it('resolves output paths for special /output mapping and relative paths', () => {
-    const fromOutputShortcut = resolveOutputPaths(defaultAppSettings, '/project');
-    expect(fromOutputShortcut).toEqual({
-      markdownOutputDir: '/project/output',
-      assetOutputDir: '/project/output/assets',
-    });
-
-    const relativeSettings = {
-      ...defaultAppSettings,
-      markdownOutputDir: './docs/out',
-      assetOutputDir: './docs/out/assets',
-    };
-    const fromRelative = resolveOutputPaths(relativeSettings, '/project');
-
-    expect(fromRelative).toEqual({
-      markdownOutputDir: '/project/docs/out',
-      assetOutputDir: '/project/docs/out/assets',
+  it('resolves output paths to ~/.ideon/output', () => {
+    const result = resolveOutputPaths();
+    expect(result).toEqual({
+      markdownOutputDir: path.join(os.homedir(), '.ideon', 'output'),
+      assetOutputDir: path.join(os.homedir(), '.ideon', 'output', 'assets'),
     });
   });
 

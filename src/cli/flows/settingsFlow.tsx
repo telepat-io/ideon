@@ -113,14 +113,6 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
         value: 'topP',
       },
       {
-        label: `Markdown output directory: ${settings.markdownOutputDir}`,
-        value: 'markdownOutputDir',
-      },
-      {
-        label: `Asset output directory: ${settings.assetOutputDir}`,
-        value: 'assetOutputDir',
-      },
-      {
         label: `T2I settings: ${currentModelEntry?.displayName ?? settings.t2i.modelId}`,
         value: 't2i-settings',
       },

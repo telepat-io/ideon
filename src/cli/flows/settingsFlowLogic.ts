@@ -9,8 +9,6 @@ export type MenuAction =
   | 'temperature'
   | 'maxTokens'
   | 'topP'
-  | 'markdownOutputDir'
-  | 'assetOutputDir'
   | 't2i-settings'
   | 't2i-model'
   | 't2i-replicate-model-id'
@@ -56,12 +54,6 @@ export function handleMenuSelect(
       return;
     case 'topP':
       setEditing({ key: action, label: 'Top p', value: String(settings.modelSettings.topP) });
-      return;
-    case 'markdownOutputDir':
-      setEditing({ key: action, label: 'Markdown output directory', value: settings.markdownOutputDir });
-      return;
-    case 'assetOutputDir':
-      setEditing({ key: action, label: 'Asset output directory', value: settings.assetOutputDir });
       return;
     case 't2i-settings':
       setMenuMode('t2i');
@@ -165,16 +157,6 @@ export function applyEdit(
         topP: nextTopP,
       },
     });
-    return true;
-  }
-
-  if (action === 'markdownOutputDir') {
-    setSettings({ ...settings, markdownOutputDir: value.trim() || settings.markdownOutputDir });
-    return true;
-  }
-
-  if (action === 'assetOutputDir') {
-    setSettings({ ...settings, assetOutputDir: value.trim() || settings.assetOutputDir });
     return true;
   }
 

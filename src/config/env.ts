@@ -37,8 +37,6 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     topP: parseNumber(env.IDEON_TOP_P),
     modelRequestTimeoutMs: parseNumber(env.IDEON_MODEL_REQUEST_TIMEOUT_MS),
     notificationsEnabled: parseBoolean(env.IDEON_NOTIFICATIONS_ENABLED),
-    markdownOutputDir: env.IDEON_MARKDOWN_OUTPUT_DIR,
-    assetOutputDir: env.IDEON_ASSET_OUTPUT_DIR,
     style: env.IDEON_STYLE,
     intent: env.IDEON_INTENT,
     targetLength: env.IDEON_TARGET_LENGTH,

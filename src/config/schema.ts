@@ -211,8 +211,6 @@ export const appSettingsSchema = z.object({
   modelRequestTimeoutMs: z.number().int().positive().default(90000),
   t2i: baseT2ISettingsSchema.default(baseT2ISettingsSchema.parse({})),
   notifications: notificationsSettingsSchema.default(notificationsSettingsSchema.parse({})),
-  markdownOutputDir: z.string().default('/output'),
-  assetOutputDir: z.string().default('/output/assets'),
   contentTargets: z
     .array(contentTargetSchema)
     .min(1)
@@ -235,8 +233,6 @@ export const envSettingsSchema = z.object({
   topP: z.number().min(0).max(1).optional(),
   modelRequestTimeoutMs: z.number().int().positive().optional(),
   notificationsEnabled: z.boolean().optional(),
-  markdownOutputDir: z.string().optional(),
-  assetOutputDir: z.string().optional(),
   style: z.enum(writingStyleValues).optional(),
   intent: z.enum(contentIntentValues).optional(),
   targetLength: targetLengthWordsSchema.optional(),

@@ -1,8 +1,5 @@
 import { rm, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { readEnvSettings } from '../../config/env.js';
-import { appSettingsSchema } from '../../config/schema.js';
-import { loadSavedSettings } from '../../config/settingsFile.js';
 import { resolveAnalyticsPath, resolveOutputPaths } from '../../output/filesystem.js';
 import { ReportedError } from '../reportedError.js';
 
@@ -65,14 +62,7 @@ export async function runDeleteCommand(
 }
 
 async function resolveDeleteTargets(slug: string, cwd: string): Promise<DeleteTargets> {
-  const [savedSettings, envSettings] = await Promise.all([loadSavedSettings(), Promise.resolve(readEnvSettings())]);
-  const mergedSettings = appSettingsSchema.parse({
-    ...savedSettings,
-    ...(envSettings.markdownOutputDir ? { markdownOutputDir: envSettings.markdownOutputDir } : {}),
-    ...(envSettings.assetOutputDir ? { assetOutputDir: envSettings.assetOutputDir } : {}),
-  });
-
-  const outputPaths = resolveOutputPaths(mergedSettings, cwd);
+  const outputPaths = resolveOutputPaths();
   const markdownPath = await resolveMarkdownPathForSlug(outputPaths.markdownOutputDir, slug);
 
   await assertMarkdownExists(markdownPath, slug);

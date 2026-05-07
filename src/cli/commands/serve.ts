@@ -1,8 +1,5 @@
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { appSettingsSchema } from '../../config/schema.js';
-import { readEnvSettings } from '../../config/env.js';
-import { loadSavedSettings } from '../../config/settingsFile.js';
 import { resolveOutputPaths } from '../../output/filesystem.js';
 import { resolveMarkdownPath, parsePort } from '../../server/previewHelpers.js';
 import { startPreviewServer } from '../../server/previewServer.js';
@@ -15,14 +12,7 @@ interface ServeCommandOptions {
 }
 
 export async function runServeCommand(options: ServeCommandOptions): Promise<void> {
-  const [savedSettings, envSettings] = await Promise.all([loadSavedSettings(), Promise.resolve(readEnvSettings())]);
-  const mergedSettings = appSettingsSchema.parse({
-    ...savedSettings,
-    ...(envSettings.markdownOutputDir ? { markdownOutputDir: envSettings.markdownOutputDir } : {}),
-    ...(envSettings.assetOutputDir ? { assetOutputDir: envSettings.assetOutputDir } : {}),
-  });
-
-  const outputPaths = resolveOutputPaths(mergedSettings);
+  const outputPaths = resolveOutputPaths();
   const markdownPath = await resolveMarkdownPath(options.markdownPath, outputPaths.markdownOutputDir, process.cwd());
   const port = parsePort(options.port);
 

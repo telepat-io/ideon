@@ -28,7 +28,7 @@ export async function runOutputCommand(
   const targetIndex = options.index ?? 1;
 
   const resolved = await resolveRunInput({ idea: `Export generation ${options.generationId}` });
-  const outputPaths = resolveOutputPaths(resolved.config.settings, cwd);
+  const outputPaths = resolveOutputPaths();
 
   // --- Resolve generation ---
   const generations = await listAllGenerations(outputPaths.markdownOutputDir);

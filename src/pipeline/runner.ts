@@ -129,7 +129,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const pipelineCustomLinkRaws = options.customLinks ?? [];
   const pipelineUnlinks = options.unlinks ?? [];
   const pipelineMaxLinks = options.maxLinks;
-  const outputPaths = resolveOutputPaths(input.config.settings, workingDir);
+  const outputPaths = resolveOutputPaths();
   const hasArticlePrimary = isArticlePrimary;
   const stageTracking = new Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>();
   const stageRetryState = new Map<WriteStageId, { retries: number; lastError: string | null }>();

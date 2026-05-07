@@ -1,11 +1,13 @@
 import { access, mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
-import type { AppSettings, ResolvedPaths } from '../config/schema.js';
+import type { ResolvedPaths } from '../config/schema.js';
 
-export function resolveOutputPaths(settings: AppSettings, cwd: string = process.cwd()): ResolvedPaths {
+export function resolveOutputPaths(): ResolvedPaths {
+  const base = path.join(os.homedir(), '.ideon', 'output');
   return {
-    markdownOutputDir: resolveConfiguredDir(settings.markdownOutputDir, cwd),
-    assetOutputDir: resolveConfiguredDir(settings.assetOutputDir, cwd),
+    markdownOutputDir: base,
+    assetOutputDir: path.join(base, 'assets'),
   };
 }
 
@@ -106,18 +108,6 @@ export function resolveAnalyticsPath(markdownPath: string): string {
 
 export function relativeAssetPath(markdownPath: string, assetPath: string): string {
   return path.relative(path.dirname(markdownPath), assetPath).split(path.sep).join('/');
-}
-
-function resolveConfiguredDir(configuredPath: string, cwd: string): string {
-  if (configuredPath === '/output' || configuredPath.startsWith('/output/')) {
-    return path.join(cwd, configuredPath.slice(1));
-  }
-
-  if (path.isAbsolute(configuredPath)) {
-    return configuredPath;
-  }
-
-  return path.resolve(cwd, configuredPath);
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
