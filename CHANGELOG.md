@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.25](https://github.com/telepat-io/ideon/compare/ideon-v0.1.24...ideon-v0.1.25) (2026-05-07)
+
+
+### Features
+
+* add export functionality for generated articles and update CLI options ([cb933ff](https://github.com/telepat-io/ideon/commit/cb933ff19ae040c57b94131b985ab1254ea2db31))
+* introduce meta.json sidecar for structured content metadata ([f6fe6ba](https://github.com/telepat-io/ideon/commit/f6fe6ba163196a4c05a9c49f3b1d297f6febf163))
+* update inline image validation rules and adjust anchorAfterSection constraints ([d8fcf67](https://github.com/telepat-io/ideon/commit/d8fcf671dc037bda1c2fff6e2b299c7d1fa255f6))
+
 ## [0.1.24](https://github.com/telepat-io/ideon/compare/ideon-v0.1.23...ideon-v0.1.24) (2026-05-07)
 
 
