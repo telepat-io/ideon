@@ -1,7 +1,9 @@
-import { writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, rename, unlink, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import type { Limn, ModelId } from '@telepat/limn';
 import type { AppSettings } from '../config/schema.js';
+import { isReplicateModelIdForFamily } from './limnModelCatalog.js';
 import { buildImagePromptMessages, imagePromptSchema } from '../llm/prompts/imagePrompt.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { relativeAssetPath } from '../output/filesystem.js';
@@ -11,6 +13,47 @@ import type { ArticleImagePrompt, ArticlePlan, GeneratedArticle, GeneratedArticl
 import { imagePromptResultSchema } from '../types/articleSchema.js';
 
 export const MIN_IMAGE_BYTES = 1024;
+
+function getLocalSessionArtifactDir(workingDir: string = process.cwd()): string {
+  const hash = createHash('sha256').update(path.resolve(workingDir)).digest('hex').slice(0, 16);
+  return path.join(workingDir, '.ideon', 'sessions', hash, 'limn-artifacts');
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
+}
+
+function isCrossDeviceError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'EXDEV';
+}
+
+async function moveLimnTemporaryArtifact(savedPath: string | undefined): Promise<void> {
+  if (!savedPath || savedPath.trim().length === 0) {
+    return;
+  }
+
+  const sourcePath = path.resolve(savedPath);
+  const destinationDir = getLocalSessionArtifactDir(path.dirname(sourcePath));
+  const destinationPath = path.join(destinationDir, path.basename(sourcePath));
+  await mkdir(destinationDir, { recursive: true });
+
+  try {
+    await rename(sourcePath, destinationPath);
+    return;
+  } catch (error) {
+    if (isCrossDeviceError(error)) {
+      await copyFile(sourcePath, destinationPath);
+      await unlink(sourcePath);
+      return;
+    }
+
+    if (isNotFoundError(error)) {
+      return;
+    }
+
+    throw error;
+  }
+}
 
 export interface ImagePromptCallMetrics {
   imageId: string;
@@ -256,12 +299,16 @@ export async function renderExpandedImages({
     }
 
     const family = settings.t2i.modelId as ModelId;
+    const replicateModelOverride = settings.t2i.replicateModelId;
+    const limnOptions = {
+      aspectRatio: '16:9' as const,
+      ...(replicateModelOverride && isReplicateModelIdForFamily(family, replicateModelOverride)
+        ? { replicateModel: replicateModelOverride }
+        : {}),
+    };
     const renderStartedAtMs = Date.now();
     try {
-      const result = await limn.generate(prompt.prompt, family, {
-        replicateModel: settings.t2i.modelId,
-        aspectRatio: '16:9',
-      });
+      const result = await limn.generate(prompt.prompt, family, limnOptions);
 
       const ext = mimeTypeToExtension(result.mimeType);
       const liveFileName = `${prompt.kind === 'cover' ? 'cover' : `inline-${prompt.anchorAfterSection}`}-${index + 1}.${ext}`;
@@ -273,6 +320,7 @@ export async function renderExpandedImages({
         );
       }
       await writeFile(liveOutputPath, result.image);
+      await moveLimnTemporaryArtifact(result.savedPath);
 
       renderedImages.push({
         ...prompt,

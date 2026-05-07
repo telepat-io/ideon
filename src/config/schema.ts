@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import {
+  DEFAULT_LIMN_MODEL_ID,
+  isKnownLimnFamily,
+  isKnownReplicateModelId,
+  isReplicateModelIdForFamily,
+  resolveFamilyFromReplicateModelId,
+} from '../images/limnModelCatalog.js';
 
 export const contentTypeValues = [
   'article',
@@ -122,10 +129,70 @@ export const modelSettingsSchema = z.object({
   topP: z.number().min(0).max(1).default(1),
 });
 
-export const baseT2ISettingsSchema = z.object({
-  modelId: z.string().default('flux'),
-  inputOverrides: z.record(z.string(), z.unknown()).default({}),
-});
+function normalizeT2ISettings(value: unknown): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return value;
+  }
+
+  const raw = value as Record<string, unknown>;
+  const rawModelId = typeof raw.modelId === 'string' ? raw.modelId.trim() : '';
+  const rawReplicateModelId = typeof raw.replicateModelId === 'string' ? raw.replicateModelId.trim() : '';
+
+  let modelId = rawModelId || DEFAULT_LIMN_MODEL_ID;
+  let replicateModelId = rawReplicateModelId || undefined;
+
+  if (isKnownLimnFamily(modelId)) {
+    if (replicateModelId && !isReplicateModelIdForFamily(modelId, replicateModelId)) {
+      replicateModelId = undefined;
+    }
+    return {
+      ...raw,
+      modelId,
+      replicateModelId,
+    };
+  }
+
+  if (isKnownReplicateModelId(modelId)) {
+    const derivedFamily = resolveFamilyFromReplicateModelId(modelId);
+    if (derivedFamily) {
+      modelId = derivedFamily;
+      replicateModelId = replicateModelId && isReplicateModelIdForFamily(modelId, replicateModelId)
+        ? replicateModelId
+        : rawModelId;
+      return {
+        ...raw,
+        modelId,
+        replicateModelId,
+      };
+    }
+  }
+
+  if (replicateModelId && isKnownReplicateModelId(replicateModelId)) {
+    const derivedFamily = resolveFamilyFromReplicateModelId(replicateModelId);
+    if (derivedFamily) {
+      return {
+        ...raw,
+        modelId: derivedFamily,
+        replicateModelId,
+      };
+    }
+  }
+
+  return {
+    ...raw,
+    modelId: DEFAULT_LIMN_MODEL_ID,
+    replicateModelId: undefined,
+  };
+}
+
+export const baseT2ISettingsSchema = z.preprocess(
+  normalizeT2ISettings,
+  z.object({
+    modelId: z.string().default(DEFAULT_LIMN_MODEL_ID),
+    replicateModelId: z.string().optional(),
+    inputOverrides: z.record(z.string(), z.unknown()).default({}),
+  }),
+);
 
 export const notificationsSettingsSchema = z.object({
   enabled: z.boolean().default(false),

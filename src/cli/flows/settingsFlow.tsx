@@ -3,7 +3,7 @@ import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import type { AppSettings, SecretSettings } from '../../config/schema.js';
-import { getLimnGenerationModels } from '../../images/limnModelCatalog.js';
+import { getLimnGenerationModels, isReplicateModelIdForFamily } from '../../images/limnModelCatalog.js';
 import { applyEdit, handleMenuSelect, type EditingState, type MenuAction } from './settingsFlowLogic.js';
 
 interface SettingsFlowProps {
@@ -55,11 +55,19 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
     return count === 0 ? 'none' : `${count} override${count === 1 ? '' : 's'}`;
   };
 
+  const formatReplicateOverrideSummary = (replicateModelId: string | undefined): string => {
+    return replicateModelId && replicateModelId.length > 0 ? replicateModelId : 'auto';
+  };
+
   const menuItems = useMemo<MenuItem[]>(() => {
     const t2iSubmenu: MenuItem[] = [
       {
         label: `T2I model: ${currentModelEntry?.displayName ?? settings.t2i.modelId}`,
         value: 't2i-model',
+      },
+      {
+        label: `T2I Replicate model override: ${formatReplicateOverrideSummary(settings.t2i.replicateModelId)}`,
+        value: 't2i-replicate-model-id',
       },
       {
         label: `T2I input overrides: ${formatT2iOverridesSummary(settings.t2i.inputOverrides)}`,
@@ -146,6 +154,10 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
               ...current,
               t2i: {
                 modelId: item.value,
+                replicateModelId:
+                  current.t2i.replicateModelId && isReplicateModelIdForFamily(item.value, current.t2i.replicateModelId)
+                    ? current.t2i.replicateModelId
+                    : undefined,
                 inputOverrides: {},
               },
             }));

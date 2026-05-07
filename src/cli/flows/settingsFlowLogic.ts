@@ -13,6 +13,7 @@ export type MenuAction =
   | 'assetOutputDir'
   | 't2i-settings'
   | 't2i-model'
+  | 't2i-replicate-model-id'
   | 't2i-input-overrides'
   | 't2i-back'
   | 'save'
@@ -73,6 +74,13 @@ export function handleMenuSelect(
         key: action,
         label: 'T2I input overrides (JSON)',
         value: JSON.stringify(settings.t2i.inputOverrides, null, 2),
+      });
+      return;
+    case 't2i-replicate-model-id':
+      setEditing({
+        key: action,
+        label: 'T2I Replicate model ID override (blank to clear)',
+        value: settings.t2i.replicateModelId ?? '',
       });
       return;
     case 't2i-back':
@@ -200,6 +208,18 @@ export function applyEdit(
     } catch {
       return false;
     }
+  }
+
+  if (action === 't2i-replicate-model-id') {
+    const trimmed = value.trim();
+    setSettings({
+      ...settings,
+      t2i: {
+        ...settings.t2i,
+        replicateModelId: trimmed.length > 0 ? trimmed : undefined,
+      },
+    });
+    return true;
   }
 
   return false;

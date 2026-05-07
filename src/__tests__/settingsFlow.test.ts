@@ -95,6 +95,41 @@ describe('Ideon settings flow', () => {
     expect(exit).not.toHaveBeenCalled();
   });
 
+  it('starts editing T2I replicate model override when selected', () => {
+    const setEditing = jest.fn();
+    const setShowModelSelect = jest.fn();
+    const setMenuMode = jest.fn();
+    const onDone = jest.fn();
+    const exit = jest.fn();
+    const settings: AppSettings = {
+      ...defaultAppSettings,
+      t2i: {
+        modelId: 'flux',
+        replicateModelId: 'black-forest-labs/flux-2-pro',
+        inputOverrides: {},
+      },
+    };
+
+    handleMenuSelect(
+      't2i-replicate-model-id',
+      settings,
+      defaultSecrets,
+      setEditing,
+      setShowModelSelect,
+      setMenuMode,
+      onDone,
+      exit,
+    );
+
+    expect(setEditing).toHaveBeenCalledWith({
+      key: 't2i-replicate-model-id',
+      label: 'T2I Replicate model ID override (blank to clear)',
+      value: 'black-forest-labs/flux-2-pro',
+    });
+    expect(setShowModelSelect).not.toHaveBeenCalled();
+    expect(setMenuMode).not.toHaveBeenCalled();
+  });
+
   it('clears input overrides when blank JSON is submitted', () => {
     const setSettings = jest.fn();
     const setSecrets = jest.fn();
@@ -127,6 +162,54 @@ describe('Ideon settings flow', () => {
 
     expect(result).toBe(false);
     expect(setSettings).not.toHaveBeenCalled();
+    expect(setSecrets).not.toHaveBeenCalled();
+  });
+
+  it('sets T2I replicate model override from editor input', () => {
+    const setSettings = jest.fn();
+    const setSecrets = jest.fn();
+
+    const result = applyEdit(
+      't2i-replicate-model-id',
+      'black-forest-labs/flux-2-pro',
+      defaultAppSettings,
+      defaultSecrets,
+      setSettings,
+      setSecrets,
+    );
+
+    expect(result).toBe(true);
+    expect(setSettings).toHaveBeenCalledWith({
+      ...defaultAppSettings,
+      t2i: {
+        ...defaultAppSettings.t2i,
+        replicateModelId: 'black-forest-labs/flux-2-pro',
+      },
+    });
+    expect(setSecrets).not.toHaveBeenCalled();
+  });
+
+  it('clears T2I replicate model override when editor input is blank', () => {
+    const setSettings = jest.fn();
+    const setSecrets = jest.fn();
+    const settings: AppSettings = {
+      ...defaultAppSettings,
+      t2i: {
+        ...defaultAppSettings.t2i,
+        replicateModelId: 'black-forest-labs/flux-2-pro',
+      },
+    };
+
+    const result = applyEdit('t2i-replicate-model-id', '   ', settings, defaultSecrets, setSettings, setSecrets);
+
+    expect(result).toBe(true);
+    expect(setSettings).toHaveBeenCalledWith({
+      ...settings,
+      t2i: {
+        ...settings.t2i,
+        replicateModelId: undefined,
+      },
+    });
     expect(setSecrets).not.toHaveBeenCalled();
   });
 });

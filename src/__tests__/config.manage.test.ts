@@ -37,7 +37,7 @@ describe('config manage', () => {
       model: 'deepseek/deepseek-v4-pro',
       modelSettings: { temperature: 0.7, maxTokens: 4000, topP: 1 },
       modelRequestTimeoutMs: 90000,
-      t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
+      t2i: { modelId: 'flux', replicateModelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
       notifications: { enabled: false },
       markdownOutputDir: '/output',
       assetOutputDir: '/output/assets',
@@ -61,6 +61,7 @@ describe('config manage', () => {
     expect(result.settings.model).toBe('deepseek/deepseek-v4-pro');
     expect(result.settings.style).toBe('professional');
     expect(result.settings.intent).toBe('tutorial');
+    expect(result.settings['t2i.replicateModelId']).toBe('black-forest-labs/flux-schnell');
     expect(result.secrets.openRouterApiKey).toBe(true);
     expect(result.secrets.replicateApiToken).toBe(false);
   });
@@ -104,8 +105,30 @@ describe('config manage', () => {
   it('validates known keys', () => {
     expect(isConfigKey('style')).toBe(true);
     expect(isConfigKey('intent')).toBe(true);
+    expect(isConfigKey('t2i.replicateModelId')).toBe(true);
     expect(isConfigKey('openRouterApiKey')).toBe(true);
     expect(isConfigKey('unknown.key')).toBe(false);
+  });
+
+  it('sets and unsets t2i.replicateModelId', async () => {
+    await configSet('t2i.replicateModelId', 'black-forest-labs/flux-2-pro');
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        t2i: expect.objectContaining({
+          modelId: 'flux',
+          replicateModelId: 'black-forest-labs/flux-2-pro',
+        }),
+      }),
+    );
+
+    await configUnset('t2i.replicateModelId');
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        t2i: expect.objectContaining({
+          replicateModelId: undefined,
+        }),
+      }),
+    );
   });
 
   it('coerces numeric and boolean fields', async () => {

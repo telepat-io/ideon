@@ -55,6 +55,8 @@ describe('resolveRunInput', () => {
     expect(result.job).toBeNull();
     expect(result.config.settings.model).toBe('saved/model');
     expect(result.config.settings.modelSettings.temperature).toBe(0.5);
+    expect(result.config.settings.t2i.modelId).toBe('flux');
+    expect(result.config.settings.t2i.replicateModelId).toBe('black-forest-labs/flux-schnell');
     expect(result.config.secrets.openRouterApiKey).toBe('saved-openrouter-key');
   });
 
@@ -344,5 +346,53 @@ describe('resolveRunInput', () => {
 
     const result = await resolveRunInput({ idea: 'env length test' });
     expect(result.config.settings.targetLength).toBe(500);
+  });
+
+  it('keeps family-only t2i settings when no replicate override is configured', async () => {
+    loadSavedSettingsMock.mockResolvedValue({
+      model: 'saved/model',
+      modelSettings: { temperature: 0.5, maxTokens: 1500, topP: 0.9 },
+      modelRequestTimeoutMs: 90000,
+      t2i: { modelId: 'flux', inputOverrides: {} },
+      notifications: { enabled: false },
+      markdownOutputDir: '/saved-out',
+      assetOutputDir: '/saved-out/assets',
+      contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 900,
+    });
+
+    const result = await resolveRunInput({ idea: 'family only' });
+    expect(result.config.settings.t2i.modelId).toBe('flux');
+    expect(result.config.settings.t2i.replicateModelId).toBeUndefined();
+  });
+
+  it('merges job-provided t2i.replicateModelId and preserves family', async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-replicate-override-'));
+
+    try {
+      const jobPath = path.join(tempDir, 'job.json');
+      await writeFile(
+        jobPath,
+        JSON.stringify({
+          idea: 'job t2i override',
+          settings: {
+            t2i: {
+              modelId: 'flux',
+              replicateModelId: 'black-forest-labs/flux-2-pro',
+              inputOverrides: {},
+            },
+          },
+        }),
+        'utf8',
+      );
+
+      const result = await resolveRunInput({ jobPath });
+      expect(result.config.settings.t2i.modelId).toBe('flux');
+      expect(result.config.settings.t2i.replicateModelId).toBe('black-forest-labs/flux-2-pro');
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 });

@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { jest } from '@jest/globals';
 import { defaultAppSettings } from '../config/schema.js';
 import { buildAndRenderImages, expandImagePrompts, renderExpandedImages, buildImageSlots, MIN_IMAGE_BYTES } from '../images/renderImages.js';
@@ -124,6 +125,15 @@ describe('renderExpandedImages', () => {
       });
 
       expect(limn.generate).toHaveBeenCalledTimes(1);
+      expect(limn.generate).toHaveBeenCalledWith(
+        'cover prompt',
+        'flux',
+        expect.objectContaining({
+          aspectRatio: '16:9',
+        }),
+      );
+      const firstCallOptions = limn.generate.mock.calls[0]?.[2] as Record<string, unknown>;
+      expect(firstCallOptions).not.toHaveProperty('replicateModel');
       expect(rendered).toHaveLength(1);
       expect(rendered[0]?.outputPath.endsWith('.png')).toBe(true);
       expect(onInteraction).toHaveBeenCalledWith(
@@ -305,6 +315,122 @@ describe('renderExpandedImages', () => {
 
       expect(rendered[0]?.outputPath.endsWith('.webp')).toBe(true);
     } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('forwards valid replicate model override when configured', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-override-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article.md');
+      const assetDir = path.join(tempRoot, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const limn = {
+        generate: jest.fn<() => Promise<unknown>>().mockResolvedValue({
+          image: Buffer.alloc(MIN_IMAGE_BYTES, 1),
+          filename: 'cover.png',
+          savedPath: '',
+          mimeType: 'image/png',
+          modelSlug: 'black-forest-labs/flux-2-pro',
+          promptUsed: 'p',
+          analytics: {
+            totalDurationMs: 1,
+            openrouterDurationMs: 0,
+            replicateDurationMs: 1,
+            openrouterUsage: null,
+            openrouterCostUsd: null,
+            openrouterGenerationId: null,
+            replicatePredictionId: 'p',
+            replicateEstimatedCostUsd: null,
+            totalEstimatedCostUsd: null,
+            costSource: 'unknown' as const,
+          },
+        }),
+      };
+
+      await renderExpandedImages({
+        prompts: [{ id: 'cover', kind: 'cover', prompt: 'p', description: '', anchorAfterSection: null }],
+        settings: {
+          ...defaultAppSettings,
+          t2i: {
+            ...defaultAppSettings.t2i,
+            modelId: 'flux',
+            replicateModelId: 'black-forest-labs/flux-2-pro',
+          },
+        },
+        limn: limn as never,
+        markdownPath,
+        assetDir,
+        dryRun: false,
+      });
+
+      expect(limn.generate).toHaveBeenCalledWith(
+        'p',
+        'flux',
+        expect.objectContaining({
+          aspectRatio: '16:9',
+          replicateModel: 'black-forest-labs/flux-2-pro',
+        }),
+      );
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('moves Limn temporary savedPath from cwd into local .ideon session artifacts', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-artifact-move-'));
+    const originalCwd = process.cwd();
+
+    try {
+      process.chdir(tempRoot);
+      const markdownPath = path.join(tempRoot, 'article.md');
+      const assetDir = path.join(tempRoot, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const limnTempPath = path.join(tempRoot, 'limn_flux_temp.webp');
+      await writeFile(limnTempPath, Buffer.alloc(64, 2));
+
+      const limn = {
+        generate: jest.fn<() => Promise<unknown>>().mockResolvedValue({
+          image: Buffer.alloc(MIN_IMAGE_BYTES, 8),
+          filename: 'cover.webp',
+          savedPath: limnTempPath,
+          mimeType: 'image/webp',
+          modelSlug: 'black-forest-labs/flux-schnell',
+          promptUsed: 'p',
+          analytics: {
+            totalDurationMs: 1,
+            openrouterDurationMs: 0,
+            replicateDurationMs: 1,
+            openrouterUsage: null,
+            openrouterCostUsd: null,
+            openrouterGenerationId: null,
+            replicatePredictionId: 'p',
+            replicateEstimatedCostUsd: null,
+            totalEstimatedCostUsd: null,
+            costSource: 'unknown' as const,
+          },
+        }),
+      };
+
+      await renderExpandedImages({
+        prompts: [{ id: 'cover', kind: 'cover', prompt: 'p', description: '', anchorAfterSection: null }],
+        settings: defaultAppSettings,
+        limn: limn as never,
+        markdownPath,
+        assetDir,
+        dryRun: false,
+      });
+
+      await expect(readFile(limnTempPath)).rejects.toThrow();
+      const sessionHash = createHash('sha256').update(path.resolve(tempRoot)).digest('hex').slice(0, 16);
+      const movedPath = path.join(tempRoot, '.ideon', 'sessions', sessionHash, 'limn-artifacts', path.basename(limnTempPath));
+      const movedContent = await readFile(movedPath);
+      expect(movedContent.byteLength).toBe(64);
+    } finally {
+      process.chdir(originalCwd);
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
