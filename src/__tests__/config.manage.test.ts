@@ -39,8 +39,6 @@ describe('config manage', () => {
       modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'flux', replicateModelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
       notifications: { enabled: false },
-      markdownOutputDir: '/output',
-      assetOutputDir: '/output/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
       intent: 'tutorial',
@@ -166,15 +164,9 @@ describe('config manage', () => {
     );
   });
 
-  it('updates path and enum fields', async () => {
+  it('updates model and enum fields', async () => {
     await configSet('model', 'openai/gpt-4.1');
     expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ model: 'openai/gpt-4.1' }));
-
-    await configSet('markdownOutputDir', '/tmp/md');
-    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ markdownOutputDir: '/tmp/md' }));
-
-    await configSet('assetOutputDir', '/tmp/assets');
-    expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ assetOutputDir: '/tmp/assets' }));
 
     await configSet('targetLength', 'large');
     expect(saveSettingsMock).toHaveBeenLastCalledWith(expect.objectContaining({ targetLength: 1400 }));

@@ -280,7 +280,7 @@ function makeMarkdown(slug: string, title: string, body?: string): string {
   ].join('\n');
 }
 
-function makeResolvedInput(markdownOutputDir: string): ResolvedRunInput {
+function makeResolvedInput(_markdownOutputDir: string): ResolvedRunInput {
   return {
     idea: 'Export test',
     targetAudienceHint: undefined,
@@ -288,8 +288,6 @@ function makeResolvedInput(markdownOutputDir: string): ResolvedRunInput {
     config: {
       settings: {
         ...defaultAppSettings,
-        markdownOutputDir,
-        assetOutputDir: path.join(markdownOutputDir, 'assets'),
       },
       secrets: {
         openRouterApiKey: null,

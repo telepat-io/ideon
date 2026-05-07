@@ -17,8 +17,6 @@ export const configSettingKeys = [
   'modelSettings.topP',
   'modelRequestTimeoutMs',
   'notifications.enabled',
-  'markdownOutputDir',
-  'assetOutputDir',
   't2i.replicateModelId',
   'style',
   'intent',
@@ -68,8 +66,6 @@ export async function configList(): Promise<ConfigListResult> {
       'modelSettings.topP': settings.modelSettings.topP,
       modelRequestTimeoutMs: settings.modelRequestTimeoutMs,
       'notifications.enabled': settings.notifications.enabled,
-      markdownOutputDir: settings.markdownOutputDir,
-      assetOutputDir: settings.assetOutputDir,
       't2i.replicateModelId': settings.t2i.replicateModelId,
       style: settings.style,
       intent: settings.intent,
@@ -142,13 +138,10 @@ function coerceSettingValue(key: ConfigSettingKey, rawValue: string): unknown {
 
   switch (key) {
     case 'model':
-    case 'markdownOutputDir':
-    case 'assetOutputDir': {
       if (trimmed.length === 0) {
         throw new Error(`${key} cannot be empty.`);
       }
       return trimmed;
-    }
     case 't2i.replicateModelId': {
       if (trimmed.length === 0) {
         throw new Error('t2i.replicateModelId cannot be empty. Use config unset to clear it.');
@@ -230,10 +223,6 @@ function getSettingValue(settings: AppSettings, key: ConfigSettingKey): unknown 
       return settings.modelRequestTimeoutMs;
     case 'notifications.enabled':
       return settings.notifications.enabled;
-    case 'markdownOutputDir':
-      return settings.markdownOutputDir;
-    case 'assetOutputDir':
-      return settings.assetOutputDir;
     case 't2i.replicateModelId':
       return settings.t2i.replicateModelId;
     case 'style':
@@ -261,10 +250,6 @@ function setSettingValue(settings: AppSettings, key: ConfigSettingKey, value: un
       return { ...settings, modelRequestTimeoutMs: value as number };
     case 'notifications.enabled':
       return { ...settings, notifications: { ...settings.notifications, enabled: value as boolean } };
-    case 'markdownOutputDir':
-      return { ...settings, markdownOutputDir: value as string };
-    case 'assetOutputDir':
-      return { ...settings, assetOutputDir: value as string };
     case 't2i.replicateModelId':
       return { ...settings, t2i: { ...settings.t2i, replicateModelId: value as string | undefined } };
     case 'style':

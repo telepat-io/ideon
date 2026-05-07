@@ -32,8 +32,6 @@ describe('resolveRunInput', () => {
       modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
       notifications: { enabled: false },
-      markdownOutputDir: '/saved-out',
-      assetOutputDir: '/saved-out/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
       intent: 'tutorial',
@@ -73,8 +71,6 @@ describe('resolveRunInput', () => {
             model: 'job/model',
             modelRequestTimeoutMs: 120000,
             modelSettings: { maxTokens: 2200, topP: 0.7 },
-            markdownOutputDir: '/job-out',
-            assetOutputDir: '/job-out/assets',
           },
         }),
         'utf8',
@@ -84,8 +80,6 @@ describe('resolveRunInput', () => {
         model: 'env/model',
         temperature: 1.1,
         modelRequestTimeoutMs: 150000,
-        markdownOutputDir: '/env-out',
-        assetOutputDir: '/env-out/assets',
       });
 
       const result = await resolveRunInput({ jobPath });
@@ -96,8 +90,6 @@ describe('resolveRunInput', () => {
       expect(result.config.settings.modelSettings.temperature).toBe(1.1);
       expect(result.config.settings.modelSettings.maxTokens).toBe(2200);
       expect(result.config.settings.modelSettings.topP).toBe(0.7);
-      expect(result.config.settings.markdownOutputDir).toBe('/env-out');
-      expect(result.config.settings.assetOutputDir).toBe('/env-out/assets');
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
@@ -250,8 +242,6 @@ describe('resolveRunInput', () => {
       modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'black-forest-labs/flux-schnell', inputOverrides: {} },
       notifications: { enabled: false },
-      markdownOutputDir: '/saved-out',
-      assetOutputDir: '/saved-out/assets',
       style: 'professional',
       intent: 'tutorial',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
@@ -355,8 +345,6 @@ describe('resolveRunInput', () => {
       modelRequestTimeoutMs: 90000,
       t2i: { modelId: 'flux', inputOverrides: {} },
       notifications: { enabled: false },
-      markdownOutputDir: '/saved-out',
-      assetOutputDir: '/saved-out/assets',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       style: 'professional',
       intent: 'tutorial',

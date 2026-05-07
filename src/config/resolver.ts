@@ -77,8 +77,6 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
           },
         }
       : {}),
-    ...(envSettings.markdownOutputDir ? { markdownOutputDir: envSettings.markdownOutputDir } : {}),
-    ...(envSettings.assetOutputDir ? { assetOutputDir: envSettings.assetOutputDir } : {}),
     ...(envSettings.style ? { style: envSettings.style } : {}),
     ...(envSettings.intent ? { intent: envSettings.intent } : {}),
     ...(envSettings.targetLength ? { targetLength: envSettings.targetLength } : {}),

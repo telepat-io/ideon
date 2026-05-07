@@ -335,7 +335,7 @@ describe('parseCustomLinkFlag', () => {
   });
 });
 
-function makeResolvedInput(markdownOutputDir: string, assetOutputDir: string): ResolvedRunInput {
+function makeResolvedInput(_markdownOutputDir: string, _assetOutputDir: string): ResolvedRunInput {
   return {
     idea: 'Enrich links for test',
     targetAudienceHint: undefined,
@@ -343,8 +343,6 @@ function makeResolvedInput(markdownOutputDir: string, assetOutputDir: string): R
     config: {
       settings: {
         ...defaultAppSettings,
-        markdownOutputDir,
-        assetOutputDir,
       },
       secrets: {
         openRouterApiKey: 'test-openrouter-key',

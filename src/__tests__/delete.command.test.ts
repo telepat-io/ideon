@@ -30,7 +30,7 @@ describe('runDeleteCommand', () => {
       const paths = await seedArticle(tempRoot, 'delete-me', { analytics: true, assets: true });
       const logs: string[] = [];
 
-      loadSavedSettingsMock.mockResolvedValue(makeSettings(paths.markdownDir, paths.assetRoot));
+      loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
       await runDeleteCommand(
         { slug: 'delete-me', force: true },
@@ -58,7 +58,7 @@ describe('runDeleteCommand', () => {
       const confirmDeletion = jest.fn(async () => false);
       const logs: string[] = [];
 
-      loadSavedSettingsMock.mockResolvedValue(makeSettings(paths.markdownDir, paths.assetRoot));
+      loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
       await runDeleteCommand(
         { slug: 'keep-me', force: false },
@@ -86,7 +86,7 @@ describe('runDeleteCommand', () => {
 
     try {
       const paths = await seedArticle(tempRoot, 'needs-force', { analytics: true, assets: true });
-      loadSavedSettingsMock.mockResolvedValue(makeSettings(paths.markdownDir, paths.assetRoot));
+      loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
       await expect(runDeleteCommand({ slug: 'needs-force', force: false }, { cwd: tempRoot })).rejects.toThrow(
         'Delete requires confirmation in an interactive terminal. Re-run with --force to skip the prompt.',
@@ -107,7 +107,7 @@ describe('runDeleteCommand', () => {
       const assetRoot = path.join(markdownDir, 'assets');
       await mkdir(assetRoot, { recursive: true });
 
-      loadSavedSettingsMock.mockResolvedValue(makeSettings(markdownDir, assetRoot));
+      loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
       await expect(runDeleteCommand({ slug: 'missing-slug', force: true }, { cwd: tempRoot })).rejects.toThrow(
         `Could not find article "missing-slug". Expected markdown at ${path.join(markdownDir, 'missing-slug.md')}.`,
@@ -122,7 +122,7 @@ describe('runDeleteCommand', () => {
 
     try {
       const paths = await seedArticle(tempRoot, 'partial-state', { analytics: false, assets: false });
-      loadSavedSettingsMock.mockResolvedValue(makeSettings(paths.markdownDir, paths.assetRoot));
+      loadSavedSettingsMock.mockResolvedValue(makeSettings());
 
       await runDeleteCommand({ slug: 'partial-state', force: true }, { cwd: tempRoot, log: () => undefined });
 
@@ -141,11 +141,8 @@ describe('runDeleteCommand', () => {
   });
 });
 
-function makeSettings(markdownOutputDir: string, assetOutputDir: string): Partial<AppSettings> {
-  return {
-    markdownOutputDir,
-    assetOutputDir,
-  };
+function makeSettings(): Partial<AppSettings> {
+  return {};
 }
 
 async function seedArticle(

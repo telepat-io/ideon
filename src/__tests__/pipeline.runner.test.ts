@@ -46,8 +46,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
             },
             secrets: {
               openRouterApiKey: null,
@@ -176,8 +174,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [{ contentType: 'linkedin-post', role: 'primary', count: 1 }],
             },
             secrets: {
@@ -286,8 +282,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [{ contentType: 'linkedin-post', role: 'primary', count: 1 }],
             },
             secrets: {
@@ -332,8 +326,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [
                 { contentType: 'article', role: 'primary', count: 1 },
                 { contentType: 'x-thread', role: 'secondary', count: 1 },
@@ -394,10 +386,7 @@ describe('pipeline runner', () => {
         prompt: string;
         contentTargets: Array<{ contentType: string; count: number }>;
         style: string;
-        settings: {
-          markdownOutputDir: string;
-          assetOutputDir: string;
-        };
+        settings: Record<string, unknown>;
       };
       expect(job.prompt).toBe('multi target generation test');
       expect(job.contentTargets).toEqual([
@@ -406,8 +395,7 @@ describe('pipeline runner', () => {
         { contentType: 'x-post', role: 'secondary', count: 1 },
       ]);
       expect(job.style).toBe('professional');
-      expect(job.settings.markdownOutputDir).toBe(markdownDir);
-      expect(job.settings.assetOutputDir).toBe(assetDir);
+      expect(job.settings).toEqual({});
 
       const planMarkdown = await readFile(path.join(result.artifact.generationDir, 'plan.md'), 'utf8');
       expect(planMarkdown).toContain('---');
@@ -435,8 +423,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [
                 { contentType: 'x-thread', role: 'primary', count: 1 },
                 { contentType: 'linkedin-post', role: 'secondary', count: 1 },
@@ -503,8 +489,6 @@ describe('pipeline runner', () => {
             config: {
               settings: {
                 ...defaultAppSettings,
-                markdownOutputDir: markdownDir,
-                assetOutputDir: assetDir,
               },
               secrets: {
                 openRouterApiKey: null,
@@ -547,8 +531,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
             },
             secrets: {
               openRouterApiKey: null,
@@ -588,8 +570,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [
                 { contentType: 'x-post', role: 'primary', count: 1 },
                 { contentType: 'x-thread', role: 'secondary', count: 1 },
@@ -632,8 +612,6 @@ describe('pipeline runner', () => {
           job: null,
           settings: {
             ...defaultAppSettings,
-            markdownOutputDir: markdownDir,
-            assetOutputDir: assetDir,
           },
           dryRun: true,
           outputPaths: {
@@ -681,8 +659,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
             },
             secrets: {
               openRouterApiKey: null,
@@ -727,8 +703,6 @@ describe('pipeline runner', () => {
           job: null,
           settings: {
             ...defaultAppSettings,
-            markdownOutputDir: markdownDir,
-            assetOutputDir: assetDir,
           },
           dryRun: true,
           outputPaths: {
@@ -810,8 +784,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
             },
             secrets: {
               openRouterApiKey: null,
@@ -868,8 +840,6 @@ describe('pipeline runner', () => {
           job: null,
           settings: {
             ...defaultAppSettings,
-            markdownOutputDir: markdownDir,
-            assetOutputDir: assetDir,
           },
           dryRun: true,
           outputPaths: { markdownOutputDir: markdownDir, assetOutputDir: assetDir },
@@ -936,8 +906,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
             },
             secrets: { openRouterApiKey: null, replicateApiToken: null },
           },
@@ -978,8 +946,6 @@ describe('pipeline runner', () => {
             config: {
               settings: {
                 ...defaultAppSettings,
-                markdownOutputDir: path.join(tempRoot, 'out'),
-                assetOutputDir: path.join(tempRoot, 'out', 'assets'),
               },
               secrets: {
                 openRouterApiKey: null,
@@ -1017,8 +983,6 @@ describe('pipeline runner', () => {
           job: null,
           settings: {
             ...defaultAppSettings,
-            markdownOutputDir: markdownDir,
-            assetOutputDir: assetDir,
           },
           dryRun: true,
           outputPaths: {
@@ -1133,8 +1097,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [
                 { contentType: 'article', role: 'primary', count: 1 },
                 { contentType: 'blog-post', role: 'secondary', count: 1 },
@@ -1206,8 +1168,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [{ contentType: 'x-post', role: 'primary', count: 1 }],
             },
             secrets: {
@@ -1244,8 +1204,6 @@ describe('pipeline runner', () => {
           config: {
             settings: {
               ...defaultAppSettings,
-              markdownOutputDir: markdownDir,
-              assetOutputDir: assetDir,
               contentTargets: [{ contentType: 'blog-post', role: 'primary', count: 1 }],
             },
             secrets: {
