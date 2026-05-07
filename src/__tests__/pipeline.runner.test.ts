@@ -958,7 +958,7 @@ describe('pipeline runner', () => {
               kind: 'inline',
               prompt: 'DO-NOT-REGENERATE-INLINE-1',
               description: 'Inline one',
-              anchorAfterSection: 1,
+              anchorAfterSection: 2,
             },
             {
               id: 'inline-2',
@@ -1083,12 +1083,12 @@ describe('pipeline runner', () => {
           imageArtifacts: {
             imagePrompts: [
               { id: 'cover', kind: 'cover', prompt: 'cover prompt', description: 'cover', anchorAfterSection: null },
-              { id: 'inline-1', kind: 'inline', prompt: 'inline prompt', description: 'inline one', anchorAfterSection: 1 },
+              { id: 'inline-1', kind: 'inline', prompt: 'inline prompt', description: 'inline one', anchorAfterSection: 2 },
               { id: 'inline-2', kind: 'inline', prompt: 'inline prompt 2', description: 'inline two', anchorAfterSection: 2 },
             ],
             renderedImages: [
               { id: 'cover', kind: 'cover', prompt: 'cover prompt', description: 'cover', anchorAfterSection: null, outputPath: corruptedPath, relativePath: 'assets/cover-1.webp' },
-              { id: 'inline-1', kind: 'inline', prompt: 'inline prompt', description: 'inline one', anchorAfterSection: 1, outputPath: missingPath, relativePath: 'assets/inline-1-2.webp' },
+              { id: 'inline-1', kind: 'inline', prompt: 'inline prompt', description: 'inline one', anchorAfterSection: 2, outputPath: missingPath, relativePath: 'assets/inline-1-2.webp' },
               { id: 'inline-2', kind: 'inline', prompt: 'inline prompt 2', description: 'inline two', anchorAfterSection: 2, outputPath: missingPath + '-2', relativePath: 'assets/inline-2-3.webp' },
             ],
           },

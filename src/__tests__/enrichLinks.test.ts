@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { jest } from '@jest/globals';
-import { defaultAppSettings, resolveDefaultMaxLinks } from '../config/schema.js';
+import { defaultAppSettings, resolveDefaultMaxLinks, resolveDefaultInlineImageCount } from '../config/schema.js';
 import { enrichLinks } from '../generation/enrichLinks.js';
 import type { ChatMessage } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
@@ -382,6 +382,32 @@ describe('resolveDefaultMaxLinks', () => {
   it('returns 12 for large word counts', () => {
     expect(resolveDefaultMaxLinks(1400)).toBe(12);
     expect(resolveDefaultMaxLinks(2000)).toBe(12);
+  });
+});
+
+describe('resolveDefaultInlineImageCount', () => {
+  it('returns 0-1 for small word counts', () => {
+    expect(resolveDefaultInlineImageCount(300)).toEqual({ min: 0, max: 1 });
+    expect(resolveDefaultInlineImageCount(500)).toEqual({ min: 0, max: 1 });
+    expect(resolveDefaultInlineImageCount(700)).toEqual({ min: 0, max: 1 });
+  });
+
+  it('returns 1-2 for medium word counts', () => {
+    expect(resolveDefaultInlineImageCount(701)).toEqual({ min: 1, max: 2 });
+    expect(resolveDefaultInlineImageCount(900)).toEqual({ min: 1, max: 2 });
+    expect(resolveDefaultInlineImageCount(1150)).toEqual({ min: 1, max: 2 });
+  });
+
+  it('returns 2-4 for large word counts', () => {
+    expect(resolveDefaultInlineImageCount(1151)).toEqual({ min: 2, max: 4 });
+    expect(resolveDefaultInlineImageCount(1400)).toEqual({ min: 2, max: 4 });
+    expect(resolveDefaultInlineImageCount(2000)).toEqual({ min: 2, max: 4 });
+  });
+
+  it('returns 1-2 for invalid or missing word counts (medium fallback)', () => {
+    expect(resolveDefaultInlineImageCount(Number.NaN)).toEqual({ min: 1, max: 2 });
+    expect(resolveDefaultInlineImageCount(0)).toEqual({ min: 1, max: 2 });
+    expect(resolveDefaultInlineImageCount(-100)).toEqual({ min: 1, max: 2 });
   });
 });
 

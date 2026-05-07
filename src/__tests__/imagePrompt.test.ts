@@ -24,7 +24,7 @@ describe('image prompt helpers', () => {
         kind: 'inline',
         prompt: '',
         description: 'A rustic meal on a wooden table',
-        anchorAfterSection: 1,
+        anchorAfterSection: 2,
       },
     );
 

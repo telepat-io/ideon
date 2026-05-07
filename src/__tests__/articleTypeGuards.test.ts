@@ -38,7 +38,7 @@ describe('isLongFormPlan', () => {
         { title: 'Section 1', description: 'Desc 1' },
         { title: 'Section 2', description: 'Desc 2' },
       ],
-      inlineImages: [{ description: 'Image 1', anchorAfterSection: 1 }],
+      inlineImages: [{ description: 'Image 1', anchorAfterSection: 2 }],
     };
 
     expect(isLongFormPlan(plan)).toBe(true);

@@ -106,9 +106,12 @@ describe('primary plan prompt builders', () => {
     expect(messages[0]?.content).not.toContain('Avoid generic filler');
     expect(messages[1]?.content).not.toContain('Avoid AI giveaway phrasing');
     expect(messages[1]?.content).toContain('contentType: set to "article" exactly');
-    // Verify medium article gets 2-3 inline image instruction
-    expect(messages[1]?.content).toContain('Include a cover image description and 2 to 3 inline image descriptions');
-    expect(messages[1]?.content).toContain('inlineImages: array of 2 to 3 objects');
+    // Verify medium article gets 1-2 inline image instruction
+    expect(messages[1]?.content).toContain('Include a cover image description and 1 to 2 inline image descriptions');
+    expect(messages[1]?.content).toContain('inlineImages: array of 1 to 2 objects');
+    // Verify anchorAfterSection guidance starts at 2 and mentions cover image proximity
+    expect(messages[1]?.content).toContain('anchorAfterSection, starting at 2');
+    expect(messages[1]?.content).toContain('cover image already appears near the title');
   });
 
   it('uses proportional image count instructions by target length for long-form', () => {
@@ -128,13 +131,13 @@ describe('primary plan prompt builders', () => {
       targetLength: 1400,
     });
 
-    // small (500 words) → 1-2 inline images
-    expect(smallMessages[1]?.content).toContain('Include a cover image description and 1 to 2 inline image descriptions');
-    expect(smallMessages[1]?.content).toContain('inlineImages: array of 1 to 2 objects');
+    // small (500 words) → 0-1 inline images
+    expect(smallMessages[1]?.content).toContain('Include a cover image description and 0 to 1 inline image descriptions');
+    expect(smallMessages[1]?.content).toContain('inlineImages: array of 0 to 1 objects');
 
-    // large (1400 words) → 3-4 inline images
-    expect(largeMessages[1]?.content).toContain('Include a cover image description and 3 to 4 inline image descriptions');
-    expect(largeMessages[1]?.content).toContain('inlineImages: array of 3 to 4 objects');
+    // large (1400 words) → 2-4 inline images
+    expect(largeMessages[1]?.content).toContain('Include a cover image description and 2 to 4 inline image descriptions');
+    expect(largeMessages[1]?.content).toContain('inlineImages: array of 2 to 4 objects');
   });
 
   it('builds short-form plan prompt without sections or keywords', () => {
@@ -200,29 +203,29 @@ describe('primary plan prompt builders', () => {
     const largeSchema = buildPrimaryPlanJsonSchema('article', 1400);
     const fallbackSchema = buildPrimaryPlanJsonSchema('article', Number.NaN);
 
-    // small: 1-2 inline images (+ 1 cover = 2-3 total)
+    // small: 0-1 inline images (+ 1 cover = 1-2 total)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((smallSchema as any).properties.inlineImages.minItems).toBe(1);
+    expect((smallSchema as any).properties.inlineImages.minItems).toBe(0);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((smallSchema as any).properties.inlineImages.maxItems).toBe(2);
+    expect((smallSchema as any).properties.inlineImages.maxItems).toBe(1);
 
-    // medium: 2-3 inline images (+ 1 cover = 3-4 total)
+    // medium: 1-2 inline images (+ 1 cover = 2-3 total)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((mediumSchema as any).properties.inlineImages.minItems).toBe(2);
+    expect((mediumSchema as any).properties.inlineImages.minItems).toBe(1);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((mediumSchema as any).properties.inlineImages.maxItems).toBe(3);
+    expect((mediumSchema as any).properties.inlineImages.maxItems).toBe(2);
 
-    // large: 3-4 inline images (+ 1 cover = 4-5 total)
+    // large: 2-4 inline images (+ 1 cover = 3-5 total)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((largeSchema as any).properties.inlineImages.minItems).toBe(3);
+    expect((largeSchema as any).properties.inlineImages.minItems).toBe(2);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((largeSchema as any).properties.inlineImages.maxItems).toBe(4);
 
-    // fallback (medium): 2-3 inline images
+    // fallback (medium): 1-2 inline images
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((fallbackSchema as any).properties.inlineImages.minItems).toBe(2);
+    expect((fallbackSchema as any).properties.inlineImages.minItems).toBe(1);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((fallbackSchema as any).properties.inlineImages.maxItems).toBe(3);
+    expect((fallbackSchema as any).properties.inlineImages.maxItems).toBe(2);
   });
 
   it('builds short-form plan schema without sections or inlineImages', () => {

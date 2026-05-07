@@ -117,7 +117,7 @@ export function buildImageSlots(
       kind: 'inline',
       prompt: '',
       description: img.description,
-      anchorAfterSection: Math.max(1, Math.min(sectionCount, img.anchorAfterSection)),
+      anchorAfterSection: Math.max(2, Math.min(sectionCount, img.anchorAfterSection)),
     });
   }
 

@@ -7,7 +7,7 @@ export const articleSectionPlanSchema = z.object({
 
 export const inlineImagePlanSchema = z.object({
   description: z.string().min(1),
-  anchorAfterSection: z.number().int().min(1),
+  anchorAfterSection: z.number().int().min(2),
 });
 
 export const primaryPlanSchema = z.object({
@@ -21,7 +21,7 @@ export const primaryPlanSchema = z.object({
   introBrief: z.string().min(1).optional(),
   outroBrief: z.string().min(1).optional(),
   sections: z.array(articleSectionPlanSchema).min(2).max(10).optional(),
-  inlineImages: z.array(inlineImagePlanSchema).min(2).max(3).optional(),
+  inlineImages: z.array(inlineImagePlanSchema).min(0).max(4).optional(),
   angle: z.string().min(1).optional(),
 });
 
@@ -36,7 +36,7 @@ export const longFormPlanSchema = z.object({
   outroBrief: z.string().min(1),
   sections: z.array(articleSectionPlanSchema).min(2).max(10),
   coverImageDescription: z.string().min(1),
-  inlineImages: z.array(inlineImagePlanSchema).min(2).max(3),
+  inlineImages: z.array(inlineImagePlanSchema).min(0).max(4),
 });
 
 export const shortFormPlanSchema = z.object({

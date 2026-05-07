@@ -71,6 +71,26 @@ describe('inlineImagePlanSchema', () => {
     const result = inlineImagePlanSchema.safeParse(image);
     expect(result.success).toBe(false);
   });
+
+  it('should reject anchorAfterSection less than 2', () => {
+    const image = {
+      description: 'A helpful diagram',
+      anchorAfterSection: 1,
+    };
+
+    const result = inlineImagePlanSchema.safeParse(image);
+    expect(result.success).toBe(false);
+  });
+
+  it('should validate anchorAfterSection of 2 or greater', () => {
+    const image = {
+      description: 'A helpful diagram',
+      anchorAfterSection: 2,
+    };
+
+    const result = inlineImagePlanSchema.safeParse(image);
+    expect(result.success).toBe(true);
+  });
 });
 
 describe('articlePlanSchema', () => {
@@ -91,7 +111,7 @@ describe('articlePlanSchema', () => {
     ],
     coverImageDescription: 'A futuristic banner',
     inlineImages: [
-      { anchorAfterSection: 1, description: 'First inline image' },
+      { anchorAfterSection: 2, description: 'First inline image' },
       { anchorAfterSection: 3, description: 'Second inline image' },
     ],
   };
@@ -171,33 +191,41 @@ describe('articlePlanSchema', () => {
     expect(articlePlanSchema.safeParse(planWith9Keywords).success).toBe(false);
   });
 
-  it('should enforce 2-3 inline images', () => {
+  it('should enforce 0-4 inline images', () => {
+    const planWith0Images = {
+      ...validArticlePlan,
+      inlineImages: [],
+    };
+    expect(articlePlanSchema.safeParse(planWith0Images).success).toBe(true);
+
     const planWith1Image = {
       ...validArticlePlan,
       inlineImages: [{ anchorAfterSection: 2, description: 'Image' }],
     };
-    expect(articlePlanSchema.safeParse(planWith1Image).success).toBe(false);
-
-    const planWith3Images = {
-      ...validArticlePlan,
-      inlineImages: [
-        { anchorAfterSection: 1, description: 'Image 1' },
-        { anchorAfterSection: 2, description: 'Image 2' },
-        { anchorAfterSection: 3, description: 'Image 3' },
-      ],
-    };
-    expect(articlePlanSchema.safeParse(planWith3Images).success).toBe(true);
+    expect(articlePlanSchema.safeParse(planWith1Image).success).toBe(true);
 
     const planWith4Images = {
       ...validArticlePlan,
       inlineImages: [
-        { anchorAfterSection: 1, description: 'Image 1' },
-        { anchorAfterSection: 2, description: 'Image 2' },
-        { anchorAfterSection: 3, description: 'Image 3' },
-        { anchorAfterSection: 4, description: 'Image 4' },
+        { anchorAfterSection: 2, description: 'Image 1' },
+        { anchorAfterSection: 3, description: 'Image 2' },
+        { anchorAfterSection: 4, description: 'Image 3' },
+        { anchorAfterSection: 5, description: 'Image 4' },
       ],
     };
-    expect(articlePlanSchema.safeParse(planWith4Images).success).toBe(false);
+    expect(articlePlanSchema.safeParse(planWith4Images).success).toBe(true);
+
+    const planWith5Images = {
+      ...validArticlePlan,
+      inlineImages: [
+        { anchorAfterSection: 2, description: 'Image 1' },
+        { anchorAfterSection: 3, description: 'Image 2' },
+        { anchorAfterSection: 4, description: 'Image 3' },
+        { anchorAfterSection: 5, description: 'Image 4' },
+        { anchorAfterSection: 6, description: 'Image 5' },
+      ],
+    };
+    expect(articlePlanSchema.safeParse(planWith5Images).success).toBe(false);
   });
 
   it('should reject missing required fields', () => {
@@ -422,7 +450,7 @@ describe('longFormPlanSchema', () => {
     ],
     coverImageDescription: 'A futuristic banner',
     inlineImages: [
-      { anchorAfterSection: 1, description: 'First inline image' },
+      { anchorAfterSection: 2, description: 'First inline image' },
       { anchorAfterSection: 3, description: 'Second inline image' },
     ],
   };
@@ -453,12 +481,12 @@ describe('longFormPlanSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject less than 2 inline images', () => {
+  it('should allow 0 inline images', () => {
     const result = longFormPlanSchema.safeParse({
       ...validLongFormPlan,
-      inlineImages: [{ anchorAfterSection: 1, description: 'Only one' }],
+      inlineImages: [],
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });

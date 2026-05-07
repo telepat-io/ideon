@@ -105,7 +105,7 @@ describe('planPrimaryContent', () => {
         ],
         coverImageDescription: 'Cover image',
         inlineImages: [
-          { description: 'A', anchorAfterSection: 1 },
+          { description: 'A', anchorAfterSection: 2 },
           { description: 'B', anchorAfterSection: 2 },
           { description: 'C should be removed', anchorAfterSection: 2 },
           { description: 'D extra', anchorAfterSection: 2 },
@@ -135,7 +135,7 @@ describe('planPrimaryContent', () => {
       expect(result.slug).toBe('unique-slug');
       expect(result.keywords).toHaveLength(8);
       expect(result.inlineImages).toEqual([
-        { description: 'A', anchorAfterSection: 1 },
+        { description: 'A', anchorAfterSection: 2 },
         { description: 'B', anchorAfterSection: 2 },
         { description: 'C should be removed', anchorAfterSection: 2 },
       ]);
@@ -265,7 +265,7 @@ describe('planPrimaryContent', () => {
         inlineImages: [
           { description: 'A', anchorAfterSection: 0 },
           { description: 'B', anchorAfterSection: 5 },
-          { description: 'C', anchorAfterSection: 1 },
+          { description: 'C', anchorAfterSection: 2 },
         ],
       });
 
@@ -282,9 +282,9 @@ describe('planPrimaryContent', () => {
       });
 
       expect(result.inlineImages).toEqual([
-        { description: 'A', anchorAfterSection: 1 },
+        { description: 'A', anchorAfterSection: 2 },
         { description: 'B', anchorAfterSection: 2 },
-        { description: 'C', anchorAfterSection: 1 },
+        { description: 'C', anchorAfterSection: 2 },
       ]);
     });
   });
