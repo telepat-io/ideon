@@ -2,10 +2,16 @@ import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { resolveRunInput } from '../../config/resolver.js';
 import { enrichMarkdownWithLinks } from '../../output/enrichMarkdownWithLinks.js';
-import { resolveLinksPath, resolveOutputPaths } from '../../output/filesystem.js';
+import { listFilesRecursively, resolveLinksPath, resolveOutputPaths } from '../../output/filesystem.js';
 import { listAllGenerations } from '../../server/previewHelpers.js';
 import type { LinkEntry } from '../../types/article.js';
 import { ReportedError } from '../reportedError.js';
+
+const INTERNAL_FILE_NAMES = new Set([
+  'job.json',
+  'model.interactions.json',
+  'generation.analytics.json',
+]);
 
 export interface OutputCommandOptions {
   generationId: string;
@@ -75,40 +81,21 @@ export async function runOutputCommand(
   const links = await loadLinks(sourceMarkdownPath);
   const enrichedMarkdown = enrichWithFrontmatterGuard(sourceMarkdown, links);
 
-  // --- Collect and copy referenced local images ---
+  // --- Copy all non-internal files from the generation directory ---
   const sourceDir = path.dirname(sourceMarkdownPath);
-  const imagePaths = extractLocalImagePaths(sourceMarkdown);
-  const copiedImages: string[] = [];
+  const allFiles = await listFilesRecursively(sourceDir, () => true);
+  const copiedFiles: string[] = [];
 
-  for (const relImagePath of imagePaths) {
-    const absoluteImageSrc = path.resolve(sourceDir, relImagePath);
+  for (const absoluteSrc of allFiles) {
+    const basename = path.basename(absoluteSrc);
+    if (INTERNAL_FILE_NAMES.has(basename)) continue;
+    if (path.resolve(absoluteSrc) === path.resolve(sourceMarkdownPath)) continue;
 
-    let imageStat: Awaited<ReturnType<typeof stat>> | null = null;
-    try {
-      imageStat = await stat(absoluteImageSrc);
-    } catch {
-      throw new ReportedError(
-        `Referenced image not found: ${relImagePath} (resolved to ${absoluteImageSrc}).`,
-      );
-    }
-
-    if (!imageStat.isFile()) {
-      throw new ReportedError(`Referenced image path is not a file: ${absoluteImageSrc}.`);
-    }
-
-    const destImagePath = path.join(destinationDir, relImagePath);
-    await mkdir(path.dirname(destImagePath), { recursive: true });
-    await copyFile(absoluteImageSrc, destImagePath);
-    copiedImages.push(relImagePath);
-  }
-
-  // --- Copy meta.json sidecar ---
-  let copiedMetaJson = false;
-  const metaJsonSrc = path.join(sourceDir, 'meta.json');
-  const metaJsonDest = path.join(destinationDir, 'meta.json');
-  if (await fileExists(metaJsonSrc)) {
-    await copyFile(metaJsonSrc, metaJsonDest);
-    copiedMetaJson = true;
+    const relativePath = path.relative(sourceDir, absoluteSrc);
+    const destPath = path.join(destinationDir, relativePath);
+    await mkdir(path.dirname(destPath), { recursive: true });
+    await copyFile(absoluteSrc, destPath);
+    copiedFiles.push(relativePath);
   }
 
   // --- Write exported markdown ---
@@ -116,11 +103,8 @@ export async function runOutputCommand(
 
   const relDest = path.relative(cwd, destinationFilePath);
   log(`Exported "${generation.id}" (${generation.primaryContentType} #${targetIndex}) → ${relDest}`);
-  if (copiedImages.length > 0) {
-    log(`Copied ${copiedImages.length} image${copiedImages.length === 1 ? '' : 's'}: ${copiedImages.join(', ')}`);
-  }
-  if (copiedMetaJson) {
-    log('Copied meta.json sidecar.');
+  if (copiedFiles.length > 0) {
+    log(`Copied ${copiedFiles.length} file${copiedFiles.length === 1 ? '' : 's'}: ${copiedFiles.join(', ')}`);
   }
   if (links.length > 0) {
     log(`Injected ${links.length} inline link${links.length === 1 ? '' : 's'}.`);

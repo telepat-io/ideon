@@ -198,6 +198,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
     .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
     .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
+    .option('--export <path>', 'Export the generated article to the given directory after writing')
     .action(async (ideaArg: string | undefined, options: {
       idea?: string;
       audience?: string;
@@ -214,6 +215,7 @@ export async function runCli(argv: string[]): Promise<void> {
       unlink?: string[];
       maxLinks?: number;
       maxImages?: number;
+      export?: string;
     }) => {
       await runWriteCommand({
         idea: options.idea ?? ideaArg,
@@ -231,6 +233,7 @@ export async function runCli(argv: string[]): Promise<void> {
         unlinks: options.unlink,
         maxLinks: options.maxLinks,
         maxImages: options.maxImages,
+        exportPath: options.export,
       });
     });
 
@@ -243,7 +246,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
     .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
     .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
-    .action(async (options: { noInteractive: boolean; enrichLinks: boolean; link?: string[]; unlink?: string[]; maxLinks?: number; maxImages?: number }) => {
+    .option('--export <path>', 'Export the generated article to the given directory after writing')
+    .action(async (options: { noInteractive: boolean; enrichLinks: boolean; link?: string[]; unlink?: string[]; maxLinks?: number; maxImages?: number; export?: string }) => {
       await runWriteResumeCommand({
         noInteractive: options.noInteractive,
         enrichLinks: options.enrichLinks,
@@ -251,6 +255,7 @@ export async function runCli(argv: string[]): Promise<void> {
         unlinks: options.unlink,
         maxLinks: options.maxLinks,
         maxImages: options.maxImages,
+        exportPath: options.export,
       });
     });
 

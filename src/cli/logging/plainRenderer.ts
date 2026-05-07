@@ -1,7 +1,7 @@
 import type { ResolvedRunInput } from '../../config/resolver.js';
 import { runPipelineShell, type PipelineRunOptions } from '../../pipeline/runner.js';
 import { ReportedError } from '../reportedError.js';
-import type { PipelineStageAnalytics, StageViewModel } from '../../pipeline/events.js';
+import type { PipelineRunResult, PipelineStageAnalytics, StageViewModel } from '../../pipeline/events.js';
 import { withWriteResumeHint } from '../commands/writeErrorHint.js';
 import { notifyWriteFailed, notifyWriteStarted, notifyWriteSucceeded } from '../notifications/osNotifier.js';
 
@@ -87,7 +87,7 @@ export async function renderPlainPipeline(
   unlinks?: string[],
   maxLinks?: number,
   maxImages?: number,
-): Promise<void> {
+): Promise<PipelineRunResult> {
   let previousStages = new Map<string, Pick<StageViewModel, 'status' | 'detail' | 'retryCount' | 'lastRetryError'>>();
   let previousItemStatuses = new Map<string, string>();
   const notificationsEnabled = input.config.settings.notifications.enabled;
@@ -165,6 +165,8 @@ export async function renderPlainPipeline(
       title: result.artifact.title,
       slug: result.artifact.slug,
     });
+
+    return result;
   } catch (error) {
     const message = error instanceof Error ? withWriteResumeHint(error.message) : withWriteResumeHint('Pipeline failed.');
     await notifyWriteFailed({

@@ -82,6 +82,7 @@ Use this skill when:
 - You need to install and configure Ideon from scratch.
 - You need reliable non-interactive automation for CI/agents.
 - You need to debug failed, interrupted, or misconfigured content runs.
+- You need to export generated content as standalone markdown with all assets to a directory.
 - You need local preview and URL handoff steps.
 - You need first-party MCP server usage with Ideon tools.
 
@@ -111,7 +112,7 @@ Do not use this skill when:
 3. Choose operation path:
    - Create content: `ideon write ...`
    - Resume interrupted run: `ideon write resume`
-    - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
+   - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
    - Export generated articles: `ideon export <generationId> <path>`
    - Preview outputs: `ideon preview ...`
    - Delete outputs: `ideon delete <slug>`
@@ -174,6 +175,21 @@ ideon links my-article-slug --unlink "OpenRouter"
 
 # Cap generated links at 5
 ideon links my-article-slug --max-links 5
+
+# Export a generation by ID or slug
+ideon export my-article-slug ./export-dir
+
+# Export a specific variant when multiple exist (default index: 1)
+ideon export my-article-slug ./export-dir --index 2
+
+# Overwrite existing export
+ideon export my-article-slug ./export-dir --overwrite
+
+# Auto-export after write (equivalent to write + export in one command)
+ideon write "Your idea" --primary article=1 --export ./out
+
+# Auto-export after resume
+ideon write resume --export ./out
 ```
 
 Monitoring / status:
@@ -318,6 +334,18 @@ Mode behavior:
 - Interactive (TTY default): prompts for missing idea/style/intent/targets/length.
 - Non-interactive (`--no-interactive` or non-TTY): fails fast on missing required inputs.
 
+Export behavior:
+
+- `ideon export <generationId> <path>` resolves the generation by exact ID, falling back to frontmatter slug match.
+- `--index <n>` selects which primary article variant to export when multiple exist (default: 1).
+- `--overwrite` replaces the destination file if it exists; without it, export fails with an "already exists" error.
+- The primary article markdown is written as `<slug>.md` with inline links injected from `.links.json` sidecars.
+- All non-internal files from the generation directory are copied to the destination directory, preserving relative subdirectories.
+- Internal files that are **never** exported: `job.json`, `model.interactions.json`, `generation.analytics.json`.
+- `meta.json` and all secondary outputs (e.g. `x-post-1.md`) are always included.
+- `--export <path>` on `ideon write` or `ideon write resume` has no effect for `--dry-run` runs; export requires a real write to complete first.
+- If an export during `--export` fails, the write was already successful and artifacts remain in the output directory.
+
 Image generation behavior:
 
 - Image count and placement are decided at plan time by the LLM, not after writing.
@@ -392,10 +420,15 @@ Common exit semantics:
 Write artifacts and sidecars:
 
 - Markdown outputs (`*.md`)
-- Content metadata sidecars (`meta.json`, written into every generation directory)
-- Link metadata sidecars (`*.links.json`, when `--enrich-links` is enabled or `ideon links` is run)
+- Content metadata sidecars (`meta.json`, written into every generation directory and included in exports)
+- Link metadata sidecars (`*.links.json`, when `--enrich-links` is enabled or `ideon links` is run; injected inline during export)
 - Analytics sidecars (`*.analytics.json`)
 - Session state (`~/.ideon/sessions/<project-hash>/state.json`, read/written from the OS config directory)
+
+Export artifacts:
+
+- `ideon export` produces a self-contained directory with the enriched primary markdown, `meta.json`, all referenced images, secondary markdown outputs, and any remaining non-internal sidecar files.
+- Internal files (`job.json`, `model.interactions.json`, `generation.analytics.json`) are excluded from exports.
 
 ## Gotchas and sharp edges
 
@@ -411,6 +444,10 @@ Write artifacts and sidecars:
   Mitigation: legacy `.ideon/write/state.json` files are automatically migrated on first resume.
 - Link enrichment is opt-in for write/resume runs.
   Mitigation: pass `--enrich-links` during write/resume, or run `ideon links <slug>` afterward.
+- Export without `--overwrite` fails if the destination markdown already exists.
+  Mitigation: pass `--overwrite` to replace, or export to a fresh directory.
+- `--export` on write/resume has no effect during `--dry-run`.
+  Mitigation: export requires a real generation to exist; run a full write first.
 
 ## Clarifying questions for risky operations
 
@@ -439,6 +476,8 @@ Credentials:
 | No resumable session found | Start a fresh `ideon write ...` run. Legacy `.ideon/write/state.json` files are automatically migrated. |
 | Preview cannot find markdown | Run write first or pass explicit `.md` path. |
 | Invalid target spec | Use `<content-type=count>` and keep primary count exactly `1`. |
+| Export destination already exists | Pass `--overwrite` or choose a different destination directory. |
+| Generation not found for export | Run `ideon preview` to list available generation IDs and slugs. |
 
 ## Verification prompts
 
@@ -467,6 +506,7 @@ Should not trigger:
 - Standalone links command behavior: `src/cli/commands/links.ts`
 - Write/resume behavior and signal handling: `src/cli/commands/write.tsx`
 - Target parsing rules and conflicts: `src/cli/commands/writeTargetSpecs.ts`
+- Export command behavior, internal file filtering, and `--export` flag integration: `src/cli/commands/export.ts`
 - Delete behavior and confirmation rules: `src/cli/commands/delete.ts`
 - Preview behavior and watch mode: `src/cli/commands/serve.ts`, `src/server/previewHelpers.ts`
 - Config key surface and coercion: `src/config/manage.ts`

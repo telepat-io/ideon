@@ -10,6 +10,7 @@ import {
   writingStyleValues,
 } from '../../config/schema.js';
 import { ReportedError } from '../reportedError.js';
+import { runOutputCommand } from './export.js';
 import { PipelinePresenter } from '../ui/pipelinePresenter.js';
 import { createInitialStages, runPipelineShell } from '../../pipeline/runner.js';
 import { renderPlainPipeline } from '../logging/plainRenderer.js';
@@ -41,6 +42,7 @@ interface WriteCommandOptions {
   unlinks?: string[];
   maxLinks?: number;
   maxImages?: number;
+  exportPath?: string;
 }
 
 type WriteRunMode = 'fresh' | 'resume';
@@ -56,6 +58,7 @@ function WriteApp({
   unlinks,
   maxLinks,
   maxImages,
+  onSuccess,
   onError,
 }: {
   input: Awaited<ReturnType<typeof resolveRunInput>>;
@@ -66,6 +69,7 @@ function WriteApp({
   unlinks?: string[];
   maxLinks?: number;
   maxImages?: number;
+  onSuccess?: (result: PipelineRunResult) => void;
   onError: (error: Error) => void;
 }): React.JSX.Element {
   const { exit } = useApp();
@@ -106,6 +110,7 @@ function WriteApp({
         }
 
         setResult(runResult);
+        onSuccess?.(runResult);
         await notifyWriteSucceeded({
           enabled: input.config.settings.notifications.enabled,
           title: runResult.artifact.title,
@@ -151,10 +156,10 @@ function WriteApp({
 
 export async function runWriteCommand(options: WriteCommandOptions): Promise<void> {
   const input = await resolveInputWithInteractiveIdeaFallback(options);
-  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive, options.links, options.unlinks, options.maxLinks, options.maxImages);
+  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive, options.links, options.unlinks, options.maxLinks, options.maxImages, options.exportPath);
 }
 
-export async function runWriteResumeCommand(options: { noInteractive?: boolean; enrichLinks?: boolean; links?: string[]; unlinks?: string[]; maxLinks?: number; maxImages?: number } = {}): Promise<void> {
+export async function runWriteResumeCommand(options: { noInteractive?: boolean; enrichLinks?: boolean; links?: string[]; unlinks?: string[]; maxLinks?: number; maxImages?: number; exportPath?: string } = {}): Promise<void> {
   const session = await loadWriteSession();
   if (!session) {
     throw new ReportedError('No resumable write session found. Run ideon write <idea> first.');
@@ -176,7 +181,7 @@ export async function runWriteResumeCommand(options: { noInteractive?: boolean; 
       secrets: resolved.config.secrets,
     },
   };
-  await runWritePipeline(input, session.dryRun, options.enrichLinks ?? false, 'resume', options.noInteractive ?? false, options.links, options.unlinks, options.maxLinks, options.maxImages);
+  await runWritePipeline(input, session.dryRun, options.enrichLinks ?? false, 'resume', options.noInteractive ?? false, options.links, options.unlinks, options.maxLinks, options.maxImages, options.exportPath);
 }
 
 async function runWritePipeline(
@@ -189,6 +194,7 @@ async function runWritePipeline(
   unlinks?: string[],
   maxLinks?: number,
   maxImages?: number,
+  exportPath?: string,
 ): Promise<void> {
   let interruptHandled = false;
 
@@ -231,11 +237,18 @@ async function runWritePipeline(
   try {
 
     if (noInteractive || !process.stdout.isTTY) {
-      await renderPlainPipeline(input, dryRun, enrichLinks, runMode, links, unlinks, maxLinks, maxImages);
+      const result = await renderPlainPipeline(input, dryRun, enrichLinks, runMode, links, unlinks, maxLinks, maxImages);
+      if (exportPath) {
+        await runOutputCommand({
+          generationId: result.artifact.slug,
+          destinationPath: exportPath,
+        });
+      }
       return;
     }
 
     let commandError: Error | null = null;
+    let pipelineResult: PipelineRunResult | null = null;
 
     const app = render(
       <WriteApp
@@ -247,6 +260,9 @@ async function runWritePipeline(
         unlinks={unlinks}
         maxLinks={maxLinks}
         maxImages={maxImages}
+        onSuccess={(result) => {
+          pipelineResult = result;
+        }}
         onError={(error) => {
           commandError = error;
         }}
@@ -258,6 +274,9 @@ async function runWritePipeline(
 
     if (finalError) {
       throw new ReportedError(withWriteResumeHint(finalError.message));
+    }
+    if (exportPath && pipelineResult) {
+      await autoExport(exportPath, pipelineResult);
     }
   } finally {
     cleanupSignalHandlers();
@@ -450,4 +469,11 @@ async function promptForIdea(): Promise<string> {
   } finally {
     readline.close();
   }
+}
+
+async function autoExport(exportPath: string, result: PipelineRunResult): Promise<void> {
+  await runOutputCommand({
+    generationId: result.artifact.slug,
+    destinationPath: exportPath,
+  });
 }

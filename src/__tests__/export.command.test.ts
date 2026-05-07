@@ -9,11 +9,14 @@ import type { LinkEntry } from '../types/article.js';
 const resolveRunInputMock = jest.fn<(input: ResolveConfigInput) => Promise<ResolvedRunInput>>();
 let mockedOutputPaths = { markdownOutputDir: '', assetOutputDir: '' };
 
+const filesystemModule = await import('../output/filesystem.js');
+
 jest.unstable_mockModule('../config/resolver.js', () => ({
   resolveRunInput: resolveRunInputMock,
 }));
 
 jest.unstable_mockModule('../output/filesystem.js', () => ({
+  ...filesystemModule,
   resolveOutputPaths: () => mockedOutputPaths,
   resolveLinksPath: (markdownPath: string) => markdownPath.replace(/\.md$/, '.links.json'),
 }));
@@ -120,7 +123,7 @@ describe('runOutputCommand', () => {
 
       const copiedImage = await readFile(path.join(exportDir, 'images', 'cover.webp'), 'utf8');
       expect(copiedImage).toBe('fake-img');
-      expect(logs.some((msg) => msg.includes('1 image'))).toBe(true);
+      expect(logs.some((msg) => msg.includes('images/cover.webp'))).toBe(true);
 
       void markdownPath;
     } finally {
@@ -169,6 +172,54 @@ describe('runOutputCommand', () => {
 
       await expect(readFile(path.join(exportDir, 'meta.json'), 'utf8')).rejects.toThrow();
       expect(logs.some((msg) => msg.includes('meta.json'))).toBe(false);
+
+      void markdownPath;
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('skips internal files but copies all other non-internal files', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-output-internal-skip-'));
+    try {
+      const { markdownPath, outputDir, exportDir, generationDir } = await seedGeneration(tempRoot, 'internal-skip');
+
+      // Write internal files
+      await writeFile(path.join(generationDir, 'job.json'), JSON.stringify({ name: 'test-job' }), 'utf8');
+      await writeFile(path.join(generationDir, 'model.interactions.json'), JSON.stringify({ calls: [] }), 'utf8');
+      await writeFile(path.join(generationDir, 'generation.analytics.json'), JSON.stringify({ totalCost: 0 }), 'utf8');
+
+      // Write meta.json (should be copied)
+      const metaJson = { version: 1, title: 'Internal Skip', slug: 'internal-skip' };
+      await writeFile(path.join(generationDir, 'meta.json'), JSON.stringify(metaJson), 'utf8');
+
+      // Write a secondary output (should be copied)
+      await writeFile(path.join(generationDir, 'x-post-1.md'), '# Side Post\n\nSide content.\n', 'utf8');
+
+      resolveRunInputMock.mockResolvedValue(makeResolvedInput(outputDir));
+
+      const logs: string[] = [];
+      await runOutputCommand(
+        { generationId: '20260418-120000-internal-skip', destinationPath: exportDir },
+        { cwd: tempRoot, log: (msg) => logs.push(msg) },
+      );
+
+      // Internal files must be absent
+      await expect(readFile(path.join(exportDir, 'job.json'), 'utf8')).rejects.toThrow();
+      await expect(readFile(path.join(exportDir, 'model.interactions.json'), 'utf8')).rejects.toThrow();
+      await expect(readFile(path.join(exportDir, 'generation.analytics.json'), 'utf8')).rejects.toThrow();
+
+      // Non-internal files must be present
+      const exportedMeta = await readFile(path.join(exportDir, 'meta.json'), 'utf8');
+      expect(JSON.parse(exportedMeta)).toMatchObject(metaJson);
+
+      const exportedSecondary = await readFile(path.join(exportDir, 'x-post-1.md'), 'utf8');
+      expect(exportedSecondary).toContain('# Side Post');
+
+      // Bulk copy log should include meta.json and x-post-1.md
+      expect(logs.some((msg) => msg.includes('meta.json'))).toBe(true);
+      expect(logs.some((msg) => msg.includes('x-post-1.md'))).toBe(true);
+      expect(logs.some((msg) => msg.includes('job.json'))).toBe(false);
 
       void markdownPath;
     } finally {

@@ -49,7 +49,7 @@ export async function listMarkdownFilesRecursively(rootDir: string): Promise<str
   return listFilesRecursively(rootDir, (fileName) => fileName.toLowerCase().endsWith('.md'));
 }
 
-async function listFilesRecursively(rootDir: string, predicate: (fileName: string) => boolean): Promise<string[]> {
+export async function listFilesRecursively(rootDir: string, predicate: (fileName: string) => boolean): Promise<string[]> {
   const fs = await import('node:fs/promises');
   const results: string[] = [];
   const stack = [rootDir];
