@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.23](https://github.com/telepat-io/ideon/compare/ideon-v0.1.22...ideon-v0.1.23) (2026-05-07)
+
+
+### Features
+
+* move markdown and asset output directory to homedir ([2a277d6](https://github.com/telepat-io/ideon/commit/2a277d64f9ba16f345d800bf8f5bc1b7c427b625))
+
 ## [0.1.22](https://github.com/telepat-io/ideon/compare/ideon-v0.1.21...ideon-v0.1.22) (2026-05-07)
 
 
