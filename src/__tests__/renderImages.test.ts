@@ -320,6 +320,41 @@ describe('renderExpandedImages', () => {
     }
   });
 
+  it('uses jpg extension when Limn returns image/jpeg', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-jpeg-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article.md');
+      const assetDir = path.join(tempRoot, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const limn = {
+        generate: jest.fn<() => Promise<unknown>>().mockResolvedValue({
+          image: Buffer.alloc(MIN_IMAGE_BYTES, 1),
+          filename: 'cover.jpg',
+          savedPath: '',
+          mimeType: 'image/jpeg',
+          modelSlug: 'model',
+          promptUsed: 'p',
+          analytics: { totalDurationMs: 1, openrouterDurationMs: 0, replicateDurationMs: 1, openrouterUsage: null, openrouterCostUsd: null, openrouterGenerationId: null, replicatePredictionId: 'p', replicateEstimatedCostUsd: null, totalEstimatedCostUsd: null, costSource: 'unknown' as const },
+        }),
+      };
+
+      const rendered = await renderExpandedImages({
+        prompts: [{ id: 'cover', kind: 'cover', prompt: 'p', description: '', anchorAfterSection: null }],
+        settings: defaultAppSettings,
+        limn: limn as never,
+        markdownPath,
+        assetDir,
+        dryRun: false,
+      });
+
+      expect(rendered[0]?.outputPath.endsWith('.jpg')).toBe(true);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('forwards valid replicate model override when configured', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-override-'));
 
@@ -432,6 +467,54 @@ describe('renderExpandedImages', () => {
       expect(movedContent.byteLength).toBe(64);
     } finally {
       process.chdir(originalCwd);
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('ignores missing savedPath artifact (ENOENT) after render succeeds', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-artifact-enoent-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article.md');
+      const assetDir = path.join(tempRoot, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const missingSavedPath = path.join(tempRoot, 'does-not-exist.webp');
+      const limn = {
+        generate: jest.fn<() => Promise<unknown>>().mockResolvedValue({
+          image: Buffer.alloc(MIN_IMAGE_BYTES, 8),
+          filename: 'cover.webp',
+          savedPath: missingSavedPath,
+          mimeType: 'image/webp',
+          modelSlug: 'black-forest-labs/flux-schnell',
+          promptUsed: 'p',
+          analytics: {
+            totalDurationMs: 1,
+            openrouterDurationMs: 0,
+            replicateDurationMs: 1,
+            openrouterUsage: null,
+            openrouterCostUsd: null,
+            openrouterGenerationId: null,
+            replicatePredictionId: 'p',
+            replicateEstimatedCostUsd: null,
+            totalEstimatedCostUsd: null,
+            costSource: 'unknown' as const,
+          },
+        }),
+      };
+
+      const rendered = await renderExpandedImages({
+        prompts: [{ id: 'cover', kind: 'cover', prompt: 'p', description: '', anchorAfterSection: null }],
+        settings: defaultAppSettings,
+        limn: limn as never,
+        markdownPath,
+        assetDir,
+        dryRun: false,
+      });
+
+      expect(rendered).toHaveLength(1);
+      expect(rendered[0]?.outputPath.endsWith('.webp')).toBe(true);
+    } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
