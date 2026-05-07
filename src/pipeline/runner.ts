@@ -2,7 +2,7 @@ import { mkdir, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
-import { resolveDefaultMaxLinks } from '../config/schema.js';
+import { resolveDefaultMaxLinks, resolveTargetLengthAlias } from '../config/schema.js';
 import { enrichLinks } from '../generation/enrichLinks.js';
 import { planContentPlan } from '../generation/planContentPlan.js';
 import { planPrimaryContent } from '../generation/planPrimaryContent.js';
@@ -12,6 +12,7 @@ import { Limn } from '@telepat/limn';
 import { buildImageSlots, expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
+import { buildMetaJson } from '../output/meta.js';
 import {
   buildGenerationDirectoryName,
   ensureOutputDirectories,
@@ -1215,6 +1216,24 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const interactionsPath = path.join(generationDir, 'model.interactions.json');
     await writeJsonFile(analyticsPath, analytics);
     await writeJsonFile(interactionsPath, interactions);
+
+    const metaJson = buildMetaJson({
+      idea: input.idea,
+      generationDir,
+      contentPlan,
+      plan,
+      renderedImages: imageArtifacts?.renderedImages ?? [],
+      outputs: generatedOutputs,
+      generatedAt: new Date().toISOString(),
+      style: input.config.settings.style,
+      intent: input.config.settings.intent,
+      targetLength: input.config.settings.targetLength
+        ? resolveTargetLengthAlias(input.config.settings.targetLength)
+        : null,
+    });
+    const metaJsonPath = path.join(generationDir, 'meta.json');
+    await writeJsonFile(metaJsonPath, metaJson);
+
     const primaryMarkdownPathForArtifact = markdownPaths[0] ?? primaryMarkdownPath;
 
     const artifact = {
@@ -1230,6 +1249,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       analyticsPath,
       interactionsPath,
       planPath,
+      metaJsonPath,
     };
 
     writeSession = await patchWriteSession(

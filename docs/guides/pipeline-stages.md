@@ -115,7 +115,7 @@ When a stage fails:
 - Secondary targets are expanded into numbered files by content type (`x-thread-1.md`, `x-post-1.md`, etc.).
 - Long-form primaries use section-generation artifacts; short-form primaries use single-shot primary generation.
 - Secondary outputs are anchored to generated primary context.
-- The output stage also writes `job.json` with the resolved run definition.
+- The output stage also writes `job.json` with the resolved run definition and `meta.json` with structured content metadata.
 - Output progress is itemized in the CLI and persisted in analytics under `outputItemCalls`.
 
 ## Links Stage Behavior

@@ -6,7 +6,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Output Structure
 
-Ideon writes one generation directory per run. Each generation directory contains one or more markdown outputs, a run-definition `job.json`, a per-run analytics artifact, a run-level model interaction artifact, and shared image assets.
+Ideon writes one generation directory per run. Each generation directory contains one or more markdown outputs, a run-definition `job.json`, a per-run analytics artifact, a run-level model interaction artifact, a structured metadata sidecar (`meta.json`), and shared image assets.
 
 Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) for resume support.
 
@@ -16,6 +16,7 @@ Ideon also keeps local write-session artifacts in `.ideon/write/` (gitignored) f
 - Asset directory: `/output/assets`
 - Analytics file: `generation.analytics.json` inside each generation directory
 - Model interactions file: `model.interactions.json` inside each generation directory
+- Metadata sidecar: `meta.json` inside each generation directory
 - Article plan file: `plan.md` inside each generation directory (for article-primary runs)
 
 Paths beginning with `/output` are resolved relative to current working directory.
@@ -33,6 +34,7 @@ output/
     linkedin-1.md
     job.json
     plan.md
+    meta.json
     generation.analytics.json
     model.interactions.json
     practical-ai-workflows-cover.webp
@@ -134,6 +136,87 @@ Example shape:
   "runMode": "fresh"
 }
 ```
+
+## Metadata Sidecar (`meta.json`)
+
+Each generation run emits a structured `meta.json` sidecar inside the generation directory. It consolidates content-level metadata in a single machine-readable file.
+
+The JSON includes:
+
+- `version`: schema version (currently `1`)
+- `title`, `slug`, `idea`, `description`: core content metadata
+- `subtitle`, `keywords`, `angle`: long-form article metadata (nullable when absent)
+- `contentType`, `style`, `intent`, `targetLength`: generation settings
+- `cover`: cover image metadata (`path`, `relativePath`, `description`) or `null`
+- `sections`: array of section titles and descriptions (empty for short-form content)
+- `images`: array of all rendered images (cover and inline) with paths, descriptions, and anchor positions
+- `outputs`: array of all markdown output files with content types and paths
+- `generatedAt`: ISO timestamp
+- `generationDir`: absolute path to the generation directory
+
+Example shape:
+
+```json
+{
+  "version": 1,
+  "title": "How teams can operationalize content systems",
+  "slug": "operationalize-content-systems",
+  "idea": "How teams can operationalize content systems",
+  "description": "A practical guide to building repeatable content operations.",
+  "subtitle": "From one-off posts to predictable publishing pipelines",
+  "keywords": ["content ops", "publishing", "automation"],
+  "contentType": "article",
+  "style": "professional",
+  "intent": "tutorial",
+  "targetLength": "medium",
+  "angle": "Process-first perspective",
+  "cover": {
+    "path": "/Users/you/.ideon/output/20260327-slug/cover-1.png",
+    "relativePath": "cover-1.png",
+    "description": "A clean editorial workspace with content calendars"
+  },
+  "sections": [
+    { "title": "Audit your current workflow", "description": "Map existing steps and bottlenecks." },
+    { "title": "Design the pipeline", "description": "Choose tools and handoff points." }
+  ],
+  "images": [
+    {
+      "id": "cover",
+      "kind": "cover",
+      "path": "/Users/you/.ideon/output/20260327-slug/cover-1.png",
+      "relativePath": "cover-1.png",
+      "description": "A clean editorial workspace with content calendars",
+      "anchorAfterSection": null
+    },
+    {
+      "id": "inline-1",
+      "kind": "inline",
+      "path": "/Users/you/.ideon/output/20260327-slug/inline-1-2.png",
+      "relativePath": "inline-1-2.png",
+      "description": "Pipeline diagram",
+      "anchorAfterSection": 1
+    }
+  ],
+  "outputs": [
+    {
+      "fileId": "article-1",
+      "contentType": "article",
+      "path": "/Users/you/.ideon/output/20260327-slug/article-1.md",
+      "relativePath": "article-1.md"
+    },
+    {
+      "fileId": "x-post-1",
+      "contentType": "x-post",
+      "path": "/Users/you/.ideon/output/20260327-slug/x-post-1.md",
+      "relativePath": "x-post-1.md"
+    }
+  ],
+  "generatedAt": "2026-03-27T10:20:00.000Z",
+  "generationDir": "/Users/you/.ideon/output/20260327-slug"
+}
+```
+
+`meta.json` is also copied by `ideon export` alongside the exported markdown and images.
 
 ## Local Session Artifacts
 

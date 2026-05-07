@@ -128,6 +128,54 @@ describe('runOutputCommand', () => {
     }
   });
 
+  it('copies meta.json sidecar when present', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-output-meta-'));
+    try {
+      const { markdownPath, outputDir, exportDir, generationDir } = await seedGeneration(tempRoot, 'meta-article');
+
+      const metaJson = { version: 1, title: 'Meta Article Title', slug: 'meta-article' };
+      await writeFile(path.join(generationDir, 'meta.json'), JSON.stringify(metaJson, null, 2), 'utf8');
+
+      resolveRunInputMock.mockResolvedValue(makeResolvedInput(outputDir));
+
+      const logs: string[] = [];
+      await runOutputCommand(
+        { generationId: '20260418-120000-meta-article', destinationPath: exportDir },
+        { cwd: tempRoot, log: (msg) => logs.push(msg) },
+      );
+
+      const copiedMeta = await readFile(path.join(exportDir, 'meta.json'), 'utf8');
+      expect(JSON.parse(copiedMeta)).toMatchObject(metaJson);
+      expect(logs.some((msg) => msg.includes('meta.json'))).toBe(true);
+
+      void markdownPath;
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('skips meta.json copy when not present', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-output-no-meta-'));
+    try {
+      const { markdownPath, outputDir, exportDir } = await seedGeneration(tempRoot, 'no-meta-article');
+
+      resolveRunInputMock.mockResolvedValue(makeResolvedInput(outputDir));
+
+      const logs: string[] = [];
+      await runOutputCommand(
+        { generationId: '20260418-120000-no-meta-article', destinationPath: exportDir },
+        { cwd: tempRoot, log: (msg) => logs.push(msg) },
+      );
+
+      await expect(readFile(path.join(exportDir, 'meta.json'), 'utf8')).rejects.toThrow();
+      expect(logs.some((msg) => msg.includes('meta.json'))).toBe(false);
+
+      void markdownPath;
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('hard fails if the destination file already exists and --overwrite is not set', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-output-overwrite-'));
     try {

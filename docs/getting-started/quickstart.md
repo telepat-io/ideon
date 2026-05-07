@@ -51,6 +51,7 @@ By default (resolved from current working directory):
 - Markdown files: `article-1.md`, `x-thread-1.md`, `x-post-1.md`, ...
 - Run metadata: `job.json`
 - Article plan: `plan.md`
+- Content metadata: `meta.json`
 - Run analytics: `generation.analytics.json`
 - Shared generation assets: image files in the same generation directory
 

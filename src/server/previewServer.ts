@@ -258,6 +258,7 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
   const generationDir = path.dirname(generation.outputs[0]?.sourcePath ?? '');
   const interactions = generationDir ? await loadSavedInteractions(generationDir) : { llmCalls: [], t2iCalls: [] };
   const analyticsSummary = generationDir ? await loadSavedAnalyticsSummary(generationDir) : null;
+  const metaJson = generationDir ? await loadSavedMetaJson(generationDir) : null;
 
   return {
     title: generation.title,
@@ -265,6 +266,7 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
     sourcePath,
     interactions,
     analyticsSummary,
+    metaJson,
     outputs,
   };
 }
@@ -414,6 +416,17 @@ async function loadSavedAnalyticsSummary(generationDir: string): Promise<Preview
       totalCostUsd,
       totalCostSource,
     };
+  } catch {
+    return null;
+  }
+}
+
+async function loadSavedMetaJson(generationDir: string): Promise<unknown | null> {
+  const metaJsonPath = path.join(generationDir, 'meta.json');
+
+  try {
+    const raw = await readFile(metaJsonPath, 'utf8');
+    return JSON.parse(raw) as unknown;
   } catch {
     return null;
   }

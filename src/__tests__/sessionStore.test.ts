@@ -220,6 +220,7 @@ describe('sessionStore', () => {
           analyticsPath: '/tmp/output/generated-title/article-1.analytics.json',
           interactionsPath: '/tmp/output/generated-title/model.interactions.json',
           planPath: null,
+          metaJsonPath: '/tmp/output/generated-title/meta.json',
         },
         },
         dir,

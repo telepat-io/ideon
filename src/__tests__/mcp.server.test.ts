@@ -110,13 +110,18 @@ describe('ideon MCP server', () => {
       artifact: {
         slug: 'slug',
         title: 'Title',
+        sectionCount: 0,
+        imageCount: 0,
         outputCount: 1,
         markdownPath: '/tmp/out.md',
         markdownPaths: ['/tmp/out.md'],
-      generationDir: '/tmp/gen',
-      analyticsPath: '/tmp/a.json',
-      planPath: null,
-    },
+        generationDir: '/tmp/gen',
+        assetDir: '/tmp/gen',
+        analyticsPath: '/tmp/a.json',
+        interactionsPath: '/tmp/i.json',
+        planPath: null,
+        metaJsonPath: '/tmp/meta.json',
+      },
     });
 
     isConfigKeyMock.mockReturnValue(true);

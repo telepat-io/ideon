@@ -35,6 +35,7 @@ See [Installation](./getting-started/installation.md) and [Quickstart](./getting
 - One or more markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` run definition metadata for reproducibility
 - `plan.md` with the primary content plan
+- `meta.json` structured content metadata sidecar
 - `generation.analytics.json` with stage and run metrics
 - Shared image assets rendered via a Replicate T2I model for the primary output (article primary includes inline images)
 

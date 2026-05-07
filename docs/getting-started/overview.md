@@ -18,7 +18,7 @@ Use Ideon when you need to ship content across multiple formats quickly while ke
 - Builds planning context and drafts long-form structures for article-led runs
 - Generates visuals for article-led outputs (cover and inline images)
 - Enriches outputs with relevant links when enabled
-- Produces reusable artifacts (`*.md`, `job.json`, `plan.md`, `generation.analytics.json`, and shared assets)
+- Produces reusable artifacts (`*.md`, `job.json`, `plan.md`, `meta.json`, `generation.analytics.json`, and shared assets)
 
 ## Why it matters
 

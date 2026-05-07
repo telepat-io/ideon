@@ -392,6 +392,7 @@ Common exit semantics:
 Write artifacts and sidecars:
 
 - Markdown outputs (`*.md`)
+- Content metadata sidecars (`meta.json`, written into every generation directory)
 - Link metadata sidecars (`*.links.json`, when `--enrich-links` is enabled or `ideon links` is run)
 - Analytics sidecars (`*.analytics.json`)
 - Session state (`~/.ideon/sessions/<project-hash>/state.json`, read/written from the OS config directory)

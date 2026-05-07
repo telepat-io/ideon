@@ -115,6 +115,7 @@ describe('renderPlainPipeline', () => {
           analyticsPath: '/tmp/run/generation.analytics.json',
           interactionsPath: '/tmp/run/model.interactions.json',
           planPath: null,
+          metaJsonPath: '/tmp/run/meta.json',
         },
         analytics: {
           runId: 'run-1',
@@ -257,6 +258,7 @@ describe('renderPlainPipeline', () => {
           analyticsPath: '/tmp/run/generation.analytics.json',
           interactionsPath: '/tmp/run/model.interactions.json',
           planPath: null,
+          metaJsonPath: '/tmp/run/meta.json',
         },
         analytics: {
           runId: 'run-1',

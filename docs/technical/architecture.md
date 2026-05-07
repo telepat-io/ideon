@@ -14,7 +14,7 @@ Ideon is organized as a modular CLI pipeline with generation-directory outputs a
 2. Build generation directory and run metadata (`job.json`)
 3. Run primary content planning + writing (section-based for long-form, single-shot for short-form)
 4. Expand image prompts + render assets
-5. Write one or more output markdown files + analytics
+5. Write one or more output markdown files + `meta.json` + analytics
 
 ## Module Boundaries
 
@@ -50,6 +50,7 @@ Each run writes a generation directory:
 - numbered markdown outputs (`article-1.md`, `x-thread-1.md`, `x-post-1.md`, etc.)
 - `job.json` with resolved run definition metadata
 - `plan.md` with the primary content plan
+- `meta.json` with structured content metadata
 - `generation.analytics.json`
 - shared assets for that generation
 

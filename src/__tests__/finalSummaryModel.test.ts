@@ -16,6 +16,7 @@ describe('buildFinalSummaryRows', () => {
         analyticsPath: '/tmp/example-title/generation.analytics.json',
         interactionsPath: '/tmp/example-title/model.interactions.json',
         planPath: '/tmp/example-title/plan.md',
+        metaJsonPath: '/tmp/example-title/meta.json',
       },
       analytics: {
         runId: 'run-1',
@@ -92,6 +93,7 @@ describe('buildFinalSummaryRows', () => {
         analyticsPath: '/tmp/example-title/generation.analytics.json',
         interactionsPath: '/tmp/example-title/model.interactions.json',
         planPath: '/tmp/example-title/plan.md',
+        metaJsonPath: '/tmp/example-title/meta.json',
       },
       analytics: {
         runId: 'run-2',

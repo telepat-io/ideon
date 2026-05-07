@@ -69,6 +69,7 @@ export interface PreviewArticleContent {
   sourcePath: string;
   interactions: PreviewInteractionsPayload;
   analyticsSummary: PreviewAnalyticsSummary | null;
+  metaJson: unknown | null;
   outputs: PreviewArticleOutput[];
 }
 

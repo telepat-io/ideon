@@ -102,6 +102,15 @@ export async function runOutputCommand(
     copiedImages.push(relImagePath);
   }
 
+  // --- Copy meta.json sidecar ---
+  let copiedMetaJson = false;
+  const metaJsonSrc = path.join(sourceDir, 'meta.json');
+  const metaJsonDest = path.join(destinationDir, 'meta.json');
+  if (await fileExists(metaJsonSrc)) {
+    await copyFile(metaJsonSrc, metaJsonDest);
+    copiedMetaJson = true;
+  }
+
   // --- Write exported markdown ---
   await writeFile(destinationFilePath, enrichedMarkdown, 'utf8');
 
@@ -109,6 +118,9 @@ export async function runOutputCommand(
   log(`Exported "${generation.id}" (${generation.primaryContentType} #${targetIndex}) → ${relDest}`);
   if (copiedImages.length > 0) {
     log(`Copied ${copiedImages.length} image${copiedImages.length === 1 ? '' : 's'}: ${copiedImages.join(', ')}`);
+  }
+  if (copiedMetaJson) {
+    log('Copied meta.json sidecar.');
   }
   if (links.length > 0) {
     log(`Injected ${links.length} inline link${links.length === 1 ? '' : 's'}.`);
