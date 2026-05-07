@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.24](https://github.com/telepat-io/ideon/compare/ideon-v0.1.23...ideon-v0.1.24) (2026-05-07)
+
+
+### Features
+
+* refactor article planning structure and introduce primary plan schema ([c32ea62](https://github.com/telepat-io/ideon/commit/c32ea6216e91cbe2464ec8431ce78c2269e6cb8e))
+
+
+### Bug Fixes
+
+* remove markdown and asset output directory from settings and tests ([03ea988](https://github.com/telepat-io/ideon/commit/03ea988ab61d5d929a105cfe997462fba5d2b881))
+
 ## [0.1.23](https://github.com/telepat-io/ideon/compare/ideon-v0.1.22...ideon-v0.1.23) (2026-05-07)
 
 
