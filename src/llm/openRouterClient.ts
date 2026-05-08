@@ -65,6 +65,11 @@ interface OpenRouterResponse {
   }>;
   error?: {
     message?: string;
+    code?: number;
+    metadata?: {
+      raw?: string;
+      provider_name?: string;
+    };
   };
   usage?: {
     prompt_tokens?: number;
@@ -264,7 +269,9 @@ export class OpenRouterClient {
         responseBodyRaw = rawBody;
         const json = parseOpenRouterResponse(rawBody);
         if (!response.ok) {
-          const message = json?.error?.message ?? `OpenRouter request failed with status ${response.status}`;
+          const providerMessage = json?.error?.message ?? `OpenRouter request failed with status ${response.status}`;
+          const raw = json?.error?.metadata?.raw;
+          const message = raw ? `${raw} (OpenRouter: ${providerMessage})` : providerMessage;
           if (shouldRetryStatus(response.status) && attempt < 2) {
             const backoff = backoffMs(attempt);
             retries += 1;
