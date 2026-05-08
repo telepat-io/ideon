@@ -200,7 +200,7 @@ export async function listAllArticles(markdownOutputDir: string): Promise<Articl
 
 export async function listAllGenerations(markdownOutputDir: string): Promise<GenerationMetadata[]> {
   const markdownFiles = await findMarkdownFiles(markdownOutputDir);
-  const grouped = new Map<string, GenerationOutputMetadata[]>();
+  const outputMap = new Map<string, GenerationOutputMetadata>();
 
   for (const filePath of markdownFiles) {
     try {
@@ -220,14 +220,23 @@ export async function listAllGenerations(markdownOutputDir: string): Promise<Gen
         index: identity.index,
       };
 
-      const existing = grouped.get(identity.generationId);
-      if (existing) {
-        existing.push(output);
-      } else {
-        grouped.set(identity.generationId, [output]);
+      const outputKey = `${output.generationId}:${output.contentType}:${output.index}`;
+      const existing = outputMap.get(outputKey);
+      if (!existing || output.mtime > existing.mtime) {
+        outputMap.set(outputKey, output);
       }
     } catch {
       // Skip files that fail to parse
+    }
+  }
+
+  const grouped = new Map<string, GenerationOutputMetadata[]>();
+  for (const output of outputMap.values()) {
+    const existing = grouped.get(output.generationId);
+    if (existing) {
+      existing.push(output);
+    } else {
+      grouped.set(output.generationId, [output]);
     }
   }
 

@@ -282,7 +282,7 @@ describe('planPrimaryContent', () => {
       });
 
       expect(result.inlineImages).toEqual([
-        { description: 'A', anchorAfterSection: 2 },
+        { description: 'A', anchorAfterSection: 1 },
         { description: 'B', anchorAfterSection: 2 },
         { description: 'C', anchorAfterSection: 2 },
       ]);

@@ -218,6 +218,26 @@ describe('preview helpers', () => {
     }
   });
 
+  it('deduplicates duplicate outputs with the same content type and index', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-duplicate-outputs-'));
+
+    try {
+      const generationDir = path.join(tempRoot, '20260507-999999-duplicate');
+      const nestedDir = path.join(generationDir, 'nested');
+      await mkdir(nestedDir, { recursive: true });
+      await writeFile(path.join(generationDir, 'article-1.md'), '# Article\n\nBody\n', 'utf8');
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      await writeFile(path.join(nestedDir, 'article-1.md'), '# Article Duplicate\n\nBody\n', 'utf8');
+
+      const generations = await listAllGenerations(tempRoot);
+      expect(generations).toHaveLength(1);
+      expect(generations[0]?.outputs).toHaveLength(1);
+      expect(generations[0]?.outputs[0]?.sourcePath).toBe(path.join(nestedDir, 'article-1.md'));
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('selects generation primary from job metadata when article is secondary', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-generations-primary-from-job-'));
 

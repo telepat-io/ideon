@@ -74,7 +74,7 @@ export async function planPrimaryContent({
         .slice(0, 3)
         .map((img) => ({
           ...img,
-          anchorAfterSection: Math.max(2, Math.min(sectionCount, img.anchorAfterSection)),
+          anchorAfterSection: Math.max(1, Math.min(sectionCount, img.anchorAfterSection)),
         })),
     };
   }

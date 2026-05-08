@@ -109,9 +109,9 @@ describe('primary plan prompt builders', () => {
     // Verify medium article gets 1-2 inline image instruction
     expect(messages[1]?.content).toContain('Include a cover image description and 1 to 2 inline image descriptions');
     expect(messages[1]?.content).toContain('inlineImages: array of 1 to 2 objects');
-    // Verify anchorAfterSection guidance starts at 2 and mentions cover image proximity
-    expect(messages[1]?.content).toContain('anchorAfterSection, starting at 2');
-    expect(messages[1]?.content).toContain('cover image already appears near the title');
+    // Verify anchorAfterSection guidance starts at 1
+    expect(messages[1]?.content).toContain('anchorAfterSection, starting at 1');
+  
   });
 
   it('uses proportional image count instructions by target length for long-form', () => {

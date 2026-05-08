@@ -55,7 +55,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   const app = express();
   const previewClientDir = await resolvePreviewClientBuildDir();
   app.disable('x-powered-by');
-  app.use('/assets', express.static(options.assetDir));
+  app.use('/assets', express.static(options.assetDir, { dotfiles: 'allow' }));
   if (previewClientDir) {
     app.use(express.static(previewClientDir, { index: false }));
   }
@@ -91,7 +91,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       const assetPathParam = req.params.assetPath;
       const rawAssetPath = Array.isArray(assetPathParam) ? assetPathParam.join('/') : (assetPathParam ?? '');
       const resolvedAssetPath = await resolveGenerationAssetPath(generationId, rawAssetPath, options.markdownOutputDir);
-      res.sendFile(resolvedAssetPath);
+      res.sendFile(resolvedAssetPath, { dotfiles: 'allow' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error loading generation asset';
       const status = error instanceof MissingArticleError ? 404 : 400;

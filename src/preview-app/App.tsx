@@ -132,7 +132,16 @@ export default function PreviewApp() {
   }, [groupedOutputs]);
 
   const activeOutputs = useMemo(() => {
-    return groupedOutputs[activeType] ?? [];
+    const outputs = groupedOutputs[activeType] ?? [];
+    const seen = new Set<string>();
+    return outputs.filter((output) => {
+      if (seen.has(output.id)) {
+        return false;
+      }
+
+      seen.add(output.id);
+      return true;
+    });
   }, [activeType, groupedOutputs]);
 
   const activeOutput = useMemo(() => {

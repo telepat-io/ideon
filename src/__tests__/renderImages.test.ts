@@ -47,10 +47,10 @@ describe('buildImageSlots', () => {
     expect(slots[2]?.anchorAfterSection).toBe(3);
   });
 
-  it('clamps anchorAfterSection to minimum 2', () => {
+  it('clamps anchorAfterSection to minimum 1', () => {
     const plan = { ...basePlan, inlineImages: [{ description: 'Early', anchorAfterSection: 0 }] };
     const slots = buildImageSlots(plan, makeSection(5));
-    expect(slots[1]?.anchorAfterSection).toBe(2);
+    expect(slots[1]?.anchorAfterSection).toBe(1);
   });
 
   it('respects maxImages=1 (cover only)', () => {

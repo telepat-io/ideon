@@ -241,6 +241,54 @@ describe('preview server resilience', () => {
     }
   });
 
+  it('serves generation-local assets when output directory contains dot-prefixed segments', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), '.ideon-preview-server-assets-'));
+
+    try {
+      const markdownOutputDir = path.join(tempRoot, 'output');
+      const assetDir = path.join(markdownOutputDir, 'assets');
+      const generationDir = path.join(markdownOutputDir, '20260328-130000-dotfile-test');
+      await mkdir(assetDir, { recursive: true });
+      await mkdir(generationDir, { recursive: true });
+
+      await writeFile(
+        path.join(generationDir, 'article-1.md'),
+        '# Dotfile Asset Test\n\n![Cover](cover.webp)\n',
+        'utf8',
+      );
+      await writeFile(path.join(generationDir, 'cover.webp'), 'dotfile-fake-image', 'utf8');
+
+      const server = await startPreviewServer({
+        markdownPath: path.join(generationDir, 'article-1.md'),
+        assetDir,
+        markdownOutputDir,
+        port: 0,
+        openBrowser: false,
+      });
+
+      try {
+        const assetResponse = await fetch(
+          `${server.url}/api/generations/20260328-130000-dotfile-test/assets/cover.webp`,
+        );
+        const assetContent = await assetResponse.text();
+        expect(assetResponse.status).toBe(200);
+        expect(assetContent).toContain('dotfile-fake-image');
+
+        const articleResponse = await fetch(`${server.url}/api/articles/20260328-130000-dotfile-test`);
+        const articlePayload = (await articleResponse.json()) as {
+          outputs: Array<{ htmlBody: string }>;
+        };
+        expect(articleResponse.status).toBe(200);
+        const htmlBody = articlePayload.outputs[0]?.htmlBody ?? '';
+        expect(htmlBody).toContain('/api/generations/20260328-130000-dotfile-test/assets/cover.webp');
+      } finally {
+        await server.close();
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('exposes frontmatter slug for each generation output item', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-preview-server-output-slug-'));
 

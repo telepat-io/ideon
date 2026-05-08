@@ -72,20 +72,20 @@ describe('inlineImagePlanSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject anchorAfterSection less than 2', () => {
+  it('should reject anchorAfterSection less than 1', () => {
     const image = {
       description: 'A helpful diagram',
-      anchorAfterSection: 1,
+      anchorAfterSection: 0,
     };
 
     const result = inlineImagePlanSchema.safeParse(image);
     expect(result.success).toBe(false);
   });
 
-  it('should validate anchorAfterSection of 2 or greater', () => {
+  it('should validate anchorAfterSection of 1 or greater', () => {
     const image = {
       description: 'A helpful diagram',
-      anchorAfterSection: 2,
+      anchorAfterSection: 1,
     };
 
     const result = inlineImagePlanSchema.safeParse(image);
