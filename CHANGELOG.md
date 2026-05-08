@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.26](https://github.com/telepat-io/ideon/compare/ideon-v0.1.25...ideon-v0.1.26) (2026-05-08)
+
+
+### Features
+
+* enhance custom link handling in pipeline runner and update documentation ([99286a7](https://github.com/telepat-io/ideon/commit/99286a70109f013ad6683ac977f7a47ede5b7ca6))
+* update inline image validation to allow anchorAfterSection starting at 1 ([ae6dfe0](https://github.com/telepat-io/ideon/commit/ae6dfe0a876ccb9a825f58d8094593c48c9fc597))
+* update output path resolution to use IDEON_HOME environment variable and add test setup file ([13d24b3](https://github.com/telepat-io/ideon/commit/13d24b3001f46cfe00157adef72248258448c6ba))
+
 ## [0.1.25](https://github.com/telepat-io/ideon/compare/ideon-v0.1.24...ideon-v0.1.25) (2026-05-07)
 
 
