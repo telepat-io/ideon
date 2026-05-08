@@ -750,6 +750,47 @@ describe('pipeline runner', () => {
     }
   });
 
+  it('writes custom link sidecars even when --enrich-links is disabled', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-custom-links-only-'));
+
+    try {
+      const result = await runPipelineShell(
+        {
+          idea: 'custom link only sidecar',
+          job: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          enrichLinks: false,
+          customLinks: ['React->https://react.dev'],
+          workingDir: tempRoot,
+        },
+      );
+
+      const linksStage = result.stages.find((stage) => stage.id === 'links');
+      expect(linksStage?.status).toBe('succeeded');
+      expect(linksStage?.detail).toContain('Updated custom links without generating new links.');
+      expect(linksStage?.summary).toBe('1 files updated');
+
+      const sidecarRaw = await readFile(resolveLinksPath(result.artifact.markdownPath), 'utf8');
+      const sidecar = JSON.parse(sidecarRaw) as { version: number; customLinks: Array<{ expression: string; url: string; title: string | null }>; links: Array<unknown> };
+      expect(sidecar.version).toBe(2);
+      expect(sidecar.customLinks).toEqual([{ expression: 'React', url: 'https://react.dev', title: null }]);
+      expect(sidecar.links).toEqual([]);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('skips the links stage when all outputs are short-form', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-short-links-'));
 

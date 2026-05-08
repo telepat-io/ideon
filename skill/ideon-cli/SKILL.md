@@ -149,8 +149,8 @@ ideon write "Your idea" --primary article=1 --secondary x-post=1 --secondary lin
 # Enable link enrichment during write (opt-in)
 ideon write "Your idea" --primary article=1 --enrich-links
 
-# Add custom links during write (requires --enrich-links)
-ideon write "Your idea" --primary article=1 --enrich-links --link "React->https://react.dev"
+# Add custom links during write
+ideon write "Your idea" --primary article=1 --link "React->https://react.dev"
 
 # Use job file
 ideon write --job ./job.json

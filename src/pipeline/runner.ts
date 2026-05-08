@@ -1,4 +1,4 @@
-import { mkdir, stat } from 'node:fs/promises';
+import { mkdir, readFile, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
@@ -16,6 +16,7 @@ import { buildMetaJson } from '../output/meta.js';
 import {
   buildGenerationDirectoryName,
   ensureOutputDirectories,
+  resolveLinksPath,
   resolveOutputPaths,
   writeJsonFile,
   writeLinksFile,
@@ -1032,15 +1033,49 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     options.onUpdate?.(cloneStages(stages));
 
     if (!shouldEnrichLinks) {
-      markStageCompleted(stageTracking, 'links');
-      stages[6] = {
-        ...stages[6],
-        status: 'succeeded',
-        detail: 'Skipped link enrichment (enable with --enrich-links).',
-        summary: 'Link enrichment disabled for this run',
-        stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
-      };
-      options.onUpdate?.(cloneStages(stages));
+      const customLinkActions = pipelineCustomLinkRaws.length > 0 || pipelineUnlinks.length > 0;
+      if (customLinkActions && eligibleOutputsForLinks.length > 0) {
+        for (const output of eligibleOutputsForLinks) {
+          const existingLinks = await readExistingLinks(resolveLinksPath(output.markdownPath));
+          const mergedCustomLinks = resolvePipelineCustomLinks(
+            existingLinks?.customLinks ?? [],
+            pipelineCustomLinkRaws,
+            pipelineUnlinks,
+          );
+          const generatedLinks = existingLinks?.links ?? [];
+
+          await writeLinksFile(output.markdownPath, {
+            version: 2,
+            customLinks: mergedCustomLinks,
+            links: generatedLinks,
+          });
+        }
+
+        markStageCompleted(stageTracking, 'links');
+        stages[6] = {
+          ...stages[6],
+          status: 'succeeded',
+          detail: 'Updated custom links without generating new links.',
+          summary: `${eligibleOutputsForLinks.length} files updated`,
+          items: (stages[6].items ?? []).map((stageItem) => ({
+            ...stageItem,
+            status: 'succeeded',
+            detail: 'Saved custom links sidecar.',
+          })),
+          stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
+        };
+        options.onUpdate?.(cloneStages(stages));
+      } else {
+        markStageCompleted(stageTracking, 'links');
+        stages[6] = {
+          ...stages[6],
+          status: 'succeeded',
+          detail: 'Skipped link enrichment (enable with --enrich-links).',
+          summary: 'Link enrichment disabled for this run',
+          stageAnalytics: snapshotStageAnalytics(stageTracking, 'links'),
+        };
+        options.onUpdate?.(cloneStages(stages));
+      }
     } else if (eligibleOutputsForLinks.length === 0) {
       markStageCompleted(stageTracking, 'links');
       stages[6] = {
@@ -1879,6 +1914,82 @@ function parsePipelineCustomLinks(rawLinks: string[], unlinks: string[]): LinkEn
   }
 
   return Array.from(result.values());
+}
+
+function resolvePipelineCustomLinks(existing: LinkEntry[], rawLinks: string[], unlinks: string[]): LinkEntry[] {
+  const result = new Map<string, LinkEntry>(
+    existing.map((entry) => [entry.expression.trim().toLowerCase(), entry]),
+  );
+
+  for (const raw of rawLinks) {
+    const separatorIndex = raw.indexOf('->');
+    if (separatorIndex < 0) {
+      continue;
+    }
+
+    const expression = raw.slice(0, separatorIndex).trim();
+    const url = raw.slice(separatorIndex + 2).trim();
+    if (expression && url) {
+      result.set(expression.toLowerCase(), { expression, url, title: null });
+    }
+  }
+
+  for (const expr of unlinks) {
+    result.delete(expr.trim().toLowerCase());
+  }
+
+  return Array.from(result.values());
+}
+
+async function readExistingLinks(linksPath: string): Promise<{ version: number; customLinks: LinkEntry[]; links: LinkEntry[] } | null> {
+  try {
+    const raw = await readFile(linksPath, 'utf8');
+    const parsed = JSON.parse(raw) as { version?: unknown; links?: unknown; customLinks?: unknown };
+    const links = Array.isArray(parsed.links)
+      ? parsed.links
+          .filter((entry): entry is LinkEntry => isValidLinkEntry(entry))
+          .map((entry) => ({
+            expression: entry.expression.trim(),
+            url: entry.url.trim(),
+            title: typeof entry.title === 'string' ? entry.title : null,
+          }))
+      : null;
+
+    if (!links) {
+      throw new Error(`Invalid links sidecar format at ${linksPath}. Expected { version, links[] }.`);
+    }
+
+    const customLinks = Array.isArray(parsed.customLinks)
+      ? parsed.customLinks
+          .filter((entry): entry is LinkEntry => isValidLinkEntry(entry))
+          .map((entry) => ({
+            expression: entry.expression.trim(),
+            url: entry.url.trim(),
+            title: typeof entry.title === 'string' ? entry.title : null,
+          }))
+      : [];
+
+    return {
+      version: typeof parsed.version === 'number' ? parsed.version : 2,
+      customLinks,
+      links,
+    };
+  } catch (error) {
+    if ((error as { code?: string }).code === 'ENOENT') {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function isValidLinkEntry(entry: unknown): entry is LinkEntry {
+  return (
+    typeof entry === 'object'
+    && entry !== null
+    && typeof (entry as { expression?: unknown }).expression === 'string'
+    && typeof (entry as { url?: unknown }).url === 'string'
+  );
 }
 
 export const __testInternals = {

@@ -33,8 +33,8 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Disables all prompts and fails fast when required inputs are missing. |
 | `--dry-run` | None | No | boolean | `false` | `true` or omitted | Runs orchestration without provider API calls. |
 | `--enrich-links` | None | No | boolean | `false` | `true` or omitted | Runs link enrichment stage after markdown generation. |
-| `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link in the sidecar. Format: `expression->url`. Requires `--enrich-links`. Repeatable. Custom links take precedence over generated ones. |
-| `--unlink <expression>` | None | No | repeatable string | none | Any expression string | Removes a custom link by expression. Repeatable. Requires `--enrich-links`. |
+| `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link in the sidecar. Format: `expression->url`. Repeatable. Custom links take precedence over generated ones. |
+| `--unlink <expression>` | None | No | repeatable string | none | Any expression string | Removes a custom link by expression. Repeatable. |
 | `--max-links <n>` | None | No | positive integer | Derived from `--length` | Any positive integer | Caps the number of generated links. Does not apply to custom links. Requires `--enrich-links`. |
 
 ## Examples
