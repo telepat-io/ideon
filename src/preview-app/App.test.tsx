@@ -23,6 +23,11 @@ const articleDetailPayload = {
   title: 'Thinking in Rome',
   generationId: '20260328-roman-forum',
   sourcePath: '/tmp/output/20260328-roman-forum/article-1.md',
+  analyticsSummary: {
+    totalDurationMs: 3000,
+    totalCostUsd: 0.0102,
+    totalCostSource: 'estimated',
+  },
   interactions: {
     llmCalls: [
       {
@@ -117,13 +122,20 @@ describe('PreviewApp', () => {
   it('loads the selected generation, switches output types, and shows the interaction inspector', async () => {
     render(<PreviewApp />);
 
-    // Title appears in both the sidebar list item and the detail panel heading.
-    const titleElements = await screen.findAllByText('Thinking in Rome');
+const titleElements = await screen.findAllByText('Thinking in Rome');
     expect(titleElements.length).toBeGreaterThan(0);
     expect(await screen.findByText('How antiquity built durable decision systems.')).toBeInTheDocument();
 
+    expect(await screen.findByText('Generation ID:')).toBeInTheDocument();
+    expect(await screen.findByText('20260328-roman-forum')).toBeInTheDocument();
+    expect(await screen.findByText('Slug:')).toBeInTheDocument();
+    expect(await screen.findByText('thinking-in-rome')).toBeInTheDocument();
+    expect(await screen.findByText('/tmp/output/20260328-roman-forum/article-1.md')).toBeInTheDocument();
+    expect(await screen.findByText('Total time: 3s')).toBeInTheDocument();
+    expect(await screen.findByText('Total cost: $0.0102 (estimated)')).toBeInTheDocument();
+
     fireEvent.click(await screen.findByText('X Post'));
-    expect(await screen.findByText('Shareable takeaway')).toBeInTheDocument();
+    expect(await screen.findByText('A sharp social-ready takeaway.')).toBeInTheDocument();
 
     fireEvent.click(await screen.findByText('Logs'));
     expect(await screen.findByText('Interaction Inspector')).toBeInTheDocument();
@@ -307,16 +319,24 @@ describe('PreviewApp', () => {
     expect(await screen.findByText('No interactions captured for this generation.')).toBeInTheDocument();
   });
 
-  it('copies the selected output slug and updates the button label', async () => {
+  it('copies the selected output slug and generation id and updates the button label', async () => {
     const clipboardWrite = jest.spyOn(navigator.clipboard, 'writeText');
 
     render(<PreviewApp />);
 
-    const copyButton = await screen.findByRole('button', { name: 'Copy slug' });
-    fireEvent.click(copyButton);
+    const copySlugButton = await screen.findByRole('button', { name: 'Copy slug' });
+    fireEvent.click(copySlugButton);
 
     await waitFor(() => {
       expect(clipboardWrite).toHaveBeenCalledWith('thinking-in-rome');
+    });
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
+
+    const copyGenerationIdButton = await screen.findByRole('button', { name: 'Copy generation ID' });
+    fireEvent.click(copyGenerationIdButton);
+
+    await waitFor(() => {
+      expect(clipboardWrite).toHaveBeenCalledWith('20260328-roman-forum');
     });
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });

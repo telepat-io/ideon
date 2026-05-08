@@ -272,6 +272,7 @@ export default function PreviewApp() {
   const totalDurationLabel = formatDuration(detail?.analyticsSummary?.totalDurationMs ?? null);
   const totalCostLabel = formatUsd(detail?.analyticsSummary?.totalCostUsd ?? null);
   const costSource = detail?.analyticsSummary?.totalCostSource;
+  const activeOutputSlug = activeOutput?.slug ?? detail?.outputs?.[0]?.slug ?? '';
 
   const onSelectType = (nextType: string) => {
     setActiveType(nextType);
@@ -350,23 +351,6 @@ export default function PreviewApp() {
 
               <Layout.Content className="preview-content">
                 <div className="preview-grid">
-                  <Card className="preview-summary-card" variant="borderless" size="small">
-                    <Flex justify="space-between" gap={12} align="center" wrap>
-                      <Typography.Text className="preview-source-path" style={{ margin: 0 }}>
-                        {sourcePathLabel}
-                      </Typography.Text>
-
-                      <Space size="small" wrap>
-                        <Tag icon={<ClockCircleOutlined />} bordered={false} className="preview-pill">
-                          {`Total time: ${totalDurationLabel}`}
-                        </Tag>
-                        <Tag icon={<DollarOutlined />} bordered={false} className="preview-pill">
-                          {`Total cost: ${totalCostLabel}${costSource ? ` (${costSource})` : ''}`}
-                        </Tag>
-                      </Space>
-                    </Flex>
-                  </Card>
-
                   {listError ? (
                     <Card className="preview-message-card preview-message-card--error">
                       <Typography.Title level={4}>Unable to load preview index</Typography.Title>
@@ -388,14 +372,57 @@ export default function PreviewApp() {
                       <Flex justify="space-between" gap={16} wrap align="center">
                         <div>
                           <Typography.Text className="preview-overline">Active Generation</Typography.Text>
-                          <Typography.Title level={3} className="preview-generation-title">
-                            {detail?.title ?? bootstrap?.title ?? 'Loading generation...'}
-                          </Typography.Title>
-                          {selectedSlug ? (
-                            <Tag bordered={false} className="preview-generation-tag">
-                              {selectedSlug}
-                            </Tag>
-                          ) : null}
+                          <div style={{ marginTop: 8 }}>
+                            <Flex wrap gap={12} align="center">
+                              {detail?.generationId ? (
+                                <>
+                                  <Typography.Text strong style={{ whiteSpace: 'nowrap' }}>
+                                    Generation ID:
+                                  </Typography.Text>
+                                  <Tag bordered={false} className="preview-generation-tag">
+                                    {detail.generationId}
+                                  </Tag>
+                                  <Button
+                                    size="small"
+                                    onClick={() => void onCopySlug(detail.generationId)}
+                                  >
+                                    {copiedSlug === detail.generationId ? 'Copied' : 'Copy generation ID'}
+                                  </Button>
+                                </>
+                              ) : null}
+
+                              {activeOutputSlug ? (
+                                <>
+                                  <Typography.Text strong style={{ whiteSpace: 'nowrap' }}>
+                                    Slug:
+                                  </Typography.Text>
+                                  <Tag bordered={false} className="preview-generation-tag">
+                                    {activeOutputSlug}
+                                  </Tag>
+                                  <Button
+                                    size="small"
+                                    onClick={() => void onCopySlug(activeOutputSlug)}
+                                  >
+                                    {copiedSlug === activeOutputSlug ? 'Copied' : 'Copy slug'}
+                                  </Button>
+                                </>
+                              ) : null}
+                            </Flex>
+
+                            <Flex justify="space-between" align="center" wrap gap={12} style={{ marginTop: 12 }}>
+                              <Typography.Text className="preview-source-path" style={{ margin: 0 }}>
+                                {sourcePathLabel}
+                              </Typography.Text>
+                              <Space size="small" wrap>
+                                <Tag icon={<ClockCircleOutlined />} bordered={false} className="preview-pill">
+                                  {`Total time: ${totalDurationLabel}`}
+                                </Tag>
+                                <Tag icon={<DollarOutlined />} bordered={false} className="preview-pill">
+                                  {`Total cost: ${totalCostLabel}${costSource ? ` (${costSource})` : ''}`}
+                                </Tag>
+                              </Space>
+                            </Flex>
+                          </div>
                         </div>
 
                         <Segmented
@@ -616,29 +643,6 @@ function OutputCard({
 
   return (
     <section className={channelClassName}>
-      <header className="preview-output-header">
-        <div>
-          <Typography.Title level={4}>{output.title || output.contentTypeLabel}</Typography.Title>
-          <Space wrap>
-            <Tag bordered={false} className="preview-generation-tag">
-              {output.contentTypeLabel}
-            </Tag>
-            <Tag bordered={false} className="preview-generation-tag">
-              {`Variant ${output.index}`}
-            </Tag>
-          </Space>
-        </div>
-
-        <Flex gap={8} wrap align="center">
-          <Tag bordered={false} className="preview-slug-pill">
-            {output.slug}
-          </Tag>
-          <Button onClick={() => onCopySlug(output.slug)}>
-            {copiedSlug === output.slug ? 'Copied' : 'Copy slug'}
-          </Button>
-        </Flex>
-      </header>
-
       <div
         className="preview-output-body preview-rendered-html"
         dangerouslySetInnerHTML={{ __html: output.htmlBody }}

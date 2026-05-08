@@ -1908,6 +1908,10 @@ function renderShell({
           \`<code class="slug-text">\${escapeHtml(output.slug)}</code>\`,
           \`<button class="copy-btn" data-copy-slug="\${escapeHtml(output.slug)}" type="button">Copy slug</button>\`,
           '</div>',
+          '<div class="slug-row">',
+          \`<code class="slug-text">\${escapeHtml(currentGeneration.generationId)}</code>\`,
+          \`<button class="copy-btn" data-copy-generation-id="\${escapeHtml(currentGeneration.generationId)}" type="button">Copy generation ID</button>\`,
+          '</div>',
           \`<div class="channel-meta">\${escapeHtml(output.contentTypeLabel)} • Variant \${output.index}</div>\`,
           '</div>',
           '</div>',
@@ -2019,6 +2023,12 @@ function renderShell({
         const copyButton = target.closest('[data-copy-slug]');
         if (copyButton instanceof HTMLElement && copyButton.dataset.copySlug) {
           copySlug(copyButton, copyButton.dataset.copySlug);
+          return;
+        }
+
+        const copyGenerationIdButton = target.closest('[data-copy-generation-id]');
+        if (copyGenerationIdButton instanceof HTMLElement && copyGenerationIdButton.dataset.copyGenerationId) {
+          copySlug(copyGenerationIdButton, copyGenerationIdButton.dataset.copyGenerationId);
         }
       });
 
