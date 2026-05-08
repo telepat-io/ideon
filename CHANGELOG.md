@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.28](https://github.com/telepat-io/ideon/compare/ideon-v0.1.27...ideon-v0.1.28) (2026-05-08)
+
+
+### Features
+
+* enhance markdown link handling by adding sidecar link loading and frontmatter support ([4709efd](https://github.com/telepat-io/ideon/commit/4709efdd5d1c11167aeaa63491516821d858cd54))
+
 ## [0.1.27](https://github.com/telepat-io/ideon/compare/ideon-v0.1.26...ideon-v0.1.27) (2026-05-08)
 
 
