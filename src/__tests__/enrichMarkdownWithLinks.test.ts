@@ -137,4 +137,31 @@ describe('enrichMarkdownWithLinks', () => {
     const result = enrichMarkdownWithLinks(md, [link('Aristotle', 'https://example.com/aristotle')]);
     expect(result).toBe('The founder was [Aristotle](https://example.com/aristotle)');
   });
+
+  it('does not link an expression inside a level-1 heading', () => {
+    const md = '# Aristotle and the Lyceum';
+    const result = enrichMarkdownWithLinks(md, [link('Aristotle', 'https://example.com/aristotle')]);
+    expect(result).toBe(md);
+  });
+
+  it('does not link an expression inside a level-2 heading', () => {
+    const md = '## Introduction to TypeScript\n\nTypeScript is great.';
+    const result = enrichMarkdownWithLinks(md, [link('TypeScript', 'https://example.com/ts')]);
+    expect(result).toContain('[TypeScript](https://example.com/ts) is great.');
+    expect(result).toContain('## Introduction to TypeScript');
+  });
+
+  it('links an expression that appears in both a heading and body', () => {
+    const md = '## About React\n\nReact is a JavaScript library.';
+    const result = enrichMarkdownWithLinks(md, [link('React', 'https://react.dev')]);
+    expect(result).toContain('## About React');
+    expect(result).toContain('[React](https://react.dev) is a JavaScript library.');
+  });
+
+  it('does not link an expression inside a level-6 heading', () => {
+    const md = '###### TypeScript v6\n\nTypeScript is here.';
+    const result = enrichMarkdownWithLinks(md, [link('TypeScript', 'https://example.com/ts')]);
+    expect(result).toContain('###### TypeScript v6');
+    expect(result).toContain('[TypeScript](https://example.com/ts) is here.');
+  });
 });

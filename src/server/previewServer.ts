@@ -7,9 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { marked } from 'marked';
-import { resolveLinksPath } from '../output/filesystem.js';
-import { enrichMarkdownWithLinks } from '../output/enrichMarkdownWithLinks.js';
-import type { LinkEntry } from '../types/article.js';
+import { enrichMarkdownWithLinks, loadLinksFromSidecar } from '../output/enrichMarkdownWithLinks.js';
 import type {
   PreviewArticleContent,
   PreviewAnalyticsSummary,
@@ -308,46 +306,10 @@ function isMissingFileError(error: unknown): boolean {
 
 async function renderArticleHtml(markdown: string, generationId: string, sourcePath: string): Promise<string> {
   let content = stripFrontmatter(markdown);
-  const links = await loadSavedLinks(sourcePath);
+  const links = await loadLinksFromSidecar(sourcePath);
   content = enrichMarkdownWithLinks(content, links);
   const html = await marked.parse(content);
   return rewriteRelativeAssetUrls(html, generationId);
-}
-
-async function loadSavedLinks(markdownPath: string): Promise<LinkEntry[]> {
-  const linksPath = resolveLinksPath(markdownPath);
-
-  try {
-    const raw = await readFile(linksPath, 'utf8');
-    const parsed = JSON.parse(raw) as { links?: unknown };
-    if (!Array.isArray(parsed.links)) {
-      return [];
-    }
-
-    return parsed.links
-      .filter((entry): entry is LinkEntry => {
-        if (typeof entry !== 'object' || entry === null) {
-          return false;
-        }
-
-        const record = entry as { expression?: unknown; url?: unknown; title?: unknown };
-        return typeof record.expression === 'string'
-          && typeof record.url === 'string'
-          && (record.title === null || typeof record.title === 'string');
-      })
-      .map((entry) => ({
-        expression: entry.expression.trim(),
-        url: entry.url.trim(),
-        title: entry.title,
-      }))
-      .filter((entry) => entry.expression.length > 0 && entry.url.length > 0);
-  } catch (error) {
-    if (isMissingFileError(error)) {
-      return [];
-    }
-
-    return [];
-  }
 }
 
 async function loadSavedInteractions(generationDir: string): Promise<PreviewInteractionsPayload> {
