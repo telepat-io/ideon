@@ -129,4 +129,5 @@ When a stage fails:
 - Short-form channels (`x-post`, `x-thread`) are skipped by default for link enrichment.
 - **Custom links** (`--link "expression->url"`) are stored separately and always preserved regardless of `--mode fresh`. Use `--unlink <expression>` to remove a custom link.
 - Custom links take precedence: if the LLM selects an expression already covered by a custom link, the generated entry for that expression is discarded.
+- **Custom links replace every unprotected occurrence** of their expression in the article body; generated links only replace the first occurrence.
 - **Max links** (`--max-links <n>`) caps the number of generated links. Defaults to 5 / 8 / 12 based on the article's target word count (≤700 / ≤1150 / >1150).

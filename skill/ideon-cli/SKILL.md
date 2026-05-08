@@ -373,7 +373,7 @@ Link enrichment behavior:
 - Link enrichment applies to eligible long-form outputs and skips short-form channels like `x-post` and `x-thread`.
 - `ideon links --mode fresh` (default) replaces existing **generated** sidecar links only. Custom links are always preserved.
 - `ideon links --mode append` merges into existing generated sidecar content (creates sidecar if missing).
-- **Custom links** (`--link "expression->url"`): user-specified mappings stored separately from generated links. They take precedence over LLM-generated ones and survive `--mode fresh`. Use `--unlink <expression>` to remove.
+- **Custom links** (`--link "expression->url"`): user-specified mappings stored separately from generated links. They take precedence over LLM-generated ones, survive `--mode fresh`, and are applied to **every unprotected occurrence** of the expression in the article body (generated links only apply to the first occurrence). Use `--unlink <expression>` to remove.
 - **Max links** (`--max-links <n>`): caps the number of generated links. Defaults: ≤700 words→5, ≤1150 words→8, >1150 words→12. Does not cap custom links.
 - Sidecar format is v2: `{ version: 2, customLinks: [...], links: [...] }`. v1 sidecars are read transparently.
 

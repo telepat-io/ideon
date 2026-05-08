@@ -85,6 +85,13 @@ export interface LinkEntry {
   expression: string;
   url: string;
   title: string | null;
+  /**
+   * When true, the enrichment engine will link every occurrence of this
+   * expression in the markdown body (subject to protected-span rules).
+   * Generated links (isCustom: false / undefined) are only applied to the
+   * first unprotected occurrence.
+   */
+  isCustom?: boolean;
 }
 
 export interface ContentItemLinks {

@@ -26,7 +26,7 @@ ideon links <slug> [--mode <fresh|append>] [--link <expression->url>] [--unlink 
 | --- | --- | --- | --- | --- | --- | --- |
 | `<slug>` | None | Yes | string | n/a | Generated article slug | Selects the target article by frontmatter slug. |
 | `--mode <mode>` | None | No | enum | `fresh` | `fresh`, `append` | `fresh` replaces existing generated links. `append` merges newly generated links into existing entries. Custom links are unaffected by `--mode`. |
-| `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link. The format is `expression->url`. Repeatable for multiple custom links. Custom links are saved separately from generated ones and always included regardless of `--mode`. |
+| `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link. The format is `expression->url`. Repeatable for multiple custom links. Custom links are saved separately from generated ones, always included regardless of `--mode`, and applied to every unprotected occurrence of the expression in the article body. |
 | `--unlink <expression>` | None | No | repeatable string | none | Any expression string | Removes a custom link by expression text. Repeatable. Case-insensitive match. |
 | `--max-links <n>` | None | No | positive integer | Derived from article length | Any positive integer | Caps the number of generated links. Does not affect custom links. |
 
@@ -52,6 +52,7 @@ Custom links are user-specified `expression → url` pairs that are:
 - Stored in the sidecar separately from LLM-generated links.
 - Always included in preview rendering, regardless of `--mode`.
 - Given precedence over generated links: if the LLM selects an expression that already has a custom link, the generated entry for that expression is discarded.
+- **Applied to every unprotected occurrence** of the expression across the entire article body (generated links only apply to the first occurrence).
 - Persisted across `--mode fresh` runs — only `--unlink` removes them.
 
 To add a custom link:

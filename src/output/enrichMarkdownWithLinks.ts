@@ -31,35 +31,42 @@ export async function loadLinksFromSidecar(markdownPath: string): Promise<LinkEn
   const record = parsed as Record<string, unknown>;
   const links = Array.isArray(record.links) ? record.links : [];
   const customLinks = Array.isArray(record.customLinks) ? record.customLinks : [];
-  const combined = [...customLinks, ...links];
 
-  return combined
-    .filter((entry): entry is LinkEntry => {
-      if (typeof entry !== 'object' || entry === null) {
-        return false;
-      }
+  const filterAndMap = (entries: unknown[], isCustom: boolean): LinkEntry[] =>
+    entries
+      .filter((entry): entry is LinkEntry => {
+        if (typeof entry !== 'object' || entry === null) {
+          return false;
+        }
 
-      const e = entry as Record<string, unknown>;
-      return typeof e.expression === 'string'
-        && typeof e.url === 'string'
-        && (e.title === null || typeof e.title === 'string');
-    })
-    .map((entry) => ({
-      expression: entry.expression.trim(),
-      url: entry.url.trim(),
-      title: entry.title,
-    }))
-    .filter((entry) => entry.expression.length > 0 && entry.url.length > 0);
+        const e = entry as Record<string, unknown>;
+        return typeof e.expression === 'string'
+          && typeof e.url === 'string'
+          && (e.title === null || typeof e.title === 'string');
+      })
+      .map((entry) => ({
+        expression: entry.expression.trim(),
+        url: entry.url.trim(),
+        title: entry.title,
+        isCustom,
+      }))
+      .filter((entry) => entry.expression.length > 0 && entry.url.length > 0);
+
+  return [...filterAndMap(customLinks, true), ...filterAndMap(links, false)];
 }
 
 /**
  * Returns a copy of `markdown` with each link entry injected as a Markdown
- * hyperlink on its first occurrence. Longer expressions are matched first so
- * multi-word phrases take precedence over their constituent words. An
- * expression is skipped when its match position falls inside an already-
- * existing `[text](url)` span, preventing double-linking.
+ * hyperlink. Longer expressions are matched first so multi-word phrases take
+ * precedence over their constituent words. An expression is skipped when its
+ * match position falls inside an already-existing `[text](url)` span,
+ * preventing double-linking.
  *
  * Content inside headings (`# ...`, `## ...`, etc.) is never linked.
+ *
+ * By default, only the first unprotected occurrence of each expression is
+ * linked. When a link entry carries `isCustom: true` (user-supplied custom
+ * links), every unprotected occurrence is linked.
  */
 export function enrichMarkdownWithLinks(markdown: string, links: LinkEntry[]): string {
   if (links.length === 0) {
@@ -83,8 +90,15 @@ export function enrichMarkdownWithLinks(markdown: string, links: LinkEntry[]): s
       if (isInProtectedSpan(updated, start, end)) {
         continue;
       }
-      updated = `${updated.slice(0, start)}[${match[0]}](${link.url})${updated.slice(end)}`;
-      break;
+      const replacement = `[${match[0]}](${link.url})`;
+      updated = `${updated.slice(0, start)}${replacement}${updated.slice(end)}`;
+      // For custom links continue replacing every unprotected occurrence;
+      // generated links stop after the first hit.
+      if (link.isCustom) {
+        expressionRegex.lastIndex = start + replacement.length;
+      } else {
+        break;
+      }
     }
   }
 

@@ -48,7 +48,7 @@ If a referenced image file is missing from the source generation directory the c
 
 ## Link Injection
 
-Links are loaded from the sidecar `<article>.links.json` file. Both `customLinks` and `links` arrays are merged and applied. If no sidecar exists, the markdown is exported as-is without link injection.
+Links are loaded from the sidecar `<article>.links.json` file. Both `customLinks` and `links` arrays are merged and applied. Custom links (`--link`) replace every unprotected occurrence of their expression in the body; generated links only replace the first. If no sidecar exists, the markdown is exported as-is without link injection.
 
 The YAML frontmatter block is preserved exactly as written; link injection only applies to the body text.
 

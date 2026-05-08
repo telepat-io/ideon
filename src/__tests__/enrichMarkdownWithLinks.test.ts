@@ -1,8 +1,12 @@
 import { enrichMarkdownWithLinks } from '../output/enrichMarkdownWithLinks.js';
 import type { LinkEntry } from '../types/article.js';
 
-function link(expression: string, url: string): LinkEntry {
-  return { expression, url, title: null };
+function link(expression: string, url: string, isCustom?: boolean): LinkEntry {
+  return { expression, url, title: null, isCustom };
+}
+
+function customLink(expression: string, url: string): LinkEntry {
+  return link(expression, url, true);
 }
 
 describe('enrichMarkdownWithLinks', () => {
@@ -163,5 +167,50 @@ describe('enrichMarkdownWithLinks', () => {
     const result = enrichMarkdownWithLinks(md, [link('TypeScript', 'https://example.com/ts')]);
     expect(result).toContain('###### TypeScript v6');
     expect(result).toContain('[TypeScript](https://example.com/ts) is here.');
+  });
+
+  it('replaces every unprotected occurrence for custom links (isCustom = true)', () => {
+    const md = 'Aristotle thought deeply. Aristotle also ate lunch.';
+    const result = enrichMarkdownWithLinks(md, [customLink('Aristotle', 'https://example.com/aristotle')]);
+    expect(result).toBe(
+      '[Aristotle](https://example.com/aristotle) thought deeply. ' +
+      '[Aristotle](https://example.com/aristotle) also ate lunch.',
+    );
+  });
+
+  it('custom links still respect heading protection across all occurrences', () => {
+    const md = [
+      '# Aristotle on Ethics',
+      '',
+      'Aristotle wrote about ethics. Aristotle also studied biology.',
+    ].join('\n');
+    const result = enrichMarkdownWithLinks(md, [customLink('Aristotle', 'https://example.com/aristotle')]);
+    expect(result).toContain('# Aristotle on Ethics');
+    expect(result).toContain('[Aristotle](https://example.com/aristotle) wrote about ethics.');
+    expect(result).toContain('[Aristotle](https://example.com/aristotle) also studied biology.');
+  });
+
+  it('custom links skip occurrences inside existing links and inline code', () => {
+    const md = 'Read [Aristotle](https://example.com/existing). `Aristotle` type. Then Aristotle himself.';
+    const result = enrichMarkdownWithLinks(md, [customLink('Aristotle', 'https://example.com/new')]);
+    expect(result).toContain('[Aristotle](https://example.com/existing)');
+    expect(result).toContain('`Aristotle`');
+    expect(result).toContain('Then [Aristotle](https://example.com/new) himself.');
+    // Only the body occurrence gets linked, heading + existing link + code are untouched
+  });
+
+  it('mixed custom and generated links: custom replaces all, generated replaces first only', () => {
+    const md = 'React is a library. React uses JSX. TypeScript types React. TypeScript is typed.';
+    const result = enrichMarkdownWithLinks(md, [
+      customLink('React', 'https://react.dev'),
+      link('TypeScript', 'https://typescriptlang.org'),
+    ]);
+    // React (custom, longer expression, sorted first): all three occurrences linked
+    expect(result).toContain('[React](https://react.dev) is a library.');
+    expect(result).toContain('[React](https://react.dev) uses JSX.');
+    expect(result).toContain('[React](https://react.dev).');
+    // TypeScript (generated): only first occurrence linked
+    expect(result).toContain('[TypeScript](https://typescriptlang.org) types ');
+    expect(result).toContain('TypeScript is typed.'); // second occurrence NOT linked
   });
 });
