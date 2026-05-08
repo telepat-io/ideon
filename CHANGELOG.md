@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.29](https://github.com/telepat-io/ideon/compare/ideon-v0.1.28...ideon-v0.1.29) (2026-05-08)
+
+
+### Features
+
+* enhance custom link handling to replace every unprotected occurrence in markdown ([9ab10f7](https://github.com/telepat-io/ideon/commit/9ab10f78c922bba877c5966d23284dfedecc754b))
+
 ## [0.1.28](https://github.com/telepat-io/ideon/compare/ideon-v0.1.27...ideon-v0.1.28) (2026-05-08)
 
 
