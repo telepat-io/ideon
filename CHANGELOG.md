@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.27](https://github.com/telepat-io/ideon/compare/ideon-v0.1.26...ideon-v0.1.27) (2026-05-08)
+
+
+### Features
+
+* add unit tests for config schema utilities and validation ([87ea54a](https://github.com/telepat-io/ideon/commit/87ea54af9e729b9611f4791f73909a852acea3f4))
+
 ## [0.1.26](https://github.com/telepat-io/ideon/compare/ideon-v0.1.25...ideon-v0.1.26) (2026-05-08)
 
 
