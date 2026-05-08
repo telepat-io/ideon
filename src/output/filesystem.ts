@@ -4,7 +4,8 @@ import path from 'node:path';
 import type { ResolvedPaths } from '../config/schema.js';
 
 export function resolveOutputPaths(): ResolvedPaths {
-  const base = path.join(os.homedir(), '.ideon', 'output');
+  const ideonHome = process.env.IDEON_HOME || os.homedir();
+  const base = path.join(ideonHome, '.ideon', 'output');
   return {
     markdownOutputDir: base,
     assetOutputDir: path.join(base, 'assets'),

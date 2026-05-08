@@ -16,12 +16,25 @@ import {
 } from '../output/filesystem.js';
 
 describe('output filesystem helpers', () => {
-  it('resolves output paths to ~/.ideon/output', () => {
-    const result = resolveOutputPaths();
-    expect(result).toEqual({
-      markdownOutputDir: path.join(os.homedir(), '.ideon', 'output'),
-      assetOutputDir: path.join(os.homedir(), '.ideon', 'output', 'assets'),
-    });
+  it('resolves output paths to IDEON_HOME when configured', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-home-'));
+    const originalIdeonHome = process.env.IDEON_HOME;
+
+    process.env.IDEON_HOME = tempRoot;
+
+    try {
+      const result = resolveOutputPaths();
+      expect(result).toEqual({
+        markdownOutputDir: path.join(tempRoot, '.ideon', 'output'),
+        assetOutputDir: path.join(tempRoot, '.ideon', 'output', 'assets'),
+      });
+    } finally {
+      if (originalIdeonHome === undefined) {
+        delete process.env.IDEON_HOME;
+      } else {
+        process.env.IDEON_HOME = originalIdeonHome;
+      }
+    }
   });
 
   it('creates both output directories', async () => {
