@@ -1,0 +1,59 @@
+{
+  "_note": "These paths are relative to the skill root (ideon/skill/ideon/). Files are synced from the canonical source using 'npm run guides:sync'.",
+  "general": [
+    "guides/general/core-web-writing-rules.md",
+    "guides/general/idea-generation-systems.md"
+  ],
+  "formats": {
+    "article": "guides/formats/article.md",
+    "blog-post": "guides/formats/blog-post.md",
+    "newsletter": "guides/formats/newsletter.md",
+    "x-post": "guides/formats/x-post.md",
+    "x-thread": "guides/formats/x-thread.md",
+    "reddit-post": "guides/formats/reddit-post.md",
+    "linkedin-post": "guides/formats/linkedin-post.md",
+    "press-release": "guides/formats/press-release.md",
+    "science-paper": "guides/formats/science-paper.md"
+  },
+  "styles": {
+    "professional": "guides/styles/professional.md",
+    "technical": "guides/styles/technical.md",
+    "friendly": "guides/styles/friendly.md",
+    "analytical": "guides/styles/analytical.md",
+    "empathetic": "guides/styles/empathetic.md",
+    "academic": "guides/styles/academic.md",
+    "persuasive": "guides/styles/persuasive.md",
+    "journalistic": "guides/styles/journalistic.md",
+    "authoritative": "guides/styles/authoritative.md",
+    "conversational": "guides/styles/conversational.md",
+    "playful": "guides/styles/playful.md",
+    "minimalist": "guides/styles/minimalist.md",
+    "storytelling": "guides/styles/storytelling.md"
+  },
+  "intents": {
+    "tutorial": "guides/content-intent/tutorial.md",
+    "case-study": "guides/content-intent/case-study.md",
+    "opinion-piece": "guides/content-intent/opinion-piece.md",
+    "deep-dive-analysis": "guides/content-intent/deep-dive-analysis.md",
+    "cornerstone": "guides/content-intent/cornerstone.md",
+    "interview-q-and-a": "guides/content-intent/interview-q-and-a.md",
+    "how-to-guide": "guides/content-intent/how-to-guide.md",
+    "listicle": "guides/content-intent/listicle.md",
+    "announcement": "guides/content-intent/announcement.md",
+    "critique-review": "guides/content-intent/critique-review.md",
+    "counterargument": "guides/content-intent/counterargument.md",
+    "personal-essay": "guides/content-intent/personal-essay.md",
+    "roundup-curation": "guides/content-intent/roundup-curation.md"
+  },
+  "references": {
+    "headline-writing-systems": "guides/references/headline-writing-systems.md",
+    "content-frameworks": "guides/references/content-frameworks.md",
+    "readability-and-pace": "guides/references/readability-and-pace.md",
+    "skimmability-patterns": "guides/references/skimmability-patterns.md",
+    "emotional-resonance": "guides/references/emotional-resonance.md",
+    "prose-quality-checks": "guides/references/prose-quality-checks.md",
+    "target-length-guidance": "guides/references/target-length-guidance.md",
+    "visual-storytelling": "guides/references/visual-storytelling.md",
+    "link-integration-best-practices": "guides/references/link-integration-best-practices.md"
+  }
+}

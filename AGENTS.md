@@ -14,6 +14,14 @@ Concise reference for AI agents working on this codebase.
   - `npm run test:coverage`
   - `npm run docs:build`
 - Keep CLI/config/pipeline/preview/MCP/SKILL.md in sync with code changes.
+- Keep `ideon/skill/ideon/` in sync with runtime behavior, especially:
+  - pipeline stage semantics and checkpoint flow
+  - output metadata format (`meta.json`) and links artifact schema
+  - custom link merge/precedence behavior and Replicate model/config guidance
+- **Whenever writing guides are updated** (files in `ideon/writing-guide/`):
+  - Run `npm run guides:sync` to sync guides into the skill directory
+  - Commit both the updated guides and the synced copies in `ideon/skill/ideon/guides/`
+  - This keeps the skill self-contained and ensures agents have access to the latest guides
 - Update the docs extensively after code changes, especially for new features or architectural changes.
 
 ---
