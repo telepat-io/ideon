@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.30](https://github.com/telepat-io/ideon/compare/ideon-v0.1.29...ideon-v0.1.30) (2026-05-10)
+
+
+### Features
+
+* add generation ID and analytics summary to preview output ([b9ddd00](https://github.com/telepat-io/ideon/commit/b9ddd007249258319890b5a17e40b52320bf6846))
+* add standalone Ideon skill ([569ce4b](https://github.com/telepat-io/ideon/commit/569ce4b66a45fc2dbe3564291485e507a5cdb675))
+* enhance OpenRouterResponse to include error code and metadata ([18ca6ec](https://github.com/telepat-io/ideon/commit/18ca6ecaac3c29c641cc705ef57c1ee560d4248f))
+
+
+### Bug Fixes
+
+* remove unused props from OutputCard component ([a06e30c](https://github.com/telepat-io/ideon/commit/a06e30cd8cfc885d72bf89040c81b0e7c899feb5))
+
 ## [0.1.29](https://github.com/telepat-io/ideon/compare/ideon-v0.1.28...ideon-v0.1.29) (2026-05-08)
 
 
