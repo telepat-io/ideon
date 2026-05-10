@@ -485,9 +485,7 @@ export default function PreviewApp() {
 
                               {activeOutput ? (
                                 <OutputCard
-                                  copiedSlug={copiedSlug}
                                   output={activeOutput}
-                                  onCopySlug={(slug) => void onCopySlug(slug)}
                                 />
                               ) : (
                                 <Empty description="No content outputs found for this generation." />
@@ -632,12 +630,8 @@ function SidebarContent({
 
 function OutputCard({
   output,
-  copiedSlug,
-  onCopySlug,
 }: {
   output: PreviewArticleOutput;
-  copiedSlug: string;
-  onCopySlug: (slug: string) => void;
 }) {
   const channelClassName = `preview-output-shell preview-output-shell--${sanitizeClassName(output.contentType)}`;
 
