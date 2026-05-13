@@ -29,10 +29,10 @@ This document covers common errors, edge cases, and recovery strategies for usin
 - Errors occur during image rendering
 
 **Recovery Steps:**
-1. Wait 30-60 seconds
-2. Retry image generation (max 3 retries)
-3. If persistent: Offer cheaper/faster model (Flux Schnell instead of Flux Pro)
-4. If still fails: Offer to skip images or retry later
+1. Ideon automatically retries 429s up to `t2i.maxAttempts` times (default 4), honoring `retry_after` from the response body or `Retry-After` header (capped at 60s per wait). No manual sleep needed before resuming.
+2. If retries exhaust and the run fails, run `ideon write resume` — completed stages are skipped and only the failing image stage re-runs.
+3. If 429s persist (e.g. Replicate credit below $5 caps you at 6 RPM/burst 1): top up credit, or raise `t2i.maxAttempts` to allow more waits, or switch to a cheaper/faster model (Flux Schnell instead of Flux Pro).
+4. If still failing: skip images or rerun later.
 
 ---
 

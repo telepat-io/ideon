@@ -42,8 +42,9 @@ Replicate enforces rate limits based on account tier:
 
 If agent hits rate limit:
 - Agent receives HTTP 429 error
-- Agent should wait 30–60 seconds and retry (with user notification)
-- Max 3 retries per image before failing
+- Ideon automatically retries up to `t2i.maxAttempts` times (default 4), honoring the `retry_after` value from the 429 response body and capping each wait at 60 seconds. No manual sleep needed in the agent loop.
+- If retries are exhausted, the error surfaces as `Replicate <kind> image (<id>) failed after N attempts: <original message>` and the run can be resumed via `ideon write resume`.
+- Tune via `t2i.maxAttempts` in settings if you want fewer/more retries.
 
 ---
 

@@ -19,6 +19,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 - `IDEON_MAX_TOKENS`
 - `IDEON_TOP_P`
 - `IDEON_MODEL_REQUEST_TIMEOUT_MS`
+- `IDEON_MODEL_REQUEST_MAX_ATTEMPTS` — max attempts per OpenRouter call (default `4`, range 1–10)
 
 ## Output Paths
 

@@ -151,6 +151,7 @@ export function SettingsFlow({ initialSettings, initialSecrets, onDone }: Settin
                     ? current.t2i.replicateModelId
                     : undefined,
                 inputOverrides: {},
+                maxAttempts: current.t2i.maxAttempts,
               },
             }));
             setShowModelSelect(false);

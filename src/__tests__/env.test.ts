@@ -94,6 +94,29 @@ describe('readEnvSettings', () => {
     expect(invalidResult.notificationsEnabled).toBeUndefined();
   });
 
+  it('reads IDEON_MODEL_REQUEST_MAX_ATTEMPTS from env', () => {
+    const result = readEnvSettings({
+      IDEON_MODEL_REQUEST_MAX_ATTEMPTS: '6',
+    });
+
+    expect(result.modelRequestMaxAttempts).toBe(6);
+  });
+
+  it('falls back to process.env when no argument is provided', () => {
+    const original = process.env.IDEON_MODEL;
+    process.env.IDEON_MODEL = 'env-default-model';
+    try {
+      const result = readEnvSettings();
+      expect(result.model).toBe('env-default-model');
+    } finally {
+      if (original === undefined) {
+        delete process.env.IDEON_MODEL;
+      } else {
+        process.env.IDEON_MODEL = original;
+      }
+    }
+  });
+
   it('parses IDEON_DISABLE_KEYTAR as a boolean', () => {
     const enabledResult = readEnvSettings({
       IDEON_DISABLE_KEYTAR: 'true',

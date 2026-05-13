@@ -40,8 +40,10 @@ Core settings include:
 - `modelSettings.maxTokens`: positive integer
 - `modelSettings.topP`: 0..1
 - `modelRequestTimeoutMs`: positive integer request timeout in milliseconds (default `90000`)
+- `modelRequestMaxAttempts`: maximum attempts (initial + retries) per OpenRouter call before giving up. Default `4`, range 1–10. Retries fire on 408/409/425/429 and 5xx; `Retry-After` headers and `retry_after` JSON body fields are honored, capped at 60s per wait.
 - `t2i.modelId`: selected text-to-image model
 - `t2i.inputOverrides`: model-specific user overrides
+- `t2i.maxAttempts`: maximum attempts (initial + retries) per Replicate image generation before failing. Default `4`, range 1–10. Same retry rules as above — 429s with `retry_after` are honored.
 - `notifications.enabled`: toggles OS notifications for write lifecycle updates
 - `markdownOutputDir`
 - `assetOutputDir`
