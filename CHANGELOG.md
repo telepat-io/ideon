@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.31](https://github.com/telepat-io/ideon/compare/ideon-v0.1.30...ideon-v0.1.31) (2026-05-13)
+
+
+### Features
+
+* retry LLM and image API calls with Retry-After awareness ([#31](https://github.com/telepat-io/ideon/issues/31)) ([cceced5](https://github.com/telepat-io/ideon/commit/cceced503d53089c6a19d5c18dc1b77d84aa2c8e))
+
 ## [0.1.30](https://github.com/telepat-io/ideon/compare/ideon-v0.1.29...ideon-v0.1.30) (2026-05-10)
 
 
