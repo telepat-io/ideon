@@ -50,7 +50,7 @@ export interface OpenRouterInteractionContext {
   operationId: string;
 }
 
-interface OpenRouterResponse {
+export interface OpenRouterResponse {
   choices?: Array<{
     message?: {
       content?: string | null;
@@ -544,7 +544,7 @@ function backoffMs(attempt: number): number {
 
 const MAX_RETRY_BACKOFF_MS = 60_000;
 
-function extractRetryAfterFromResponse(
+export function extractRetryAfterFromResponse(
   response: Response,
   json: OpenRouterResponse,
   rawBody: string,

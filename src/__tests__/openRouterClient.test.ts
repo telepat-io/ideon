@@ -409,6 +409,96 @@ describe('OpenRouterClient requestStructured', () => {
     expect(failedRecord?.retryBackoffMs).toBe(1000);
   });
 
+  it('records empty-response retry interaction without interactionContext', async () => {
+    let callCount = 0;
+    const fetchMock = jest.fn(async () => {
+      callCount += 1;
+      const content = callCount < 2 ? null : '{"value":"ok"}';
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ choices: [{ message: { content } }] }),
+      };
+    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const onInteraction = jest.fn();
+    const result = await new OpenRouterClient(apiKey).requestStructured<{ value: string }>({
+      schemaName: 'structured_test',
+      schema,
+      messages: [{ role: 'user', content: 'test' }],
+      settings: defaultAppSettings,
+      onInteraction,
+    });
+
+    expect(result.value).toBe('ok');
+    expect(onInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({ stageId: 'unknown', operationId: 'unknown', status: 'failed' }),
+    );
+  });
+
+  it('falls back to status-only message when error.message is absent', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: false,
+      status: 401,
+      headers: { get: () => null },
+      text: async () => JSON.stringify({}),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    await expect(
+      new OpenRouterClient(apiKey).requestStructured<{ value: string }>({
+        schemaName: 'structured_test',
+        schema,
+        messages: [{ role: 'user', content: 'test' }],
+        settings: defaultAppSettings,
+      }),
+    ).rejects.toThrow('OpenRouter request failed with status 401');
+  });
+
+  it('returns fallback synchronously without aggregated metrics on early fetch failure', async () => {
+    const fetchMock = jest.fn(async () => {
+      throw new Error('socket hang up');
+    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const onMetrics = jest.fn();
+    const result = await new OpenRouterClient(apiKey).requestStructured<{ value: string }>({
+      schemaName: 'structured_test',
+      schema,
+      messages: [{ role: 'user', content: 'test' }],
+      settings: defaultAppSettings,
+      fallbackFactory: () => ({ value: 'fallback-no-metrics' }),
+      onMetrics,
+    });
+
+    expect(result).toEqual({ value: 'fallback-no-metrics' });
+    expect(onMetrics).not.toHaveBeenCalled();
+  });
+
+  it('records thrown-error interaction without interactionContext', async () => {
+    const fetchMock = jest.fn(async () => {
+      const networkError = new Error('network failure');
+      throw networkError;
+    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const onInteraction = jest.fn();
+    await expect(
+      new OpenRouterClient(apiKey).requestStructured<{ value: string }>({
+        schemaName: 'structured_test',
+        schema,
+        messages: [{ role: 'user', content: 'test' }],
+        settings: defaultAppSettings,
+        onInteraction,
+      }),
+    ).rejects.toThrow('network failure');
+
+    expect(onInteraction).toHaveBeenCalledWith(
+      expect.objectContaining({ stageId: 'unknown', operationId: 'unknown', status: 'failed' }),
+    );
+  });
+
   it('honors retry_after in error body when header is absent', async () => {
     let callCount = 0;
     const fetchMock = jest.fn(async () => {

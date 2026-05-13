@@ -138,6 +138,89 @@ describe('classifyHttpError', () => {
     const result = classifyHttpError(circular);
     expect(result.retryable).toBe(true);
   });
+
+  it('ignores error.response when status field is missing', () => {
+    const result = classifyHttpError({ response: { headers: {} } });
+    expect(result.statusCode).toBeUndefined();
+    expect(result.retryable).toBe(true);
+  });
+
+  it('ignores numeric status string that is not finite', () => {
+    const result = classifyHttpError({ status: 'soon' });
+    expect(result.statusCode).toBeUndefined();
+  });
+
+  it('ignores body retry_after of zero', () => {
+    const result = classifyHttpError(new Error('status 429: {"retry_after":0}'));
+    expect(result.retryAfterMs).toBeUndefined();
+  });
+
+  it('falls back to Retry-After under capitalized header key', () => {
+    const err = { response: { status: 429, headers: { 'Retry-After': '4' } } };
+    const result = classifyHttpError(err);
+    expect(result.retryAfterMs).toBe(4000);
+  });
+
+  it('returns no retry_after when headers object lacks a get function and key', () => {
+    const err = { response: { status: 429, headers: {} } };
+    const result = classifyHttpError(err);
+    expect(result.retryAfterMs).toBeUndefined();
+  });
+
+  it('ignores empty Retry-After header', () => {
+    const err = { response: { status: 429, headers: { 'retry-after': '   ' } } };
+    const result = classifyHttpError(err);
+    expect(result.retryAfterMs).toBeUndefined();
+  });
+
+  it('ignores Retry-After header that is neither a number nor a valid date', () => {
+    const err = { response: { status: 429, headers: { 'retry-after': 'eventually' } } };
+    const result = classifyHttpError(err);
+    expect(result.retryAfterMs).toBeUndefined();
+  });
+
+  it('ignores Retry-After header set to a non-string non-number value', () => {
+    const err = { response: { status: 429, headers: { 'retry-after': { wat: true } } } };
+    const result = classifyHttpError(err);
+    expect(result.retryAfterMs).toBeUndefined();
+  });
+
+  it('ignores error.response when it is null', () => {
+    const err = { response: null };
+    const result = classifyHttpError(err);
+    expect(result.statusCode).toBeUndefined();
+  });
+
+  it('handles error.response without a headers property at all', () => {
+    const err = { response: { status: 429 } };
+    const result = classifyHttpError(err);
+    expect(result.statusCode).toBe(429);
+    expect(result.retryAfterMs).toBeUndefined();
+  });
+
+  it('parses Retry-After header from a Map (no string get key issue)', () => {
+    const headers = new Map([['retry-after', '3']]);
+    const err = { response: { status: 429, headers } };
+    const result = classifyHttpError(err);
+    expect(result.retryAfterMs).toBe(3000);
+  });
+});
+
+describe('withRetry final error fallbacks', () => {
+  it('falls back to classification reason when the original error has an empty message', async () => {
+    const empty = new Error('');
+    const op = jest.fn<() => Promise<string>>().mockRejectedValue(empty);
+    const sleep = jest.fn<(ms: number) => Promise<void>>().mockResolvedValue();
+
+    let caught: Error | null = null;
+    try {
+      await withRetry(op, { operationLabel: 'op', maxAttempts: 1, sleep });
+    } catch (error) {
+      caught = error as Error;
+    }
+
+    expect(caught?.message).toContain('Unknown error treated as transient.');
+  });
 });
 
 describe('withRetry', () => {
