@@ -36,6 +36,7 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     maxTokens: parseNumber(env.IDEON_MAX_TOKENS),
     topP: parseNumber(env.IDEON_TOP_P),
     modelRequestTimeoutMs: parseNumber(env.IDEON_MODEL_REQUEST_TIMEOUT_MS),
+    modelRequestMaxAttempts: parseNumber(env.IDEON_MODEL_REQUEST_MAX_ATTEMPTS),
     notificationsEnabled: parseBoolean(env.IDEON_NOTIFICATIONS_ENABLED),
     style: env.IDEON_STYLE,
     intent: env.IDEON_INTENT,

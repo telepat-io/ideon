@@ -30,7 +30,7 @@ Concise reference for AI agents working on this codebase.
 
 - Config: CLI > env > settings file > defaults. Key files: `src/config/schema.ts`, `resolver.ts`, `env.ts`, `secretStore.ts`.
 - Pipeline: `runPipelineShell()` in `src/pipeline/runner.ts`; stages run from `shared-plan` to `links`.
-- LLM: `OpenRouterClient`, prompt templates in `src/llm/prompts/`, response validation via `src/types/articleSchema.ts`.
+- LLM: `OpenRouterClient`, prompt templates in `src/llm/prompts/`, response validation via `src/types/articleSchema.ts`. Shared HTTP retry helper in `src/llm/retry.ts` (used by Replicate image rendering and reusable for other external calls — honors `Retry-After` header and `retry_after` JSON body).
 - Images: `ReplicateClient`; model definitions in `src/models/t2i/definitions/`; registry and option resolution in `registry.ts` and `options.ts`.
 - Output: `renderMarkdownDocument()` and filesystem helpers in `src/output/filesystem.ts`.
 - CLI: Ink commands in `src/cli/commands/`, root app in `src/cli/app.ts`.

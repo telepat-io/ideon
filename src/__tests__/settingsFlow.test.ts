@@ -69,6 +69,7 @@ describe('Ideon settings flow', () => {
       t2i: {
         modelId: 'flux',
         inputOverrides: { prompt: 'vivid' },
+        maxAttempts: 4,
       },
     };
 
@@ -107,6 +108,7 @@ describe('Ideon settings flow', () => {
         modelId: 'flux',
         replicateModelId: 'black-forest-labs/flux-2-pro',
         inputOverrides: {},
+        maxAttempts: 4,
       },
     };
 
@@ -138,6 +140,7 @@ describe('Ideon settings flow', () => {
       t2i: {
         modelId: 'flux',
         inputOverrides: { width: 512 },
+        maxAttempts: 4,
       },
     };
 

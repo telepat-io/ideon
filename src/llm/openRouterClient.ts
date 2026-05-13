@@ -99,9 +99,10 @@ export class OpenRouterClient {
 
   async requestStructured<T>(request: StructuredRequest<T>): Promise<T> {
     let aggregatedMetrics: LlmCallMetrics | null = null;
+    const maxParseAttempts = Math.max(1, request.settings.modelRequestMaxAttempts);
 
     try {
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (let attempt = 0; attempt < maxParseAttempts; attempt += 1) {
         const response = await this.sendCompletion({
           messages: request.messages,
           settings: request.settings,
@@ -128,7 +129,7 @@ export class OpenRouterClient {
           request.onMetrics?.(aggregatedMetrics);
           return structured;
         } catch (parseError) {
-          if (attempt < 2 && shouldRetryStructuredParseError(parseError)) {
+          if (attempt < maxParseAttempts - 1 && shouldRetryStructuredParseError(parseError)) {
             const backoff = backoffMs(attempt);
             aggregatedMetrics = recordParseRetryMetrics(aggregatedMetrics, backoff);
             await wait(backoff);
@@ -213,8 +214,9 @@ export class OpenRouterClient {
     let attempts = 0;
     let retries = 0;
     let retryBackoffMs = 0;
+    const maxAttempts = Math.max(1, settings.modelRequestMaxAttempts);
 
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       attempts = attempt + 1;
       const attemptStartedAtMs = Date.now();
       const controller = new AbortController();
@@ -272,8 +274,11 @@ export class OpenRouterClient {
           const providerMessage = json?.error?.message ?? `OpenRouter request failed with status ${response.status}`;
           const raw = json?.error?.metadata?.raw;
           const message = raw ? `${raw} (OpenRouter: ${providerMessage})` : providerMessage;
-          if (shouldRetryStatus(response.status) && attempt < 2) {
-            const backoff = backoffMs(attempt);
+          if (shouldRetryStatus(response.status) && attempt < maxAttempts - 1) {
+            const advisedMs = extractRetryAfterFromResponse(response, json, rawBody);
+            const backoff = advisedMs !== null
+              ? Math.min(MAX_RETRY_BACKOFF_MS, advisedMs)
+              : backoffMs(attempt);
             retries += 1;
             retryBackoffMs += backoff;
             onInteraction?.({
@@ -301,7 +306,7 @@ export class OpenRouterClient {
         }
 
         const content = json.choices?.[0]?.message?.content;
-        if (!content && attempt < 2) {
+        if (!content && attempt < maxAttempts - 1) {
           const backoff = backoffMs(attempt);
           retries += 1;
           retryBackoffMs += backoff;
@@ -379,7 +384,7 @@ export class OpenRouterClient {
           responseBody: responseBodyRaw,
           errorMessage: lastError.message,
         });
-        if (attempt < 2 && shouldRetryError(lastError)) {
+        if (attempt < maxAttempts - 1 && shouldRetryError(lastError)) {
           const backoff = backoffMs(attempt);
           retries += 1;
           retryBackoffMs += backoff;
@@ -535,6 +540,72 @@ function normalizeClientError(error: unknown, timeoutMs: number): Error {
 
 function backoffMs(attempt: number): number {
   return 500 * (attempt + 1);
+}
+
+const MAX_RETRY_BACKOFF_MS = 60_000;
+
+function extractRetryAfterFromResponse(
+  response: Response,
+  json: OpenRouterResponse,
+  rawBody: string,
+): number | null {
+  const headerValue = typeof response.headers?.get === 'function' ? response.headers.get('retry-after') : null;
+  if (headerValue) {
+    const numeric = Number.parseFloat(headerValue);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      return Math.round(numeric * 1000);
+    }
+    const dateMs = Date.parse(headerValue);
+    if (Number.isFinite(dateMs)) {
+      const diff = dateMs - Date.now();
+      if (diff > 0) {
+        return diff;
+      }
+    }
+  }
+
+  const metadata = json?.error?.metadata as Record<string, unknown> | undefined;
+  if (metadata) {
+    const fromMetadata = metadata['retry_after'] ?? metadata['retryAfter'];
+    const numeric = toFiniteNumber(fromMetadata);
+    if (numeric !== null && numeric > 0) {
+      return Math.round(numeric * 1000);
+    }
+    const rawCandidate = metadata['raw'];
+    if (typeof rawCandidate === 'string') {
+      const fromRaw = extractRetryAfterFromString(rawCandidate);
+      if (fromRaw !== null) {
+        return fromRaw;
+      }
+    }
+  }
+
+  const fromBody = extractRetryAfterFromString(rawBody);
+  if (fromBody !== null) {
+    return fromBody;
+  }
+
+  return null;
+}
+
+function extractRetryAfterFromString(value: string): number | null {
+  const bodyMatch = value.match(/\\?"retry_after\\?"\s*:\s*(\d+(?:\.\d+)?)/i);
+  if (!bodyMatch) {
+    return null;
+  }
+  const numeric = Number.parseFloat(bodyMatch[1]!);
+  return Number.isFinite(numeric) && numeric > 0 ? Math.round(numeric * 1000) : null;
+}
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }
 
 function aggregateLlmMetrics(total: LlmCallMetrics | null, next: LlmCallMetrics): LlmCallMetrics {

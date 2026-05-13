@@ -356,6 +356,119 @@ describe('renderExpandedImages', () => {
     }
   });
 
+  it('retries Replicate 429 errors and surfaces retry counts in metrics', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-retry-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article.md');
+      const assetDir = path.join(tempRoot, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const imageData = Buffer.alloc(MIN_IMAGE_BYTES, 9);
+      const throttleMessage =
+        'Request to https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions failed with status 429 Too Many Requests: {"detail":"throttled","status":429,"retry_after":0.05}.';
+      const generate = jest
+        .fn<() => Promise<unknown>>()
+        .mockRejectedValueOnce(new Error(throttleMessage))
+        .mockRejectedValueOnce(new Error(throttleMessage))
+        .mockResolvedValueOnce({
+          image: imageData,
+          filename: 'cover.png',
+          savedPath: '',
+          mimeType: 'image/png',
+          modelSlug: 'black-forest-labs/flux-schnell',
+          promptUsed: 'p',
+          analytics: {
+            totalDurationMs: 100,
+            openrouterDurationMs: 0,
+            replicateDurationMs: 100,
+            openrouterUsage: null,
+            openrouterCostUsd: null,
+            openrouterGenerationId: null,
+            replicatePredictionId: 'pred-retry',
+            replicateEstimatedCostUsd: 0.003,
+            totalEstimatedCostUsd: 0.003,
+            costSource: 'estimate-only' as const,
+          },
+        });
+      const limn = { generate };
+
+      const onRenderComplete = jest.fn();
+      const onInteraction = jest.fn();
+
+      const rendered = await renderExpandedImages({
+        prompts: [{ id: 'cover', kind: 'cover', prompt: 'p', description: '', anchorAfterSection: null }],
+        settings: defaultAppSettings,
+        limn: limn as never,
+        markdownPath,
+        assetDir,
+        dryRun: false,
+        onRenderComplete,
+        onInteraction,
+      });
+
+      expect(generate).toHaveBeenCalledTimes(3);
+      expect(rendered).toHaveLength(1);
+      expect(onRenderComplete).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attempts: 3,
+          retries: 2,
+        }),
+      );
+      expect(onInteraction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'succeeded',
+          attempts: 3,
+          retries: 2,
+        }),
+      );
+      const interactionCall = onInteraction.mock.calls.at(-1)?.[0] as { retryBackoffMs: number } | undefined;
+      expect(interactionCall?.retryBackoffMs).toBeGreaterThan(0);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('throws a descriptive error after exhausting Replicate retries', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-retry-fail-'));
+
+    try {
+      const markdownPath = path.join(tempRoot, 'article.md');
+      const assetDir = path.join(tempRoot, 'assets');
+      await mkdir(assetDir, { recursive: true });
+
+      const throttleMessage =
+        'Request to https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions failed with status 429 Too Many Requests: {"retry_after":0.01}.';
+      const limn = {
+        generate: jest.fn<() => Promise<unknown>>().mockRejectedValue(new Error(throttleMessage)),
+      };
+      const onInteraction = jest.fn();
+
+      await expect(
+        renderExpandedImages({
+          prompts: [{ id: 'cover', kind: 'cover', prompt: 'p', description: '', anchorAfterSection: null }],
+          settings: { ...defaultAppSettings, t2i: { ...defaultAppSettings.t2i, maxAttempts: 2 } },
+          limn: limn as never,
+          markdownPath,
+          assetDir,
+          dryRun: false,
+          onInteraction,
+        }),
+      ).rejects.toThrow(/Replicate cover image \(cover\) failed after 2 attempts.*429/);
+
+      expect(limn.generate).toHaveBeenCalledTimes(2);
+      expect(onInteraction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'failed',
+          attempts: 2,
+          retries: 1,
+        }),
+      );
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it('forwards valid replicate model override when configured', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-render-limn-override-'));
 

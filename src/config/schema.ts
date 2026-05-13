@@ -198,6 +198,7 @@ export const baseT2ISettingsSchema = z.preprocess(
     modelId: z.string().default(DEFAULT_LIMN_MODEL_ID),
     replicateModelId: z.string().optional(),
     inputOverrides: z.record(z.string(), z.unknown()).default({}),
+    maxAttempts: z.number().int().min(1).max(10).default(4),
   }),
 );
 
@@ -209,6 +210,7 @@ export const appSettingsSchema = z.object({
   model: z.string().default('deepseek/deepseek-v4-pro'),
   modelSettings: modelSettingsSchema.default(modelSettingsSchema.parse({})),
   modelRequestTimeoutMs: z.number().int().positive().default(90000),
+  modelRequestMaxAttempts: z.number().int().min(1).max(10).default(4),
   t2i: baseT2ISettingsSchema.default(baseT2ISettingsSchema.parse({})),
   notifications: notificationsSettingsSchema.default(notificationsSettingsSchema.parse({})),
   contentTargets: z
@@ -232,6 +234,7 @@ export const envSettingsSchema = z.object({
   maxTokens: z.number().int().positive().optional(),
   topP: z.number().min(0).max(1).optional(),
   modelRequestTimeoutMs: z.number().int().positive().optional(),
+  modelRequestMaxAttempts: z.number().int().min(1).max(10).optional(),
   notificationsEnabled: z.boolean().optional(),
   style: z.enum(writingStyleValues).optional(),
   intent: z.enum(contentIntentValues).optional(),

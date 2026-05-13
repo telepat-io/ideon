@@ -6,6 +6,7 @@ import type { AppSettings } from '../config/schema.js';
 import { isReplicateModelIdForFamily } from './limnModelCatalog.js';
 import { buildImagePromptMessages, imagePromptSchema } from '../llm/prompts/imagePrompt.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
+import { withRetry } from '../llm/retry.js';
 import { relativeAssetPath } from '../output/filesystem.js';
 import { estimateLlmCostUsd, type LlmCallMetrics } from '../pipeline/analytics.js';
 import type { CostSource, LlmInteractionRecord, T2IInteractionRecord } from '../pipeline/events.js';
@@ -307,8 +308,26 @@ export async function renderExpandedImages({
         : {}),
     };
     const renderStartedAtMs = Date.now();
+    let attemptsMade = 0;
+    let retryCount = 0;
+    let retryBackoffMs = 0;
     try {
-      const result = await limn.generate(prompt.prompt, family, limnOptions);
+      const result = await withRetry(
+        () => {
+          attemptsMade += 1;
+          return limn.generate(prompt.prompt, family, limnOptions);
+        },
+        {
+          operationLabel: `Replicate ${prompt.kind} image (${prompt.id})`,
+          maxAttempts: settings.t2i.maxAttempts,
+          baseBackoffMs: 1500,
+          maxBackoffMs: 60_000,
+          onRetry({ delayMs }) {
+            retryCount += 1;
+            retryBackoffMs += delayMs;
+          },
+        },
+      );
 
       const ext = mimeTypeToExtension(result.mimeType);
       const liveFileName = `${prompt.kind === 'cover' ? 'cover' : `inline-${prompt.anchorAfterSection}`}-${index + 1}.${ext}`;
@@ -334,9 +353,9 @@ export async function renderExpandedImages({
         kind: prompt.kind,
         modelId: result.modelSlug,
         durationMs: result.analytics.totalDurationMs,
-        attempts: 1,
-        retries: 0,
-        retryBackoffMs: 0,
+        attempts: attemptsMade,
+        retries: retryCount,
+        retryBackoffMs,
         outputBytes: result.image.byteLength,
         costUsd: result.analytics.totalEstimatedCostUsd,
         costSource,
@@ -350,9 +369,9 @@ export async function renderExpandedImages({
         startedAt: new Date(renderStartedAtMs).toISOString(),
         endedAt: new Date().toISOString(),
         durationMs: result.analytics.totalDurationMs,
-        attempts: 1,
-        retries: 0,
-        retryBackoffMs: 0,
+        attempts: attemptsMade,
+        retries: retryCount,
+        retryBackoffMs,
         status: 'succeeded',
         prompt: prompt.prompt,
         input: {},
@@ -369,9 +388,9 @@ export async function renderExpandedImages({
         startedAt: new Date(renderStartedAtMs).toISOString(),
         endedAt: new Date().toISOString(),
         durationMs,
-        attempts: 1,
-        retries: 0,
-        retryBackoffMs: 0,
+        attempts: Math.max(attemptsMade, 1),
+        retries: retryCount,
+        retryBackoffMs,
         status: 'failed',
         prompt: prompt.prompt,
         input: {},
