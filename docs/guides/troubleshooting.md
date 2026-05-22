@@ -14,7 +14,7 @@ Error pattern:
 
 Fix:
 
-- Set `IDEON_OPENROUTER_API_KEY`, or
+- Set `TELEPAT_OPENROUTER_KEY`, or
 - Save key through `ideon settings`
 - If both are set, env var wins for that run
 
@@ -26,7 +26,7 @@ Error pattern:
 
 Fix:
 
-- Set `IDEON_REPLICATE_API_TOKEN`, or
+- Set `TELEPAT_REPLICATE_TOKEN`, or
 - Save token through `ideon settings`
 
 If your run does not include an `article` target, image stages are skipped and Replicate is not required.

@@ -88,7 +88,7 @@ function warnKeytarUnavailable(details: string): void {
 
   hasWarnedAboutUnavailableKeytar = true;
   console.warn(
-    `System keychain unavailable (${details}). Falling back to environment variables for secrets. Set IDEON_DISABLE_KEYTAR=true to skip keychain access in this environment.`,
+    `System keychain unavailable (${details}). Falling back to environment variables for secrets. Set TELEPAT_DISABLE_KEYTAR=true to skip keychain access in this environment.`,
   );
 }
 
@@ -146,14 +146,14 @@ export async function loadSecrets(options: SecretStoreOptions = {}): Promise<Sec
 export async function saveSecrets(secrets: Partial<SecretSettings>, options: SecretStoreOptions = {}): Promise<void> {
   if (shouldDisableKeytar(options)) {
     throw new KeytarUnavailableError(
-      'System keychain access is disabled by IDEON_DISABLE_KEYTAR=true. Use IDEON_OPENROUTER_API_KEY and IDEON_REPLICATE_API_TOKEN instead.',
+      'System keychain access is disabled by TELEPAT_DISABLE_KEYTAR=true. Use TELEPAT_OPENROUTER_KEY and TELEPAT_REPLICATE_TOKEN instead.',
     );
   }
 
   const keytarClient = await getKeytarClient();
   if (!keytarClient) {
     throw new KeytarUnavailableError(
-      `System keychain unavailable while saving credentials (${keytarUnavailableReason ?? 'keytar module failed to load'}). Use IDEON_OPENROUTER_API_KEY and IDEON_REPLICATE_API_TOKEN instead.`,
+      `System keychain unavailable while saving credentials (${keytarUnavailableReason ?? 'keytar module failed to load'}). Use TELEPAT_OPENROUTER_KEY and TELEPAT_REPLICATE_TOKEN instead.`,
     );
   }
 
@@ -182,7 +182,7 @@ async function saveSecretValue(keytarClient: KeytarClient, account: string, valu
     if (isKeytarAvailabilityError(error)) {
       const message = readErrorMessage(error);
       throw new KeytarUnavailableError(
-        `System keychain unavailable while saving credentials (${message}). Use IDEON_OPENROUTER_API_KEY and IDEON_REPLICATE_API_TOKEN instead.`,
+        `System keychain unavailable while saving credentials (${message}). Use TELEPAT_OPENROUTER_KEY and TELEPAT_REPLICATE_TOKEN instead.`,
       );
     }
 

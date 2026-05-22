@@ -10,8 +10,8 @@ Live generation requires two provider credentials.
 
 ## Required Secrets
 
-- `IDEON_OPENROUTER_API_KEY`
-- `IDEON_REPLICATE_API_TOKEN`
+- `TELEPAT_OPENROUTER_KEY`
+- `TELEPAT_REPLICATE_TOKEN`
 
 ## Recommended Setup Path
 
@@ -28,15 +28,15 @@ The CLI persists secrets via keychain integration, not plain text config.
 Bash/zsh:
 
 ```bash
-export IDEON_OPENROUTER_API_KEY=your_openrouter_key
-export IDEON_REPLICATE_API_TOKEN=your_replicate_token
+export TELEPAT_OPENROUTER_KEY=your_openrouter_key
+export TELEPAT_REPLICATE_TOKEN=your_replicate_token
 ```
 
 Fish:
 
 ```fish
-set -x IDEON_OPENROUTER_API_KEY your_openrouter_key
-set -x IDEON_REPLICATE_API_TOKEN your_replicate_token
+set -x TELEPAT_OPENROUTER_KEY your_openrouter_key
+set -x TELEPAT_REPLICATE_TOKEN your_replicate_token
 ```
 
 ## Validation Behavior

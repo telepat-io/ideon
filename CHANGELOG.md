@@ -226,7 +226,7 @@
 
 ### Features
 
-* implement IDEON_DISABLE_KEYTAR environment variable for keychain access control ([cf094c0](https://github.com/telepat-io/ideon/commit/cf094c027617d8319f271551139ab657ce535069))
+* implement TELEPAT_DISABLE_KEYTAR environment variable for keychain access control ([cf094c0](https://github.com/telepat-io/ideon/commit/cf094c027617d8319f271551139ab657ce535069))
 
 
 ### Bug Fixes

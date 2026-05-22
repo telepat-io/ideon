@@ -31,7 +31,7 @@ ideon settings
 ```
 
 ```bash title="Common real-world path"
-IDEON_DISABLE_KEYTAR=true ideon settings
+TELEPAT_DISABLE_KEYTAR=true ideon settings
 ```
 
 ```bash title="Debug-focused verification"

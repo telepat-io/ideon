@@ -28,9 +28,9 @@ function parseBoolean(value: string | undefined): boolean | undefined {
 
 export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettings {
   return envSettingsSchema.parse({
-    openRouterApiKey: env.IDEON_OPENROUTER_API_KEY,
-    replicateApiToken: env.IDEON_REPLICATE_API_TOKEN,
-    disableKeytar: parseBoolean(env.IDEON_DISABLE_KEYTAR),
+    openRouterApiKey: env.TELEPAT_OPENROUTER_KEY,
+    replicateApiToken: env.TELEPAT_REPLICATE_TOKEN,
+    disableKeytar: parseBoolean(env.TELEPAT_DISABLE_KEYTAR),
     model: env.IDEON_MODEL,
     temperature: parseNumber(env.IDEON_TEMPERATURE),
     maxTokens: parseNumber(env.IDEON_MAX_TOKENS),

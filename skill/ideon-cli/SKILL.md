@@ -44,9 +44,9 @@ ideon settings
 Non-interactive setup path (CI/agents/containers):
 
 ```bash
-IDEON_DISABLE_KEYTAR=true \
-IDEON_OPENROUTER_API_KEY=sk-... \
-IDEON_REPLICATE_API_TOKEN=r8_... \
+TELEPAT_DISABLE_KEYTAR=true \
+TELEPAT_OPENROUTER_KEY=sk-... \
+TELEPAT_REPLICATE_TOKEN=r8_... \
 ideon config list --json
 ```
 
@@ -394,7 +394,7 @@ Precedence (highest to lowest):
 
 Secrets precedence:
 
-1. `IDEON_OPENROUTER_API_KEY` / `IDEON_REPLICATE_API_TOKEN` from env
+1. `TELEPAT_OPENROUTER_KEY` / `TELEPAT_REPLICATE_TOKEN` from env
 2. Keychain-stored secrets
 
 Key paths:
@@ -437,7 +437,7 @@ Export artifacts:
 - `ideon delete` in non-TTY requires `--force`.
   Mitigation: require explicit user confirmation before forced delete.
 - Keychain may be unavailable in containers/CI.
-  Mitigation: set `IDEON_DISABLE_KEYTAR=true` and inject env secrets.
+  Mitigation: set `TELEPAT_DISABLE_KEYTAR=true` and inject env secrets.
 - Legacy `xMode` fields in content targets are rejected.
   Mitigation: use explicit `x-post` or `x-thread` content types.
 - Resume works from any directory — session state is stored in the user's config directory, keyed by project path.
@@ -472,7 +472,7 @@ Credentials:
 | --- | --- |
 | No idea provided | Ask for idea or require `--job` with `idea`/`prompt`. |
 | Missing required options in non-interactive mode | Add `--primary`, `--style`, `--intent`, and `--length` (or equivalent in job settings). |
-| Keychain unavailable | Set `IDEON_DISABLE_KEYTAR=true` and use env secrets. |
+| Keychain unavailable | Set `TELEPAT_DISABLE_KEYTAR=true` and use env secrets. |
 | No resumable session found | Start a fresh `ideon write ...` run. Legacy `.ideon/write/state.json` files are automatically migrated. |
 | Preview cannot find markdown | Run write first or pass explicit `.md` path. |
 | Invalid target spec | Use `<content-type=count>` and keep primary count exactly `1`. |

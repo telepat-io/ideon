@@ -10,8 +10,8 @@ keywords: [ideon, 文档, cli, 指南, 参考]
 
 ## 必需密钥
 
-- `IDEON_OPENROUTER_API_KEY`
-- `IDEON_REPLICATE_API_TOKEN`
+- `TELEPAT_OPENROUTER_KEY`
+- `TELEPAT_REPLICATE_TOKEN`
 
 ## 推荐配置方式
 
@@ -28,15 +28,15 @@ CLI 通过钥匙串集成持久化密钥，而不是明文配置。
 Bash/zsh:
 
 ```bash
-export IDEON_OPENROUTER_API_KEY=your_openrouter_key
-export IDEON_REPLICATE_API_TOKEN=your_replicate_token
+export TELEPAT_OPENROUTER_KEY=your_openrouter_key
+export TELEPAT_REPLICATE_TOKEN=your_replicate_token
 ```
 
 Fish:
 
 ```fish
-set -x IDEON_OPENROUTER_API_KEY your_openrouter_key
-set -x IDEON_REPLICATE_API_TOKEN your_replicate_token
+set -x TELEPAT_OPENROUTER_KEY your_openrouter_key
+set -x TELEPAT_REPLICATE_TOKEN your_replicate_token
 ```
 
 ## 校验行为

@@ -23,7 +23,7 @@ Use this matrix to diagnose common failures quickly.
 | `Invalid target` / unsupported type | Bad `<content-type=count>` spec | Check target format and allowed content types | Use exact format and one of supported content types |
 | `Primary target count must be exactly 1` | Invalid primary count | Inspect `--primary` value | Use `--primary <type=1>` |
 | `cannot be both primary and secondary` | Same type used in both roles | Inspect target flags | Keep each type in one role only |
-| Keychain warnings/failures in CI/container | Keychain unavailable | Check runtime environment and keychain access | Set `IDEON_DISABLE_KEYTAR=true` and inject env secrets |
+| Keychain warnings/failures in CI/container | Keychain unavailable | Check runtime environment and keychain access | Set `TELEPAT_DISABLE_KEYTAR=true` and inject env secrets |
 | `No resumable write session found` | No session state for this project path | Check project directory | Start a fresh `ideon write ...` run; legacy `.ideon/write/state.json` files are automatically migrated |
 | Delete requires confirmation in non-TTY | Running delete without `--force` in automation | Check terminal mode and flags | Re-run with `--force` after explicit user confirmation |
 | Could not find article by slug | Slug typo or wrong output directory | Check slug and output dir config/env overrides | Use correct slug and run `ideon preview` to identify latest outputs |

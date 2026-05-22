@@ -63,8 +63,8 @@ Concise reference for AI agents working on this codebase.
 
 ## Credentials
 
-- `IDEON_OPENROUTER_API_KEY`
-- `IDEON_REPLICATE_API_TOKEN`
+- `TELEPAT_OPENROUTER_KEY`
+- `TELEPAT_REPLICATE_TOKEN`
 
 ---
 

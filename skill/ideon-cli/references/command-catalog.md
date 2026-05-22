@@ -124,7 +124,7 @@ Highest -> lowest:
 
 Secrets precedence:
 
-1. Environment secrets (`IDEON_OPENROUTER_API_KEY`, `IDEON_REPLICATE_API_TOKEN`)
+1. Environment secrets (`TELEPAT_OPENROUTER_KEY`, `TELEPAT_REPLICATE_TOKEN`)
 2. Keychain secrets
 
 ## Interactive and non-interactive behavior
@@ -193,9 +193,9 @@ ideon preview --no-open
 ### CI path
 
 ```bash
-IDEON_DISABLE_KEYTAR=true \
-IDEON_OPENROUTER_API_KEY=sk-... \
-IDEON_REPLICATE_API_TOKEN=r8_... \
+TELEPAT_DISABLE_KEYTAR=true \
+TELEPAT_OPENROUTER_KEY=sk-... \
+TELEPAT_REPLICATE_TOKEN=r8_... \
 ideon write --no-interactive --idea "CI generation check" --primary article=1 --style professional --length medium
 ```
 

@@ -47,7 +47,7 @@ ideon config get openRouterApiKey --json
 
 ```bash
 ideon config set style technical
-ideon config set openRouterApiKey "$IDEON_OPENROUTER_API_KEY"
+ideon config set openRouterApiKey "$TELEPAT_OPENROUTER_KEY"
 ```
 
 ### ideon config unset

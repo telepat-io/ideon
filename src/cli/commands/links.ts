@@ -56,7 +56,7 @@ export async function runLinksCommand(
 
   if (!openRouterApiKey) {
     throw new ReportedError(
-      'Missing OpenRouter API key. Run `ideon settings` to configure credentials or set IDEON_OPENROUTER_API_KEY.',
+      'Missing OpenRouter API key. Run `ideon settings` to configure credentials or set TELEPAT_OPENROUTER_KEY.',
     );
   }
 

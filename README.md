@@ -89,8 +89,8 @@ Ideon is built for agentic workflows:
 ## Security And Trust
 
 - Secrets are stored in the OS keychain by default via `ideon settings`.
-- In CI or containerized environments, use `IDEON_OPENROUTER_API_KEY` and `IDEON_REPLICATE_API_TOKEN`.
-- Set `IDEON_DISABLE_KEYTAR=true` when keychain access is unavailable.
+- In CI or containerized environments, use `TELEPAT_OPENROUTER_KEY` and `TELEPAT_REPLICATE_TOKEN`.
+- Set `TELEPAT_DISABLE_KEYTAR=true` when keychain access is unavailable.
 - Generated outputs can include model-produced content, so review content before publication.
 
 To report a security issue, open a private report through the repository security flow or contact maintainers through repository issue channels with minimal sensitive detail.

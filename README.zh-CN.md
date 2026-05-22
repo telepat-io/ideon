@@ -89,8 +89,8 @@ Ideon 专为智能体工作流打造：
 ## 安全与信任
 
 - 默认通过 `ideon settings` 将密钥保存到系统钥匙串。
-- 在 CI 或容器环境中，请使用 `IDEON_OPENROUTER_API_KEY` 和 `IDEON_REPLICATE_API_TOKEN`。
-- 在无法访问钥匙串时设置 `IDEON_DISABLE_KEYTAR=true`。
+- 在 CI 或容器环境中，请使用 `TELEPAT_OPENROUTER_KEY` 和 `TELEPAT_REPLICATE_TOKEN`。
+- 在无法访问钥匙串时设置 `TELEPAT_DISABLE_KEYTAR=true`。
 - 生成内容来自模型输出，发布前请进行人工审阅。
 
 如需报告安全问题，请通过仓库安全报告通道私下提交，或通过仓库 issue 渠道联系维护者并避免包含敏感细节。

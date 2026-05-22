@@ -50,8 +50,8 @@ describe('readEnvSettings', () => {
 
   it('reads string settings from custom env objects', () => {
     const result = readEnvSettings({
-      IDEON_OPENROUTER_API_KEY: 'openrouter-key',
-      IDEON_REPLICATE_API_TOKEN: 'replicate-token',
+      TELEPAT_OPENROUTER_KEY: 'openrouter-key',
+      TELEPAT_REPLICATE_TOKEN: 'replicate-token',
       IDEON_MODEL: 'deepseek/deepseek-v4-pro',
       IDEON_NOTIFICATIONS_ENABLED: 'true',
       IDEON_STYLE: 'technical',
@@ -117,15 +117,15 @@ describe('readEnvSettings', () => {
     }
   });
 
-  it('parses IDEON_DISABLE_KEYTAR as a boolean', () => {
+  it('parses TELEPAT_DISABLE_KEYTAR as a boolean', () => {
     const enabledResult = readEnvSettings({
-      IDEON_DISABLE_KEYTAR: 'true',
+      TELEPAT_DISABLE_KEYTAR: 'true',
     });
     const disabledResult = readEnvSettings({
-      IDEON_DISABLE_KEYTAR: 'FALSE',
+      TELEPAT_DISABLE_KEYTAR: 'FALSE',
     });
     const invalidResult = readEnvSettings({
-      IDEON_DISABLE_KEYTAR: 'sometimes',
+      TELEPAT_DISABLE_KEYTAR: 'sometimes',
     });
 
     expect(enabledResult.disableKeytar).toBe(true);

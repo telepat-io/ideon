@@ -8,9 +8,9 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 ## Secrets
 
-- `IDEON_OPENROUTER_API_KEY`
-- `IDEON_REPLICATE_API_TOKEN`
-- `IDEON_DISABLE_KEYTAR` (`true` or `false`) — when `true`, Ideon does not attempt keychain access and uses env-only secret resolution
+- `TELEPAT_OPENROUTER_KEY`
+- `TELEPAT_REPLICATE_TOKEN`
+- `TELEPAT_DISABLE_KEYTAR` (`true` or `false`) — when `true`, Ideon does not attempt keychain access and uses env-only secret resolution
 
 ## Model Settings
 
@@ -39,9 +39,9 @@ keywords: [ideon, documentation, cli, guides, reference]
 ## Example
 
 ```bash
-IDEON_OPENROUTER_API_KEY=... \
-IDEON_REPLICATE_API_TOKEN=... \
-IDEON_DISABLE_KEYTAR=true \
+TELEPAT_OPENROUTER_KEY=... \
+TELEPAT_REPLICATE_TOKEN=... \
+TELEPAT_DISABLE_KEYTAR=true \
 IDEON_MODEL=deepseek/deepseek-v4-pro \
 IDEON_TEMPERATURE=0.7 \
 IDEON_MAX_TOKENS=2000 \
@@ -62,5 +62,5 @@ ideon write "How teams scale editorial pipelines"
 - `IDEON_TARGET_LENGTH` supports aliases (`small=500`, `medium=900`, `large=1400`) or explicit positive integer words.
 - Invalid numeric values are ignored during parsing and schema validation determines final acceptance.
 - Env vars override saved and job-file settings where applicable.
-- In environments where keychain services are unavailable (for example many containers), set `IDEON_DISABLE_KEYTAR=true`.
+- In environments where keychain services are unavailable (for example many containers), set `TELEPAT_DISABLE_KEYTAR=true`.
 - Content targets (`contentTargets`) are not configurable through env vars; use CLI `--primary/--secondary` or job files.

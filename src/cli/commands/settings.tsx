@@ -46,7 +46,7 @@ export async function openSettings(): Promise<void> {
   } catch (error) {
     if (error instanceof KeytarUnavailableError) {
       console.log('Settings saved, but secrets were not stored in the system keychain.');
-      console.log('Use IDEON_OPENROUTER_API_KEY and IDEON_REPLICATE_API_TOKEN in this environment.');
+      console.log('Use TELEPAT_OPENROUTER_KEY and TELEPAT_REPLICATE_TOKEN in this environment.');
       return;
     }
 

@@ -65,7 +65,7 @@ Stateful:
 Credentials:
 
 - Store via keychain or env-only?
-- Is this CI/container requiring `IDEON_DISABLE_KEYTAR=true`?
+- Is this CI/container requiring `TELEPAT_DISABLE_KEYTAR=true`?
 
 ## 6. Config precedence pattern
 

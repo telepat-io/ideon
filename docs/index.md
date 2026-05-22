@@ -55,6 +55,6 @@ See [Installation](./getting-started/installation.md) and [Quickstart](./getting
 - **OpenRouter API key** — for LLM calls (planning, article writing, channel outputs)
 - **Replicate API token** — for image rendering
 
-Store them interactively: `ideon settings` — or set `IDEON_OPENROUTER_API_KEY` / `IDEON_REPLICATE_API_TOKEN` as environment variables.
+Store them interactively: `ideon settings` — or set `TELEPAT_OPENROUTER_KEY` / `TELEPAT_REPLICATE_TOKEN` as environment variables.
 
 Use `--dry-run` to test pipeline orchestration without making API calls.

@@ -8,9 +8,9 @@ keywords: [ideon, 文档, cli, 指南, 参考]
 
 ## 密钥
 
-- `IDEON_OPENROUTER_API_KEY`
-- `IDEON_REPLICATE_API_TOKEN`
-- `IDEON_DISABLE_KEYTAR`（`true` 或 `false`）- 为 `true` 时，Ideon 不会尝试访问系统钥匙串，仅通过环境变量解析密钥
+- `TELEPAT_OPENROUTER_KEY`
+- `TELEPAT_REPLICATE_TOKEN`
+- `TELEPAT_DISABLE_KEYTAR`（`true` 或 `false`）- 为 `true` 时，Ideon 不会尝试访问系统钥匙串，仅通过环境变量解析密钥
 
 ## 模型设置
 
@@ -38,9 +38,9 @@ keywords: [ideon, 文档, cli, 指南, 参考]
 ## 示例
 
 ```bash
-IDEON_OPENROUTER_API_KEY=... \
-IDEON_REPLICATE_API_TOKEN=... \
-IDEON_DISABLE_KEYTAR=true \
+TELEPAT_OPENROUTER_KEY=... \
+TELEPAT_REPLICATE_TOKEN=... \
+TELEPAT_DISABLE_KEYTAR=true \
 IDEON_MODEL=deepseek/deepseek-v4-pro \
 IDEON_TEMPERATURE=0.7 \
 IDEON_MAX_TOKENS=2000 \
@@ -61,5 +61,5 @@ ideon write "How teams scale editorial pipelines"
 - `IDEON_TARGET_LENGTH` 支持别名（`small=500`、`medium=900`、`large=1400`）或显式正整数词数。
 - 非法数值会在解析阶段被忽略，最终是否接受由 schema 校验决定。
 - 在可覆盖的场景中，环境变量优先于已保存设置与作业文件设置。
-- 若运行环境无法使用钥匙串服务（例如许多容器环境），请设置 `IDEON_DISABLE_KEYTAR=true`。
+- 若运行环境无法使用钥匙串服务（例如许多容器环境），请设置 `TELEPAT_DISABLE_KEYTAR=true`。
 - 内容目标（`contentTargets`）不能通过环境变量配置；请使用 CLI `--primary/--secondary` 或作业文件。

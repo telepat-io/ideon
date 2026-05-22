@@ -53,6 +53,6 @@ ideon write "Why async Rust is worth learning" --primary article=1 --secondary x
 - **OpenRouter API key**：用于 LLM 调用（规划、文章写作、渠道输出）
 - **Replicate API token**：用于图像渲染
 
-可通过 `ideon settings` 交互式保存，或通过环境变量 `IDEON_OPENROUTER_API_KEY` / `IDEON_REPLICATE_API_TOKEN` 提供。
+可通过 `ideon settings` 交互式保存，或通过环境变量 `TELEPAT_OPENROUTER_KEY` / `TELEPAT_REPLICATE_TOKEN` 提供。
 
 可使用 `--dry-run` 在不触发外部 API 的情况下验证流水线编排。

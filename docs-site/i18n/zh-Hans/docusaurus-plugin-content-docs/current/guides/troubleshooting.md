@@ -14,7 +14,7 @@ keywords: [ideon, 故障排查, cli, 错误, 恢复]
 
 修复方式：
 
-- 设置 `IDEON_OPENROUTER_API_KEY`，或
+- 设置 `TELEPAT_OPENROUTER_KEY`，或
 - 通过 `ideon settings` 保存 key
 - 若两者都存在，本次运行优先使用环境变量
 
@@ -26,7 +26,7 @@ keywords: [ideon, 故障排查, cli, 错误, 恢复]
 
 修复方式：
 
-- 设置 `IDEON_REPLICATE_API_TOKEN`，或
+- 设置 `TELEPAT_REPLICATE_TOKEN`，或
 - 通过 `ideon settings` 保存 token
 
 如果本次运行不包含 `article` 目标，会跳过图像阶段，因此不需要 Replicate。

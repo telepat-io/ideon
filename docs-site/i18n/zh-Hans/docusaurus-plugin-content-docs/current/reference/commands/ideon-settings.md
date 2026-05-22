@@ -31,7 +31,7 @@ ideon settings
 ```
 
 ```bash title="常见生产示例"
-IDEON_DISABLE_KEYTAR=true ideon settings
+TELEPAT_DISABLE_KEYTAR=true ideon settings
 ```
 
 ```bash title="排障验证示例"
