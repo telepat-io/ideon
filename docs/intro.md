@@ -17,6 +17,7 @@ This documentation explains what Ideon is, why teams use it, and how to run it e
 - Channel-specific output generation (articles, social, newsletter, landing-page copy, and more).
 - Style consistency across outputs in a single run.
 - Research-informed planning, optional link enrichment, and generated visuals for article-led runs.
+- Built-in SEO optimization with on-page essentials, E-E-A-T credibility signals, and fact density requirements.
 - Iterative workflows via reruns, resume support, and local preview.
 
 ## Start Here

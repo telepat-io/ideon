@@ -65,13 +65,13 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 **Purpose:** Generate title, slug, description, content plan, keywords
 
-**Inputs:** Idea, cross-channel guidance, format/style/intent guides, length
+**Inputs:** Idea, cross-channel guidance, format/style/intent guides, SEO guides, length
 
-**Agent:** Using system prompt (guides + instructions), generate: title (<70 chars), slug, description (<160 chars), outline with sections/word counts, keywords (5-10).
+**Agent:** Using system prompt (guides + instructions), generate: title (<60 chars), slug, description (120-160 chars), outline with sections/word counts, keywords (5-10, non-generic, not duplicating heading text).
 
 **Output:** JSON with plan + token/cost estimate
 
-**Validation:** Title <70 chars, slug matches `^[a-z0-9-]+$`, description <160 chars, word count ±20% of target
+**Validation:** Title <60 chars, slug matches `^[a-z0-9-]+$`, description 120-160 chars, word count ±20% of target
 
 **Error:** If validation fails, regenerate with clearer format. If word count off, log warning and proceed.
 
@@ -83,9 +83,9 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 **Purpose:** Write full long-form markdown content following the plan from Stage 2
 
-**Inputs:** Plan, format/style/intent guides (cached), target length
+**Inputs:** Plan, format/style/intent guides, SEO guides (cached), target length
 
-**Agent:** Using system prompt (guides + plan + quality standards), generate full markdown with sections as outlined.
+**Agent:** Using system prompt (guides + plan + quality standards + SEO rules), generate full markdown with sections as outlined. Each section must include at least one statistic or citation per on-page essentials and fact density guides. Apply E-E-A-T signals (practitioner observations, authoritative citations, competing viewpoints). After writing, run AI prose detection avoidance pass: scan for prohibited vocabulary, hedging language, and formulaic transitions.
 
 **Output:** Full markdown + actual word count + token/cost
 

@@ -45,6 +45,11 @@
     "personal-essay": "guides/content-intent/personal-essay.md",
     "roundup-curation": "guides/content-intent/roundup-curation.md"
   },
+  "seo": {
+    "on-page-essentials": "guides/seo/on-page-essentials.md",
+    "eeat-signals": "guides/seo/eeat-signals.md",
+    "fact-density": "guides/seo/fact-density.md"
+  },
   "references": {
     "headline-writing-systems": "guides/references/headline-writing-systems.md",
     "content-frameworks": "guides/references/content-frameworks.md",
@@ -54,6 +59,7 @@
     "prose-quality-checks": "guides/references/prose-quality-checks.md",
     "target-length-guidance": "guides/references/target-length-guidance.md",
     "visual-storytelling": "guides/references/visual-storytelling.md",
-    "link-integration-best-practices": "guides/references/link-integration-best-practices.md"
+    "link-integration-best-practices": "guides/references/link-integration-best-practices.md",
+    "ai-prose-detection-avoidance": "guides/references/ai-prose-detection-avoidance.md"
   }
 }

@@ -18,6 +18,7 @@ It is designed for teams who need to ship high-quality content across channels w
 - Write many formats from one idea: article, blog post, newsletter, Reddit post, LinkedIn post, X thread, X post, and landing-page copy.
 - Keep voice consistent with style controls across all outputs.
 - Add depth with planning briefs, link enrichment, and generated images for article-led runs.
+- Built-in SEO optimization: on-page essentials, E-E-A-T signals, and fact density baked into every generation.
 - Iterate quickly with resumable runs, job files, and local preview.
 
 ## Quickstart

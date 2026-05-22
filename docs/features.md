@@ -53,6 +53,20 @@ Ideon browses the web and inserts contextual external links like a human writer 
 
 ---
 
+## SEO-Optimized From the Start
+
+Ideon's writing pipeline enforces on-page SEO best practices at every stage of content generation — not as an afterthought, but as a baked-in layer of the writing process.
+
+**During planning**, titles are constrained to search-safe lengths and meta descriptions are shaped for click-through impact. **During writing**, three dedicated SEO guides shape every section:
+
+- **On-page essentials** — heading hierarchy, BLUF paragraphs, key takeaway blocks, and paragraph structure optimized for both human readers and search crawlers
+- **E-E-A-T signals** — Experience, Expertise, Authoritativeness, and Trustworthiness embedded through practitioner observations, competing viewpoints, and primary-source citations
+- **Fact density** — statistics, data points, and authoritative citations per section, inspired by Princeton's Generative Engine Optimization research showing up to 40% visibility gains in AI-generated summaries
+
+No keyword stuffing. No SEO hacks. Just disciplined writing that happens to perform in both traditional search results and generative AI summaries.
+
+---
+
 ## Your Model, Your Choice
 
 Plug in any LLM via OpenRouter. Switch models without changing your workflow. Use Claude for nuance, GPT-4 for speed, or any model OpenRouter supports — Ideon works the same way regardless.

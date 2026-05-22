@@ -52,6 +52,10 @@ function styleToGuidePath(style: string): string {
   return `writing-guide/styles/${style}.md`;
 }
 
+function seoGuidePath(name: string): string {
+  return `writing-guide/seo/${name}.md`;
+}
+
 function dedupe(items: string[]): string[] {
   return Array.from(new Set(items));
 }
@@ -69,6 +73,7 @@ export function buildPrimaryPlanGuideInstruction(intent: string, contentType: st
     'writing-guide/references/headline-writing-systems.md',
     'writing-guide/references/ideation-and-credibility-systems.md',
     'writing-guide/references/content-frameworks.md',
+    seoGuidePath('on-page-essentials'),
     intentToGuidePath(intent),
     formatToGuidePath(contentType),
   ];
@@ -91,6 +96,9 @@ export function buildArticleSectionGuideInstruction(style: string, intent: strin
     'writing-guide/references/prose-quality-checks.md',
     'writing-guide/references/readability-and-pace.md',
     'writing-guide/references/skimmability-patterns.md',
+    seoGuidePath('on-page-essentials'),
+    seoGuidePath('eeat-signals'),
+    seoGuidePath('fact-density'),
     styleToGuidePath(style),
     intentToGuidePath(intent),
     formatToGuidePath(contentType),

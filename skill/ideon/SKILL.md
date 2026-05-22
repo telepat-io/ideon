@@ -190,8 +190,8 @@ This skill references the following detailed guides. Agents should load these as
 
 | Document | Purpose |
 |----------|---------|
-| [guides.md](guides.md) | How to load modular writing guides (format + intent + style) |
-| [guide-map.json](guide-map.json) | Index mapping content types, styles, intents to guide files |
+| [guides.md](guides.md) | How to load modular writing guides (format + intent + style + seo) |
+| [guide-map.json](guide-map.json) | Index mapping content types, styles, intents, seo to guide files |
 | [pipeline.md](pipeline.md) | Detailed 7-stage workflow orchestration |
 | [checkpoints.md](checkpoints.md) | Approval checkpoint logic and user interaction patterns |
 | [output-spec.md](output-spec.md) | Output file formats (session.json, meta.json, markdown, links.json v2) |
@@ -201,7 +201,7 @@ This skill references the following detailed guides. Agents should load these as
 
 ### 📌 Self-Contained Writing Guides
 
-All writing guides (formats, styles, content intents, references) are synced into this skill directory under `guides/`. This ensures agents have full access to all required guides without external dependencies.
+All writing guides (formats, styles, content intents, seo, references) are synced into this skill directory under `guides/`. This ensures agents have full access to all required guides without external dependencies.
 
 **Location:** `ideon/skill/ideon/guides/` (populated via `npm run guides:sync`)
 

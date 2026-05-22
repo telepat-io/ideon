@@ -355,7 +355,12 @@ Before finalizing output, agent should verify:
 
 - [ ] `session.json` is valid JSON ✓
 - [ ] `meta.json` contains all required fields (version, title, slug, idea, description, keywords, contentType, style, intent, outputs, generatedAt) ✓
+- [ ] Title is under 60 characters (search display safety) ✓
+- [ ] Description is 120-160 characters (meta description effectiveness) ✓
+- [ ] Keywords are specific, non-generic, and not exact-match duplicates of heading text ✓
 - [ ] All markdown files have complete YAML frontmatter ✓
+- [ ] Each H2 section contains at least one statistic, citation, or data point (for long-form) ✓
+- [ ] No prohibited AI vocabulary present (delve, realm, leverage, etc.) ✓
 - [ ] All image paths in markdown are relative & correct (e.g., `../assets/images/cover.webp`) ✓
 - [ ] All WebP images exist in `assets/images/` ✓
 - [ ] All `.links.json` files follow v2 format with both customLinks and links arrays ✓

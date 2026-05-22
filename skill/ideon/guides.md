@@ -10,6 +10,7 @@ Ideon's writing guides are included with this skill in the `guides/` directory a
 - **styles/** — 13 writing voices (professional, technical, friendly, analytical, empathetic, academic, persuasive, journalistic, authoritative, conversational, playful, minimalist, storytelling)
 - **content-intent/** — 14 content purposes (tutorial, case-study, opinion-piece, deep-dive-analysis, cornerstone, interview-q-and-a, and 8 more)
 - **general/** — Universal web writing rules (one-time load, applies to all runs)
+- **seo/** — Search optimization rules for traditional SERPs and generative engines (always loaded for long-form)
 - **references/** — Shared concept docs (headline-writing, content-frameworks, readability, etc.; load on-demand)
 
 ## Guide Composition Strategy
@@ -20,20 +21,26 @@ When an agent begins a run with user inputs `(format, style, intent)`, it should
    - These apply universally to all content
    - Locations: `general/core-web-writing-rules.md`, `general/idea-generation-systems.md`
 
-2. **Load format guide** (based on user's primary target)
+2. **Load SEO guides upfront** (for long-form content)
+   - These apply to all long-form outputs (article, blog-post, newsletter, press-release, science-paper)
+   - Locations: `seo/on-page-essentials.md`, `seo/eeat-signals.md`, `seo/fact-density.md`
+
+3. **Load format guide** (based on user's primary target)
    - Example: User wants blog-post → load `formats/blog-post.md`
 
-3. **Load style guide** (based on user's writing style choice)
+4. **Load style guide** (based on user's writing style choice)
    - Example: User wants technical voice → load `styles/technical.md`
 
-4. **Load intent guide** (based on user's content purpose)
+5. **Load intent guide** (based on user's content purpose)
    - Example: User wants deep-dive analysis → load `content-intent/deep-dive-analysis.md`
 
-5. **Load references on-demand** (if agent needs clarification)
+6. **Load references on-demand** (if agent needs clarification)
    - Example: During section writing, if agent needs headline guidance, load `references/headline-writing-systems.md`
 
-This creates a **composable 4-part guide bundle** with minimal context:
-- Universal rules + Format guidance + Style guidance + Intent guidance = Complete context for one run
+This creates a **composable 5-part guide bundle** with minimal context for long-form runs:
+- Universal rules + SEO rules + Format guidance + Style guidance + Intent guidance = Complete context for one run
+
+Short-form runs (x-post, x-thread, linkedin-post, reddit-post) skip SEO guides.
 
 ## Guide Format & Structure
 
@@ -67,15 +74,15 @@ This format allows agents to extract rules efficiently without extensive parsing
 Different stages of the pipeline benefit from different guides:
 
 ### Stage 2: Planning
-- **Load:** General + Format + Style + Intent guides
-- **Purpose:** Help the agent generate title, slug, description, and content structure
-- **Key rules:** Content frameworks, outline structure, target length
+- **Load:** General + SEO + Format + Style + Intent guides
+- **Purpose:** Help the agent generate SEO-optimized title, slug, description, and content structure
+- **Key rules:** On-page essentials (title length, meta description, heading hierarchy), content frameworks, target length
 
 ### Stage 3: Sections
-- **Load:** General + Format + Style + Intent + References (on-demand)
-- **Purpose:** Help the agent write intro, body sections, and conclusion
-- **Key rules:** Section structure, prose quality, readability, emotional resonance
-- **On-demand references:** Skimmability patterns, content frameworks
+- **Load:** General + SEO + Format + Style + Intent + References (on-demand)
+- **Purpose:** Help the agent write intro, body sections, and conclusion with strong E-E-A-T signals and fact density
+- **Key rules:** On-page essentials, E-E-A-T signals, fact density, section structure, prose quality, readability, emotional resonance
+- **On-demand references:** Skimmability patterns, content frameworks, AI prose detection avoidance (for post-draft cleanup)
 
 ### Stage 4: Image Prompts
 - **Load:** Format + References (if needed)
@@ -178,6 +185,11 @@ See list of available references below.
 - `content-intent/personal-essay.md` — Personal reflection or memoir
 - `content-intent/roundup-curation.md` — Curated collection of resources/links
 
+### SEO Guides (Always Load for Long-Form)
+- `seo/on-page-essentials.md` — Title tag, meta description, heading hierarchy, BLUF paragraphs, formatting for search visibility
+- `seo/eeat-signals.md` — Embedding Experience, Expertise, Authoritativeness, and Trustworthiness signals
+- `seo/fact-density.md` — Statistics, citations, quotations requirements per section for generative engine visibility
+
 ### Reference Guides (Load On-Demand)
 - `references/headline-writing-systems.md` — How to write compelling headlines
 - `references/content-frameworks.md` — Structural patterns for organizing content
@@ -188,6 +200,7 @@ See list of available references below.
 - `references/target-length-guidance.md` — How to hit word count targets
 - `references/visual-storytelling.md` — How images enhance narrative
 - `references/link-integration-best-practices.md` — How to integrate external links naturally
+- `references/ai-prose-detection-avoidance.md` — How to reduce AI-detectable linguistic patterns (prohibited vocabulary, hedging, formulaic transitions)
 
 ## Caching & Reuse Within a Run
 

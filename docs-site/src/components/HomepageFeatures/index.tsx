@@ -11,32 +11,33 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'One Idea, Every Channel',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Turn a single idea into articles, blog posts, newsletters, X threads,
+        LinkedIn posts, and more — all in one run, all sharing one voice.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'SEO-Optimized by Default',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        On-page essentials, E-E-A-T credibility signals, and fact density
+        baked into every generation. Content built to rank in traditional search
+        and AI-generated summaries.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Built for Agents and CI',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        MCP server, non-interactive mode, machine-readable config, and resumable
+        runs. Drop Ideon into any automated content pipeline.
       </>
     ),
   },

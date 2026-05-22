@@ -59,6 +59,35 @@ export async function planPrimaryContent({
         },
       });
 
+  if (!dryRun) {
+    const seoWarnings: string[] = [];
+
+    if (basePlan.title && basePlan.title.length > 60) {
+      seoWarnings.push(`Title is ${basePlan.title.length} chars (recommended: under 60 for search display safety)`);
+    }
+
+    if (basePlan.description) {
+      if (basePlan.description.length < 120) {
+        seoWarnings.push(`Description is ${basePlan.description.length} chars (recommended: 120-160 for meta description effectiveness)`);
+      } else if (basePlan.description.length > 160) {
+        seoWarnings.push(`Description is ${basePlan.description.length} chars (recommended: 120-160 for meta description effectiveness)`);
+      }
+    }
+
+    if (isLongForm) {
+      const longPlan = basePlan as ArticlePlan;
+      const headings = longPlan.sections.map((s) => s.title.toLowerCase());
+      const duplicateKeywords = longPlan.keywords.filter((kw) => headings.includes(kw.toLowerCase()));
+      if (duplicateKeywords.length > 0) {
+        seoWarnings.push(`Keywords duplicate heading text: ${duplicateKeywords.join(', ')} (consider using semantic variants)`);
+      }
+    }
+
+    for (const warning of seoWarnings) {
+      console.warn(`[seo] ${warning}`);
+    }
+  }
+
   const normalizedSlug = slugify(basePlan.slug || basePlan.title);
   const uniqueSlug = await resolveUniqueSlug(markdownOutputDir, normalizedSlug);
 
