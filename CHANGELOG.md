@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.32](https://github.com/telepat-io/ideon/compare/ideon-v0.1.31...ideon-v0.1.32) (2026-05-22)
+
+
+### Features
+
+* enhance SEO and content quality guidelines ([7c18379](https://github.com/telepat-io/ideon/commit/7c183792a3f7129706bc1f586de5d717e92ec9a2))
+
 ## [0.1.31](https://github.com/telepat-io/ideon/compare/ideon-v0.1.30...ideon-v0.1.31) (2026-05-13)
 
 
