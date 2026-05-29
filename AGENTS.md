@@ -57,7 +57,7 @@ Concise reference for AI agents working on this codebase.
 
 - Primary docs live in `docs/`.
 - Site workspace is `docs-site/`.
-- Keep user-visible docs and `zh-Hans` parity in sync.
+- Keep user-visible docs and `zh-CN` parity in sync.
 
 ---
 
