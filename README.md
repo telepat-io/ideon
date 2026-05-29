@@ -30,6 +30,7 @@ Built for marketers, founders, and lean teams who need to ship high-quality cont
 - **Code-driven efficiency** — Deterministic pipeline code handles orchestration. You pay for tokens only when drafting prose.
 - **Visual storytelling** — Auto-generated cover and inline images via Replicate for article-led runs.
 - **Agent and CI ready** — MCP server, non-interactive mode, machine-readable config, and resumable runs.
+- **Google Keyword Planner** — Query real keyword data from Google Ads: ideas, historical metrics, and forecasts. Set up with `ideon gads login`, query with `ideon gkp`.
 
 ## Quick Start
 
@@ -73,13 +74,15 @@ ideon write --job ./job.json
 ideon write resume
 ideon delete my-article-slug
 ideon preview --no-open
+ideon gads login
+ideon gkp ideas --keywords seo,marketing
 ```
 
 ## Using With AI Agents
 
 Ideon is built for agentic workflows:
 
-- **MCP server** — `ideon mcp serve` exposes 5 tools over stdio for content generation, resume, deletion, and config management. Compatible with Claude Code, ChatGPT, Gemini, and any generic MCP host.
+- **MCP server** — `ideon mcp serve` exposes tools over stdio for content generation, resume, deletion, config management, and Google Keyword Planner queries. Compatible with Claude Code, ChatGPT, Gemini, and any generic MCP host.
 - **Agent runtime registration** — `ideon agent install <runtime>` registers integration profiles for supported platforms. Check status with `ideon agent status --json`.
 - **Non-interactive mode** — `ideon write --no-interactive ...` removes all prompts for CI and automation.
 - **Machine-readable config** — `ideon config list --json` and `ideon config get <key> --json` for agent inspection.

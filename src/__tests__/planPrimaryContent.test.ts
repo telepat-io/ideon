@@ -306,4 +306,70 @@ describe('planPrimaryContent', () => {
 
     expect(openRouter.requestStructured).not.toHaveBeenCalled();
   });
+
+  it('collects SEO warnings for long title and description', async () => {
+    const longContentPlan: ContentPlan = {
+      ...contentPlan,
+      title: 'This Is A Very Long Title That Exceeds Sixty Characters For SEO Warning Test',
+      description: 'Short',
+    };
+
+    const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await planPrimaryContent({
+      idea: 'seo warnings test',
+      contentType: 'article',
+      contentPlan: longContentPlan,
+      settings: defaultAppSettings,
+      markdownOutputDir: '/tmp/out',
+      openRouter: null,
+      dryRun: false,
+    });
+
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('collects SEO warnings for short description', async () => {
+    const shortDescPlan: ContentPlan = {
+      ...contentPlan,
+      description: 'Too short',
+    };
+
+    const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await planPrimaryContent({
+      idea: 'short desc test',
+      contentType: 'article',
+      contentPlan: shortDescPlan,
+      settings: defaultAppSettings,
+      markdownOutputDir: '/tmp/out',
+      openRouter: null,
+      dryRun: false,
+    });
+
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('collects SEO warnings for keywords duplicating headings', async () => {
+    const dupPlan: ContentPlan = {
+      ...contentPlan,
+    };
+
+    const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await planPrimaryContent({
+      idea: 'duplicate keywords test',
+      contentType: 'article',
+      contentPlan: dupPlan,
+      settings: defaultAppSettings,
+      markdownOutputDir: '/tmp/out',
+      openRouter: null,
+      dryRun: false,
+    });
+
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
 });

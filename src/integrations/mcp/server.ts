@@ -18,6 +18,9 @@ import {
   type ConfigUnsetToolInput,
   type DeleteToolInput,
   type ExportToolInput,
+  type GkpGenerateIdeasToolInput,
+  type GkpGetForecastDataToolInput,
+  type GkpGetHistoricalDataToolInput,
   type LinksToolInput,
   type WriteResumeToolInput,
   type WriteToolInput,
@@ -27,10 +30,49 @@ import {
   configUnsetToolInputSchema,
   deleteToolInputSchema,
   exportToolInputZodSchema,
+  gkpGenerateIdeasToolInputZodSchema,
+  gkpGetForecastDataToolInputZodSchema,
+  gkpGetHistoricalDataToolInputZodSchema,
   linksToolInputSchema,
   writeResumeToolInputSchema,
   writeToolInputSchema,
 } from './tools.js';
+import { GkpClient } from '../keywordplanner/client.js';
+import { loadSecrets } from '../../config/secretStore.js';
+import { readEnvSettings } from '../../config/env.js';
+
+let gkpClient: GkpClient | null = null;
+
+async function getOrCreateGkpClient(): Promise<GkpClient> {
+  if (gkpClient) return gkpClient;
+
+  const envSettings = readEnvSettings();
+  const secrets = await loadSecrets({ disableKeytar: envSettings.disableKeytar });
+
+  const devToken = envSettings.googleAdsDeveloperToken ?? secrets.googleAdsDeveloperToken;
+  const clientId = envSettings.googleAdsClientId ?? secrets.googleAdsClientId;
+  const clientSecret = envSettings.googleAdsClientSecret ?? secrets.googleAdsClientSecret;
+  const refreshToken = envSettings.googleAdsRefreshToken ?? secrets.googleAdsRefreshToken;
+  const customerId = envSettings.googleAdsCustomerId ?? secrets.googleAdsCustomerId;
+  const loginCustomerId = envSettings.googleAdsLoginCustomerId ?? secrets.googleAdsLoginCustomerId;
+
+  if (!devToken || !clientId || !clientSecret || !refreshToken || !customerId) {
+    throw new ReportedError(
+      'Google Ads credentials are not configured. Set googleAdsDeveloperToken, googleAdsClientId, googleAdsClientSecret, googleAdsRefreshToken, and googleAdsCustomerId via ideon_config_set or environment variables.',
+    );
+  }
+
+  gkpClient = new GkpClient({
+    developerToken: devToken,
+    clientId,
+    clientSecret,
+    refreshToken,
+    customerId,
+    loginCustomerId: loginCustomerId || undefined,
+  });
+
+  return gkpClient;
+}
 
 export async function startIdeonMcpServer(): Promise<void> {
   const server = new McpServer({
@@ -400,6 +442,89 @@ export async function startIdeonMcpServer(): Promise<void> {
             key: input.key,
             updated: true,
           },
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'gkp_generate_ideas',
+    {
+      title: 'Google Keyword Planner - Generate Ideas',
+      description: 'Generate keyword ideas from seed keywords, a URL, or a site using Google Ads Keyword Planner.',
+      inputSchema: gkpGenerateIdeasToolInputZodSchema,
+    },
+    async (input: GkpGenerateIdeasToolInput) => {
+      try {
+        const client = await getOrCreateGkpClient();
+        const result = await client.generateKeywordIdeas({
+          seedKeywords: input.seedKeywords,
+          url: input.url,
+          site: input.site,
+          countryCodes: input.countryCodes,
+          language: input.language,
+          pageSize: input.pageSize,
+        });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          structuredContent: result as unknown as Record<string, unknown>,
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'gkp_get_historical_data',
+    {
+      title: 'Google Keyword Planner - Historical Data',
+      description: 'Get historical search volume and competition metrics for a list of keywords.',
+      inputSchema: gkpGetHistoricalDataToolInputZodSchema,
+    },
+    async (input: GkpGetHistoricalDataToolInput) => {
+      try {
+        const client = await getOrCreateGkpClient();
+        const result = await client.getHistoricalMetrics({
+          keywords: input.keywords,
+          countryCodes: input.countryCodes,
+          language: input.language,
+          includeAverageCpc: input.includeAverageCpc,
+        });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          structuredContent: result as unknown as Record<string, unknown>,
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'gkp_get_forecast_data',
+    {
+      title: 'Google Keyword Planner - Forecast Data',
+      description: 'Get projected impressions, clicks, and cost for a set of keywords.',
+      inputSchema: gkpGetForecastDataToolInputZodSchema,
+    },
+    async (input: GkpGetForecastDataToolInput) => {
+      try {
+        const client = await getOrCreateGkpClient();
+        const result = await client.getForecastData({
+          keywords: input.keywords,
+          keywordMatchType: input.keywordMatchType,
+          maxCpcBidMicros: input.maxCpcBidMicros,
+          countryCodes: input.countryCodes,
+          language: input.language,
+          startDate: input.startDate,
+          endDate: input.endDate,
+        });
+        return {
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          structuredContent: result as unknown as Record<string, unknown>,
         };
       } catch (error) {
         return formatToolError(error);

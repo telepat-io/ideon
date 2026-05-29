@@ -11,7 +11,7 @@ Concise reference for AI agents working on this codebase.
 - Run after every code change:
   - `npm run lint`
   - `npm run build`
-  - `npm run test:coverage`
+  - `npm run test:coverage` (NOT `npm test` — only `test:coverage` enforces the 90% threshold)
   - `npm run docs:build`
 - Keep CLI/config/pipeline/preview/MCP/SKILL.md in sync with code changes.
 - Keep `ideon/skill/ideon/` in sync with runtime behavior, especially:

@@ -82,6 +82,38 @@ export const configUnsetToolInputSchema = {
 export const configUnsetToolInputZodSchema = z.object(configUnsetToolInputSchema);
 export type ConfigUnsetToolInput = z.infer<typeof configUnsetToolInputZodSchema>;
 
+export const gkpGenerateIdeasToolInputSchema = {
+  seedKeywords: z.array(z.string().min(1)).optional(),
+  url: z.string().min(1).optional(),
+  site: z.string().min(1).optional(),
+  countryCodes: z.array(z.string().min(1)).optional(),
+  language: z.string().min(1).optional(),
+  pageSize: z.coerce.number().int().positive().optional(),
+};
+export const gkpGenerateIdeasToolInputZodSchema = z.object(gkpGenerateIdeasToolInputSchema);
+export type GkpGenerateIdeasToolInput = z.infer<typeof gkpGenerateIdeasToolInputZodSchema>;
+
+export const gkpGetHistoricalDataToolInputSchema = {
+  keywords: z.array(z.string().min(1)).min(1),
+  countryCodes: z.array(z.string().min(1)).optional(),
+  language: z.string().min(1).optional(),
+  includeAverageCpc: z.boolean().optional(),
+};
+export const gkpGetHistoricalDataToolInputZodSchema = z.object(gkpGetHistoricalDataToolInputSchema);
+export type GkpGetHistoricalDataToolInput = z.infer<typeof gkpGetHistoricalDataToolInputZodSchema>;
+
+export const gkpGetForecastDataToolInputSchema = {
+  keywords: z.array(z.string().min(1)).min(1),
+  keywordMatchType: z.enum(['BROAD', 'EXACT', 'PHRASE']).optional(),
+  maxCpcBidMicros: z.coerce.number().int().positive().optional(),
+  countryCodes: z.array(z.string().min(1)).optional(),
+  language: z.string().min(1).optional(),
+  startDate: z.string().min(1).optional(),
+  endDate: z.string().min(1).optional(),
+};
+export const gkpGetForecastDataToolInputZodSchema = z.object(gkpGetForecastDataToolInputSchema);
+export type GkpGetForecastDataToolInput = z.infer<typeof gkpGetForecastDataToolInputZodSchema>;
+
 export interface ToolContract {
   name: string;
   required: string[];
@@ -144,6 +176,23 @@ export const ideonToolContracts: ToolContract[] = [
     required: ['key'],
     enums: {
       key: [...configKeys],
+    },
+  },
+  {
+    name: 'gkp_generate_ideas',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'gkp_get_historical_data',
+    required: ['keywords'],
+    enums: {},
+  },
+  {
+    name: 'gkp_get_forecast_data',
+    required: ['keywords'],
+    enums: {
+      keywordMatchType: ['BROAD', 'EXACT', 'PHRASE'],
     },
   },
 ];

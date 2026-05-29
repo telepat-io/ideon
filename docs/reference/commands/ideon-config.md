@@ -72,6 +72,7 @@ Settings keys:
 - `markdownOutputDir`
 - `assetOutputDir`
 - `style`
+- `intent`
 - `targetLength`
 
 `targetLength` value notes:
@@ -83,6 +84,14 @@ Secret keys:
 
 - `openRouterApiKey`
 - `replicateApiToken`
+- `googleAdsDeveloperToken`
+- `googleAdsClientId`
+- `googleAdsClientSecret`
+- `googleAdsRefreshToken`
+- `googleAdsCustomerId`
+- `googleAdsLoginCustomerId`
+
+For Google Ads credential setup, use `ideon gads login` for interactive guided setup, or set them individually via `ideon config set`. See [Google Ads Keyword Planner Setup](../../guides/google-ads-keyword-planner.md) for details.
 
 ## Output and Exit Codes
 
@@ -94,6 +103,7 @@ Secret keys:
 
 ## Related Commands
 
+- [ideon gads](./ideon-gads.md) — Interactive Google Ads credential management
 - [ideon settings](./ideon-settings.md)
 - [ideon write [idea]](./ideon-write.md)
 - [Environment Variables](../environment-variables.md)

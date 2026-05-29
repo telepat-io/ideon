@@ -83,6 +83,14 @@ Secret keys:
 
 - `openRouterApiKey`
 - `replicateApiToken`
+- `googleAdsDeveloperToken`
+- `googleAdsClientId`
+- `googleAdsClientSecret`
+- `googleAdsRefreshToken`
+- `googleAdsCustomerId`
+- `googleAdsLoginCustomerId`
+
+对于 Google Ads 凭据设置，请使用 `ideon gads login` 进行交互式引导设置，或通过 `ideon config set` 单独设置。详见 [Google Ads Keyword Planner 设置](../../guides/google-ads-keyword-planner.md)。
 
 ## 输出与退出码
 
@@ -94,6 +102,7 @@ Secret keys:
 
 ## 相关命令
 
+- [ideon gads](./ideon-gads.md) — 交互式 Google Ads 凭据管理
 - [ideon settings](./ideon-settings.md)
 - [ideon write [idea]](./ideon-write.md)
 - [环境变量](../environment-variables.md)

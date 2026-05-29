@@ -113,6 +113,24 @@ Ideon is designed to slot into modern agentic and CI workflows:
 
 ---
 
+## Google Keyword Planner Integration
+
+Query real keyword data from Google Ads directly from the CLI or through MCP tools:
+
+- **Keyword ideas** — Generate related keywords from seed keywords, a URL, or a site
+- **Historical metrics** — Get search volume, competition, and CPC data for any keyword
+- **Forecast data** — Project impressions, clicks, and cost for keyword campaigns
+
+```bash
+ideon gkp ideas --keywords seo,marketing --country US
+ideon gkp historical --keywords seo --json
+ideon gkp forecast --keywords seo --match-type EXACT --country US
+```
+
+Set up credentials once with `ideon gads login`, then query keyword data from the CLI or expose it to any MCP-compatible agent.
+
+---
+
 ## Ready to Ship More Content?
 
 [Get Started →](./getting-started/installation.md)

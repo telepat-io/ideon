@@ -33,27 +33,45 @@ describe('secretStore', () => {
 
   it('loads both secrets from keytar', async () => {
     const { loadSecrets } = await importSecretStoreWithKeytarModule();
-    getPasswordMock.mockResolvedValueOnce('openrouter').mockResolvedValueOnce('replicate');
+    getPasswordMock.mockResolvedValue('openrouter');
 
     const result = await loadSecrets();
 
     expect(result).toEqual({
       openRouterApiKey: 'openrouter',
-      replicateApiToken: 'replicate',
+      replicateApiToken: 'openrouter',
+      googleAdsDeveloperToken: 'openrouter',
+      googleAdsClientId: 'openrouter',
+      googleAdsClientSecret: 'openrouter',
+      googleAdsRefreshToken: 'openrouter',
+      googleAdsCustomerId: 'openrouter',
+      googleAdsLoginCustomerId: 'openrouter',
     });
     expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'openrouter-api-key');
     expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'replicate-api-token');
+    expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'google-ads-developer-token');
+    expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'google-ads-client-id');
+    expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'google-ads-client-secret');
+    expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'google-ads-refresh-token');
+    expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'google-ads-customer-id');
+    expect(getPasswordMock).toHaveBeenCalledWith('ideon', 'google-ads-login-customer-id');
   });
 
   it('returns null values when keytar has no stored credentials', async () => {
     const { loadSecrets } = await importSecretStoreWithKeytarModule();
-    getPasswordMock.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    getPasswordMock.mockResolvedValue(null);
 
     const result = await loadSecrets();
 
     expect(result).toEqual({
       openRouterApiKey: null,
       replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
   });
 
@@ -64,6 +82,12 @@ describe('secretStore', () => {
     expect(result).toEqual({
       openRouterApiKey: null,
       replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
     expect(getPasswordMock).not.toHaveBeenCalled();
   });
@@ -77,6 +101,12 @@ describe('secretStore', () => {
     expect(result).toEqual({
       openRouterApiKey: null,
       replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
     expect(warnMock).toHaveBeenCalledTimes(1);
   });
@@ -95,10 +125,22 @@ describe('secretStore', () => {
     expect(firstResult).toEqual({
       openRouterApiKey: null,
       replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
     expect(secondResult).toEqual({
       openRouterApiKey: null,
       replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
     expect(warnMock).toHaveBeenCalledTimes(1);
   });

@@ -25,6 +25,8 @@ ideon mcp serve
 
 ## Available Tools
 
+### Ideon Tools
+
 - `ideon_write`
 - `ideon_write_resume`
 - `ideon_delete`
@@ -33,6 +35,14 @@ ideon mcp serve
 - `ideon_config_set`
 - `ideon_config_list`
 - `ideon_config_unset`
+
+### Google Keyword Planner Tools
+
+- `gkp_generate_ideas` — find related keywords from seed keywords or a URL
+- `gkp_get_historical_data` — get historical search volume and competition for keywords
+- `gkp_get_forecast_data` — project impressions, clicks, and cost for keywords
+
+The GKP tools require six Google Ads credentials to be configured before use. For setup instructions, see [Google Ads Keyword Planner Setup](../../guides/google-ads-keyword-planner.md).
 
 ## Output and Exit Codes
 
@@ -47,6 +57,7 @@ ideon mcp serve
 - [ideon agent](./ideon-agent.md)
 - [ideon config](./ideon-config.md)
 - [MCP Servers (For Agents)](../../for-agents/mcp-servers.md)
+- [Google Ads Keyword Planner Setup](../../guides/google-ads-keyword-planner.md)
 
 ## Versioning and Deprecation Notes
 

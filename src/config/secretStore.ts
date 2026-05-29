@@ -3,6 +3,12 @@ import type { SecretSettings } from './schema.js';
 const SERVICE_NAME = 'ideon';
 const OPENROUTER_ACCOUNT = 'openrouter-api-key';
 const REPLICATE_ACCOUNT = 'replicate-api-token';
+const GOOGLE_ADS_DEVELOPER_TOKEN_ACCOUNT = 'google-ads-developer-token';
+const GOOGLE_ADS_CLIENT_ID_ACCOUNT = 'google-ads-client-id';
+const GOOGLE_ADS_CLIENT_SECRET_ACCOUNT = 'google-ads-client-secret';
+const GOOGLE_ADS_REFRESH_TOKEN_ACCOUNT = 'google-ads-refresh-token';
+const GOOGLE_ADS_CUSTOMER_ID_ACCOUNT = 'google-ads-customer-id';
+const GOOGLE_ADS_LOGIN_CUSTOMER_ID_ACCOUNT = 'google-ads-login-customer-id';
 
 const KEYTAR_UNAVAILABLE_ERROR_NAME = 'KeytarUnavailableError';
 
@@ -35,6 +41,12 @@ function nullSecrets(): SecretSettings {
   return {
     openRouterApiKey: null,
     replicateApiToken: null,
+    googleAdsDeveloperToken: null,
+    googleAdsClientId: null,
+    googleAdsClientSecret: null,
+    googleAdsRefreshToken: null,
+    googleAdsCustomerId: null,
+    googleAdsLoginCustomerId: null,
   };
 }
 
@@ -123,14 +135,35 @@ export async function loadSecrets(options: SecretStoreOptions = {}): Promise<Sec
   }
 
   try {
-    const [openRouterApiKey, replicateApiToken] = await Promise.all([
+    const [
+      openRouterApiKey,
+      replicateApiToken,
+      googleAdsDeveloperToken,
+      googleAdsClientId,
+      googleAdsClientSecret,
+      googleAdsRefreshToken,
+      googleAdsCustomerId,
+      googleAdsLoginCustomerId,
+    ] = await Promise.all([
       keytarClient.getPassword(SERVICE_NAME, OPENROUTER_ACCOUNT),
       keytarClient.getPassword(SERVICE_NAME, REPLICATE_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, GOOGLE_ADS_DEVELOPER_TOKEN_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, GOOGLE_ADS_CLIENT_ID_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, GOOGLE_ADS_CLIENT_SECRET_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, GOOGLE_ADS_REFRESH_TOKEN_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, GOOGLE_ADS_CUSTOMER_ID_ACCOUNT),
+      keytarClient.getPassword(SERVICE_NAME, GOOGLE_ADS_LOGIN_CUSTOMER_ID_ACCOUNT),
     ]);
 
     return {
       openRouterApiKey,
       replicateApiToken,
+      googleAdsDeveloperToken,
+      googleAdsClientId,
+      googleAdsClientSecret,
+      googleAdsRefreshToken,
+      googleAdsCustomerId,
+      googleAdsLoginCustomerId,
     };
   } catch (error) {
     if (isKeytarAvailabilityError(error)) {
@@ -165,6 +198,30 @@ export async function saveSecrets(secrets: Partial<SecretSettings>, options: Sec
 
   if (secrets.replicateApiToken !== undefined) {
     tasks.push(saveSecretValue(keytarClient, REPLICATE_ACCOUNT, secrets.replicateApiToken));
+  }
+
+  if (secrets.googleAdsDeveloperToken !== undefined) {
+    tasks.push(saveSecretValue(keytarClient, GOOGLE_ADS_DEVELOPER_TOKEN_ACCOUNT, secrets.googleAdsDeveloperToken));
+  }
+
+  if (secrets.googleAdsClientId !== undefined) {
+    tasks.push(saveSecretValue(keytarClient, GOOGLE_ADS_CLIENT_ID_ACCOUNT, secrets.googleAdsClientId));
+  }
+
+  if (secrets.googleAdsClientSecret !== undefined) {
+    tasks.push(saveSecretValue(keytarClient, GOOGLE_ADS_CLIENT_SECRET_ACCOUNT, secrets.googleAdsClientSecret));
+  }
+
+  if (secrets.googleAdsRefreshToken !== undefined) {
+    tasks.push(saveSecretValue(keytarClient, GOOGLE_ADS_REFRESH_TOKEN_ACCOUNT, secrets.googleAdsRefreshToken));
+  }
+
+  if (secrets.googleAdsCustomerId !== undefined) {
+    tasks.push(saveSecretValue(keytarClient, GOOGLE_ADS_CUSTOMER_ID_ACCOUNT, secrets.googleAdsCustomerId));
+  }
+
+  if (secrets.googleAdsLoginCustomerId !== undefined) {
+    tasks.push(saveSecretValue(keytarClient, GOOGLE_ADS_LOGIN_CUSTOMER_ID_ACCOUNT, secrets.googleAdsLoginCustomerId));
   }
 
   await Promise.all(tasks);

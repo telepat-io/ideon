@@ -1,0 +1,202 @@
+---
+title: ideon gkp
+description: Query Google Ads Keyword Planner data — keyword ideas, historical metrics, and forecasts.
+keywords: [ideon, cli, gkp, keyword planner, google ads, keywords, forecast, historical]
+---
+
+# ideon gkp
+
+## What This Command Does
+
+`ideon gkp` queries Google Ads Keyword Planner data directly from the CLI. It provides three subcommands that mirror the GKP MCP tools: keyword ideas, historical metrics, and forecast data.
+
+Requires Google Ads credentials configured via `ideon gads login` or environment variables.
+
+## Usage
+
+```bash
+ideongkp ideas [options]
+ideongkp historical [options]
+ideongkp forecast [options]
+```
+
+## Subcommands
+
+### ideon gkp ideas
+
+Generate keyword ideas from seed keywords, a URL, or a site.
+
+```bash
+ideongkp ideas --keywords seo,marketing
+ideongkp ideas --keywords seo --country US,GB --language en
+ideongkp ideas --url https://example.com
+ideongkp ideas --keywords seo --url https://example.com --page-size 20
+```
+
+| Flag | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--keywords <keywords>` | * | — | Comma-separated seed keywords |
+| `--url <url>` | * | — | Seed URL for keyword ideas |
+| `--site <site>` | ** | — | Seed site domain (exclusive with keywords/url) |
+| `--country <codes>` | No | *all countries* | Comma-separated ISO 3166-1 alpha-2 country codes |
+| `--language <code>` | No | `en` | ISO 639-1 language code |
+| `--page-size <n>` | No | — | Number of results per page |
+| `--json` | No | `false` | Print machine-readable JSON output |
+
+\* At least one of `--keywords` or `--url` is required.
+\*\* `--site` cannot be combined with `--keywords` or `--url`.
+
+#### TTY Output Example
+
+```
+Keyword Ideas
+──────────────────────────────────────────────────────────────────────────
+Keyword                                  Searches   Competition    Low Bid   High Bid
+──────────────────────────────────────────────────────────────────────────
+seo tools                                   12,000         MEDIUM      $0.50      $2.00
+marketing automation                         8,000           HIGH      $1.00      $5.00
+seo strategy                                 5,500          MEDIUM      $0.80      $3.50
+──────────────────────────────────────────────────────────────────────────
+Total: 3 keywords
+```
+
+#### JSON Output Example
+
+```json
+{
+  "ideas": [
+    {
+      "text": "seo tools",
+      "avgMonthlySearches": 12000,
+      "competition": "MEDIUM",
+      "competitionIndex": 50,
+      "lowTopOfPageBidMicros": 500000,
+      "highTopOfPageBidMicros": 2000000,
+      "closeVariants": []
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+### ideon gkp historical
+
+Get historical search volume and competition metrics for a list of keywords.
+
+```bash
+ideongkp historical --keywords seo,marketing
+ideongkp historical --keywords seo --country US --language en
+ideongkp historical --keywords seo --no-include-cpc
+```
+
+| Flag | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--keywords <keywords>` | **Yes** | — | Comma-separated keywords to look up |
+| `--country <codes>` | No | *all countries* | Comma-separated ISO 3166-1 alpha-2 country codes |
+| `--language <code>` | No | `en` | ISO 639-1 language code |
+| `--include-cpc` / `--no-include-cpc` | No | `true` | Include average CPC in results |
+| `--json` | No | `false` | Print machine-readable JSON output |
+
+#### TTY Output Example
+
+```
+Historical Metrics
+──────────────────────────────────────────────────────────────────────────
+Keyword                                  Searches   Competition    Low Bid   High Bid
+──────────────────────────────────────────────────────────────────────────
+seo tools                                   12,000         MEDIUM      $0.50      $2.00
+──────────────────────────────────────────────────────────────────────────
+Total: 1 keyword
+```
+
+---
+
+### ideon gkp forecast
+
+Get projected impressions, clicks, and cost for a set of keywords.
+
+```bash
+ideongkp forecast --keywords seo,marketing
+ideongkp forecast --keywords seo --match-type EXACT --country US
+ideongkp forecast --keywords seo --max-cpc-bid 5000000 --start-date 2025-01-01 --end-date 2025-01-31
+```
+
+| Flag | Required | Default | Description |
+| --- | --- | --- | --- |
+| `--keywords <keywords>` | **Yes** | — | Comma-separated keywords to forecast |
+| `--match-type <type>` | No | `BROAD` | Keyword match type: `BROAD`, `EXACT`, or `PHRASE` |
+| `--max-cpc-bid <micros>` | No | — | Max CPC bid in micros (1 USD = 1,000,000 micros) |
+| `--country <codes>` | No | `US` | Comma-separated ISO country codes (defaults to US) |
+| `--language <code>` | No | `en` | ISO 639-1 language code |
+| `--start-date <date>` | No | today | Forecast start date (`YYYY-MM-DD`) |
+| `--end-date <date>` | No | today+30 | Forecast end date (`YYYY-MM-DD`) |
+| `--json` | No | `false` | Print machine-readable JSON output |
+
+#### TTY Output Example
+
+```
+Forecast
+────────────────────────────────────────────────────────────────────────────────────
+Keyword                          Match    Impr.   Clicks       Cost      CTR
+────────────────────────────────────────────────────────────────────────────────────
+seo tools                       BROAD    50,000     1,500      $7.50     3.0%
+────────────────────────────────────────────────────────────────────────────────────
+Total: 1 keyword
+```
+
+#### JSON Output Example
+
+```json
+{
+  "keywords": [
+    {
+      "text": "seo tools",
+      "matchType": "BROAD",
+      "impressions": 50000,
+      "clicks": 1500,
+      "costMicros": 7500000,
+      "ctr": 0.03
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+## Output and Exit Codes
+
+| Exit code | Meaning |
+| --- | --- |
+| `0` | Command completed successfully. |
+| `1` | Validation failed, credentials are invalid, or a runtime error occurred. |
+| `130` | Command interrupted by `Ctrl+C`. |
+
+## Environment Variables
+
+All Google Ads credentials can alternatively be set via environment variables:
+
+| Variable | Description |
+| --- | --- |
+| `TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN` | Developer token |
+| `TELEPAT_GOOGLE_ADS_CLIENT_ID` | OAuth2 client ID |
+| `TELEPAT_GOOGLE_ADS_CLIENT_SECRET` | OAuth2 client secret |
+| `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` | OAuth2 refresh token |
+| `TELEPAT_GOOGLE_ADS_CUSTOMER_ID` | Customer ID |
+| `TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Manager account ID (optional) |
+
+Environment variables take precedence over keychain-stored values.
+
+## Related Commands
+
+- [ideon gads](./ideon-gads.md) — Manage Google Ads credentials and OAuth
+- [ideon config](./ideon-config.md) — Set individual credentials non-interactively
+- [Google Ads Keyword Planner Setup](../../guides/google-ads-keyword-planner.md) — Full setup guide
+
+## Versioning and Deprecation Notes
+
+- Current behavior applies to Ideon `0.1.6`.
+- The `gkp` commands require Google Ads credentials to be configured first. Run `ideon gads login` or set environment variables before using these commands.
+- TTY output formats bids in dollars; JSON output preserves raw micros.

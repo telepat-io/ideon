@@ -49,6 +49,12 @@ describe('config manage', () => {
     loadSecretsMock.mockResolvedValue({
       openRouterApiKey: 'openrouter-token',
       replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
 
     readEnvSettingsMock.mockReturnValue({});
@@ -183,5 +189,28 @@ describe('config manage', () => {
     await expect(configSet('targetLength', 'tiny')).rejects.toThrow('targetLength must be one of');
     await expect(configSet('modelSettings.maxTokens', '0')).rejects.toThrow('positive integer');
     await expect(configSet('model', '   ')).rejects.toThrow('cannot be empty');
+    await expect(configSet('t2i.replicateModelId', '  ')).rejects.toThrow('t2i.replicateModelId cannot be empty');
+    await expect(configSet('modelSettings.temperature', 'abc')).rejects.toThrow('must be a number');
+    await expect(configSet('modelSettings.topP', 'abc')).rejects.toThrow('must be a number');
+  });
+
+  it('gets all setting keys', async () => {
+    expect((await configGet('model')).value).toBe('deepseek/deepseek-v4-pro');
+    expect((await configGet('modelSettings.maxTokens')).value).toBe(4000);
+    expect((await configGet('modelSettings.topP')).value).toBe(1);
+    expect((await configGet('modelRequestTimeoutMs')).value).toBe(90000);
+    expect((await configGet('notifications.enabled')).value).toBe(false);
+    expect((await configGet('style')).value).toBe('professional');
+    expect((await configGet('intent')).value).toBe('tutorial');
+    expect((await configGet('targetLength')).value).toBe(900);
+  });
+
+  it('sets notifications.enabled to false', async () => {
+    await configSet('notifications.enabled', 'false');
+    expect(saveSettingsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        notifications: expect.objectContaining({ enabled: false }),
+      }),
+    );
   });
 });

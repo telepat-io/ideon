@@ -397,6 +397,12 @@ function makeResolvedInput(_markdownOutputDir: string): ResolvedRunInput {
       secrets: {
         openRouterApiKey: null,
         replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
       },
     },
   };

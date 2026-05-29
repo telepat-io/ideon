@@ -41,5 +41,11 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     style: env.IDEON_STYLE,
     intent: env.IDEON_INTENT,
     targetLength: env.IDEON_TARGET_LENGTH,
+    googleAdsDeveloperToken: env.TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN,
+    googleAdsClientId: env.TELEPAT_GOOGLE_ADS_CLIENT_ID,
+    googleAdsClientSecret: env.TELEPAT_GOOGLE_ADS_CLIENT_SECRET,
+    googleAdsRefreshToken: env.TELEPAT_GOOGLE_ADS_REFRESH_TOKEN,
+    googleAdsCustomerId: env.TELEPAT_GOOGLE_ADS_CUSTOMER_ID,
+    googleAdsLoginCustomerId: env.TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID,
   });
 }

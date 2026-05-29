@@ -25,6 +25,13 @@ const configUnsetMock = jest.fn<(...args: any[]) => Promise<any>>();
 const isConfigKeyMock = jest.fn<(key: string) => boolean>();
 const parsePrimaryAndSecondarySpecsMock = jest.fn();
 const loadWriteSessionMock = jest.fn<(...args: any[]) => Promise<any>>();
+const loadSecretsMock = jest.fn<(...args: any[]) => Promise<any>>();
+const readEnvSettingsMock = jest.fn<() => any>();
+const gkpClientMock = {
+  generateKeywordIdeas: jest.fn<(...args: any[]) => Promise<any>>(),
+  getHistoricalMetrics: jest.fn<(...args: any[]) => Promise<any>>(),
+  getForecastData: jest.fn<(...args: any[]) => Promise<any>>(),
+};
 
 jest.unstable_mockModule('@modelcontextprotocol/sdk/server/mcp.js', () => ({
   McpServer: MockMcpServer,
@@ -73,7 +80,7 @@ jest.unstable_mockModule('../config/manage.js', () => ({
     'intent',
     'targetLength',
   ],
-  configSecretKeys: ['openRouterApiKey', 'replicateApiToken'],
+  configSecretKeys: ['openRouterApiKey', 'replicateApiToken', 'googleAdsDeveloperToken', 'googleAdsClientId', 'googleAdsClientSecret', 'googleAdsRefreshToken', 'googleAdsCustomerId', 'googleAdsLoginCustomerId'],
 }));
 
 jest.unstable_mockModule('../cli/commands/writeTargetSpecs.js', () => ({
@@ -82,6 +89,22 @@ jest.unstable_mockModule('../cli/commands/writeTargetSpecs.js', () => ({
 
 jest.unstable_mockModule('../pipeline/sessionStore.js', () => ({
   loadWriteSession: loadWriteSessionMock,
+}));
+
+jest.unstable_mockModule('../config/secretStore.js', () => ({
+  loadSecrets: loadSecretsMock,
+}));
+
+jest.unstable_mockModule('../config/env.js', () => ({
+  readEnvSettings: readEnvSettingsMock,
+}));
+
+jest.unstable_mockModule('../integrations/keywordplanner/client.js', () => ({
+  GkpClient: class {
+    generateKeywordIdeas = gkpClientMock.generateKeywordIdeas;
+    getHistoricalMetrics = gkpClientMock.getHistoricalMetrics;
+    getForecastData = gkpClientMock.getForecastData;
+  },
 }));
 
 const { startIdeonMcpServer } = await import('../integrations/mcp/server.js');
@@ -102,6 +125,12 @@ describe('ideon MCP server', () => {
         secrets: {
           openRouterApiKey: 'token',
           replicateApiToken: 'token',
+          googleAdsDeveloperToken: null,
+          googleAdsClientId: null,
+          googleAdsClientSecret: null,
+          googleAdsRefreshToken: null,
+          googleAdsCustomerId: null,
+          googleAdsLoginCustomerId: null,
         },
       },
     });
@@ -146,6 +175,22 @@ describe('ideon MCP server', () => {
       },
       status: 'failed',
     });
+
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: 'token',
+      replicateApiToken: 'token',
+      googleAdsDeveloperToken: 'gkp-dev-token',
+      googleAdsClientId: 'gkp-client-id',
+      googleAdsClientSecret: 'gkp-client-secret',
+      googleAdsRefreshToken: 'gkp-refresh-token',
+      googleAdsCustomerId: '1234567890',
+      googleAdsLoginCustomerId: null,
+    });
+
+    readEnvSettingsMock.mockReturnValue({ disableKeytar: undefined });
+    gkpClientMock.generateKeywordIdeas.mockResolvedValue({ ideas: [], count: 0 });
+    gkpClientMock.getHistoricalMetrics.mockResolvedValue({ keywords: [], count: 0 });
+    gkpClientMock.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
   });
 
   it('registers tools and connects transport', async () => {
@@ -161,6 +206,9 @@ describe('ideon MCP server', () => {
     expect(registeredTools.has('ideon_config_set')).toBe(true);
     expect(registeredTools.has('ideon_config_list')).toBe(true);
     expect(registeredTools.has('ideon_config_unset')).toBe(true);
+    expect(registeredTools.has('gkp_generate_ideas')).toBe(true);
+    expect(registeredTools.has('gkp_get_historical_data')).toBe(true);
+    expect(registeredTools.has('gkp_get_forecast_data')).toBe(true);
   });
 
   it('executes ideon_write tool handler', async () => {
@@ -458,5 +506,68 @@ describe('ideon MCP server', () => {
 
     expect(result?.isError).toBe(true);
     expect(result?.content?.[0]?.text).toContain('Unsupported config key');
+  });
+
+  it('executes gkp_generate_ideas handler', async () => {
+    gkpClientMock.generateKeywordIdeas.mockResolvedValue({
+      ideas: [{ text: 'test keyword', avgMonthlySearches: 1000, competition: 'HIGH', competitionIndex: 80, lowTopOfPageBidMicros: 500000, highTopOfPageBidMicros: 1500000, closeVariants: [] }],
+      count: 1,
+    });
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gkp_generate_ideas');
+
+    const result = await tool?.handler({ seedKeywords: ['test'] });
+
+    expect(gkpClientMock.generateKeywordIdeas).toHaveBeenCalledWith(
+      expect.objectContaining({ seedKeywords: ['test'] }),
+    );
+    expect(result?.structuredContent?.count).toBe(1);
+  });
+
+  it('executes gkp_get_historical_data handler', async () => {
+    gkpClientMock.getHistoricalMetrics.mockResolvedValue({
+      keywords: [{ text: 'test keyword', avgMonthlySearches: 2000, competition: 'MEDIUM', competitionIndex: 50, lowTopOfPageBidMicros: 300000, highTopOfPageBidMicros: 900000, monthlySearchVolumes: [] }],
+      count: 1,
+    });
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gkp_get_historical_data');
+
+    const result = await tool?.handler({ keywords: ['test'] });
+
+    expect(gkpClientMock.getHistoricalMetrics).toHaveBeenCalledWith(
+      expect.objectContaining({ keywords: ['test'] }),
+    );
+    expect(result?.structuredContent?.count).toBe(1);
+  });
+
+  it('executes gkp_get_forecast_data handler', async () => {
+    gkpClientMock.getForecastData.mockResolvedValue({
+      keywords: [{ text: 'test keyword', matchType: 'BROAD', impressions: 1000, clicks: 50, costMicros: 25000, ctr: 0.05 }],
+      count: 1,
+    });
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gkp_get_forecast_data');
+
+    const result = await tool?.handler({ keywords: ['test'] });
+
+    expect(gkpClientMock.getForecastData).toHaveBeenCalledWith(
+      expect.objectContaining({ keywords: ['test'] }),
+    );
+    expect(result?.structuredContent?.count).toBe(1);
+  });
+
+  it('returns tool error when gkp_generate_ideas fails', async () => {
+    gkpClientMock.generateKeywordIdeas.mockRejectedValue(new Error('API error'));
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gkp_generate_ideas');
+
+    const result = await tool?.handler({ seedKeywords: ['test'] });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('API error');
   });
 });

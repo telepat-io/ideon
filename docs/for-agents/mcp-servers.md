@@ -22,6 +22,15 @@ Ideon publishes a first-party Model Context Protocol server over stdio transport
 	- `ideon_config_set`
 	- `ideon_config_list`
 	- `ideon_config_unset`
+	- `gkp_generate_ideas`
+	- `gkp_get_historical_data`
+	- `gkp_get_forecast_data`
+
+## Google Keyword Planner Tools
+
+The three `gkp_*` tools provide access to Google Ads Keyword Planner data. They require six Google Ads credentials to be configured before use.
+
+For setup instructions, see [Google Ads Keyword Planner Setup](../guides/google-ads-keyword-planner.md).
 
 ## Contract Notes
 

@@ -113,6 +113,24 @@ Ideon 旨在融入现代智能体和 CI 工作流：
 
 ---
 
+## Google 关键词规划师集成
+
+直接从 CLI 或通过 MCP 工具查询 Google Ads 中的真实关键词数据：
+
+- **关键词建议** — 从种子关键词、URL 或网站生成相关关键词
+- **历史指标** — 获取任何关键词的搜索量、竞争度和 CPC 数据
+- **预测数据** — 预测关键词广告系列的展示量、点击量和费用
+
+```bash
+ideon gkp ideas --keywords seo,marketing --country US
+ideon gkp historical --keywords seo --json
+ideon gkp forecast --keywords seo --match-type EXACT --country US
+```
+
+使用 `ideon gads login` 一次性设置凭据，然后从 CLI 查询关键词数据或将其暴露给任何兼容 MCP 的智能体。
+
+---
+
 ## 准备好发布更多内容了吗？
 
 [开始使用 →](./getting-started/installation.md)

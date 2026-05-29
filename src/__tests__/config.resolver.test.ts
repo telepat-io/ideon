@@ -42,6 +42,12 @@ describe('resolveRunInput', () => {
     loadSecretsMock.mockResolvedValue({
       openRouterApiKey: 'saved-openrouter-key',
       replicateApiToken: 'saved-replicate-token',
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
 
     readEnvSettingsMock.mockReturnValue({});
@@ -197,6 +203,12 @@ describe('resolveRunInput', () => {
     loadSecretsMock.mockResolvedValue({
       openRouterApiKey: null,
       replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
     });
     readEnvSettingsMock.mockReturnValue({
       openRouterApiKey: 'env-openrouter-key',

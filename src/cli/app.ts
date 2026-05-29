@@ -12,6 +12,17 @@ import {
   runConfigUnsetCommand,
 } from './commands/config.js';
 import { runMcpServeCommand } from './commands/mcp.js';
+import {
+  runGadsLoginCommand,
+  runGadsLogoutCommand,
+  runGadsStatusCommand,
+  runGadsTestCommand,
+} from './commands/gads.js';
+import {
+  runGkpIdeasCommand,
+  runGkpHistoricalCommand,
+  runGkpForecastCommand,
+} from './commands/gkp.js';
 import { runLinksCommand } from './commands/links.js';
 import { runOutputCommand } from './commands/export.js';
 import { openSettings } from './commands/settings.js';
@@ -85,6 +96,105 @@ export async function runCli(argv: string[]): Promise<void> {
     .description('Start the Ideon MCP server over stdio transport.')
     .action(async () => {
       await runMcpServeCommand();
+    });
+
+  const gadsCommand = program
+    .command('gads')
+    .description('Manage Google Ads integration credentials and verification.');
+
+  gadsCommand
+    .command('login')
+    .description('Start OAuth flow to obtain Google Ads tokens.')
+    .option('--force', 'Re-authorize even if a refresh token already exists', false)
+    .option('--developer-token <token>', 'Google Ads developer token')
+    .option('--client-id <id>', 'OAuth2 client ID')
+    .option('--client-secret <secret>', 'OAuth2 client secret')
+    .option('--customer-id <id>', 'Google Ads customer ID (10 digits)')
+    .option('--login-customer-id <id>', 'Manager account customer ID (MCC only)')
+    .action(async (options: {
+      force: boolean;
+      developerToken?: string;
+      clientId?: string;
+      clientSecret?: string;
+      customerId?: string;
+      loginCustomerId?: string;
+    }) => {
+      await runGadsLoginCommand({
+        force: options.force,
+        developerToken: options.developerToken,
+        clientId: options.clientId,
+        clientSecret: options.clientSecret,
+        customerId: options.customerId,
+        loginCustomerId: options.loginCustomerId,
+      });
+    });
+
+  gadsCommand
+    .command('logout')
+    .description('Clear stored Google Ads credentials.')
+    .option('--all', 'Clear all Google Ads credentials instead of just the refresh token', false)
+    .action(async (options: { all: boolean }) => {
+      await runGadsLogoutCommand({ all: options.all });
+    });
+
+  gadsCommand
+    .command('status')
+    .description('Show which Google Ads credentials are configured.')
+    .option('--json', 'Print machine-readable JSON output', false)
+    .action(async (options: { json: boolean }) => {
+      await runGadsStatusCommand({ json: options.json });
+    });
+
+  gadsCommand
+    .command('test')
+    .description('Verify Google Ads credentials by making a test API call.')
+    .action(async () => {
+      await runGadsTestCommand({});
+    });
+
+  const gkpCommand = program
+    .command('gkp')
+    .description('Query Google Ads Keyword Planner data.');
+
+  gkpCommand
+    .command('ideas')
+    .description('Generate keyword ideas from seed keywords, a URL, or a site.')
+    .option('--keywords <keywords>', 'Comma-separated seed keywords')
+    .option('--url <url>', 'Seed URL for keyword ideas')
+    .option('--site <site>', 'Seed site domain (exclusive with keywords/url)')
+    .option('--country <codes>', 'Comma-separated ISO country codes (omit for all countries)')
+    .option('--language <code>', 'ISO 639-1 language code (default: en)')
+    .option('--page-size <n>', 'Number of results per page', (v) => Number.parseInt(v, 10))
+    .option('--json', 'Print machine-readable JSON output', false)
+    .action(async (options: { keywords?: string; url?: string; site?: string; country?: string; language?: string; pageSize?: number; json: boolean }) => {
+      await runGkpIdeasCommand(options);
+    });
+
+  gkpCommand
+    .command('historical')
+    .description('Get historical search volume and competition metrics for keywords.')
+    .requiredOption('--keywords <keywords>', 'Comma-separated keywords to look up')
+    .option('--country <codes>', 'Comma-separated ISO country codes (omit for all countries)')
+    .option('--language <code>', 'ISO 639-1 language code (default: en)')
+    .option('--no-include-cpc', 'Exclude average CPC from results')
+    .option('--json', 'Print machine-readable JSON output', false)
+    .action(async (options: { keywords: string; country?: string; language?: string; includeCpc: boolean; json: boolean }) => {
+      await runGkpHistoricalCommand({ ...options, includeCpc: options.includeCpc });
+    });
+
+  gkpCommand
+    .command('forecast')
+    .description('Get projected impressions, clicks, and cost for keywords.')
+    .requiredOption('--keywords <keywords>', 'Comma-separated keywords to forecast')
+    .option('--match-type <type>', 'Keyword match type: BROAD, EXACT, or PHRASE', 'BROAD')
+    .option('--max-cpc-bid <micros>', 'Max CPC bid in micros', (v) => Number.parseInt(v, 10))
+    .option('--country <codes>', 'Comma-separated ISO country codes (default: US)')
+    .option('--language <code>', 'ISO 639-1 language code (default: en)')
+    .option('--start-date <date>', 'Forecast start date (YYYY-MM-DD)')
+    .option('--end-date <date>', 'Forecast end date (YYYY-MM-DD)')
+    .option('--json', 'Print machine-readable JSON output', false)
+    .action(async (options: { keywords: string; matchType?: string; maxCpcBid?: number; country?: string; language?: string; startDate?: string; endDate?: string; json: boolean }) => {
+      await runGkpForecastCommand(options);
     });
 
   const agentCommand = program

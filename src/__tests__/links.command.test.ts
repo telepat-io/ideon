@@ -388,6 +388,12 @@ function makeResolvedInput(_markdownOutputDir: string, _assetOutputDir: string):
       secrets: {
         openRouterApiKey: 'test-openrouter-key',
         replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
       },
     },
   };

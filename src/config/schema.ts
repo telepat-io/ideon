@@ -239,6 +239,12 @@ export const envSettingsSchema = z.object({
   style: z.enum(writingStyleValues).optional(),
   intent: z.enum(contentIntentValues).optional(),
   targetLength: targetLengthWordsSchema.optional(),
+  googleAdsDeveloperToken: z.string().optional(),
+  googleAdsClientId: z.string().optional(),
+  googleAdsClientSecret: z.string().optional(),
+  googleAdsRefreshToken: z.string().optional(),
+  googleAdsCustomerId: z.string().optional(),
+  googleAdsLoginCustomerId: z.string().optional(),
 });
 
 export const jobInputSchema = z.object({
@@ -256,6 +262,12 @@ export type TargetLength = number;
 export interface SecretSettings {
   openRouterApiKey: string | null;
   replicateApiToken: string | null;
+  googleAdsDeveloperToken: string | null;
+  googleAdsClientId: string | null;
+  googleAdsClientSecret: string | null;
+  googleAdsRefreshToken: string | null;
+  googleAdsCustomerId: string | null;
+  googleAdsLoginCustomerId: string | null;
 }
 
 export interface ResolvedConfig {

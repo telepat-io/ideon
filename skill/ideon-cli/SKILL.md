@@ -249,7 +249,60 @@ Documented MCP characteristics:
 
 - Transport: stdio
 - Intended usage: local process-spawned MCP clients
-- Tool set: `ideon_write`, `ideon_write_resume`, `ideon_delete`, `ideon_links`, `ideon_config_get`, `ideon_config_set`, `ideon_config_list`, `ideon_config_unset`
+- Tool set: `ideon_write`, `ideon_write_resume`, `ideon_delete`, `ideon_links`, `ideon_config_get`, `ideon_config_set`, `ideon_config_list`, `ideon_config_unset`, `gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`
+
+### Google Keyword Planner (GKP) Tools
+
+The three `gkp_*` tools provide access to Google Ads Keyword Planner data. They require six credentials:
+
+| Credential | Config key | Env var | Description |
+|---|---|---|---|
+| Developer token | `googleAdsDeveloperToken` | `TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN` | From Google Ads API Center |
+| OAuth2 client ID | `googleAdsClientId` | `TELEPAT_GOOGLE_ADS_CLIENT_ID` | From GCP Console |
+| OAuth2 client secret | `googleAdsClientSecret` | `TELEPAT_GOOGLE_ADS_CLIENT_SECRET` | From GCP Console |
+| Refresh token | `googleAdsRefreshToken` | `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` | From one-time OAuth2 flow |
+| Customer ID | `googleAdsCustomerId` | `TELEPAT_GOOGLE_ADS_CUSTOMER_ID` | Google Ads account number |
+| Login customer ID | `googleAdsLoginCustomerId` | `TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Manager account ID (optional) |
+
+**Recommended setup** — use `ideon gads login` for interactive guided setup:
+
+```bash
+ideon gads login                    # Interactive OAuth flow
+ideon gads status                   # Check which credentials are set
+ideon gads test                     # Verify credentials work
+ideon gads logout                   # Clear refresh token only
+ideon gads logout --all             # Clear all 6 credentials
+```
+
+**CLI data queries** — use `ideon gkp` to query keyword data directly:
+
+```bash
+ideon gkp ideas --keywords seo,marketing           # Keyword ideas from seeds
+ideon gkp ideas --url https://example.com           # Keyword ideas from URL
+ideon gkp historical --keywords seo --country US    # Historical metrics
+ideon gkp forecast --keywords seo --match-type EXACT  # Forecast projections
+```
+
+All `gkp` subcommands support `--json` for machine-readable output. See [references/command-catalog.md](references/command-catalog.md) for full option details.
+
+**Manual setup** — configure credentials individually:
+
+```bash
+ideon config set googleAdsDeveloperToken "your-token"
+ideon config set googleAdsClientId "your-client-id"
+ideon config set googleAdsClientSecret "your-secret"
+ideon config set googleAdsRefreshToken "your-refresh-token"
+ideon config set googleAdsCustomerId "123-456-7890"
+ideon config set googleAdsLoginCustomerId "123-456-7890"  # only if needed
+```
+
+**GKP tool error messages include setup instructions.** If a GKP tool fails with a credential error, the error message will tell the user exactly which credential is missing and how to set it.
+
+### GKP Setup Reference
+
+For full step-by-step setup instructions, prerequisites, OAuth flow scripts, and error troubleshooting, see:
+
+- `references/google-ads-setup.md`
 
 Agent runtime registration:
 
@@ -498,6 +551,7 @@ Should not trigger:
 - See `references/command-catalog.md` for full command/argument matrix.
 - See `references/troubleshooting.md` for detailed failure diagnostics.
 - See `references/framework-patterns.md` for reusable workflow patterns.
+- See `references/google-ads-setup.md` for Google Ads Keyword Planner credential setup.
 - See `assets/generated-skill-template.md` for reusable scaffold.
 
 ## Source evidence map

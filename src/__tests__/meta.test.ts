@@ -2,6 +2,71 @@ import { describe, it, expect } from '@jest/globals';
 import { buildMetaJson } from '../output/meta.js';
 import type { ArticlePlan, RenderedArticleImage } from '../types/article.js';
 import type { ContentPlan } from '../types/contentPlan.js';
+import {
+  metaJsonCoverImageSchema,
+  metaJsonSectionSchema,
+  metaJsonImageSchema,
+  metaJsonOutputSchema,
+  metaJsonSchema,
+} from '../types/meta.js';
+
+describe('meta.json schemas', () => {
+  it('validates a complete meta.json object', () => {
+    const valid = {
+      version: 1 as const,
+      title: 'Title',
+      slug: 'slug',
+      idea: 'Idea',
+      description: 'Description',
+      subtitle: null,
+      keywords: ['k1'],
+      contentType: 'article',
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: null,
+      angle: null,
+      cover: null,
+      sections: [],
+      images: [],
+      outputs: [],
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      generationDir: '/out',
+    };
+    expect(metaJsonSchema.parse(valid)).toEqual(valid);
+  });
+
+  it('rejects invalid version', () => {
+    expect(() => metaJsonSchema.parse({ version: 2 })).toThrow();
+  });
+
+  it('validates cover image schema', () => {
+    const cover = { path: '/img.png', relativePath: 'img.png', description: 'A cover' };
+    expect(metaJsonCoverImageSchema.parse(cover)).toEqual(cover);
+    expect(() => metaJsonCoverImageSchema.parse({ path: '' })).toThrow();
+  });
+
+  it('validates section schema', () => {
+    const section = { title: 'Sec', description: 'Desc' };
+    expect(metaJsonSectionSchema.parse(section)).toEqual(section);
+    expect(() => metaJsonSectionSchema.parse({ title: '' })).toThrow();
+  });
+
+  it('validates image schema', () => {
+    const image = {
+      id: '1', kind: 'inline' as const, path: '/img.png', relativePath: 'img.png',
+      description: 'An image', anchorAfterSection: 0,
+    };
+    expect(metaJsonImageSchema.parse(image)).toEqual(image);
+    expect(() => metaJsonImageSchema.parse({ id: '' })).toThrow();
+    expect(() => metaJsonImageSchema.parse({ ...image, kind: 'bad' })).toThrow();
+  });
+
+  it('validates output schema', () => {
+    const output = { fileId: 'f1', contentType: 'article', path: '/a.md', relativePath: 'a.md' };
+    expect(metaJsonOutputSchema.parse(output)).toEqual(output);
+    expect(() => metaJsonOutputSchema.parse({ ...output, fileId: '' })).toThrow();
+  });
+});
 
 describe('buildMetaJson', () => {
   const baseContentPlan: ContentPlan = {

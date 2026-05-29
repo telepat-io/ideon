@@ -23,7 +23,16 @@ export const configSettingKeys = [
   'targetLength',
 ] as const;
 
-export const configSecretKeys = ['openRouterApiKey', 'replicateApiToken'] as const;
+export const configSecretKeys = [
+  'openRouterApiKey',
+  'replicateApiToken',
+  'googleAdsDeveloperToken',
+  'googleAdsClientId',
+  'googleAdsClientSecret',
+  'googleAdsRefreshToken',
+  'googleAdsCustomerId',
+  'googleAdsLoginCustomerId',
+] as const;
 
 export type ConfigSettingKey = (typeof configSettingKeys)[number];
 export type ConfigSecretKey = (typeof configSecretKeys)[number];
@@ -74,6 +83,12 @@ export async function configList(): Promise<ConfigListResult> {
     secrets: {
       openRouterApiKey: Boolean(secrets.openRouterApiKey),
       replicateApiToken: Boolean(secrets.replicateApiToken),
+      googleAdsDeveloperToken: Boolean(secrets.googleAdsDeveloperToken),
+      googleAdsClientId: Boolean(secrets.googleAdsClientId),
+      googleAdsClientSecret: Boolean(secrets.googleAdsClientSecret),
+      googleAdsRefreshToken: Boolean(secrets.googleAdsRefreshToken),
+      googleAdsCustomerId: Boolean(secrets.googleAdsCustomerId),
+      googleAdsLoginCustomerId: Boolean(secrets.googleAdsLoginCustomerId),
     },
   };
 }

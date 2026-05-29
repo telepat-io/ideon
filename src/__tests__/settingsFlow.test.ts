@@ -6,6 +6,12 @@ describe('Ideon settings flow', () => {
   const defaultSecrets: SecretSettings = {
     openRouterApiKey: null,
     replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
   };
 
   it('opens the T2I submenu when selecting T2I settings', () => {

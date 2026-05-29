@@ -31,6 +31,13 @@ Use this matrix to diagnose common failures quickly.
 | Preview cannot find markdown | No generated outputs or wrong path | Check markdown path and output directory | Run write command first or pass explicit `.md` path |
 | Unsupported runtime for `ideon agent` | Runtime outside supported set | Check runtime id | Use `claude`, `chatgpt`, `gemini`, or `generic-mcp` |
 | Unsupported config key | Invalid key in config get/set/unset | Compare key to supported key list | Use keys from command catalog |
+| GKP credential not configured | Google Ads credential missing | Run `ideon gads status` or `ideon config list --json` | Set via `ideon gads login` (interactive) or `ideon config set googleAds<Name> <value>` |
+| `DEVELOPER_TOKEN_NOT_APPROVED` | Developer token in test mode | Check token status at ads.google.com/aw/apicenter | Apply for Basic access and wait for Google approval |
+| `USER_PERMISSION_DENIED` | Missing login-customer-id or OAuth access | Run `ideon gads status` to verify all credentials | Set `googleAdsLoginCustomerId` to manager account ID if using sub-account |
+| `invalid_grant` | Refresh token expired | Run `ideon gads test` to verify, then `ideon gads login --force` to re-authorize | Obtain new refresh token via `ideon gads login --force` |
+| `gkp ideas` returns no results | No matching keywords for seed/URL | Check seed keywords and try different ones | Try broader keywords or use `--url` instead of `--keywords` |
+| `gkp historical` returns no results | No historical data for keyword/region | Try different keywords or broaden country codes | Use `--json` to see raw response for debugging |
+| `gkp forecast` returns no results | No forecast data for keyword/region | Try different keywords or check match type | Use `--country US` and `--match-type BROAD` for broadest data |
 | Legacy `xMode` error | Old schema field used in saved/job/CLI targets | Inspect job/settings payload for `xMode` | Replace with explicit `x-post` or `x-thread` content type |
 
 ## Minimal repro commands
@@ -69,6 +76,21 @@ MCP path:
 
 ```bash
 ideon mcp serve
+```
+
+GKP credentials path:
+
+```bash
+ideon gads status
+ideon gads test
+```
+
+GKP query path:
+
+```bash
+ideon gkp ideas --keywords test --json
+ideon gkp historical --keywords test --json
+ideon gkp forecast --keywords test --json
 ```
 
 ## Known doc/code discrepancy notes

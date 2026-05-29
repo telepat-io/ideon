@@ -4,6 +4,9 @@ import {
   writeToolInputZodSchema,
   writeResumeToolInputZodSchema,
   linksToolInputZodSchema,
+  gkpGenerateIdeasToolInputZodSchema,
+  gkpGetHistoricalDataToolInputZodSchema,
+  gkpGetForecastDataToolInputZodSchema,
   ideonToolContracts,
 } from '../integrations/mcp/tools.js';
 
@@ -101,5 +104,101 @@ describe('MCP tool contracts', () => {
     expect(writeContract?.enums).toHaveProperty('style');
     expect(writeContract?.enums).toHaveProperty('intent');
     expect(writeContract?.enums).toHaveProperty('length');
+  });
+
+  it('includes gkp_generate_ideas tool contract with no required fields', () => {
+    const contract = ideonToolContracts.find((tool) => tool.name === 'gkp_generate_ideas');
+    expect(contract).toBeDefined();
+    expect(contract?.required).toEqual([]);
+  });
+
+  it('includes gkp_get_historical_data tool contract with keywords required', () => {
+    const contract = ideonToolContracts.find((tool) => tool.name === 'gkp_get_historical_data');
+    expect(contract).toBeDefined();
+    expect(contract?.required).toEqual(['keywords']);
+  });
+
+  it('includes gkp_get_forecast_data tool contract with keywords required and matchType enum', () => {
+    const contract = ideonToolContracts.find((tool) => tool.name === 'gkp_get_forecast_data');
+    expect(contract).toBeDefined();
+    expect(contract?.required).toEqual(['keywords']);
+    expect(contract?.enums).toHaveProperty('keywordMatchType');
+    expect(contract?.enums?.keywordMatchType).toEqual(['BROAD', 'EXACT', 'PHRASE']);
+  });
+});
+
+describe('GKP tool schemas', () => {
+  it('validates gkp_generate_ideas input with seedKeywords', () => {
+    const result = gkpGenerateIdeasToolInputZodSchema.safeParse({
+      seedKeywords: ['test', 'keyword'],
+      countryCodes: ['US', 'GB'],
+      language: 'en',
+      pageSize: 50,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.seedKeywords).toEqual(['test', 'keyword']);
+      expect(result.data.countryCodes).toEqual(['US', 'GB']);
+    }
+  });
+
+  it('validates gkp_generate_ideas input with url', () => {
+    const result = gkpGenerateIdeasToolInputZodSchema.safeParse({ url: 'https://example.com' });
+    expect(result.success).toBe(true);
+  });
+
+  it('validates gkp_generate_ideas input with site', () => {
+    const result = gkpGenerateIdeasToolInputZodSchema.safeParse({ site: 'example.com' });
+    expect(result.success).toBe(true);
+  });
+
+  it('validates gkp_get_historical_data input', () => {
+    const result = gkpGetHistoricalDataToolInputZodSchema.safeParse({
+      keywords: ['test', 'keyword'],
+      countryCodes: ['US'],
+      language: 'en',
+      includeAverageCpc: true,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects gkp_get_historical_data input with empty keywords', () => {
+    const result = gkpGetHistoricalDataToolInputZodSchema.safeParse({ keywords: [] });
+    expect(result.success).toBe(false);
+  });
+
+  it('validates gkp_get_forecast_data input', () => {
+    const result = gkpGetForecastDataToolInputZodSchema.safeParse({
+      keywords: ['test', 'keyword'],
+      keywordMatchType: 'EXACT',
+      maxCpcBidMicros: 1500000,
+      countryCodes: ['US', 'GB'],
+      language: 'en',
+      startDate: '2024-01-01',
+      endDate: '2024-01-31',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects gkp_get_forecast_data input with invalid matchType', () => {
+    const result = gkpGetForecastDataToolInputZodSchema.safeParse({
+      keywords: ['test'],
+      keywordMatchType: 'INVALID',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('coerces maxCpcBidMicros from string to number', () => {
+    const result = gkpGetForecastDataToolInputZodSchema.safeParse({
+      keywords: ['test'],
+      maxCpcBidMicros: '1500000',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.maxCpcBidMicros).toBe(1500000);
+    }
   });
 });

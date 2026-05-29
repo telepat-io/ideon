@@ -102,6 +102,12 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
       secrets: {
         openRouterApiKey: envSettings.openRouterApiKey ?? secrets.openRouterApiKey,
         replicateApiToken: envSettings.replicateApiToken ?? secrets.replicateApiToken,
+        googleAdsDeveloperToken: envSettings.googleAdsDeveloperToken ?? secrets.googleAdsDeveloperToken,
+        googleAdsClientId: envSettings.googleAdsClientId ?? secrets.googleAdsClientId,
+        googleAdsClientSecret: envSettings.googleAdsClientSecret ?? secrets.googleAdsClientSecret,
+        googleAdsRefreshToken: envSettings.googleAdsRefreshToken ?? secrets.googleAdsRefreshToken,
+        googleAdsCustomerId: envSettings.googleAdsCustomerId ?? secrets.googleAdsCustomerId,
+        googleAdsLoginCustomerId: envSettings.googleAdsLoginCustomerId ?? secrets.googleAdsLoginCustomerId,
       },
     },
     idea,

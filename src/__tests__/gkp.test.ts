@@ -1,0 +1,509 @@
+// @ts-nocheck
+import { jest } from '@jest/globals';
+
+const loadSecretsMock = jest.fn();
+const readEnvSettingsMock = jest.fn();
+
+jest.unstable_mockModule('../config/env.js', () => ({
+  readEnvSettings: readEnvSettingsMock,
+}));
+
+jest.unstable_mockModule('../config/secretStore.js', () => ({
+  loadSecrets: loadSecretsMock,
+}));
+
+const mockGkpClient = {
+  generateKeywordIdeas: jest.fn(),
+  getHistoricalMetrics: jest.fn(),
+  getForecastData: jest.fn(),
+};
+
+jest.unstable_mockModule('../integrations/keywordplanner/client.js', () => ({
+  GkpClient: jest.fn().mockImplementation(() => mockGkpClient),
+}));
+
+const {
+  runGkpIdeasCommand,
+  runGkpHistoricalCommand,
+  runGkpForecastCommand,
+} = await import('../cli/commands/gkp.js');
+
+function createMockEnvSettings(overrides: Record<string, string | undefined> = {}) {
+  return {
+    openRouterApiKey: undefined,
+    replicateApiToken: undefined,
+    googleAdsDeveloperToken: overrides.googleAdsDeveloperToken,
+    googleAdsClientId: overrides.googleAdsClientId,
+    googleAdsClientSecret: overrides.googleAdsClientSecret,
+    googleAdsRefreshToken: overrides.googleAdsRefreshToken,
+    googleAdsCustomerId: overrides.googleAdsCustomerId,
+    googleAdsLoginCustomerId: overrides.googleAdsLoginCustomerId,
+    disableKeytar: undefined,
+    model: undefined,
+    modelRequestTimeoutMs: undefined,
+    modelRequestMaxAttempts: undefined,
+    temperature: undefined,
+    maxTokens: undefined,
+    topP: undefined,
+    notificationsEnabled: undefined,
+    style: undefined,
+    intent: undefined,
+    targetLength: undefined,
+    t2iReplicateModelId: undefined,
+  };
+}
+
+function createMockSecrets(overrides: Record<string, string | null> = {}) {
+  return {
+    openRouterApiKey: null,
+    replicateApiToken: null,
+    googleAdsDeveloperToken: overrides.googleAdsDeveloperToken ?? null,
+    googleAdsClientId: overrides.googleAdsClientId ?? null,
+    googleAdsClientSecret: overrides.googleAdsClientSecret ?? null,
+    googleAdsRefreshToken: overrides.googleAdsRefreshToken ?? null,
+    googleAdsCustomerId: overrides.googleAdsCustomerId ?? null,
+    googleAdsLoginCustomerId: overrides.googleAdsLoginCustomerId ?? null,
+  };
+}
+
+function mockAllCredentials() {
+  readEnvSettingsMock.mockReturnValue(createMockEnvSettings({
+    googleAdsDeveloperToken: 'dev-token',
+    googleAdsClientId: 'client-id',
+    googleAdsClientSecret: 'client-secret',
+    googleAdsRefreshToken: 'refresh-token',
+    googleAdsCustomerId: '1234567890',
+  }));
+  loadSecretsMock.mockResolvedValue(createMockSecrets());
+}
+
+describe('gkp commands', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('runGkpIdeasCommand', () => {
+    it('throws when no keywords or url provided', async () => {
+      mockAllCredentials();
+      await expect(
+        runGkpIdeasCommand({}),
+      ).rejects.toThrow('--keywords or --url is required');
+    });
+
+    it('throws when required credentials are missing', async () => {
+      readEnvSettingsMock.mockReturnValue(createMockEnvSettings());
+      loadSecretsMock.mockResolvedValue(createMockSecrets());
+      await expect(
+        runGkpIdeasCommand({ keywords: 'seo' }),
+      ).rejects.toThrow('Missing required Google Ads credentials');
+    });
+
+    it('includes config set commands in credential error', async () => {
+      readEnvSettingsMock.mockReturnValue(createMockEnvSettings());
+      loadSecretsMock.mockResolvedValue(createMockSecrets());
+      try {
+        await runGkpIdeasCommand({ keywords: 'seo' });
+        expect(true).toBe(false);
+      } catch (error) {
+        expect((error as Error).message).toContain('ideon config set');
+      }
+    });
+
+    it('calls generateKeywordIdeas with keywords', async () => {
+      mockAllCredentials();
+      mockGkpClient.generateKeywordIdeas.mockResolvedValue({ ideas: [], count: 0 });
+
+      await runGkpIdeasCommand({ keywords: 'seo,marketing' });
+
+      expect(mockGkpClient.generateKeywordIdeas).toHaveBeenCalledWith({
+        seedKeywords: ['seo', 'marketing'],
+        url: undefined,
+        site: undefined,
+        countryCodes: undefined,
+        language: undefined,
+        pageSize: undefined,
+      });
+    });
+
+    it('calls generateKeywordIdeas with url', async () => {
+      mockAllCredentials();
+      mockGkpClient.generateKeywordIdeas.mockResolvedValue({ ideas: [], count: 0 });
+
+      await runGkpIdeasCommand({ url: 'https://example.com' });
+
+      expect(mockGkpClient.generateKeywordIdeas).toHaveBeenCalledWith({
+        seedKeywords: undefined,
+        url: 'https://example.com',
+        site: undefined,
+        countryCodes: undefined,
+        language: undefined,
+        pageSize: undefined,
+      });
+    });
+
+    it('passes country codes and language to client', async () => {
+      mockAllCredentials();
+      mockGkpClient.generateKeywordIdeas.mockResolvedValue({ ideas: [], count: 0 });
+
+      await runGkpIdeasCommand({ keywords: 'test', country: 'US,GB', language: 'fr', pageSize: 10 });
+
+      expect(mockGkpClient.generateKeywordIdeas).toHaveBeenCalledWith({
+        seedKeywords: ['test'],
+        url: undefined,
+        site: undefined,
+        countryCodes: ['US', 'GB'],
+        language: 'fr',
+        pageSize: 10,
+      });
+    });
+
+    it('prints TTY table with keyword ideas', async () => {
+      mockAllCredentials();
+      mockGkpClient.generateKeywordIdeas.mockResolvedValue({
+        ideas: [
+          {
+            text: 'seo tools',
+            avgMonthlySearches: 12000,
+            competition: 'MEDIUM',
+            competitionIndex: 50,
+            lowTopOfPageBidMicros: 500000,
+            highTopOfPageBidMicros: 2000000,
+            closeVariants: [],
+          },
+          {
+            text: 'marketing automation',
+            avgMonthlySearches: 8000,
+            competition: 'HIGH',
+            competitionIndex: 80,
+            lowTopOfPageBidMicros: 1000000,
+            highTopOfPageBidMicros: 5000000,
+            closeVariants: [],
+          },
+        ],
+        count: 2,
+      });
+
+      const logs: string[] = [];
+      await runGkpIdeasCommand({ keywords: 'seo' }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      const output = logs.join('\n');
+      expect(output).toContain('seo tools');
+      expect(output).toContain('marketing automation');
+      expect(output).toContain('12,000');
+      expect(output).toContain('MEDIUM');
+      expect(output).toContain('$0.50');
+      expect(output).toContain('$2.00');
+      expect(output).toContain('Total: 2 keywords');
+    });
+
+    it('prints "no results" when ideas are empty', async () => {
+      mockAllCredentials();
+      mockGkpClient.generateKeywordIdeas.mockResolvedValue({ ideas: [], count: 0 });
+
+      const logs: string[] = [];
+      await runGkpIdeasCommand({ keywords: 'nonexistent' }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      expect(logs.some((l) => l.includes('No keyword ideas found'))).toBe(true);
+    });
+
+    it('outputs JSON with --json flag', async () => {
+      mockAllCredentials();
+      const expectedResult = {
+        ideas: [{ text: 'seo', avgMonthlySearches: 1000, competition: 'LOW', competitionIndex: 20, lowTopOfPageBidMicros: 100000, highTopOfPageBidMicros: 500000, closeVariants: [] }],
+        count: 1,
+      };
+      mockGkpClient.generateKeywordIdeas.mockResolvedValue(expectedResult);
+
+      const logs: string[] = [];
+      await runGkpIdeasCommand({ keywords: 'seo', json: true }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      const parsed = JSON.parse(logs[0]);
+      expect(parsed).toEqual(expectedResult);
+    });
+
+    it('wraps API errors with actionable message', async () => {
+      mockAllCredentials();
+      mockGkpClient.generateKeywordIdeas.mockRejectedValue(new Error('DEVELOPER_TOKEN_INVALID'));
+
+      await expect(
+        runGkpIdeasCommand({ keywords: 'test' }),
+      ).rejects.toThrow('Failed to generate keyword ideas');
+    });
+  });
+
+  describe('runGkpHistoricalCommand', () => {
+    it('throws when --keywords is missing', async () => {
+      mockAllCredentials();
+      await expect(
+        runGkpHistoricalCommand({}),
+      ).rejects.toThrow('--keywords is required');
+    });
+
+    it('throws when required credentials are missing', async () => {
+      readEnvSettingsMock.mockReturnValue(createMockEnvSettings());
+      loadSecretsMock.mockResolvedValue(createMockSecrets());
+      await expect(
+        runGkpHistoricalCommand({ keywords: 'seo' }),
+      ).rejects.toThrow('Missing required Google Ads credentials');
+    });
+
+    it('calls getHistoricalMetrics with keywords', async () => {
+      mockAllCredentials();
+      mockGkpClient.getHistoricalMetrics.mockResolvedValue({ keywords: [], count: 0 });
+
+      await runGkpHistoricalCommand({ keywords: 'seo,marketing' });
+
+      expect(mockGkpClient.getHistoricalMetrics).toHaveBeenCalledWith({
+        keywords: ['seo', 'marketing'],
+        countryCodes: undefined,
+        language: undefined,
+        includeAverageCpc: undefined,
+      });
+    });
+
+    it('passes country codes and language to client', async () => {
+      mockAllCredentials();
+      mockGkpClient.getHistoricalMetrics.mockResolvedValue({ keywords: [], count: 0 });
+
+      await runGkpHistoricalCommand({ keywords: 'test', country: 'DE', language: 'de' });
+
+      expect(mockGkpClient.getHistoricalMetrics).toHaveBeenCalledWith({
+        keywords: ['test'],
+        countryCodes: ['DE'],
+        language: 'de',
+        includeAverageCpc: undefined,
+      });
+    });
+
+    it('passes includeCpc to client', async () => {
+      mockAllCredentials();
+      mockGkpClient.getHistoricalMetrics.mockResolvedValue({ keywords: [], count: 0 });
+
+      await runGkpHistoricalCommand({ keywords: 'test', includeCpc: false });
+
+      expect(mockGkpClient.getHistoricalMetrics).toHaveBeenCalledWith({
+        keywords: ['test'],
+        countryCodes: undefined,
+        language: undefined,
+        includeAverageCpc: false,
+      });
+    });
+
+    it('prints TTY table with historical metrics', async () => {
+      mockAllCredentials();
+      mockGkpClient.getHistoricalMetrics.mockResolvedValue({
+        keywords: [
+          {
+            text: 'seo tools',
+            avgMonthlySearches: 12000,
+            competition: 'MEDIUM',
+            competitionIndex: 50,
+            lowTopOfPageBidMicros: 500000,
+            highTopOfPageBidMicros: 2000000,
+            monthlySearchVolumes: [],
+          },
+        ],
+        count: 1,
+      });
+
+      const logs: string[] = [];
+      await runGkpHistoricalCommand({ keywords: 'seo' }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      const output = logs.join('\n');
+      expect(output).toContain('Historical Metrics');
+      expect(output).toContain('seo tools');
+      expect(output).toContain('12,000');
+      expect(output).toContain('$0.50');
+      expect(output).toContain('$2.00');
+      expect(output).toContain('Total: 1 keyword');
+    });
+
+    it('prints "no results" when empty', async () => {
+      mockAllCredentials();
+      mockGkpClient.getHistoricalMetrics.mockResolvedValue({ keywords: [], count: 0 });
+
+      const logs: string[] = [];
+      await runGkpHistoricalCommand({ keywords: 'nonexistent' }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      expect(logs.some((l) => l.includes('No historical data found'))).toBe(true);
+    });
+
+    it('outputs JSON with --json flag', async () => {
+      mockAllCredentials();
+      const expectedResult = {
+        keywords: [{ text: 'seo', avgMonthlySearches: 1000, competition: 'LOW', competitionIndex: 20, lowTopOfPageBidMicros: 100000, highTopOfPageBidMicros: 500000, monthlySearchVolumes: [] }],
+        count: 1,
+      };
+      mockGkpClient.getHistoricalMetrics.mockResolvedValue(expectedResult);
+
+      const logs: string[] = [];
+      await runGkpHistoricalCommand({ keywords: 'seo', json: true }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      expect(JSON.parse(logs[0])).toEqual(expectedResult);
+    });
+
+    it('wraps API errors with actionable message', async () => {
+      mockAllCredentials();
+      mockGkpClient.getHistoricalMetrics.mockRejectedValue(new Error('CUSTOMER_NOT_FOUND'));
+
+      await expect(
+        runGkpHistoricalCommand({ keywords: 'test' }),
+      ).rejects.toThrow('Failed to get historical data');
+    });
+  });
+
+  describe('runGkpForecastCommand', () => {
+    it('throws when --keywords is missing', async () => {
+      mockAllCredentials();
+      await expect(
+        runGkpForecastCommand({}),
+      ).rejects.toThrow('--keywords is required');
+    });
+
+    it('throws when required credentials are missing', async () => {
+      readEnvSettingsMock.mockReturnValue(createMockEnvSettings());
+      loadSecretsMock.mockResolvedValue(createMockSecrets());
+      await expect(
+        runGkpForecastCommand({ keywords: 'seo' }),
+      ).rejects.toThrow('Missing required Google Ads credentials');
+    });
+
+    it('calls getForecastData with keywords', async () => {
+      mockAllCredentials();
+      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+
+      await runGkpForecastCommand({ keywords: 'seo,marketing' });
+
+      expect(mockGkpClient.getForecastData).toHaveBeenCalledWith({
+        keywords: ['seo', 'marketing'],
+        keywordMatchType: undefined,
+        maxCpcBidMicros: undefined,
+        countryCodes: undefined,
+        language: undefined,
+        startDate: undefined,
+        endDate: undefined,
+      });
+    });
+
+    it('passes match type and max CPC bid to client', async () => {
+      mockAllCredentials();
+      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+
+      await runGkpForecastCommand({ keywords: 'test', matchType: 'EXACT', maxCpcBid: 5000000 });
+
+      expect(mockGkpClient.getForecastData).toHaveBeenCalledWith({
+        keywords: ['test'],
+        keywordMatchType: 'EXACT',
+        maxCpcBidMicros: 5000000,
+        countryCodes: undefined,
+        language: undefined,
+        startDate: undefined,
+        endDate: undefined,
+      });
+    });
+
+    it('passes country codes, date range, and language', async () => {
+      mockAllCredentials();
+      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+
+      await runGkpForecastCommand({
+        keywords: 'test',
+        country: 'US,GB',
+        language: 'en',
+        startDate: '2025-01-01',
+        endDate: '2025-01-31',
+      });
+
+      expect(mockGkpClient.getForecastData).toHaveBeenCalledWith({
+        keywords: ['test'],
+        keywordMatchType: undefined,
+        maxCpcBidMicros: undefined,
+        countryCodes: ['US', 'GB'],
+        language: 'en',
+        startDate: '2025-01-01',
+        endDate: '2025-01-31',
+      });
+    });
+
+    it('prints TTY table with forecast metrics', async () => {
+      mockAllCredentials();
+      mockGkpClient.getForecastData.mockResolvedValue({
+        keywords: [
+          {
+            text: 'seo tools',
+            matchType: 'BROAD',
+            impressions: 50000,
+            clicks: 1500,
+            costMicros: 7500000,
+            ctr: 0.03,
+          },
+        ],
+        count: 1,
+      });
+
+      const logs: string[] = [];
+      await runGkpForecastCommand({ keywords: 'seo' }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      const output = logs.join('\n');
+      expect(output).toContain('Forecast');
+      expect(output).toContain('seo tools');
+      expect(output).toContain('BROAD');
+      expect(output).toContain('50,000');
+      expect(output).toContain('1,500');
+      expect(output).toContain('$7.50');
+      expect(output).toContain('3.0%');
+      expect(output).toContain('Total: 1 keyword');
+    });
+
+    it('prints "no results" when empty', async () => {
+      mockAllCredentials();
+      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+
+      const logs: string[] = [];
+      await runGkpForecastCommand({ keywords: 'nonexistent' }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      expect(logs.some((l) => l.includes('No forecast data found'))).toBe(true);
+    });
+
+    it('outputs JSON with --json flag', async () => {
+      mockAllCredentials();
+      const expectedResult = {
+        keywords: [{ text: 'seo', matchType: 'BROAD', impressions: 10000, clicks: 300, costMicros: 1500000, ctr: 0.03 }],
+        count: 1,
+      };
+      mockGkpClient.getForecastData.mockResolvedValue(expectedResult);
+
+      const logs: string[] = [];
+      await runGkpForecastCommand({ keywords: 'seo', json: true }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      expect(JSON.parse(logs[0])).toEqual(expectedResult);
+    });
+
+    it('wraps API errors with actionable message', async () => {
+      mockAllCredentials();
+      mockGkpClient.getForecastData.mockRejectedValue(new Error('CLIENT_CUSTOMER_ID_INVALID'));
+
+      await expect(
+        runGkpForecastCommand({ keywords: 'test' }),
+      ).rejects.toThrow('Failed to get forecast data');
+    });
+  });
+});

@@ -62,4 +62,53 @@ describe('integration contract sync validator', () => {
     expect(drifts.some((drift) => drift.id === 'config-set.enum.key.tool-vs-supported')).toBe(true);
     expect(drifts.some((drift) => drift.id === 'config-set.enum.key.skill-vs-supported')).toBe(true);
   });
+
+  it('detects missing tool and skill contracts', () => {
+    const drifts = validateIntegrationContracts({
+      toolContracts: [],
+      skillRegistry: [],
+    });
+
+    expect(drifts.some((d) => d.id === 'missing-ideon-write-tool-contract')).toBe(true);
+    expect(drifts.some((d) => d.id === 'missing-ideon-write-skill-contract')).toBe(true);
+    expect(drifts.some((d) => d.id === 'missing-ideon-config-set-tool-contract')).toBe(true);
+    expect(drifts.some((d) => d.id === 'missing-ideon-config-set-skill-contract')).toBe(true);
+  });
+
+  it('detects missing tool contract when skill exists', () => {
+    const skills: SkillDefinition[] = [
+      {
+        name: 'ideon-write-primary',
+        description: 'test',
+        command: 'ideon write --no-interactive ...',
+        inputContract: { required: ['idea'], enums: {} },
+      },
+    ];
+
+    const drifts = validateIntegrationContracts({
+      toolContracts: [],
+      skillRegistry: skills,
+    });
+
+    expect(drifts.some((d) => d.id === 'missing-ideon-write-tool-contract')).toBe(true);
+    expect(drifts.some((d) => d.id === 'missing-ideon-write-skill-contract')).toBe(false);
+  });
+
+  it('detects missing skill contract when tool exists', () => {
+    const tools: ToolContract[] = [
+      {
+        name: 'ideon_write',
+        required: ['idea'],
+        enums: {},
+      },
+    ];
+
+    const drifts = validateIntegrationContracts({
+      toolContracts: tools,
+      skillRegistry: [],
+    });
+
+    expect(drifts.some((d) => d.id === 'missing-ideon-write-tool-contract')).toBe(false);
+    expect(drifts.some((d) => d.id === 'missing-ideon-write-skill-contract')).toBe(true);
+  });
 });

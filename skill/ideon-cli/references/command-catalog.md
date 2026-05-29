@@ -21,6 +21,13 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon agent install <runtime>` | Register local runtime integration | `<runtime>` | `--dry-run` | no |
 | `ideon agent uninstall <runtime>` | Remove runtime integration | `<runtime>` | `--dry-run` | no |
 | `ideon agent status` | Show installed runtimes and readiness checks | none | `--json` | yes |
+| `ideon gads login` | Interactive OAuth flow for Google Ads credentials | none | `--force`, `--developer-token`, `--client-id`, `--client-secret`, `--customer-id`, `--login-customer-id` | no |
+| `ideon gads logout` | Clear stored Google Ads credentials | none | `--all` | no |
+| `ideon gads status` | Show Google Ads credential status and source | none | `--json` | yes |
+| `ideon gads test` | Verify Google Ads credentials with a test API call | none | none | no |
+| `ideon gkp ideas` | Generate keyword ideas from seeds/URL/site | none* | `--keywords`, `--url`, `--site`, `--country`, `--language`, `--page-size`, `--json` | yes |
+| `ideon gkp historical` | Get historical search volume and competition | `--keywords` | `--country`, `--language`, `--no-include-cpc`, `--json` | yes |
+| `ideon gkp forecast` | Get projected impressions, clicks, and cost | `--keywords` | `--match-type`, `--max-cpc-bid`, `--country`, `--language`, `--start-date`, `--end-date`, `--json` | yes |
 
 ## Argument and option semantics
 
@@ -97,6 +104,12 @@ Secret keys:
 
 - `openRouterApiKey`
 - `replicateApiToken`
+- `googleAdsDeveloperToken`
+- `googleAdsClientId`
+- `googleAdsClientSecret`
+- `googleAdsRefreshToken`
+- `googleAdsCustomerId`
+- `googleAdsLoginCustomerId`
 
 ### Runtime IDs for agent command
 
@@ -206,6 +219,14 @@ ideon write resume
 ideon write resume --no-interactive
 ```
 
+### GKP path
+
+```bash
+ideon gkp ideas --keywords seo,marketing --country US
+ideon gkp historical --keywords seo --json
+ideon gkp forecast --keywords seo --match-type EXACT --country US
+```
+
 ### MCP path
 
 ```bash
@@ -222,6 +243,9 @@ MCP tools currently registered:
 - `ideon_config_set`
 - `ideon_config_list`
 - `ideon_config_unset`
+- `gkp_generate_ideas`
+- `gkp_get_historical_data`
+- `gkp_get_forecast_data`
 
 ## Source evidence index
 
@@ -239,6 +263,7 @@ MCP tools currently registered:
 - `src/config/settingsFile.ts`
 - `src/config/secretStore.ts`
 - `src/cli/commands/agent.ts`
+- `src/cli/commands/gkp.ts`
 - `src/integrations/agent/store.ts`
 - `src/cli/commands/mcp.ts`
 - `src/integrations/mcp/server.ts`
@@ -250,6 +275,7 @@ MCP tools currently registered:
 - `docs/reference/commands/ideon-config.md`
 - `docs/reference/commands/ideon-agent.md`
 - `docs/reference/commands/ideon-mcp-serve.md`
+- `docs/reference/commands/ideon-gkp.md`
 - `docs/reference/environment-variables.md`
 - `docs/guides/configuration.md`
 - `docs/for-agents/command-index.md`
