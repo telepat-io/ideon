@@ -1,0 +1,34 @@
+{
+  "title": {
+    "message": "Ideon",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "Ideon-Logo",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.Docs": {
+    "message": "Dokumentation",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.CLI Reference": {
+    "message": "CLI-Referenz",
+    "description": "Navbar item with label CLI Reference"
+  },
+  "item.label.Technical": {
+    "message": "Technik",
+    "description": "Navbar item with label Technical"
+  },
+  "item.label.For Agents": {
+    "message": "Für KI-Assistenten",
+    "description": "Navbar item with label For Agents"
+  },
+  "item.label.Writing Guide": {
+    "message": "Schreibhilfe",
+    "description": "Navbar item with label Writing Guide"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}
