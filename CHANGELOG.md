@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.33](https://github.com/telepat-io/ideon/compare/ideon-v0.1.32...ideon-v0.1.33) (2026-05-31)
+
+
+### Features
+
+* implement Google Ads Keyword Planner client and OAuth flow ([620d7d3](https://github.com/telepat-io/ideon/commit/620d7d37c4d190116f6a103b0899830d81eab777))
+* standardize env vars to TELEPAT_OPENROUTER_KEY, TELEPAT_REPLICATE_TOKEN, TELEPAT_DISABLE_KEYTAR ([d8bb93d](https://github.com/telepat-io/ideon/commit/d8bb93d5044ded1d340953020081c763dbd3eb91))
+
 ## [0.1.32](https://github.com/telepat-io/ideon/compare/ideon-v0.1.31...ideon-v0.1.32) (2026-05-22)
 
 
