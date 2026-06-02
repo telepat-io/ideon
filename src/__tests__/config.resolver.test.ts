@@ -398,4 +398,71 @@ describe('resolveRunInput', () => {
       await rm(tempDir, { recursive: true, force: true });
     }
   });
+
+  describe('keyword merging', () => {
+    it('returns undefined when no keywords provided', async () => {
+      const result = await resolveRunInput({ idea: 'no keywords' });
+      expect(result.keywords).toBeUndefined();
+    });
+
+    it('passes through CLI keywords when no series or job keywords', async () => {
+      const result = await resolveRunInput({ idea: 'cli keywords', keywords: ['seo', 'marketing'] });
+      expect(result.keywords).toEqual(['seo', 'marketing']);
+    });
+
+    it('passes through job keywords when no CLI keywords', async () => {
+      const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-keywords-test-'));
+
+      try {
+        const jobPath = path.join(tempDir, 'job.json');
+        await writeFile(
+          jobPath,
+          JSON.stringify({
+            idea: 'job keywords',
+            keywords: ['content strategy', 'organic marketing'],
+          }),
+          'utf8',
+        );
+
+        const result = await resolveRunInput({ jobPath });
+        expect(result.keywords).toEqual(['content strategy', 'organic marketing']);
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('merges job and CLI keywords with deduplication', async () => {
+      const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-keywords-merge-test-'));
+
+      try {
+        const jobPath = path.join(tempDir, 'job.json');
+        await writeFile(
+          jobPath,
+          JSON.stringify({
+            idea: 'job keywords merge',
+            keywords: ['organic marketing', 'seo'],
+          }),
+          'utf8',
+        );
+
+        const result = await resolveRunInput({
+          jobPath,
+          keywords: ['seo', 'content strategy'],
+        });
+
+        expect(result.keywords).toEqual(['organic marketing', 'seo', 'content strategy']);
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('preserves compound keywords as single units', async () => {
+      const result = await resolveRunInput({
+        idea: 'compound keywords',
+        keywords: ['organic marketing', 'content strategy', 'link building'],
+      });
+      expect(result.keywords).toEqual(['organic marketing', 'content strategy', 'link building']);
+      expect(result.keywords!.length).toBe(3);
+    });
+  });
 });

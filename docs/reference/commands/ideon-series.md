@@ -54,7 +54,7 @@ Create a new content series.
 ### Usage
 
 ```bash
-ideon series add [name] [--topic <topic>] [--publication <slug>] [--style <style>] [--intent <intent>] [--length <size>] [--type <type>] [--audience <description>] [--tone <tone>] [--forbidden-topics <topics>] [--disclosure-requirements <requirements>] [--audience-restrictions <restrictions>] [--editorial-policy <text>]
+ideon series add [name] [--topic <topic>] [--publication <slug>] [--style <style>] [--intent <intent>] [--length <size>] [--type <type>] [--audience <description>] [--keywords <keywords>] [--tone <tone>] [--forbidden-topics <topics>] [--disclosure-requirements <requirements>] [--audience-restrictions <restrictions>] [--editorial-policy <text>]
 ```
 
 ### Options
@@ -69,6 +69,7 @@ ideon series add [name] [--topic <topic>] [--publication <slug>] [--style <style
 | `--length <size>` | No | enum or integer | Default target length. |
 | `--type <type>` | No | enum | Default primary content type. |
 | `--audience <description>` | No | string | Default target audience hint. |
+| `--keywords <keywords>` | No | string | Comma-separated SEO keywords inherited by all articles in this series. Supports compound keywords (e.g., "organic marketing, content strategy, seo"). |
 | `--tone <tone>` | No | string | Editorial policy tone. |
 | `--forbidden-topics <topics>` | No | string | Comma-separated forbidden topics. |
 | `--disclosure-requirements <requirements>` | No | string | Comma-separated disclosure requirements. |
@@ -84,6 +85,9 @@ ideon series add "AI Deep Dives"
 # Series with topic and publication
 ideon series add "AI Deep Dives" --topic "Exploring cutting-edge AI technologies" --publication tech-blog
 
+# Series with keywords
+ideon series add "SEO Playbook" --topic "SEO best practices" --keywords "organic marketing, content strategy, seo"
+
 # Series with full options
 ideon series add "Startup Stories" --topic "Founder interviews and case studies" --publication my-blog --style storytelling --intent case-study --tone conversational
 ```
@@ -98,6 +102,7 @@ When run in a TTY without flags, `ideon series add` launches an interactive flow
 4. Default intent
 5. Default target length
 6. Default content type
+7. SEO keywords (comma-separated, optional)
 7. Editorial policy: tone, forbidden topics, disclosure requirements, audience restrictions, notes
 
 ---
@@ -142,7 +147,7 @@ Edit an existing series.
 ### Usage
 
 ```bash
-ideon series edit <slug> [--name <name>] [--topic <topic>] [--publication <slug>] [--unset-publication] [--style <style>] [--intent <intent>] [--length <size>] [--type <type>] [--audience <description>] [--tone <tone>] [--forbidden-topics <topics>] [--disclosure-requirements <requirements>] [--audience-restrictions <restrictions>] [--editorial-policy <text>]
+ideon series edit <slug> [--name <name>] [--topic <topic>] [--publication <slug>] [--unset-publication] [--style <style>] [--intent <intent>] [--length <size>] [--type <type>] [--audience <description>] [--keywords <keywords>] [--tone <tone>] [--forbidden-topics <topics>] [--disclosure-requirements <requirements>] [--audience-restrictions <restrictions>] [--editorial-policy <text>]
 ```
 
 ### Options
@@ -159,6 +164,7 @@ ideon series edit <slug> [--name <name>] [--topic <topic>] [--publication <slug>
 | `--length <size>` | No | enum or integer | New default target length. |
 | `--type <type>` | No | enum | New default content type. |
 | `--audience <description>` | No | string | New audience hint. |
+| `--keywords <keywords>` | No | string | New comma-separated SEO keywords. Supports compound keywords. |
 | `--tone <tone>` | No | string | New editorial tone. |
 | `--forbidden-topics <topics>` | No | string | New comma-separated forbidden topics. |
 | `--disclosure-requirements <requirements>` | No | string | New disclosure requirements. |

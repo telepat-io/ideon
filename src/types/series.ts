@@ -19,6 +19,7 @@ export const seriesDefaultsSchema = z.object({
   style: z.enum(writingStyleValues).optional(),
   intent: z.enum(contentIntentValues).optional(),
   targetLength: targetLengthWordsSchema.optional(),
+  keywords: z.array(z.string().min(1)).optional(),
   contentTargets: z
     .array(
       z.object({

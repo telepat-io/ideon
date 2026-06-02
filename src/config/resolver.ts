@@ -34,6 +34,7 @@ export interface ResolveConfigInput {
   intent?: (typeof contentIntentValues)[number] | string;
   contentTargets?: ContentTargetInput[];
   targetLength?: TargetLength | string;
+  keywords?: string[];
 }
 
 export interface ResolvedRunInput {
@@ -43,6 +44,7 @@ export interface ResolvedRunInput {
   job: JobInput | null;
   publication: Publication | null;
   series: Series | null;
+  keywords?: string[];
 }
 
 export async function resolveRunInput(input: ResolveConfigInput): Promise<ResolvedRunInput> {
@@ -163,6 +165,12 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ?? normalizeOptionalText(pubDefaults.targetAudienceHint)
     ?? normalizeOptionalText(job?.targetAudience);
 
+  const mergedKeywords = mergeKeywords(
+    seriesDefaults.keywords,
+    job?.keywords,
+    input.keywords,
+  );
+
   return {
     config: {
       settings: mergedSettings,
@@ -182,6 +190,7 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     job,
     publication,
     series,
+    keywords: mergedKeywords,
   };
 }
 
@@ -233,4 +242,24 @@ function assertNoLegacyXMode(
   throw new Error(
     `Unsupported legacy xMode in ${sourceLabel}. Split X outputs into explicit types by using \"x-post\" for single posts and \"x-thread\" for threaded posts.`,
   );
+}
+
+function mergeKeywords(
+  ...sources: Array<string[] | undefined>
+): string[] | undefined {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+
+  for (const source of sources) {
+    if (!source) continue;
+    for (const kw of source) {
+      const normalized = kw.trim().toLowerCase();
+      if (normalized.length > 0 && !seen.has(normalized)) {
+        seen.add(normalized);
+        merged.push(kw.trim());
+      }
+    }
+  }
+
+  return merged.length > 0 ? merged : undefined;
 }

@@ -11,7 +11,7 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon config get <key>` | Read one config value/secret-presence key | `<key>` | `--json` | yes |
 | `ideon config set <key> <value>` | Set one setting or secret | `<key> <value>` | none | no |
 | `ideon config unset <key>` | Reset setting to default or delete stored secret | `<key>` | none | no |
-| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--audience`, `--publication`, `--series`, `--from-queue` | no |
+| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--audience`, `--publication`, `--series`, `--keywords`, `--from-queue` | no |
 | `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images` | no |
 | `ideon delete <slug>` | Delete generated output by slug | `<slug>` | `--force` | no |
 | `ideon links <slug>` | Run link enrichment for an existing article | `<slug>` | `--mode`, `--link`, `--unlink`, `--max-links` | no |
@@ -32,11 +32,11 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon publication list` | List all publications | none | `--json`, `--verbose` | yes |
 | `ideon publication edit <slug>` | Edit publication fields | `<slug>` | `--name`, `--style`, `--intent`, `--length`, `--type`, `--audience`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |
 | `ideon publication remove <slug>` | Delete a publication | `<slug>` | `--force` | no |
-| `ideon series add [name]` | Create content series with topic and defaults | none | `--topic`, `--publication`, `--style`, `--intent`, `--length`, `--type`, `--audience`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |
+| `ideon series add [name]` | Create content series with topic and defaults | none | `--topic`, `--publication`, `--style`, `--intent`, `--length`, `--type`, `--audience`, `--keywords`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |
 | `ideon series list` | List all series, optionally filtered by publication | none | `--json`, `--verbose`, `--publication` | yes |
-| `ideon series edit <slug>` | Edit series fields and publication association | `<slug>` | `--name`, `--topic`, `--publication`, `--unset-publication`, `--style`, `--intent`, `--length`, `--type`, `--audience`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |
+| `ideon series edit <slug>` | Edit series fields and publication association | `<slug>` | `--name`, `--topic`, `--publication`, `--unset-publication`, `--style`, `--intent`, `--length`, `--type`, `--audience`, `--keywords`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |
 | `ideon series remove <slug>` | Delete a series | `<slug>` | `--force` | no |
-| `ideon queue add [idea]` | Add article to content queue (same args as write) | none | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--audience`, `--publication`, `--series`, `--no-interactive`, `--export` | no |
+| `ideon queue add [idea]` | Add article to content queue (same args as write) | none | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--audience`, `--publication`, `--series`, `--keywords`, `--no-interactive`, `--export` | no |
 | `ideon queue list` | List queued articles | none | `--json`, `--publication`, `--status` | yes |
 | `ideon queue peek` | Show next pending article without consuming | none | `--publication` | no |
 | `ideon queue remove <id>` | Delete a queued article by ID | `<id>` | `--force` | no |

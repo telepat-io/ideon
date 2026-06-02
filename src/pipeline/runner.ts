@@ -303,6 +303,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         publication: input.publication,
         series: input.series,
+        keywords: input.keywords,
         markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
         openRouter,
         dryRun,

@@ -77,11 +77,13 @@ Different stages of the pipeline benefit from different guides:
 - **Load:** General + SEO + Format + Style + Intent guides
 - **Purpose:** Help the agent generate SEO-optimized title, slug, description, and content structure
 - **Key rules:** On-page essentials (title length, meta description, heading hierarchy), content frameworks, target length
+- **When user keywords present:** Load `seo/keyword-integration.md`; instruct planner to place at least one keyword in the title and one in a major H2 heading
 
 ### Stage 3: Sections
 - **Load:** General + SEO + Format + Style + Intent + References (on-demand)
 - **Purpose:** Help the agent write intro, body sections, and conclusion with strong E-E-A-T signals and fact density
 - **Key rules:** On-page essentials, E-E-A-T signals, fact density, section structure, prose quality, readability, emotional resonance
+- **When user keywords present:** Load `seo/keyword-integration.md`; instruct intro writer to include at least one keyword in the first 100 words; instruct section writer to weave remaining keywords naturally into body prose
 - **On-demand references:** Skimmability patterns, content frameworks, AI prose detection avoidance (for post-draft cleanup)
 
 ### Stage 4: Image Prompts
@@ -189,6 +191,7 @@ See list of available references below.
 - `seo/on-page-essentials.md` — Title tag, meta description, heading hierarchy, BLUF paragraphs, formatting for search visibility
 - `seo/eeat-signals.md` — Embedding Experience, Expertise, Authoritativeness, and Trustworthiness signals
 - `seo/fact-density.md` — Statistics, citations, quotations requirements per section for generative engine visibility
+- `seo/keyword-integration.md` — Structured keyword targeting (load only when user-provided keywords are present)
 
 ### Reference Guides (Load On-Demand)
 - `references/headline-writing-systems.md` — How to write compelling headlines

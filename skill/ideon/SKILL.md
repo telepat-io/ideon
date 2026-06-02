@@ -51,6 +51,11 @@ An agent MUST collect these inputs from the user upfront before proceeding:
   - Default: medium
 - **Image Count** *(integer, 1–10)* — Maximum images to generate
   - Default: 3
+- **Keywords** *(list of strings)* — SEO keywords to target in the content
+  - Default: None (auto-generated during planning if not provided)
+  - Supports compound keywords: `"organic marketing, content strategy, seo"`
+  - When provided, the planner places at least one keyword in the title and one in a major H2 heading; the intro writer includes at least one keyword in the first 100 words
+  - Keywords can also be defined at the series level and are inherited by all articles in that series
 
 ### System Requirements (agent provides)
 - **Replicate API Token** — For image generation (optional if image count = 0)

@@ -74,6 +74,7 @@ ideon queue add [idea] [--idea <idea>] [--audience <description>] [--job <path>]
 | `--length <size-or-words>` | No | enum or integer | Target length. |
 | `--publication <slug>` | No | string | Publication for defaults and editorial policy. |
 | `--series <slug>` | No | string | Content series for defaults and thematic context. |
+| `--keywords <keywords>` | No | string | Comma-separated SEO keywords. Supports compound keywords. Merges with series keywords. |
 | `--no-interactive` | No | boolean | Fail instead of prompting for missing input. |
 | `--export <path>` | No | string | Export destination after writing. Stored in queue entry. |
 

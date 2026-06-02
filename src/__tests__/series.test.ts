@@ -61,6 +61,16 @@ describe('series types', () => {
     it('rejects invalid style', () => {
       expect(() => seriesDefaultsSchema.parse({ style: 'invalid' })).toThrow();
     });
+
+    it('parses keywords when provided', () => {
+      const result = seriesDefaultsSchema.parse({ keywords: ['organic marketing', 'content strategy'] });
+      expect(result.keywords).toEqual(['organic marketing', 'content strategy']);
+    });
+
+    it('allows undefined keywords', () => {
+      const result = seriesDefaultsSchema.parse({});
+      expect(result.keywords).toBeUndefined();
+    });
   });
 
   describe('seriesSchema', () => {
@@ -105,6 +115,18 @@ describe('series types', () => {
         slug: 'standalone',
       });
       expect(result.publication).toBeUndefined();
+    });
+
+    it('parses series with keywords in defaults', () => {
+      const result = seriesSchema.parse({
+        name: 'SEO Series',
+        slug: 'seo-series',
+        topic: 'SEO best practices',
+        defaults: {
+          keywords: ['organic marketing', 'content strategy', 'seo'],
+        },
+      });
+      expect(result.defaults.keywords).toEqual(['organic marketing', 'content strategy', 'seo']);
     });
   });
 });

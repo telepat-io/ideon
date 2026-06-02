@@ -12,7 +12,7 @@ interface SeriesAddFlowProps {
   onDone: (result: { topic: string; publication?: string; defaults: SeriesDefaults; editorialPolicy: SeriesEditorialPolicy } | null) => void;
 }
 
-type Step = 'topic' | 'publication' | 'style' | 'intent' | 'length' | 'type' | 'tone' | 'forbiddenTopics' | 'disclosure' | 'restrictions' | 'notes';
+type Step = 'topic' | 'publication' | 'style' | 'intent' | 'length' | 'type' | 'keywords' | 'tone' | 'forbiddenTopics' | 'disclosure' | 'restrictions' | 'notes';
 
 export function SeriesAddFlow({ name, onDone }: SeriesAddFlowProps): React.JSX.Element {
   const { exit } = useApp();
@@ -24,6 +24,7 @@ export function SeriesAddFlow({ name, onDone }: SeriesAddFlowProps): React.JSX.E
   const [intent, setIntent] = useState<string | undefined>(undefined);
   const [targetLength, setTargetLength] = useState<string | undefined>(undefined);
   const [contentType, setContentType] = useState<string | undefined>(undefined);
+  const [keywords, setKeywords] = useState('');
   const [tone, setTone] = useState('');
   const [forbiddenTopics, setForbiddenTopics] = useState('');
   const [disclosure, setDisclosure] = useState('');
@@ -38,7 +39,7 @@ export function SeriesAddFlow({ name, onDone }: SeriesAddFlowProps): React.JSX.E
     onDone({
       topic: topic.trim(),
       publication,
-      defaults: buildDefaults(style, intent, targetLength, contentType),
+      defaults: buildDefaults(style, intent, targetLength, contentType, keywords),
       editorialPolicy: buildPolicy(tone, forbiddenTopics, disclosure, restrictions, notes),
     });
     exit();
@@ -168,8 +169,25 @@ export function SeriesAddFlow({ name, onDone }: SeriesAddFlowProps): React.JSX.E
             items={items}
             onSelect={(item) => {
               setContentType(item.value || undefined);
-              setStep('tone');
+              setStep('keywords');
             }}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (step === 'keywords') {
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyanBright">SEO Keywords</Text>
+        <Text color="gray">Comma-separated keywords for all articles in this series. Leave empty to skip.</Text>
+        <Box marginTop={1}>
+          <Text>{'> '}</Text>
+          <TextInput
+            value={keywords}
+            onChange={setKeywords}
+            onSubmit={() => setStep('tone')}
           />
         </Box>
       </Box>
@@ -269,6 +287,7 @@ function buildDefaults(
   intent: string | undefined,
   targetLength: string | undefined,
   contentType: string | undefined,
+  keywords: string,
 ): SeriesDefaults {
   const defaults: SeriesDefaults = {};
 
@@ -284,6 +303,11 @@ function buildDefaults(
       role: 'primary',
       count: 1,
     }];
+  }
+
+  const parsedKeywords = splitComma(keywords);
+  if (parsedKeywords.length > 0) {
+    defaults.keywords = parsedKeywords;
   }
 
   return defaults;

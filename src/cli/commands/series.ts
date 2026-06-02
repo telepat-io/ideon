@@ -31,6 +31,7 @@ interface SeriesAddOptions {
   length?: string;
   type?: string;
   audience?: string;
+  keywords?: string;
   tone?: string;
   forbiddenTopics?: string;
   disclosureRequirements?: string;
@@ -55,6 +56,7 @@ interface SeriesEditOptions {
   length?: string;
   type?: string;
   audience?: string;
+  keywords?: string;
   tone?: string;
   forbiddenTopics?: string;
   disclosureRequirements?: string;
@@ -89,7 +91,7 @@ export async function runSeriesAddCommand(
   }
 
   const hasAnyFlag = options.topic || options.publication || options.style || options.intent || options.length || options.type
-    || options.audience || options.tone || options.forbiddenTopics
+    || options.audience || options.keywords || options.tone || options.forbiddenTopics
     || options.disclosureRequirements || options.audienceRestrictions || options.editorialPolicy;
 
   let defaults: SeriesDefaults = {};
@@ -150,6 +152,7 @@ export async function runSeriesListCommand(options: SeriesListOptions): Promise<
       if (series.defaults.style) console.log(`    Style: ${series.defaults.style}`);
       if (series.defaults.intent) console.log(`    Intent: ${series.defaults.intent}`);
       if (series.defaults.targetLength) console.log(`    Length: ${resolveTargetLengthAlias(series.defaults.targetLength)}`);
+      if (series.defaults.keywords && series.defaults.keywords.length > 0) console.log(`    Keywords: ${series.defaults.keywords.join(', ')}`);
       if (series.defaults.contentTargets) {
         const primary = series.defaults.contentTargets.find((t) => t.role === 'primary');
         if (primary) console.log(`    Type: ${primary.contentType}`);
@@ -246,6 +249,10 @@ export async function runSeriesEditCommand(options: SeriesEditOptions): Promise<
     series.defaults.targetAudienceHint = options.audience;
   }
 
+  if (options.keywords) {
+    series.defaults.keywords = parseCommaSeparated(options.keywords);
+  }
+
   if (options.tone) {
     series.editorialPolicy.tone = options.tone;
   }
@@ -318,6 +325,10 @@ function buildDefaultsFromFlags(options: SeriesAddOptions): SeriesDefaults {
 
   if (options.audience) {
     defaults.targetAudienceHint = options.audience;
+  }
+
+  if (options.keywords) {
+    defaults.keywords = parseCommaSeparated(options.keywords);
   }
 
   return defaults;

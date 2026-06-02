@@ -12,6 +12,7 @@ export interface ResolvedWriteInput {
   job: Awaited<ReturnType<typeof resolveRunInput>>['job'];
   publication: Awaited<ReturnType<typeof resolveRunInput>>['publication'];
   series: Awaited<ReturnType<typeof resolveRunInput>>['series'];
+  keywords?: string[];
 }
 
 export async function resolveWriteInput(
@@ -22,6 +23,10 @@ export async function resolveWriteInput(
     primarySpec: options.primarySpec,
     secondarySpecs: options.secondarySpecs,
   });
+
+  const parsedKeywords = options.keywords
+    ? options.keywords.split(',').map((kw) => kw.trim()).filter((kw) => kw.length > 0)
+    : undefined;
 
   try {
     const resolved = await resolveRunInput({
@@ -34,6 +39,7 @@ export async function resolveWriteInput(
       intent: options.intent,
       targetLength: options.length,
       contentTargets: parsedTargets,
+      keywords: parsedKeywords,
     });
 
     if (!process.stdout.isTTY && !process.stdin.isTTY && !parsedTargets && !resolved.job?.settings?.contentTargets) {
@@ -54,6 +60,7 @@ export async function resolveWriteInput(
         intent: options.intent,
         targetLength: options.length,
         contentTargets: parsedTargets,
+        keywords: parsedKeywords,
       });
 
       return await applyInteractiveWriteOptionsIfNeeded(resolved, { ...options, idea: interactiveIdea }, parsedTargets, noInteractive);

@@ -115,6 +115,9 @@ export function buildIntroMessages(
         `- Target length: about ${introTargetWords} words.`,
         '- Hook the reader quickly.',
         '- Set up the argument and tone for the rest of the article.',
+        ...(plan.keywords && plan.keywords.length > 0
+          ? [`- Include at least one of these SEO keywords naturally within the first 100 words: ${plan.keywords.join(', ')}.`]
+          : []),
       ].join('\n'),
     },
   ];
@@ -166,6 +169,9 @@ export function buildSectionMessages(
         '- Include at least one practical insight that sounds like first-hand practitioner experience.',
         '- Continue naturally from the article draft so far without rehashing prior sections.',
         '- Use short Markdown lists only if they materially improve clarity.',
+        ...(plan.keywords && plan.keywords.length > 0
+          ? [`- Weave these SEO keywords into body prose where they fit the section topic naturally: ${plan.keywords.join(', ')}. Do not force them if they break readability.`]
+          : []),
       ].join('\n'),
     },
   ];

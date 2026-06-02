@@ -104,6 +104,7 @@ Do not use this skill when:
 | Length (`--length`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied via job. |
 | Publication (`--publication`) | No | Publication slug for defaults and editorial policy. |
 | Series (`--series`) | No | Content series slug for defaults and thematic context. |
+| Keywords (`--keywords`) | No | Comma-separated SEO keywords. Supports compound keywords. Merges with series keywords. |
 | Credentials strategy | Yes | Keychain via `ideon settings` or env-based secrets for CI. |
 | Run mode | Yes | Fresh run vs `ideon write resume` vs `ideon write --from-queue`. |
 

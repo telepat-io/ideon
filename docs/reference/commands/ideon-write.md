@@ -38,6 +38,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--max-links <n>` | None | No | positive integer | Derived from `--length` | Any positive integer | Caps the number of generated links. Does not apply to custom links. Requires `--enrich-links`. |
 | `--publication <slug>` | None | No | string | n/a | Valid publication slug | Publication slug to use for defaults and editorial policy. |
 | `--series <slug>` | None | No | string | n/a | Valid series slug | Content series slug to use for defaults and thematic context. Series overrides publication defaults. |
+| `--keywords <keywords>` | None | No | string | n/a | Comma-separated keywords | SEO keywords to target. Supports compound keywords (e.g., "organic marketing, content strategy"). When provided, skips auto-generation and uses these as the definitive keyword set. Merges with series keywords if both are present. |
 | `--from-queue` | None | No | boolean | `false` | `true` or omitted | Dequeue the next pending article from the queue and write it. When used with `--publication`, filters to entries for that publication. |
 
 ## Examples
@@ -52,6 +53,10 @@ ideon write "How small editorial teams scale content" --primary article=1 --seco
 
 ```bash title="With series association"
 ideon write "Deep dive into transformer architectures" --primary article=1 --series ai-deep-dives --publication tech-blog
+```
+
+```bash title="With keywords"
+ideon write "How to build a content strategy" --primary article=1 --keywords "organic marketing, content strategy, seo"
 ```
 
 ```bash title="Safety and debugging path"

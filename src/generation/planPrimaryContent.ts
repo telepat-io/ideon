@@ -18,6 +18,7 @@ export async function planPrimaryContent({
   settings,
   publication,
   series,
+  keywords,
   markdownOutputDir,
   openRouter,
   dryRun,
@@ -30,6 +31,7 @@ export async function planPrimaryContent({
   settings: AppSettings;
   publication?: Publication | null;
   series?: Series | null;
+  keywords?: string[];
   markdownOutputDir: string;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
@@ -37,12 +39,13 @@ export async function planPrimaryContent({
   onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<PrimaryPlan> {
   const isLongForm = isLongFormContentType(contentType);
+  const providedKeywords = keywords && keywords.length > 0 ? keywords : undefined;
 
   const basePlan = dryRun || !openRouter
-    ? buildDryRunPlan(idea, contentType, contentPlan)
+    ? buildDryRunPlan(idea, contentType, contentPlan, providedKeywords)
     : await openRouter.requestStructured<PrimaryPlan>({
         schemaName: 'primary_plan',
-        schema: buildPrimaryPlanJsonSchema(contentType, settings.targetLength),
+        schema: buildPrimaryPlanJsonSchema(contentType, settings.targetLength, providedKeywords),
         messages: buildPrimaryPlanMessages(idea, {
           contentType,
           intent: settings.intent,
@@ -51,6 +54,7 @@ export async function planPrimaryContent({
           targetLength: settings.targetLength,
           publication,
           series,
+          keywords: providedKeywords,
         }),
         settings,
         interactionContext: {
@@ -66,6 +70,12 @@ export async function planPrimaryContent({
           return shortFormPlanSchema.parse(data);
         },
       });
+
+  // Inject user-provided keywords into the plan, overriding LLM-generated ones
+  if (providedKeywords && isLongForm) {
+    const longPlan = basePlan as ArticlePlan;
+    longPlan.keywords = providedKeywords;
+  }
 
   if (!dryRun) {
     const seoWarnings: string[] = [];
@@ -122,7 +132,7 @@ export async function planPrimaryContent({
   };
 }
 
-function buildDryRunPlan(idea: string, contentType: string, contentPlan: ContentPlan): PrimaryPlan {
+function buildDryRunPlan(idea: string, contentType: string, contentPlan: ContentPlan, providedKeywords?: string[]): PrimaryPlan {
   const title = idea
     .trim()
     .split(/\s+/)
@@ -145,7 +155,7 @@ function buildDryRunPlan(idea: string, contentType: string, contentPlan: Content
     contentType,
     title,
     subtitle: 'A practical editorial blueprint for turning a good idea into strong published content',
-    keywords: ['writing', 'editorial workflow', 'ai tools', 'content strategy'],
+    keywords: providedKeywords ?? ['writing', 'editorial workflow', 'ai tools', 'content strategy'],
     slug: slugify(title),
     description: contentPlan.description,
     introBrief: 'Frame the tension between having ideas and actually shaping them into useful published work.',

@@ -340,6 +340,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Default target length: small, medium, large, or word count')
     .option('--type <type>', 'Default primary content type')
     .option('--audience <description>', 'Default target audience hint')
+    .option('--keywords <keywords>', 'Comma-separated SEO keywords')
     .option('--tone <tone>', 'Editorial policy tone')
     .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
@@ -353,6 +354,7 @@ export async function runCli(argv: string[]): Promise<void> {
       length?: string;
       type?: string;
       audience?: string;
+      keywords?: string;
       tone?: string;
       forbiddenTopics?: string;
       disclosureRequirements?: string;
@@ -385,6 +387,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Default target length: small, medium, large, or word count')
     .option('--type <type>', 'Default primary content type')
     .option('--audience <description>', 'Default target audience hint')
+    .option('--keywords <keywords>', 'Comma-separated SEO keywords')
     .option('--tone <tone>', 'Editorial policy tone')
     .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
@@ -400,6 +403,7 @@ export async function runCli(argv: string[]): Promise<void> {
       length?: string;
       type?: string;
       audience?: string;
+      keywords?: string;
       tone?: string;
       forbiddenTopics?: string;
       disclosureRequirements?: string;

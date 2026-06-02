@@ -254,6 +254,7 @@ export const jobInputSchema = z.object({
   targetAudience: z.string().min(1).optional(),
   publication: z.string().min(1).optional(),
   series: z.string().min(1).optional(),
+  keywords: z.array(z.string().min(1)).optional(),
   settings: appSettingsSchema.partial().optional(),
 });
 

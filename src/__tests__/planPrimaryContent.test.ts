@@ -86,6 +86,21 @@ describe('planPrimaryContent', () => {
       expect(result.title).toBe(contentPlan.title);
       expect(resolveUniqueSlugMock).toHaveBeenCalledWith('/tmp/out', expect.stringContaining('practical-workflow'));
     });
+
+    it('uses provided keywords in dry-run mode instead of hardcoded defaults', async () => {
+      const result = await planPrimaryContent({
+        idea: 'provided keywords dry run',
+        contentType: 'article',
+        contentPlan,
+        settings: defaultAppSettings,
+        keywords: ['organic marketing', 'content strategy', 'seo'],
+        markdownOutputDir: '/tmp/out',
+        openRouter: null,
+        dryRun: false,
+      });
+
+      expect(result.keywords).toEqual(['organic marketing', 'content strategy', 'seo']);
+    });
   });
 
   describe('LLM path', () => {
@@ -286,6 +301,50 @@ describe('planPrimaryContent', () => {
         { description: 'B', anchorAfterSection: 2 },
         { description: 'C', anchorAfterSection: 2 },
       ]);
+    });
+
+    it('injects provided keywords and removes keywords from schema requirement', async () => {
+      const requestStructured = jest.fn<() => Promise<unknown>>().mockResolvedValue({
+        contentType: 'article',
+        title: 'Generated Title',
+        subtitle: 'Generated Subtitle',
+        slug: 'generated-title',
+        description: 'Generated description',
+        introBrief: 'Intro brief',
+        outroBrief: 'Outro brief',
+        sections: [
+          { title: 'S1', description: 'D1' },
+          { title: 'S2', description: 'D2' },
+        ],
+        coverImageDescription: 'Cover image',
+        inlineImages: [
+          { description: 'A', anchorAfterSection: 1 },
+        ],
+      });
+
+      const openRouter = { requestStructured };
+
+      const result = await planPrimaryContent({
+        idea: 'provided keywords llm',
+        contentType: 'article',
+        contentPlan,
+        settings: defaultAppSettings,
+        keywords: ['organic marketing', 'content strategy', 'seo'],
+        markdownOutputDir: '/tmp/out',
+        openRouter: openRouter as never,
+        dryRun: false,
+      });
+
+      expect(requestStructured).toHaveBeenCalledTimes(1);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const callArg = (requestStructured.mock.calls[0] as any)[0] as Record<string, unknown>;
+      // Schema should not have keywords in required or properties when provided
+      const schema = callArg.schema as Record<string, unknown>;
+      expect((schema.required as string[])).not.toContain('keywords');
+      expect((schema.properties as Record<string, unknown>)).not.toHaveProperty('keywords');
+
+      // Provided keywords should be injected into the result
+      expect(result.keywords).toEqual(['organic marketing', 'content strategy', 'seo']);
     });
   });
 

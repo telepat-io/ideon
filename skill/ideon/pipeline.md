@@ -65,9 +65,9 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 **Purpose:** Generate title, slug, description, content plan, keywords
 
-**Inputs:** Idea, cross-channel guidance, format/style/intent guides, SEO guides, length
+**Inputs:** Idea, cross-channel guidance, format/style/intent guides, SEO guides, length, keywords (optional)
 
-**Agent:** Using system prompt (guides + instructions), generate: title (<60 chars), slug, description (120-160 chars), outline with sections/word counts, keywords (5-10, non-generic, not duplicating heading text).
+**Agent:** Using system prompt (guides + instructions), generate: title (<60 chars), slug, description (120-160 chars), outline with sections/word counts, keywords (5-10, non-generic, not duplicating heading text). When user-provided keywords are present, skip keyword generation and use the provided set; instruct the planner to place at least one keyword in the title and one in a major H2 heading.
 
 **Output:** JSON with plan + token/cost estimate
 
@@ -85,7 +85,7 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 **Inputs:** Plan, format/style/intent guides, SEO guides (cached), target length
 
-**Agent:** Using system prompt (guides + plan + quality standards + SEO rules), generate full markdown with sections as outlined. Each section must include at least one statistic or citation per on-page essentials and fact density guides. Apply E-E-A-T signals (practitioner observations, authoritative citations, competing viewpoints). After writing, run AI prose detection avoidance pass: scan for prohibited vocabulary, hedging language, and formulaic transitions.
+**Agent:** Using system prompt (guides + plan + quality standards + SEO rules), generate full markdown with sections as outlined. Each section must include at least one statistic or citation per on-page essentials and fact density guides. Apply E-E-A-T signals (practitioner observations, authoritative citations, competing viewpoints). When user-provided keywords are present, include at least one keyword in the first 100 words of the intro and weave remaining keywords naturally into body prose. After writing, run AI prose detection avoidance pass: scan for prohibited vocabulary, hedging language, and formulaic transitions.
 
 **Output:** Full markdown + actual word count + token/cost
 

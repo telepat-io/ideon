@@ -15,6 +15,7 @@ export interface ContentCommandOptions {
   style?: string;
   intent?: string;
   length?: string;
+  keywords?: string;
   exportPath?: string;
 }
 
@@ -29,6 +30,7 @@ export function applyContentOptions(command: Command): Command {
     .option('--style <style>', 'Writing style (academic, analytical, authoritative, conversational, empathetic, friendly, journalistic, minimalist, persuasive, playful, professional, storytelling, technical)')
     .option('--intent <intent>', 'Content intent (announcement, case-study, cornerstone, counterargument, critique-review, deep-dive-analysis, how-to-guide, interview-q-and-a, listicle, opinion-piece, personal-essay, roundup-curation, tutorial)')
     .option('--length <size>', 'Target length: small, medium, large, or a positive integer word count')
+    .option('--keywords <keywords>', 'Comma-separated SEO keywords (e.g. "organic marketing, content strategy, seo")')
     .option('--publication <slug>', 'Publication slug to use for defaults and editorial policy')
     .option('--series <slug>', 'Content series slug to use for defaults and thematic context')
     .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode');
@@ -46,6 +48,7 @@ export function parseContentOptions(ideaArg: string | undefined, options: Record
     style: options.style as string | undefined,
     intent: options.intent as string | undefined,
     length: options.length as string | undefined,
+    keywords: options.keywords as string | undefined,
     exportPath: options.export as string | undefined,
     noInteractive: !(options.interactive as boolean),
   };

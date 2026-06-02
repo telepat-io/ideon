@@ -24,77 +24,85 @@ function deriveSectionCounts(targetLengthWords: number): { min: number; max: num
   };
 }
 
-export function buildPrimaryPlanJsonSchema(contentType: string, targetLengthWords: number) {
+export function buildPrimaryPlanJsonSchema(contentType: string, targetLengthWords: number, providedKeywords?: string[]) {
   if (!isLongFormContentType(contentType)) {
     return buildShortFormPlanJsonSchema();
   }
 
-  return buildLongFormPlanJsonSchema(targetLengthWords);
+  return buildLongFormPlanJsonSchema(targetLengthWords, providedKeywords);
 }
 
-function buildLongFormPlanJsonSchema(targetLengthWords: number) {
+function buildLongFormPlanJsonSchema(targetLengthWords: number, providedKeywords?: string[]) {
   const sectionCounts = deriveSectionCounts(targetLengthWords);
   const imageCounts = resolveDefaultInlineImageCount(targetLengthWords);
-  return {
-    type: 'object',
-    additionalProperties: false,
-    required: [
-      'contentType',
-      'title',
-      'subtitle',
-      'keywords',
-      'slug',
-      'description',
-      'introBrief',
-      'outroBrief',
-      'sections',
-      'coverImageDescription',
-      'inlineImages',
-    ],
-    properties: {
-      contentType: { type: 'string' },
-      title: { type: 'string' },
-      subtitle: { type: 'string' },
+  const hasProvidedKeywords = providedKeywords && providedKeywords.length > 0;
+
+  const required = [
+    'contentType',
+    'title',
+    'subtitle',
+    ...(hasProvidedKeywords ? [] : ['keywords']),
+    'slug',
+    'description',
+    'introBrief',
+    'outroBrief',
+    'sections',
+    'coverImageDescription',
+    'inlineImages',
+  ];
+
+  const properties: Record<string, unknown> = {
+    contentType: { type: 'string' },
+    title: { type: 'string' },
+    subtitle: { type: 'string' },
+    ...(hasProvidedKeywords ? {} : {
       keywords: {
         type: 'array',
         minItems: 3,
         maxItems: 8,
         items: { type: 'string' },
       },
-      slug: { type: 'string' },
-      description: { type: 'string' },
-      introBrief: { type: 'string' },
-      outroBrief: { type: 'string' },
-      sections: {
-        type: 'array',
-        minItems: sectionCounts.min,
-        maxItems: sectionCounts.max,
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['title', 'description'],
-          properties: {
-            title: { type: 'string' },
-            description: { type: 'string' },
-          },
-        },
-      },
-      coverImageDescription: { type: 'string' },
-      inlineImages: {
-        type: 'array',
-        minItems: imageCounts.min,
-        maxItems: imageCounts.max,
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['description', 'anchorAfterSection'],
-          properties: {
-            description: { type: 'string' },
-            anchorAfterSection: { type: 'number', minimum: 1 },
-          },
+    }),
+    slug: { type: 'string' },
+    description: { type: 'string' },
+    introBrief: { type: 'string' },
+    outroBrief: { type: 'string' },
+    sections: {
+      type: 'array',
+      minItems: sectionCounts.min,
+      maxItems: sectionCounts.max,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['title', 'description'],
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
         },
       },
     },
+    coverImageDescription: { type: 'string' },
+    inlineImages: {
+      type: 'array',
+      minItems: imageCounts.min,
+      maxItems: imageCounts.max,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['description', 'anchorAfterSection'],
+        properties: {
+          description: { type: 'string' },
+          anchorAfterSection: { type: 'number', minimum: 1 },
+        },
+      },
+    },
+  };
+
+  return {
+    type: 'object',
+    additionalProperties: false,
+    required,
+    properties,
   } as const;
 }
 
@@ -131,6 +139,7 @@ export function buildPrimaryPlanMessages(
     targetLength: number;
     publication?: Publication | null;
     series?: Series | null;
+    keywords?: string[];
   },
 ): ChatMessage[] {
   if (!isLongFormContentType(options.contentType)) {
@@ -150,10 +159,13 @@ function buildLongFormPlanMessages(
     targetLength: number;
     publication?: Publication | null;
     series?: Series | null;
+    keywords?: string[];
   },
 ): ChatMessage[] {
   const sectionCounts = deriveSectionCounts(options.targetLength);
   const imageCounts = resolveDefaultInlineImageCount(options.targetLength);
+  const hasProvidedKeywords = options.keywords && options.keywords.length > 0;
+
   const systemInstruction = [
     'You are a senior editorial strategist. Produce a rigorous content plan for a polished long-form Markdown output.',
     buildPrimaryPlanGuideInstruction(options.intent, options.contentType),
@@ -161,8 +173,13 @@ function buildLongFormPlanMessages(
     buildTargetLengthDirective(options.contentType, options.targetLength),
     buildEditorialPolicyDirective(options.publication ?? null),
     buildSeriesDirective(options.series ?? null),
+    ...(hasProvidedKeywords ? [`The following SEO keywords have been provided and will be used for metadata: ${options.keywords!.join(', ')}. Structure your plan so at least one keyword appears in the title and at least one keyword appears in a major H2 section heading.`] : []),
     'Return only the requested JSON.',
   ].filter((part) => part.length > 0).join(' ');
+
+  const keywordRequirement = hasProvidedKeywords
+    ? ''
+    : '- keywords: array of 3 to 8 specific, non-generic strings representing primary entities and search topics (not exact-match duplicates of heading text)';
 
   return [
     {
@@ -200,7 +217,7 @@ function buildLongFormPlanMessages(
         `- contentType: set to "${options.contentType}" exactly`,
         '- title: string',
         '- subtitle: string',
-        '- keywords: array of 3 to 8 specific, non-generic strings representing primary entities and search topics (not exact-match duplicates of heading text)',
+        keywordRequirement,
         '- slug: string in lowercase kebab-case',
         '- description: string',
         '- introBrief: string',
@@ -210,7 +227,7 @@ function buildLongFormPlanMessages(
         `- inlineImages: array of ${imageCounts.min} to ${imageCounts.max} objects, each with a description string and an anchorAfterSection number (starting at 1).`,
         '',
         'Do not omit any required fields. Return strict JSON only.',
-      ].join('\n'),
+      ].filter((line) => line.length > 0).join('\n'),
     },
   ];
 }
@@ -225,6 +242,7 @@ function buildShortFormPlanMessages(
     targetLength: number;
     publication?: Publication | null;
     series?: Series | null;
+    keywords?: string[];
   },
 ): ChatMessage[] {
   const systemInstruction = [
