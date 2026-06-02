@@ -74,6 +74,37 @@ ideon gads status --json
 | --- | --- |
 | `--json` | 输出机器可读的 JSON 格式 |
 
+TTY 输出：
+
+```
+Google Ads Credential Status
+─────────────────────────────────────
+  developer Token        ✓ keychain
+  client Id              ✓ env
+  client Secret          ✓ keychain
+  refresh Token          ✓ keychain
+  customer Id            ✓ keychain
+  login Customer Id      — not set (optional)
+
+Run `ideon gads test` to verify credentials work.
+Run `ideon gads login` to set up missing credentials.
+```
+
+JSON 输出：
+
+```json
+{
+  "googleAdsDeveloperToken": { "set": true, "source": "keychain" },
+  "googleAdsClientId": { "set": true, "source": "env" },
+  "googleAdsClientSecret": { "set": true, "source": "keychain" },
+  "googleAdsRefreshToken": { "set": true, "source": "keychain" },
+  "googleAdsCustomerId": { "set": true, "source": "keychain" },
+  "googleAdsLoginCustomerId": { "set": false, "source": null }
+}
+```
+
+来源可以是 `env`（环境变量）、`keychain`（系统钥匙串）或 `null`（未设置）。环境变量优先于钥匙串中的值。
+
 ### ideon gads test
 
 通过发出测试 API 调用来验证 Google Ads 凭据。
@@ -83,6 +114,16 @@ ideon gads test
 ```
 
 使用单个关键词进行轻量级 `generateKeywordIdeas` 调用，以验证完整的凭据链是否正常工作（令牌刷新、API 头信息、客户 ID）。
+
+成功输出：
+
+```
+✓ Google Ads credentials verified.
+  Customer ID: 1234567890
+  API response received successfully (1 keyword returned).
+```
+
+失败输出包含具体的错误信息和可操作的修复建议。
 
 ## 退出码
 
