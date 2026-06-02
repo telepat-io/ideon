@@ -320,8 +320,17 @@ describe('publication commands', () => {
     });
 
     it('throws when name is missing in non-interactive mode', async () => {
-      const { runPublicationAddCommand } = await import('../cli/commands/publication.js');
-      await expect(runPublicationAddCommand({})).rejects.toThrow('Publication name is required');
+      const originalStdoutIsTTY = process.stdout.isTTY;
+      const originalStdinIsTTY = process.stdin.isTTY;
+      process.stdout.isTTY = undefined;
+      process.stdin.isTTY = undefined;
+      try {
+        const { runPublicationAddCommand } = await import('../cli/commands/publication.js');
+        await expect(runPublicationAddCommand({})).rejects.toThrow('Publication name is required');
+      } finally {
+        process.stdout.isTTY = originalStdoutIsTTY;
+        process.stdin.isTTY = originalStdinIsTTY;
+      }
     });
 
     it('throws when slug already exists', async () => {
