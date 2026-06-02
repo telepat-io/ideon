@@ -25,6 +25,8 @@ export interface BuildMetaJsonInput {
   style: string;
   intent: string;
   targetLength: string | null;
+  publication?: string;
+  series?: string;
 }
 
 export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
@@ -91,5 +93,7 @@ export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
     outputs,
     generatedAt: input.generatedAt,
     generationDir,
+    ...(input.publication ? { publication: input.publication } : {}),
+    ...(input.series ? { series: input.series } : {}),
   };
 }

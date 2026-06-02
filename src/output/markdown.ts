@@ -4,16 +4,28 @@ function yamlString(value: string): string {
   return JSON.stringify(value);
 }
 
-export function renderMarkdownDocument(article: GeneratedArticle): string {
-  const frontmatter = [
+export function renderMarkdownDocument(
+  article: GeneratedArticle,
+  options?: { publication?: string; series?: string },
+): string {
+  const frontmatterLines = [
     '---',
     `title: ${yamlString(article.plan.title)}`,
     `subtitle: ${yamlString(article.plan.subtitle)}`,
     `slug: ${yamlString(article.plan.slug)}`,
     `description: ${yamlString(article.plan.description)}`,
     `keywords: [${article.plan.keywords.map((keyword) => yamlString(keyword)).join(', ')}]`,
-    '---',
-  ].join('\n');
+  ];
+
+  if (options?.publication) {
+    frontmatterLines.push(`publication: ${yamlString(options.publication)}`);
+  }
+  if (options?.series) {
+    frontmatterLines.push(`series: ${yamlString(options.series)}`);
+  }
+
+  frontmatterLines.push('---');
+  const frontmatter = frontmatterLines.join('\n');
 
   const imageAfterSection = new Map(article.renderedImages.filter((image) => image.kind === 'inline').map((image) => [image.anchorAfterSection, image]));
   const coverImage = article.renderedImages.find((image) => image.kind === 'cover') ?? null;

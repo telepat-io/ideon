@@ -30,6 +30,12 @@ keywords: [ideon, agents, command index, cli, reference]
 - Purpose: Manage the content queue for scheduling future article writes.
 - Key flags: `add`, `list --json`, `peek`, `remove --force`, `clear --force`.
 
+## ideon article list
+
+- Path: `/reference/commands/ideon-article-list`
+- Purpose: List and search generated articles with filters for publication, series, and content type.
+- Key flags: `--search`, `--publication`, `--series`, `--content-type`, `--limit`, `--json`, `--verbose`.
+
 ## ideon write resume
 
 - Path: `/reference/commands/ideon-write-resume`

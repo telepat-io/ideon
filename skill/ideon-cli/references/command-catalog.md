@@ -36,6 +36,7 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon series list` | List all series, optionally filtered by publication | none | `--json`, `--verbose`, `--publication` | yes |
 | `ideon series edit <slug>` | Edit series fields and publication association | `<slug>` | `--name`, `--topic`, `--publication`, `--unset-publication`, `--style`, `--intent`, `--length`, `--type`, `--audience`, `--keywords`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |
 | `ideon series remove <slug>` | Delete a series | `<slug>` | `--force` | no |
+| `ideon article list` | List and search generated articles | none | `--search`, `--publication`, `--series`, `--content-type`, `--limit`, `--json`, `--verbose` | yes |
 | `ideon queue add [idea]` | Add article to content queue (same args as write) | none | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--audience`, `--publication`, `--series`, `--keywords`, `--no-interactive`, `--export` | no |
 | `ideon queue list` | List queued articles | none | `--json`, `--publication`, `--status` | yes |
 | `ideon queue peek` | Show next pending article without consuming | none | `--publication` | no |

@@ -47,6 +47,7 @@ import {
   runQueueClearCommand,
 } from './commands/queue.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
+import { runArticleListCommand } from './commands/article.js';
 import { applyContentOptions, parseContentOptions, collectOptionValue } from './contentOptions.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
@@ -432,6 +433,32 @@ export async function runCli(argv: string[]): Promise<void> {
         slug,
         force: options.force,
       });
+    });
+
+  const articleCommand = program
+    .command('article')
+    .description('List and search generated articles.');
+
+  articleCommand
+    .command('list')
+    .description('List generated articles with optional search and filters.')
+    .option('--search <query>', 'Search articles by title, keywords, description, or body content')
+    .option('--publication <slug>', 'Filter by publication slug')
+    .option('--series <slug>', 'Filter by series slug')
+    .option('--content-type <type>', 'Filter by content type (article, blog-post, x-post, etc.)')
+    .option('--limit <n>', 'Maximum number of results (default: 50)', (v) => Number.parseInt(v, 10))
+    .option('--json', 'Print machine-readable JSON output', false)
+    .option('--verbose', 'Show detailed article metadata', false)
+    .action(async (options: {
+      search?: string;
+      publication?: string;
+      series?: string;
+      contentType?: string;
+      limit?: number;
+      json: boolean;
+      verbose: boolean;
+    }) => {
+      await runArticleListCommand(options);
     });
 
   program

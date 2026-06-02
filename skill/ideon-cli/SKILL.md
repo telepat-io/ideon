@@ -119,6 +119,7 @@ Do not use this skill when:
    - List queued articles: `ideon queue list`
    - Write from queue: `ideon write --from-queue`
    - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
+   - List and search generated articles: `ideon article list [--search <query>] [--publication <slug>] [--series <slug>] [--content-type <type>] [--limit <n>] [--json] [--verbose]`
    - Export generated articles: `ideon export <generationId> <path>`
    - Preview outputs: `ideon preview ...`
    - Delete outputs: `ideon delete <slug>`
@@ -230,6 +231,9 @@ Monitoring / status:
 ```bash
 ideon config list --json
 ideon agent status --json
+ideon article list
+ideon article list --search "react hooks"
+ideon article list --publication tech-blog --json
 ```
 
 Update / upgrade:

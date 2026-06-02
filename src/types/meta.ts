@@ -46,6 +46,8 @@ export const metaJsonSchema = z.object({
   outputs: z.array(metaJsonOutputSchema),
   generatedAt: z.string().min(1),
   generationDir: z.string().min(1),
+  publication: z.string().optional(),
+  series: z.string().optional(),
 });
 
 export type MetaJsonCoverImage = z.infer<typeof metaJsonCoverImageSchema>;

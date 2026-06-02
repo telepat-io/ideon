@@ -760,7 +760,10 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         imagePrompts: imageArtifacts.imagePrompts,
         renderedImages: imageArtifacts.renderedImages,
       };
-      primaryMarkdownTemplate = renderMarkdownDocument(article);
+      primaryMarkdownTemplate = renderMarkdownDocument(article, {
+        publication: input.publication?.slug,
+        series: input.series?.slug,
+      });
     } else {
       if (!imagePrompts || imagePrompts.length === 0) {
         throw new Error('Primary cover image prompt is missing for image rendering stage.');
@@ -1276,6 +1279,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       targetLength: input.config.settings.targetLength
         ? resolveTargetLengthAlias(input.config.settings.targetLength)
         : null,
+      publication: input.publication?.slug,
+      series: input.series?.slug,
     });
     const metaJsonPath = path.join(generationDir, 'meta.json');
     await writeJsonFile(metaJsonPath, metaJson);

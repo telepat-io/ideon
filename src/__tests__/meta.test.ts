@@ -35,6 +35,60 @@ describe('meta.json schemas', () => {
     expect(metaJsonSchema.parse(valid)).toEqual(valid);
   });
 
+  it('validates meta.json with publication and series', () => {
+    const withPubSeries = {
+      version: 1 as const,
+      title: 'Title',
+      slug: 'slug',
+      idea: 'Idea',
+      description: 'Description',
+      subtitle: null,
+      keywords: [],
+      contentType: 'article',
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: null,
+      angle: null,
+      cover: null,
+      sections: [],
+      images: [],
+      outputs: [],
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      generationDir: '/out',
+      publication: 'tech-blog',
+      series: 'deep-dives',
+    };
+    const parsed = metaJsonSchema.parse(withPubSeries);
+    expect(parsed.publication).toBe('tech-blog');
+    expect(parsed.series).toBe('deep-dives');
+  });
+
+  it('validates meta.json without publication and series', () => {
+    const without = {
+      version: 1 as const,
+      title: 'Title',
+      slug: 'slug',
+      idea: 'Idea',
+      description: 'Description',
+      subtitle: null,
+      keywords: [],
+      contentType: 'article',
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: null,
+      angle: null,
+      cover: null,
+      sections: [],
+      images: [],
+      outputs: [],
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      generationDir: '/out',
+    };
+    const parsed = metaJsonSchema.parse(without);
+    expect(parsed.publication).toBeUndefined();
+    expect(parsed.series).toBeUndefined();
+  });
+
   it('rejects invalid version', () => {
     expect(() => metaJsonSchema.parse({ version: 2 })).toThrow();
   });
@@ -268,5 +322,43 @@ describe('buildMetaJson', () => {
     expect(meta.sections).toEqual([]);
     expect(meta.contentType).toBe('x-post');
     expect(meta.outputs).toHaveLength(1);
+  });
+
+  it('includes publication and series when provided', () => {
+    const meta = buildMetaJson({
+      idea: 'Pub series idea',
+      generationDir: '/output/gen',
+      contentPlan: baseContentPlan,
+      plan: basePlan,
+      renderedImages: [],
+      outputs: [],
+      generatedAt: '2026-05-08T12:00:00.000Z',
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 'medium',
+      publication: 'tech-blog',
+      series: 'deep-dives',
+    });
+
+    expect(meta.publication).toBe('tech-blog');
+    expect(meta.series).toBe('deep-dives');
+  });
+
+  it('omits publication and series when not provided', () => {
+    const meta = buildMetaJson({
+      idea: 'No pub series',
+      generationDir: '/output/gen',
+      contentPlan: baseContentPlan,
+      plan: basePlan,
+      renderedImages: [],
+      outputs: [],
+      generatedAt: '2026-05-08T12:00:00.000Z',
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 'medium',
+    });
+
+    expect(meta.publication).toBeUndefined();
+    expect(meta.series).toBeUndefined();
   });
 });
