@@ -102,8 +102,10 @@ Do not use this skill when:
 | Style (`--style`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied via job. |
 | Intent (`--intent`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied explicitly. |
 | Length (`--length`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied via job. |
+| Publication (`--publication`) | No | Publication slug for defaults and editorial policy. |
+| Series (`--series`) | No | Content series slug for defaults and thematic context. |
 | Credentials strategy | Yes | Keychain via `ideon settings` or env-based secrets for CI. |
-| Run mode | Yes | Fresh run vs `ideon write resume`. |
+| Run mode | Yes | Fresh run vs `ideon write resume` vs `ideon write --from-queue`. |
 
 ## Deterministic workflow
 
@@ -112,6 +114,9 @@ Do not use this skill when:
 3. Choose operation path:
    - Create content: `ideon write ...`
    - Resume interrupted run: `ideon write resume`
+   - Queue articles for later: `ideon queue add ...`
+   - List queued articles: `ideon queue list`
+   - Write from queue: `ideon write --from-queue`
    - Enrich links for an existing article: `ideon links <slug> [--mode fresh|append] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]`
    - Export generated articles: `ideon export <generationId> <path>`
    - Preview outputs: `ideon preview ...`
@@ -190,6 +195,33 @@ ideon write "Your idea" --primary article=1 --export ./out
 
 # Auto-export after resume
 ideon write resume --export ./out
+
+# Queue articles for later
+ideon queue add "Your idea" --primary article=1 --style technical --intent tutorial
+ideon queue add "Another idea" --primary article=1 --publication tech-blog
+
+# List queued articles
+ideon queue list
+ideon queue list --json
+ideon queue list --publication tech-blog
+
+# Peek at next pending article
+ideon queue peek
+
+# Remove a queued article
+ideon queue remove <id> --force
+
+# Clear all queued articles
+ideon queue clear --force
+
+# Write the next queued article
+ideon write --from-queue
+
+# Write the next queued article for a specific publication
+ideon write --from-queue --publication tech-blog
+
+# Write from queue with overrides
+ideon write --from-queue --style playful
 ```
 
 Monitoring / status:
@@ -313,6 +345,92 @@ ideon agent status --json
 ```
 
 Supported runtimes: `claude`, `claude-desktop`, `chatgpt`, `gemini`, `codex`, `cursor`, `vscode`, `opencode`, `generic-mcp`.
+
+## Publications and series management
+
+Publications define editorial policies, default styles, intents, and audience hints per publication. Series group related articles under a shared topic with optional publication association.
+
+### Settings resolution chain
+
+```
+saved settings → job file → env vars → publication defaults → series defaults → CLI flags
+```
+
+Series can override any setting a publication can: `style`, `intent`, `targetLength`, `contentTargets`, `model`, `modelSettings`, and `editorialPolicy`.
+
+### Publication commands
+
+```bash
+# Create a publication with defaults
+ideon publication add "Tech Blog" --style technical --intent tutorial --tone authoritative --forbidden-topics "hype, speculation"
+
+# List publications
+ideon publication list
+ideon publication list --json
+ideon publication list --verbose
+
+# Edit a publication
+ideon publication edit tech-blog --style professional --intent how-to-guide
+
+# Delete a publication
+ideon publication remove tech-blog --force
+```
+
+### Series commands
+
+```bash
+# Create a series with topic and publication
+ideon series add "AI Deep Dives" --topic "Exploring cutting-edge AI technologies" --publication tech-blog
+
+# List series
+ideon series list
+ideon series list --publication tech-blog
+ideon series list --json
+
+# Edit a series
+ideon series edit ai-deep-dives --topic "New topic"
+
+# Remove publication association
+ideon series edit ai-deep-dives --unset-publication
+
+# Delete a series
+ideon series remove ai-deep-dives --force
+```
+
+### How editorial policy is injected
+
+When a publication or series is active, the following data is injected into all LLM prompts:
+
+- Publication name, tone, forbidden topics, disclosure requirements, audience restrictions, and notes
+- Series name, topic, and editorial policy (appended after publication policy)
+
+### Interactive series selection
+
+When running `ideon write` in interactive mode without `--series`, a series selection step is presented. Users can pick an existing series or skip.
+
+## Content queue
+
+The content queue is a global list of pending articles stored as individual JSON files in `~/.config/ideon/queue/`.
+
+### Queue entry lifecycle
+
+1. **Enqueue** (`ideon queue add`): resolves all parameters (publication/series defaults, style, intent, length, targets) and snapshots them into a self-contained entry file.
+2. **Claim** (`ideon write --from-queue`): atomically renames `<id>.json` → `<id>.in-progress.json`. A second concurrent process will fail the rename and skip.
+3. **Success**: deletes the `.in-progress` file.
+4. **Failure or interruption**: renames back to `.json` with `status: 'pending'`.
+
+### Key behaviors
+
+- **Snapshot at enqueue time**: publication and series defaults are resolved and frozen into the entry. Changing defaults later does not affect queued entries.
+- **Write-time overrides**: CLI flags passed alongside `--from-queue` override snapshotted settings.
+- **Publication filtering**: `ideon write --from-queue --publication tech-blog` dequeues the oldest pending entry for that publication.
+- **Export path**: if `--export <path>` is passed at enqueue time, it is stored in the entry and used at write time.
+
+### Gotchas
+
+- Queue entries store the full publication and series objects. If a publication is deleted, existing queue entries still reference it.
+- `--export` paths are stored as-is. If the directory moves before writing, export will fail at write time.
+- Concurrent `--from-queue` calls use best-effort atomic rename. Two processes won't pick the same entry, but both may see an empty queue if they check simultaneously.
 
 ## Argument semantics and constraints
 
@@ -501,6 +619,10 @@ Export artifacts:
   Mitigation: pass `--overwrite` to replace, or export to a fresh directory.
 - `--export` on write/resume has no effect during `--dry-run`.
   Mitigation: export requires a real generation to exist; run a full write first.
+- Queue entries store full publication/series snapshots. Deleting a publication does not remove or update queued entries.
+  Mitigation: remove or re-add queue entries after deleting a publication.
+- `--from-queue` with `--export` uses the stored export path from the queue entry unless overridden.
+  Mitigation: pass `--export` explicitly on `write --from-queue` to override.
 
 ## Clarifying questions for risky operations
 
@@ -531,6 +653,8 @@ Credentials:
 | Invalid target spec | Use `<content-type=count>` and keep primary count exactly `1`. |
 | Export destination already exists | Pass `--overwrite` or choose a different destination directory. |
 | Generation not found for export | Run `ideon preview` to list available generation IDs and slugs. |
+| No pending articles in queue | Add articles with `ideon queue add` or remove `--publication` filter. |
+| Queue entry claimed by another process | `--from-queue` automatically skips to the next pending entry. |
 
 ## Verification prompts
 
@@ -539,6 +663,7 @@ Should trigger:
 1. Create a full Ideon CLI workflow from install through preview.
 2. Run Ideon non-interactively in CI with strict flag and secret handling.
 3. Use Ideon MCP server and map tool arguments safely.
+4. Queue articles and write from queue with publication filtering.
 
 Should not trigger:
 
@@ -553,24 +678,5 @@ Should not trigger:
 - See `references/framework-patterns.md` for reusable workflow patterns.
 - See `references/google-ads-setup.md` for Google Ads Keyword Planner credential setup.
 - See `assets/generated-skill-template.md` for reusable scaffold.
-
-## Source evidence map
-
-- CLI command surface and options: `src/cli/app.ts`
-- Standalone links command behavior: `src/cli/commands/links.ts`
-- Write/resume behavior and signal handling: `src/cli/commands/write.tsx`
-- Target parsing rules and conflicts: `src/cli/commands/writeTargetSpecs.ts`
-- Export command behavior, internal file filtering, and `--export` flag integration: `src/cli/commands/export.ts`
-- Delete behavior and confirmation rules: `src/cli/commands/delete.ts`
-- Preview behavior and watch mode: `src/cli/commands/serve.ts`, `src/server/previewHelpers.ts`
-- Config key surface and coercion: `src/config/manage.ts`
-- Settings defaults and enums: `src/config/schema.ts`
-- Precedence logic: `src/config/resolver.ts`, `docs/guides/configuration.md`
-- Env variable parsing: `src/config/env.ts`, `docs/reference/environment-variables.md`
-- Keychain and env fallback for secrets: `src/config/secretStore.ts`
-- Saved settings path: `src/config/settingsFile.ts`
-- Agent runtime store path and runtime IDs: `src/integrations/agent/store.ts`, `src/cli/commands/agent.ts`
-- MCP server transport and tools: `src/cli/commands/mcp.ts`, `src/integrations/mcp/server.ts`, `src/integrations/mcp/tools.ts`, `docs/reference/commands/ideon-mcp-serve.md`
-- Config key surface and management: `src/config/manage.ts`
-- Skill contract registry: `src/integrations/skills/registry.ts`
-- Command reference coverage: `docs/reference/commands/ideon-*.md`, `docs/reference/cli-reference.md`, `docs/for-agents/command-index.md`
+- See `docs/reference/commands/ideon-queue.md` for queue command documentation.
+- See `docs/reference/commands/ideon-series.md` for publication and series command documentation.

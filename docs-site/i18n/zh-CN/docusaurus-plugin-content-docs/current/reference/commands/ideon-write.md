@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## 用法
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>] [--from-queue] [--publication <slug>]
 ```
 
 ## 参数与选项
@@ -38,6 +38,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--max-links <n>` | 无 | 否 | 正整数 | 由 `--length` 决定 | 任意正整数 | 限制生成链接数量，不影响自定义链接。需要 `--enrich-links`。 |
 | `--publication <slug>` | 无 | 否 | string | 无 | 有效的 publication slug | 用于获取默认值和编辑策略的出版物 slug。 |
 | `--series <slug>` | 无 | 否 | string | 无 | 有效的 series slug | 用于获取默认值和主题上下文的内容系列 slug。系列会覆盖出版物默认值。 |
+| `--from-queue` | 无 | 否 | boolean | `false` | `true` 或省略 | 从队列中取出下一篇待处理文章并写入。与 `--publication` 一起使用时，按出版物过滤。 |
 
 ## 示例
 
@@ -59,6 +60,14 @@ ideon write --dry-run "How to test Ideon pipeline changes" --primary article=1
 
 ```bash title="单次执行 agent 安全示例"
 ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --intent tutorial --length 1200
+```
+
+```bash title="从队列写入"
+ideon write --from-queue
+```
+
+```bash title="从队列写入特定出版物"
+ideon write --from-queue --publication tech-blog
 ```
 
 ## 非交互行为
@@ -93,6 +102,7 @@ ideon write --no-interactive --idea "How to productionize docs operations" --pri
 ## 相关命令
 
 - [ideon write resume](./ideon-write-resume.md)
+- [ideon queue](./ideon-queue.md)
 - [ideon config](./ideon-config.md)
 - [ideon preview [markdownPath]](./ideon-preview.md)
 - [ideon settings](./ideon-settings.md)

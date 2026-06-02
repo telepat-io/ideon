@@ -73,6 +73,32 @@ ideon write "How RAG systems work" --series ai-deep-dives --primary article=1
 
 ---
 
+## Content Queue
+
+Plan your content pipeline ahead of time with the **content queue**. Add articles to a global queue with full parameter snapshots, then write them one at a time when you're ready.
+
+```bash
+# Queue articles for later
+ideon queue add "How RAG systems work" --primary article=1 --publication tech-blog --style technical
+ideon queue add "Our Q3 product launch" --primary article=1 --secondary x-thread=2 --intent announcement
+
+# See what's queued
+ideon queue list
+
+# Write the next one
+ideon write --from-queue
+
+# Write the next one for a specific publication
+ideon write --from-queue --publication tech-blog
+```
+
+- **Self-contained snapshots** — publication and series defaults are resolved at enqueue time
+- **Atomic dequeue** — concurrent writes can't double-pick the same entry
+- **Auto-revert** — failed or interrupted writes restore the entry to the queue
+- **Override at write time** — CLI flags override queued settings
+
+---
+
 ## Research-Backed Drafts
 
 Ideon browses the web and inserts contextual external links like a human writer would — no manual research, no generic placeholder URLs. Just credible, relevant links that add depth and authority to your drafts.

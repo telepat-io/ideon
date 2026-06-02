@@ -22,7 +22,13 @@ keywords: [ideon, agents, command index, cli, reference]
 
 - Path: `/reference/commands/ideon-write`
 - Purpose: Generate primary and optional secondary outputs from an idea or job file.
-- Key flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`.
+- Key flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+
+## ideon queue
+
+- Path: `/reference/commands/ideon-queue`
+- Purpose: Manage the content queue for scheduling future article writes.
+- Key flags: `add`, `list --json`, `peek`, `remove --force`, `clear --force`.
 
 ## ideon write resume
 

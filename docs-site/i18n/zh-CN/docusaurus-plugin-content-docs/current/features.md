@@ -73,6 +73,32 @@ ideon write "RAG 系统的工作原理" --series ai-深度探索 --primary artic
 
 ---
 
+## 内容队列
+
+使用**内容队列**提前规划您的内容管道。将文章添加到全局队列并保存完整参数快照，准备好后逐一写入。
+
+```bash
+# 将文章排队以供稍后写入
+ideon queue add "RAG 系统的工作原理" --primary article=1 --publication tech-blog --style technical
+ideon queue add "我们的 Q3 产品发布" --primary article=1 --secondary x-thread=2 --intent announcement
+
+# 查看队列内容
+ideon queue list
+
+# 写入下一篇
+ideon write --from-queue
+
+# 写入特定出版物的下一篇
+ideon write --from-queue --publication tech-blog
+```
+
+- **自包含快照** — 出版物和系列默认值在入队时解析
+- **原子出队** — 并发写入不会重复选取同一条目
+- **自动恢复** — 失败或中断的写入会将条目恢复到队列
+- **写入时覆盖** — CLI 参数覆盖队列设置
+
+---
+
 ## 有研究支撑的草稿
 
 Ideon 会浏览网络并像人类作者一样插入与上下文相关的外部链接——无需手动研究，没有通用占位符链接。只有可信、相关的链接，为您的草稿增添深度和权威性。

@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## Usage
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>] [--from-queue] [--publication <slug>]
 ```
 
 ## Arguments and Options
@@ -38,6 +38,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--max-links <n>` | None | No | positive integer | Derived from `--length` | Any positive integer | Caps the number of generated links. Does not apply to custom links. Requires `--enrich-links`. |
 | `--publication <slug>` | None | No | string | n/a | Valid publication slug | Publication slug to use for defaults and editorial policy. |
 | `--series <slug>` | None | No | string | n/a | Valid series slug | Content series slug to use for defaults and thematic context. Series overrides publication defaults. |
+| `--from-queue` | None | No | boolean | `false` | `true` or omitted | Dequeue the next pending article from the queue and write it. When used with `--publication`, filters to entries for that publication. |
 
 ## Examples
 
@@ -59,6 +60,14 @@ ideon write --dry-run "How to test Ideon pipeline changes" --primary article=1
 
 ```bash title="One-shot agent-safe path"
 ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --intent tutorial --length 1200
+```
+
+```bash title="Write from queue"
+ideon write --from-queue
+```
+
+```bash title="Write from queue for a specific publication"
+ideon write --from-queue --publication tech-blog
 ```
 
 ## Non-Interactive Behavior
@@ -93,6 +102,7 @@ On success, Ideon writes generation outputs under `output/<timestamp>-<slug>/` a
 ## Related Commands
 
 - [ideon write resume](./ideon-write-resume.md)
+- [ideon queue](./ideon-queue.md)
 - [ideon config](./ideon-config.md)
 - [ideon preview [markdownPath]](./ideon-preview.md)
 - [ideon settings](./ideon-settings.md)

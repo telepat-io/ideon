@@ -73,6 +73,32 @@ ideon write "Wie RAG-Systeme funktionieren" --series ki-tiefenanalysen --primary
 
 ---
 
+## Inhaltswarteschlange
+
+Planen Sie Ihre Inhaltspipeline im Voraus mit der **Inhaltswarteschlange**. Fügen Sie Artikel mit vollständigen Parametersnapshots hinzu und schreiben Sie sie dann einzeln, wenn Sie bereit sind.
+
+```bash
+# Artikel für später einreihen
+ideon queue add "Wie RAG-Systeme funktionieren" --primary article=1 --publication tech-blog --style technical
+ideon queue add "Unser Q3-Produktlaunch" --primary article=1 --secondary x-thread=2 --intent announcement
+
+# Warteschlange anzeigen
+ideon queue list
+
+# Nächsten Artikel schreiben
+ideon write --from-queue
+
+# Nächsten Artikel für eine bestimmte Veröffentlichung
+ideon write --from-queue --publication tech-blog
+```
+
+- **Eigenständige Snapshots** — Veröffentlichungs- und Serienstandardwerte werden beim Hinzufügen aufgelöst
+- **Atomares Entnehmen** — Gleichzeitige Schreibvorgänge können denselben Eintrag nicht doppelt auswählen
+- **Automatische Wiederherstellung** — Fehlgeschlagene oder unterbrochene Schreibvorgänge stellen den Eintrag wieder her
+- **Überschreiben beim Schreiben** — CLI-Argumente überschreiben Warteschlangeneinstellungen
+
+---
+
 ## Recherchegestützte Entwürfe
 
 Ideon durchsucht das Web und fügt kontextbezogene externe Links ein, wie ein menschlicher Autor es tun würde — keine manuelle Recherche, keine generischen Platzhalter-URLs. Nur glaubwürdige, relevante Links, die Ihren Entwürfen Tiefe und Autorität verleihen.

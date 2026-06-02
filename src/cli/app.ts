@@ -39,14 +39,18 @@ import {
   runSeriesEditCommand,
   runSeriesRemoveCommand,
 } from './commands/series.js';
+import {
+  runQueueAddCommand,
+  runQueueListCommand,
+  runQueuePeekCommand,
+  runQueueRemoveCommand,
+  runQueueClearCommand,
+} from './commands/queue.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
+import { applyContentOptions, parseContentOptions, collectOptionValue } from './contentOptions.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
 const { version } = packageJson;
-
-function collectOptionValue(value: string, previous: string[] = []): string[] {
-  return [...previous, value];
-}
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -476,19 +480,10 @@ export async function runCli(argv: string[]): Promise<void> {
       });
     });
 
-  const writeCommand = program
-    .command('write')
-    .description('Generate one primary content output plus optional secondary outputs from a prompt or job file.')
-    .argument('[idea]', 'Natural-language idea for the generation run')
-    .option('-i, --idea <idea>', 'Natural-language idea for the generation run')
-    .option('--audience <description>', 'Optional natural-language audience description for shared-plan targeting')
-    .option('-j, --job <path>', 'Path to a JSON job definition')
-    .option('--primary <type=count>', 'Required primary output target (for example: article=1 or x-post=1)')
-    .option('--secondary <type=count>', 'Secondary output target, repeatable (for example: x-thread=3, linkedin-post=2)', collectOptionValue)
-    .option('--style <style>', 'Writing style (academic, analytical, authoritative, conversational, empathetic, friendly, journalistic, minimalist, persuasive, playful, professional, storytelling, technical)')
-    .option('--intent <intent>', 'Content intent (announcement, case-study, cornerstone, counterargument, critique-review, deep-dive-analysis, how-to-guide, interview-q-and-a, listicle, opinion-piece, personal-essay, roundup-curation, tutorial)')
-    .option('--length <size>', 'Target length: small, medium, large, or a positive integer word count')
-    .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode')
+  const writeCommand = applyContentOptions(
+    program.command('write')
+      .description('Generate one primary content output plus optional secondary outputs from a prompt or job file.'),
+  )
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
     .option('--enrich-links', 'Run link enrichment after markdown generation', false)
     .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
@@ -496,47 +491,18 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
     .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
     .option('--export <path>', 'Export the generated article to the given directory after writing')
-    .option('--publication <slug>', 'Publication slug to use for defaults and editorial policy')
-    .option('--series <slug>', 'Content series slug to use for defaults and thematic context')
-    .action(async (ideaArg: string | undefined, options: {
-      idea?: string;
-      audience?: string;
-      job?: string;
-      publication?: string;
-      series?: string;
-      primary?: string;
-      secondary?: string[];
-      style?: string;
-      intent?: string;
-      length?: string;
-      interactive: boolean;
-      dryRun: boolean;
-      enrichLinks: boolean;
-      link?: string[];
-      unlink?: string[];
-      maxLinks?: number;
-      maxImages?: number;
-      export?: string;
-    }) => {
+    .option('--from-queue', 'Dequeue the next pending article from the queue and write it', false)
+    .action(async (ideaArg: string | undefined, options: Record<string, unknown>) => {
+      const contentOptions = parseContentOptions(ideaArg, options);
       await runWriteCommand({
-        idea: options.idea ?? ideaArg,
-        audience: options.audience,
-        jobPath: options.job,
-        publication: options.publication,
-        series: options.series,
-        primarySpec: options.primary,
-        secondarySpecs: options.secondary,
-        style: options.style,
-        intent: options.intent,
-        length: options.length,
-        noInteractive: !options.interactive,
-        dryRun: options.dryRun,
-        enrichLinks: options.enrichLinks,
-        links: options.link,
-        unlinks: options.unlink,
-        maxLinks: options.maxLinks,
-        maxImages: options.maxImages,
-        exportPath: options.export,
+        ...contentOptions,
+        dryRun: options.dryRun as boolean,
+        enrichLinks: options.enrichLinks as boolean,
+        links: options.link as string[] | undefined,
+        unlinks: options.unlink as string[] | undefined,
+        maxLinks: options.maxLinks as number | undefined,
+        maxImages: options.maxImages as number | undefined,
+        fromQueue: options.fromQueue as boolean,
       });
     });
 
@@ -560,6 +526,58 @@ export async function runCli(argv: string[]): Promise<void> {
         maxImages: options.maxImages,
         exportPath: options.export,
       });
+    });
+
+  const queueCommand = program
+    .command('queue')
+    .description('Manage the content queue for scheduling future article writes.');
+
+  applyContentOptions(
+    queueCommand.command('add')
+      .description('Add an article to the content queue.'),
+  )
+    .option('--export <path>', 'Export the generated article to the given directory after writing')
+    .action(async (ideaArg: string | undefined, options: Record<string, unknown>) => {
+      const contentOptions = parseContentOptions(ideaArg, options);
+      await runQueueAddCommand(ideaArg, {
+        ...contentOptions,
+        exportPath: options.export as string | undefined,
+      });
+    });
+
+  queueCommand
+    .command('list')
+    .description('List queued articles.')
+    .option('--json', 'Print machine-readable JSON output', false)
+    .option('--publication <slug>', 'Filter by publication slug')
+    .option('--status <status>', 'Filter by status: pending or in-progress')
+    .action(async (options: { json: boolean; publication?: string; status?: string }) => {
+      await runQueueListCommand(options);
+    });
+
+  queueCommand
+    .command('peek')
+    .description('Show the next pending article without consuming it.')
+    .option('--publication <slug>', 'Filter by publication slug')
+    .action(async (options: { publication?: string }) => {
+      await runQueuePeekCommand(options);
+    });
+
+  queueCommand
+    .command('remove')
+    .description('Delete a queued article by ID.')
+    .argument('<id>', 'Queue entry ID')
+    .option('-f, --force', 'Skip the confirmation prompt', false)
+    .action(async (id: string, options: { force: boolean }) => {
+      await runQueueRemoveCommand({ id, force: options.force });
+    });
+
+  queueCommand
+    .command('clear')
+    .description('Delete all queued articles.')
+    .option('-f, --force', 'Skip the confirmation prompt', false)
+    .action(async (options: { force: boolean }) => {
+      await runQueueClearCommand({ force: options.force });
     });
 
   await program.parseAsync(argv);

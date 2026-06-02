@@ -38,6 +38,7 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--max-links <n>` | Kein | Nein | Positive Ganzzahl | Abgeleitet von `--length` | Beliebige positive Ganzzahl | Begrenzt die Anzahl der generierten Links. Gilt nicht für benutzerdefinierte Links. Erfordert `--enrich-links`. |
 | `--publication <slug>` | Kein | Nein | Zeichenfolge | n/a | Gültiger Veröffentlichungs-Slug | Veröffentlichungs-Slug für Standardwerte und redaktionelle Richtlinie. |
 | `--series <slug>` | Kein | Nein | Zeichenfolge | n/a | Gültiger Serien-Slug | Serien-Slug für Standardwerte und thematischen Kontext. Serie überschreibt Veröffentlichungs-Standardwerte. |
+| `--from-queue` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Den nächsten ausstehenden Artikel aus der Warteschlange entnehmen und schreiben. Mit `--publication` wird nach Veröffentlichung gefiltert. |
 
 ## Beispiele
 
@@ -59,6 +60,14 @@ ideon write --dry-run "How to test Ideon pipeline changes" --primary article=1
 
 ```bash title="One-Shot-Agenten-sicherer Pfad"
 ideon write --no-interactive --idea "How to productionize docs operations" --primary article=1 --style technical --intent tutorial --length 1200
+```
+
+```bash title="Aus der Warteschlange schreiben"
+ideon write --from-queue
+```
+
+```bash title="Aus der Warteschlange für eine bestimmte Veröffentlichung"
+ideon write --from-queue --publication tech-blog
 ```
 
 ## Nicht-interaktives Verhalten
@@ -93,6 +102,7 @@ Bei Erfolg schreibt Ideon Generierungsausgaben unter `output/<timestamp>-<slug>/
 ## Verwandte Befehle
 
 - [ideon write resume](./ideon-write-resume.md)
+- [ideon queue](./ideon-queue.md)
 - [ideon config](./ideon-config.md)
 - [ideon preview [markdownPath]](./ideon-preview.md)
 - [ideon settings](./ideon-settings.md)

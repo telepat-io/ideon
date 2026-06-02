@@ -54,6 +54,7 @@ const sidebars: SidebarsConfig = {
             'reference/commands/ideon-config',
             'reference/commands/ideon-write',
             'reference/commands/ideon-write-resume',
+            'reference/commands/ideon-queue',
             'reference/commands/ideon-delete',
             'reference/commands/ideon-preview',
             'reference/commands/ideon-mcp-serve',

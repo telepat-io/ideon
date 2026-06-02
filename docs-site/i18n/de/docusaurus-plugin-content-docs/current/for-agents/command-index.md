@@ -22,7 +22,13 @@ keywords: [ideon, agents, command index, cli, reference]
 
 - Pfad: `/reference/commands/ideon-write`
 - Zweck: Generieren Sie primäre und optionale sekundäre Ausgaben aus einer Idee oder Job-Datei.
-- Wichtige Flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`.
+- Wichtige Flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+
+## ideon queue
+
+- Pfad: `/reference/commands/ideon-queue`
+- Zweck: Verwalten Sie die Inhaltswarteschlange für die Planung zukünftiger Artikel.
+- Wichtige Flags: `add`, `list --json`, `peek`, `remove --force`, `clear --force`.
 
 ## ideon write resume
 

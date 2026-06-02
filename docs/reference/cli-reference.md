@@ -21,6 +21,7 @@ ideon --version
 - [ideon config](./commands/ideon-config.md)
 - [ideon write [idea]](./commands/ideon-write.md)
 - [ideon write resume](./commands/ideon-write-resume.md)
+- [ideon queue](./commands/ideon-queue.md)
 - [`ideon links <slug>`](./commands/ideon-links.md)
 - [`ideon export <generationId> <path>`](./commands/ideon-export.md)
 - [`ideon delete <slug>`](./commands/ideon-delete.md)
@@ -45,7 +46,8 @@ ideon --version
 
 ## Versioning Notes
 
-- Reference reflects Ideon CLI version `0.1.6`.
+- Reference reflects Ideon CLI version `0.1.33`.
+- `ideon queue` manages a global content queue for scheduling future writes.
 - Deprecated syntax `--target` was replaced by `--primary` and repeatable `--secondary` flags.
 - `ideon write` now supports strict one-shot behavior with `--no-interactive`.
 - Agent runtime integrations support CLI/MCP workflows and do not support Cursor or VS Code integrations.
