@@ -15,9 +15,9 @@ Requires Google Ads credentials configured via `ideon gads login` or environment
 ## Usage
 
 ```bash
-ideongkp ideas [options]
-ideongkp historical [options]
-ideongkp forecast [options]
+ideon gkp ideas [options]
+ideon gkp historical [options]
+ideon gkp forecast [options]
 ```
 
 ## Subcommands
@@ -27,10 +27,10 @@ ideongkp forecast [options]
 Generate keyword ideas from seed keywords, a URL, or a site.
 
 ```bash
-ideongkp ideas --keywords seo,marketing
-ideongkp ideas --keywords seo --country US,GB --language en
-ideongkp ideas --url https://example.com
-ideongkp ideas --keywords seo --url https://example.com --page-size 20
+ideon gkp ideas --keywords seo,marketing
+ideon gkp ideas --keywords seo --country US,GB --language en
+ideon gkp ideas --url https://example.com
+ideon gkp ideas --keywords seo --url https://example.com --page-size 20
 ```
 
 | Flag | Required | Default | Description |
@@ -86,9 +86,9 @@ Total: 3 keywords
 Get historical search volume and competition metrics for a list of keywords.
 
 ```bash
-ideongkp historical --keywords seo,marketing
-ideongkp historical --keywords seo --country US --language en
-ideongkp historical --keywords seo --no-include-cpc
+ideon gkp historical --keywords seo,marketing
+ideon gkp historical --keywords seo --country US --language en
+ideon gkp historical --keywords seo --no-include-cpc
 ```
 
 | Flag | Required | Default | Description |
@@ -118,9 +118,9 @@ Total: 1 keyword
 Get projected impressions, clicks, and cost for a set of keywords.
 
 ```bash
-ideongkp forecast --keywords seo,marketing
-ideongkp forecast --keywords seo --match-type EXACT --country US
-ideongkp forecast --keywords seo --max-cpc-bid 5000000 --start-date 2025-01-01 --end-date 2025-01-31
+ideon gkp forecast --keywords seo,marketing
+ideon gkp forecast --keywords seo --match-type EXACT --country US
+ideon gkp forecast --keywords seo --max-cpc-bid 5000000 --start-date 2025-01-01 --end-date 2025-01-31
 ```
 
 | Flag | Required | Default | Description |
