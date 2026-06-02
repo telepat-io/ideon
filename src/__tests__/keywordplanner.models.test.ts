@@ -176,7 +176,6 @@ describe('buildGetHistoricalDataBody', () => {
       language: 'languageConstants/1000',
       historicalMetricsOptions: {
         includeAverageCpc: true,
-        monthlySearchVolume: true,
       },
     });
   });
@@ -210,12 +209,15 @@ describe('buildGetHistoricalDataBody', () => {
 describe('buildForecastBody', () => {
   it('builds body with keywords only', () => {
     const body = buildForecastBody({ keywords: ['test', 'keyword'] });
+    expect(body.forecastPeriod).toBeDefined();
     expect(body.campaign).toBeDefined();
     const campaign = body.campaign as Record<string, unknown>;
     expect(campaign.languageConstants).toEqual(['languageConstants/1000']);
     expect(campaign.geoTargetConstants).toEqual(['geoTargetConstants/2840']);
+    expect(campaign.biddingStrategy).toBeDefined();
     expect(campaign.adGroups).toHaveLength(1);
-    expect((campaign.adGroups as Array<Record<string, unknown>>)[0].biddableKeywords).toHaveLength(2);
+    const adGroups = campaign.adGroups as Array<Record<string, unknown>>;
+    expect(adGroups[0].keywords).toHaveLength(2);
   });
 
   it('defaults to US geo target', () => {
@@ -236,7 +238,15 @@ describe('buildForecastBody', () => {
     expect(campaign.languageConstants).toEqual(['languageConstants/1002']);
   });
 
-  it('includes bidding strategy when maxCpcBidMicros provided', () => {
+  it('includes bidding strategy with default maxCpcBidMicros', () => {
+    const body = buildForecastBody({ keywords: ['test'] });
+    const campaign = body.campaign as Record<string, unknown>;
+    expect(campaign.biddingStrategy).toEqual({
+      manualCpcBiddingStrategy: { maxCpcBidMicros: '10000000' },
+    });
+  });
+
+  it('uses provided maxCpcBidMicros', () => {
     const body = buildForecastBody({ keywords: ['test'], maxCpcBidMicros: 1500000 });
     const campaign = body.campaign as Record<string, unknown>;
     expect(campaign.biddingStrategy).toEqual({
@@ -244,40 +254,32 @@ describe('buildForecastBody', () => {
     });
   });
 
-  it('omits bidding strategy when maxCpcBidMicros not provided', () => {
-    const body = buildForecastBody({ keywords: ['test'] });
-    const campaign = body.campaign as Record<string, unknown>;
-    expect(campaign.biddingStrategy).toBeUndefined();
-  });
-
   it('uses provided keywordMatchType', () => {
     const body = buildForecastBody({ keywords: ['test'], keywordMatchType: 'EXACT' });
     const campaign = body.campaign as Record<string, unknown>;
     const adGroups = campaign.adGroups as Array<Record<string, unknown>>;
-    const biddable = adGroups[0].biddableKeywords as Array<Record<string, unknown>>;
-    expect((biddable[0].keyword as Record<string, unknown>).matchType).toBe('EXACT');
+    const keywords = adGroups[0].keywords as Array<Record<string, unknown>>;
+    expect(keywords[0].matchType).toBe('EXACT');
   });
 
   it('defaults keywordMatchType to BROAD', () => {
     const body = buildForecastBody({ keywords: ['test'] });
     const campaign = body.campaign as Record<string, unknown>;
     const adGroups = campaign.adGroups as Array<Record<string, unknown>>;
-    const biddable = adGroups[0].biddableKeywords as Array<Record<string, unknown>>;
-    expect((biddable[0].keyword as Record<string, unknown>).matchType).toBe('BROAD');
+    const keywords = adGroups[0].keywords as Array<Record<string, unknown>>;
+    expect(keywords[0].matchType).toBe('BROAD');
   });
 
   it('uses provided startDate and endDate', () => {
     const body = buildForecastBody({ keywords: ['test'], startDate: '2024-01-01', endDate: '2024-01-31' });
-    const campaign = body.campaign as Record<string, unknown>;
-    expect(campaign.forecastPeriod).toEqual({ startDate: '2024-01-01', endDate: '2024-01-31' });
+    expect(body.forecastPeriod).toEqual({ startDate: '2024-01-01', endDate: '2024-01-31' });
   });
 
-  it('defaults dates to today + 30 days', () => {
+  it('defaults dates to tomorrow + 30 days', () => {
     const body = buildForecastBody({ keywords: ['test'] });
-    const campaign = body.campaign as Record<string, unknown>;
-    const forecastPeriod = campaign.forecastPeriod as Record<string, string>;
-    const today = new Date().toISOString().split('T')[0];
-    expect(forecastPeriod.startDate).toBe(today);
+    const forecastPeriod = body.forecastPeriod as Record<string, string>;
+    const tomorrow = new Date(Date.now() + 2 * 86400_000).toISOString().split('T')[0];
+    expect(forecastPeriod.startDate).toBe(tomorrow);
   });
 });
 
@@ -355,7 +357,7 @@ describe('parseGenerateIdeasResponse', () => {
 describe('parseGetHistoricalDataResponse', () => {
   it('parses raw API response', () => {
     const raw = {
-      metrics: [
+      results: [
         {
           text: 'test keyword',
           keywordMetrics: {
@@ -365,8 +367,8 @@ describe('parseGetHistoricalDataResponse', () => {
             lowTopOfPageBidMicros: '300000',
             highTopOfPageBidMicros: '900000',
             monthlySearchVolumes: [
-              { year: 2024, month: 'JANUARY', monthlySearches: '1500' },
-              { year: 2024, month: 'FEBRUARY', monthlySearches: '2500' },
+              { year: '2024', month: 'JANUARY', monthlySearches: '1500' },
+              { year: '2024', month: 'FEBRUARY', monthlySearches: '2500' },
             ],
           },
         },
@@ -390,7 +392,7 @@ describe('parseGetHistoricalDataResponse', () => {
   });
 
   it('handles empty results', () => {
-    const raw = { metrics: [] };
+    const raw = { results: [] };
     const result = parseGetHistoricalDataResponse(raw);
     expect(result.count).toBe(0);
     expect(result.keywords).toEqual([]);
@@ -398,13 +400,13 @@ describe('parseGetHistoricalDataResponse', () => {
 
   it('maps month names to numbers', () => {
     const raw = {
-      metrics: [
+      results: [
         {
           text: 'test',
           keywordMetrics: {
             monthlySearchVolumes: [
-              { year: 2024, month: 'MARCH', monthlySearches: '100' },
-              { year: 2024, month: 'DECEMBER', monthlySearches: '200' },
+              { year: '2024', month: 'MARCH', monthlySearches: '100' },
+              { year: '2024', month: 'DECEMBER', monthlySearches: '200' },
             ],
           },
         },
@@ -420,55 +422,34 @@ describe('parseGetHistoricalDataResponse', () => {
 describe('parseGetForecastDataResponse', () => {
   it('parses raw API response', () => {
     const raw = {
-      adGroupForecastMetrics: [
-        {
-          keywordForecastMetrics: [
-            {
-              keyword: { text: 'test keyword', matchType: 'BROAD' },
-              metrics: { impressions: 1000, clicks: 50, costMicros: 25000, ctr: 0.05 },
-            },
-          ],
-        },
-      ],
+      campaignForecastMetrics: {
+        averageCpcMicros: '3160942',
+        clicks: 797.6166381835938,
+        costMicros: '2521219553',
+        conversions: 5.2,
+        averageCpaMicros: '23456789',
+      },
     };
 
     const result = parseGetForecastDataResponse(raw);
-    expect(result.count).toBe(1);
-    expect(result.keywords[0]).toEqual({
-      text: 'test keyword',
-      matchType: 'BROAD',
-      impressions: 1000,
-      clicks: 50,
-      costMicros: 25000,
-      ctr: 0.05,
+    expect(result.campaignForecastMetrics).toEqual({
+      averageCpcMicros: 3160942,
+      clicks: 797.6166381835938,
+      costMicros: 2521219553,
+      conversions: 5.2,
+      averageCpaMicros: 23456789,
     });
   });
 
-  it('flattens multiple ad groups', () => {
-    const raw = {
-      adGroupForecastMetrics: [
-        {
-          keywordForecastMetrics: [
-            { keyword: { text: 'kw1', matchType: 'BROAD' }, metrics: { impressions: 100, clicks: 10, costMicros: 5000, ctr: 0.1 } },
-          ],
-        },
-        {
-          keywordForecastMetrics: [
-            { keyword: { text: 'kw2', matchType: 'EXACT' }, metrics: { impressions: 200, clicks: 20, costMicros: 10000, ctr: 0.1 } },
-          ],
-        },
-      ],
-    };
-
+  it('handles missing fields', () => {
+    const raw = { campaignForecastMetrics: {} };
     const result = parseGetForecastDataResponse(raw);
-    expect(result.count).toBe(2);
-    expect(result.keywords.map((k) => k.text)).toEqual(['kw1', 'kw2']);
-  });
-
-  it('handles empty results', () => {
-    const raw = { adGroupForecastMetrics: [] };
-    const result = parseGetForecastDataResponse(raw);
-    expect(result.count).toBe(0);
-    expect(result.keywords).toEqual([]);
+    expect(result.campaignForecastMetrics).toEqual({
+      averageCpcMicros: 0,
+      clicks: 0,
+      costMicros: 0,
+      conversions: 0,
+      averageCpaMicros: 0,
+    });
   });
 });

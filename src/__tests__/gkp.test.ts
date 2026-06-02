@@ -452,7 +452,7 @@ describe('gkp commands', () => {
 
     it('calls getForecastData with keywords', async () => {
       mockAllCredentials();
-      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+      mockGkpClient.getForecastData.mockResolvedValue({ campaignForecastMetrics: { averageCpcMicros: 0, clicks: 0, costMicros: 0, conversions: 0, averageCpaMicros: 0 } });
 
       await runGkpForecastCommand({ keywords: 'seo,marketing' });
 
@@ -469,7 +469,7 @@ describe('gkp commands', () => {
 
     it('passes match type and max CPC bid to client', async () => {
       mockAllCredentials();
-      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+      mockGkpClient.getForecastData.mockResolvedValue({ campaignForecastMetrics: { averageCpcMicros: 0, clicks: 0, costMicros: 0, conversions: 0, averageCpaMicros: 0 } });
 
       await runGkpForecastCommand({ keywords: 'test', matchType: 'EXACT', maxCpcBid: 5000000 });
 
@@ -486,7 +486,7 @@ describe('gkp commands', () => {
 
     it('passes country codes, date range, and language', async () => {
       mockAllCredentials();
-      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+      mockGkpClient.getForecastData.mockResolvedValue({ campaignForecastMetrics: { averageCpcMicros: 0, clicks: 0, costMicros: 0, conversions: 0, averageCpaMicros: 0 } });
 
       await runGkpForecastCommand({
         keywords: 'test',
@@ -510,17 +510,13 @@ describe('gkp commands', () => {
     it('prints TTY table with forecast metrics', async () => {
       mockAllCredentials();
       mockGkpClient.getForecastData.mockResolvedValue({
-        keywords: [
-          {
-            text: 'seo tools',
-            matchType: 'BROAD',
-            impressions: 50000,
-            clicks: 1500,
-            costMicros: 7500000,
-            ctr: 0.03,
-          },
-        ],
-        count: 1,
+        campaignForecastMetrics: {
+          averageCpcMicros: 3160942,
+          clicks: 797.62,
+          costMicros: 2521219553,
+          conversions: 5.2,
+          averageCpaMicros: 23456789,
+        },
       });
 
       const logs: string[] = [];
@@ -529,33 +525,15 @@ describe('gkp commands', () => {
       });
 
       const output = logs.join('\n');
-      expect(output).toContain('Forecast');
-      expect(output).toContain('seo tools');
-      expect(output).toContain('BROAD');
-      expect(output).toContain('50,000');
-      expect(output).toContain('1,500');
-      expect(output).toContain('$7.50');
-      expect(output).toContain('3.0%');
-      expect(output).toContain('Total: 1 keyword');
-    });
-
-    it('prints "no results" when empty', async () => {
-      mockAllCredentials();
-      mockGkpClient.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
-
-      const logs: string[] = [];
-      await runGkpForecastCommand({ keywords: 'nonexistent' }, {
-        log: (msg: string) => logs.push(msg),
-      });
-
-      expect(logs.some((l) => l.includes('No forecast data found'))).toBe(true);
+      expect(output).toContain('Campaign Forecast');
+      expect(output).toContain('797.6');
+      expect(output).toContain('$2521.22');
     });
 
     it('outputs JSON with --json flag', async () => {
       mockAllCredentials();
       const expectedResult = {
-        keywords: [{ text: 'seo', matchType: 'BROAD', impressions: 10000, clicks: 300, costMicros: 1500000, ctr: 0.03 }],
-        count: 1,
+        campaignForecastMetrics: { averageCpcMicros: 3160942, clicks: 797.62, costMicros: 2521219553, conversions: 5.2, averageCpaMicros: 23456789 },
       };
       mockGkpClient.getForecastData.mockResolvedValue(expectedResult);
 

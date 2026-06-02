@@ -1,11 +1,13 @@
 import { jest } from '@jest/globals';
 import type { AppSettings, EnvSettings, SecretSettings } from '../config/schema.js';
 import type { Publication } from '../types/publication.js';
+import type { Series } from '../types/series.js';
 
 const loadSavedSettingsMock = jest.fn<() => Promise<AppSettings>>();
 const loadSecretsMock = jest.fn<(options?: { disableKeytar?: boolean }) => Promise<SecretSettings>>();
 const readEnvSettingsMock = jest.fn<() => EnvSettings>();
 const loadPublicationMock = jest.fn<(slug: string) => Promise<Publication>>();
+const loadSeriesMock = jest.fn<(slug: string) => Promise<Series>>();
 
 jest.unstable_mockModule('../config/settingsFile.js', () => ({
   loadSavedSettings: loadSavedSettingsMock,
@@ -21,6 +23,10 @@ jest.unstable_mockModule('../config/env.js', () => ({
 
 jest.unstable_mockModule('../config/publicationStore.js', () => ({
   loadPublication: loadPublicationMock,
+}));
+
+jest.unstable_mockModule('../config/seriesStore.js', () => ({
+  loadSeries: loadSeriesMock,
 }));
 
 const { resolveRunInput } = await import('../config/resolver.js');
@@ -257,5 +263,133 @@ describe('resolveRunInput with publications', () => {
     expect(result.config.settings.modelSettings.temperature).toBe(0.9);
     expect(result.config.settings.modelSettings.maxTokens).toBe(8000);
     expect(result.config.settings.modelSettings.topP).toBe(0.95);
+  });
+
+  it('series style overrides publication style', async () => {
+    loadPublicationMock.mockResolvedValue(basePublication);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Test Series',
+      slug: 'test-series',
+      topic: 'AI topic',
+      publication: 'tech-blog',
+      defaults: { style: 'storytelling' },
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+    });
+
+    const result = await resolveRunInput({ idea: 'test', publication: 'tech-blog', series: 'test-series' });
+
+    expect(result.config.settings.style).toBe('storytelling');
+  });
+
+  it('series intent overrides publication intent', async () => {
+    loadPublicationMock.mockResolvedValue(basePublication);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Test Series',
+      slug: 'test-series',
+      topic: 'AI topic',
+      publication: 'tech-blog',
+      defaults: { intent: 'how-to-guide' },
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+    });
+
+    const result = await resolveRunInput({ idea: 'test', publication: 'tech-blog', series: 'test-series' });
+
+    expect(result.config.settings.intent).toBe('how-to-guide');
+  });
+
+  it('series targetLength overrides publication targetLength', async () => {
+    loadPublicationMock.mockResolvedValue(basePublication);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Test Series',
+      slug: 'test-series',
+      topic: 'AI topic',
+      publication: 'tech-blog',
+      defaults: { targetLength: 500 },
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+    });
+
+    const result = await resolveRunInput({ idea: 'test', publication: 'tech-blog', series: 'test-series' });
+
+    expect(result.config.settings.targetLength).toBe(500);
+  });
+
+  it('series contentTargets overrides publication contentTargets', async () => {
+    const pubWithTargets: Publication = {
+      ...basePublication,
+      defaults: {
+        ...basePublication.defaults,
+        contentTargets: [
+          { contentType: 'blog-post', role: 'primary', count: 1 },
+        ],
+      },
+    };
+    loadPublicationMock.mockResolvedValue(pubWithTargets);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Test Series',
+      slug: 'test-series',
+      topic: 'AI topic',
+      publication: 'tech-blog',
+      defaults: {
+        contentTargets: [
+          { contentType: 'newsletter', role: 'primary', count: 1 },
+        ],
+      },
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+    });
+
+    const result = await resolveRunInput({ idea: 'test', publication: 'tech-blog', series: 'test-series' });
+
+    expect(result.config.settings.contentTargets[0]!.contentType).toBe('newsletter');
+  });
+
+  it('series modelSettings layers on top of publication modelSettings', async () => {
+    const pubWithModel: Publication = {
+      ...basePublication,
+      defaults: {
+        temperature: 0.9,
+        maxTokens: 8000,
+      },
+    };
+    loadPublicationMock.mockResolvedValue(pubWithModel);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Test Series',
+      slug: 'test-series',
+      topic: 'AI topic',
+      publication: 'tech-blog',
+      defaults: {
+        maxTokens: 4000,
+        topP: 0.95,
+      },
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+    });
+
+    const result = await resolveRunInput({ idea: 'test', publication: 'tech-blog', series: 'test-series' });
+
+    expect(result.config.settings.modelSettings.temperature).toBe(0.9);
+    expect(result.config.settings.modelSettings.maxTokens).toBe(4000);
+    expect(result.config.settings.modelSettings.topP).toBe(0.95);
+  });
+
+  it('CLI flags override both publication and series', async () => {
+    loadPublicationMock.mockResolvedValue(basePublication);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Test Series',
+      slug: 'test-series',
+      topic: 'AI topic',
+      publication: 'tech-blog',
+      defaults: { style: 'storytelling', intent: 'how-to-guide' },
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+    });
+
+    const result = await resolveRunInput({
+      idea: 'test',
+      publication: 'tech-blog',
+      series: 'test-series',
+      style: 'playful',
+      intent: 'tutorial',
+    });
+
+    expect(result.config.settings.style).toBe('playful');
+    expect(result.config.settings.intent).toBe('tutorial');
   });
 });

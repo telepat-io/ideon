@@ -134,19 +134,21 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
           },
         }
       : {}),
-    // Series defaults (applied after publication, before CLI flags)
-    ...(seriesDefaults.style && !hasStyleOverride && !pubDefaults.style ? { style: seriesDefaults.style } : {}),
-    ...(seriesDefaults.intent && !hasIntentOverride && !pubDefaults.intent ? { intent: seriesDefaults.intent } : {}),
-    ...(seriesDefaults.targetLength && !hasLengthOverride && !pubDefaults.targetLength ? { targetLength: seriesDefaults.targetLength } : {}),
-    ...(seriesDefaults.contentTargets && !hasContentTargetsOverride && !pubDefaults.contentTargets ? { contentTargets: seriesDefaults.contentTargets } : {}),
-    ...(seriesDefaults.model && !hasModelOverride && !pubDefaults.model ? { model: seriesDefaults.model } : {}),
+    // Series defaults (override publication, applied after publication, before CLI flags)
+    ...(seriesDefaults.style && !hasStyleOverride ? { style: seriesDefaults.style } : {}),
+    ...(seriesDefaults.intent && !hasIntentOverride ? { intent: seriesDefaults.intent } : {}),
+    ...(seriesDefaults.targetLength && !hasLengthOverride ? { targetLength: seriesDefaults.targetLength } : {}),
+    ...(seriesDefaults.contentTargets && !hasContentTargetsOverride ? { contentTargets: seriesDefaults.contentTargets } : {}),
+    ...(seriesDefaults.model && !hasModelOverride ? { model: seriesDefaults.model } : {}),
     ...((seriesDefaults.temperature !== undefined || seriesDefaults.maxTokens !== undefined || seriesDefaults.topP !== undefined)
       && !hasModelSettingsOverride
-      && pubDefaults.temperature === undefined && pubDefaults.maxTokens === undefined && pubDefaults.topP === undefined
       ? {
           modelSettings: {
             ...savedSettings.modelSettings,
             ...(job?.settings?.modelSettings ?? {}),
+            ...(pubDefaults.temperature !== undefined ? { temperature: pubDefaults.temperature } : {}),
+            ...(pubDefaults.maxTokens !== undefined ? { maxTokens: pubDefaults.maxTokens } : {}),
+            ...(pubDefaults.topP !== undefined ? { topP: pubDefaults.topP } : {}),
             ...(seriesDefaults.temperature !== undefined ? { temperature: seriesDefaults.temperature } : {}),
             ...(seriesDefaults.maxTokens !== undefined ? { maxTokens: seriesDefaults.maxTokens } : {}),
             ...(seriesDefaults.topP !== undefined ? { topP: seriesDefaults.topP } : {}),

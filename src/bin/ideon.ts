@@ -8,7 +8,9 @@ try {
 } catch (error) {
   process.exitCode = 1;
 
-  if (!(error instanceof ReportedError)) {
+  if (error instanceof ReportedError) {
+    console.error(error.message);
+  } else {
     const message = error instanceof Error ? error.message : 'Unknown CLI error.';
     console.error(message);
   }

@@ -16,7 +16,6 @@ import { GkpClient, type GkpClientOptions } from '../../integrations/keywordplan
 import {
   type KeywordIdea,
   type KeywordMetrics,
-  type KeywordForecastMetrics,
   type GenerateIdeasResponse,
   type GetHistoricalDataResponse,
   type GetForecastDataResponse,
@@ -147,7 +146,7 @@ async function maybeLoadFreshSnapshot<T>(
 
 async function saveKeywordMetrics(
   deps: GkpCommandDependencies,
-  keywords: Array<KeywordIdea | KeywordMetrics | KeywordForecastMetrics>,
+  keywords: Array<KeywordIdea | KeywordMetrics>,
   context: {
     fingerprint: string;
     publication?: string;
@@ -169,15 +168,11 @@ async function saveKeywordMetrics(
       series: context.series,
       countryCodes: context.countryCodes,
       language: context.language,
-      avgMonthlySearches: 'avgMonthlySearches' in keyword ? keyword.avgMonthlySearches : existing?.avgMonthlySearches,
-      competition: 'competition' in keyword ? keyword.competition : existing?.competition,
-      lowTopOfPageBidMicros: 'lowTopOfPageBidMicros' in keyword ? keyword.lowTopOfPageBidMicros : existing?.lowTopOfPageBidMicros,
-      highTopOfPageBidMicros: 'highTopOfPageBidMicros' in keyword ? keyword.highTopOfPageBidMicros : existing?.highTopOfPageBidMicros,
-      competitionIndex: 'competitionIndex' in keyword ? keyword.competitionIndex : existing?.competitionIndex,
-      impressions: 'impressions' in keyword ? keyword.impressions : existing?.impressions,
-      clicks: 'clicks' in keyword ? keyword.clicks : existing?.clicks,
-      costMicros: 'costMicros' in keyword ? keyword.costMicros : existing?.costMicros,
-      ctr: 'ctr' in keyword ? keyword.ctr : existing?.ctr,
+      avgMonthlySearches: keyword.avgMonthlySearches,
+      competition: keyword.competition,
+      lowTopOfPageBidMicros: keyword.lowTopOfPageBidMicros,
+      highTopOfPageBidMicros: keyword.highTopOfPageBidMicros,
+      competitionIndex: keyword.competitionIndex,
       sourceQueries,
     });
   }
@@ -249,26 +244,21 @@ function formatHistoricalTTY(result: GetHistoricalDataResponse): string {
 }
 
 function formatForecastTTY(result: GetForecastDataResponse): string {
-  if (result.keywords.length === 0) {
-    return 'No forecast data found.';
-  }
+  const m = result.campaignForecastMetrics;
+  const divider = '─'.repeat(50);
 
-  const header = 'Keyword'.padEnd(32) + 'Match'.padStart(8) + 'Impr.'.padStart(10) + 'Clicks'.padStart(10) + 'Cost'.padStart(12) + 'CTR'.padStart(8);
-  const divider = '─'.repeat(header.length);
-
-  const rows = result.keywords.map((kw) => {
-    const text = kw.text.length > 30 ? kw.text.slice(0, 27) + '...' : kw.text;
-    return (
-      text.padEnd(32) +
-      kw.matchType.padStart(8) +
-      kw.impressions.toLocaleString().padStart(10) +
-      kw.clicks.toLocaleString().padStart(10) +
-      microsToDollars(kw.costMicros).padStart(12) +
-      `${(kw.ctr * 100).toFixed(1)}%`.padStart(8)
-    );
-  });
-
-  return ['', 'Forecast', divider, header, divider, ...rows, divider, `Total: ${result.count} keyword${result.count === 1 ? '' : 's'}`, ''].join('\n');
+  return [
+    '',
+    'Campaign Forecast',
+    divider,
+    `  Clicks:        ${m.clicks.toFixed(1)}`,
+    `  Cost:          ${microsToDollars(m.costMicros)}`,
+    `  Avg CPC:       ${microsToDollars(m.averageCpcMicros)}`,
+    `  Conversions:   ${m.conversions.toFixed(1)}`,
+    `  Avg CPA:       ${microsToDollars(m.averageCpaMicros)}`,
+    divider,
+    '',
+  ].join('\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -519,16 +509,7 @@ export async function runGkpForecastCommand(
       maxCpcBid: options.maxCpcBid,
       startDate: options.startDate,
       endDate: options.endDate,
-      count: result.count,
     }, result);
-
-    await saveKeywordMetrics(deps, result.keywords, {
-      fingerprint,
-      publication: options.publication,
-      series: options.series,
-      countryCodes,
-      language: options.language,
-    });
 
     emitResult(deps, options, result, formatForecastTTY);
   } catch (error) {

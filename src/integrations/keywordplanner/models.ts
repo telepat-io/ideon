@@ -61,17 +61,15 @@ export interface GetHistoricalDataResponse {
 }
 
 export interface KeywordForecastMetrics {
-  text: string;
-  matchType: string;
-  impressions: number;
+  averageCpcMicros: number;
   clicks: number;
   costMicros: number;
-  ctr: number;
+  conversions: number;
+  averageCpaMicros: number;
 }
 
 export interface GetForecastDataResponse {
-  keywords: KeywordForecastMetrics[];
-  count: number;
+  campaignForecastMetrics: KeywordForecastMetrics;
 }
 
 export const countryCodeToGeoTargetId: Record<string, number> = {
@@ -184,43 +182,40 @@ export function buildGetHistoricalDataBody(input: GkpGetHistoricalDataInput): Re
 
   body.historicalMetricsOptions = {
     includeAverageCpc: input.includeAverageCpc !== false,
-    monthlySearchVolume: true,
   };
 
   return body;
 }
 
 export function buildForecastBody(input: GkpGetForecastDataInput): Record<string, unknown> {
-  const now = new Date();
-  const startDate = input.startDate || now.toISOString().split('T')[0];
-  const endDate = input.endDate || new Date(now.getTime() + FORECAST_DEFAULT_DAYS * 86400000).toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now() + 2 * 86400_000);
+  const startDate = input.startDate || tomorrow.toISOString().split('T')[0];
+  const endDate = input.endDate || new Date(tomorrow.getTime() + FORECAST_DEFAULT_DAYS * 86400000).toISOString().split('T')[0];
 
   const geoTargets = resolveGeoTargets(input.countryCodes, true);
   const language = resolveLanguage(input.language);
 
-  const biddableKeywords = input.keywords.map((kw) => ({
-    keyword: {
-      text: kw,
-      matchType: input.keywordMatchType || 'BROAD',
-    },
+  const keywords = input.keywords.map((kw) => ({
+    text: kw,
+    matchType: input.keywordMatchType || 'BROAD',
   }));
 
-  const campaign: Record<string, unknown> = {
-    languageConstants: [language],
-    geoTargetConstants: geoTargets,
-    forecastPeriod: { startDate, endDate },
-    adGroups: [{ biddableKeywords }],
-  };
-
-  if (input.maxCpcBidMicros !== undefined) {
-    campaign.biddingStrategy = {
-      manualCpcBiddingStrategy: {
-        maxCpcBidMicros: String(input.maxCpcBidMicros),
+  return {
+    forecastPeriod: {
+      startDate,
+      endDate,
+    },
+    campaign: {
+      languageConstants: [language],
+      geoTargetConstants: geoTargets,
+      biddingStrategy: {
+        manualCpcBiddingStrategy: {
+          maxCpcBidMicros: String(input.maxCpcBidMicros ?? 10_000_000),
+        },
       },
-    };
-  }
-
-  return { campaign };
+      adGroups: [{ keywords }],
+    },
+  };
 }
 
 export function parseGenerateIdeasResponse(raw: Record<string, unknown>): GenerateIdeasResponse {
@@ -243,12 +238,12 @@ export function parseGenerateIdeasResponse(raw: Record<string, unknown>): Genera
 }
 
 export function parseGetHistoricalDataResponse(raw: Record<string, unknown>): GetHistoricalDataResponse {
-  const metrics = (raw.metrics as Array<Record<string, unknown>>) || [];
-  const keywords: KeywordMetrics[] = metrics.map((m) => {
+  const results = (raw.results as Array<Record<string, unknown>>) || [];
+  const keywords: KeywordMetrics[] = results.map((m) => {
     const km = (m.keywordMetrics || {}) as Record<string, unknown>;
     const monthlyRaw = (km.monthlySearchVolumes as Array<Record<string, unknown>>) || [];
     const monthlySearchVolumes: MonthlyVolume[] = monthlyRaw.map((v) => ({
-      year: (v.year as number) || 0,
+      year: parseStrInt(v.year as string | undefined),
       month: MONTH_MAP[(v.month as string) || ''] || 0,
       monthlySearches: parseStrInt(v.monthlySearches as string | undefined),
     }));
@@ -268,24 +263,14 @@ export function parseGetHistoricalDataResponse(raw: Record<string, unknown>): Ge
 }
 
 export function parseGetForecastDataResponse(raw: Record<string, unknown>): GetForecastDataResponse {
-  const adGroupMetrics = (raw.adGroupForecastMetrics as Array<Record<string, unknown>>) || [];
-  const keywords: KeywordForecastMetrics[] = [];
-
-  for (const ag of adGroupMetrics) {
-    const kfMetrics = (ag.keywordForecastMetrics as Array<Record<string, unknown>>) || [];
-    for (const kf of kfMetrics) {
-      const kw = (kf.keyword || {}) as Record<string, unknown>;
-      const m = (kf.metrics || {}) as Record<string, unknown>;
-      keywords.push({
-        text: (kw.text as string) || '',
-        matchType: (kw.matchType as string) || 'BROAD',
-        impressions: (m.impressions as number) || 0,
-        clicks: (m.clicks as number) || 0,
-        costMicros: (m.costMicros as number) || 0,
-        ctr: (m.ctr as number) || 0,
-      });
-    }
-  }
-
-  return { keywords, count: keywords.length };
+  const m = (raw.campaignForecastMetrics || {}) as Record<string, unknown>;
+  return {
+    campaignForecastMetrics: {
+      averageCpcMicros: parseStrInt(m.averageCpcMicros as string | undefined),
+      clicks: typeof m.clicks === 'number' ? m.clicks : 0,
+      costMicros: parseStrInt(m.costMicros as string | undefined),
+      conversions: typeof m.conversions === 'number' ? m.conversions : 0,
+      averageCpaMicros: parseStrInt(m.averageCpaMicros as string | undefined),
+    },
+  };
 }

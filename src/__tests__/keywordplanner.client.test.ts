@@ -201,7 +201,7 @@ describe('GkpClient', () => {
         .mockImplementationOnce(async () => mockFetchResponse(200, MOCK_TOKEN_RESPONSE))
         .mockImplementationOnce(async () =>
           mockFetchResponse(200, {
-            metrics: [
+            results: [
               {
                 text: 'test keyword',
                 keywordMetrics: {
@@ -239,24 +239,20 @@ describe('GkpClient', () => {
         .mockImplementationOnce(async () => mockFetchResponse(200, MOCK_TOKEN_RESPONSE))
         .mockImplementationOnce(async () =>
           mockFetchResponse(200, {
-            adGroupForecastMetrics: [
-              {
-                keywordForecastMetrics: [
-                  {
-                    keyword: { text: 'test keyword', matchType: 'BROAD' },
-                    metrics: { impressions: 1000, clicks: 50, costMicros: 25000, ctr: 0.05 },
-                  },
-                ],
-              },
-            ],
+            campaignForecastMetrics: {
+              averageCpcMicros: '3160942',
+              clicks: 797.6166381835938,
+              costMicros: '2521219553',
+              conversions: 5.2,
+              averageCpaMicros: '23456789',
+            },
           }),
         );
 
       const result = await client.getForecastData({ keywords: ['test'] });
 
-      expect(result.count).toBe(1);
-      expect(result.keywords[0].text).toBe('test keyword');
-      expect(result.keywords[0].impressions).toBe(1000);
+      expect(result.campaignForecastMetrics.clicks).toBeCloseTo(797.62, 0);
+      expect(result.campaignForecastMetrics.costMicros).toBe(2521219553);
     });
   });
 

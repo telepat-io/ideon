@@ -31,7 +31,7 @@ const gkpQuerySnapshotSchema = z.object({
   maxCpcBid: z.number().int().positive().optional(),
   startDate: z.string().min(1).optional(),
   endDate: z.string().min(1).optional(),
-  count: z.number().int().min(0),
+  count: z.number().int().min(0).optional(),
   response: z.unknown(),
 });
 
