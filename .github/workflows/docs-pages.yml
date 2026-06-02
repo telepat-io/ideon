@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - 'docs/**'
       - 'docs-site/**'
       - 'writing-guide/**'
       - '.github/workflows/docs-pages.yml'
