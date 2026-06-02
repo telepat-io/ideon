@@ -322,8 +322,8 @@ describe('publication commands', () => {
     it('throws when name is missing in non-interactive mode', async () => {
       const originalStdoutIsTTY = process.stdout.isTTY;
       const originalStdinIsTTY = process.stdin.isTTY;
-      process.stdout.isTTY = undefined;
-      process.stdin.isTTY = undefined;
+      (process.stdout as { isTTY?: boolean }).isTTY = undefined;
+      (process.stdin as { isTTY?: boolean }).isTTY = undefined;
       try {
         const { runPublicationAddCommand } = await import('../cli/commands/publication.js');
         await expect(runPublicationAddCommand({})).rejects.toThrow('Publication name is required');
