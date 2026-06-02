@@ -26,7 +26,7 @@ When a series is associated with a write run, its defaults are applied after pub
 saved settings → job file → env vars → publication defaults → series defaults → CLI flags
 ```
 
-Series can override any setting a publication can: `style`, `intent`, `targetLength`, `contentTargets`, `model`, `modelSettings`, and `editorialPolicy`.
+Series can override any setting a publication can: `style`, `intent`, `targetLength`, `contentTargets`, `countryCodes`, `language`, `model`, `modelSettings`, and `editorialPolicy`.
 
 ## Series Data in Prompts
 
@@ -69,6 +69,8 @@ ideon series add [name] [--topic <topic>] [--publication <slug>] [--style <style
 | `--length <size>` | No | enum or integer | Default target length. |
 | `--type <type>` | No | enum | Default primary content type. |
 | `--audience <description>` | No | string | Default target audience hint. |
+| `--country <codes>` | No | string | Comma-separated ISO 3166-1 alpha-2 country codes (for example: `US,GB,DE`). |
+| `--language <code>` | No | string | ISO 639-1 language code (for example: `en`, `de`, `es`). |
 | `--keywords <keywords>` | No | string | Comma-separated SEO keywords inherited by all articles in this series. Supports compound keywords (e.g., "organic marketing, content strategy, seo"). |
 | `--tone <tone>` | No | string | Editorial policy tone. |
 | `--forbidden-topics <topics>` | No | string | Comma-separated forbidden topics. |
@@ -87,6 +89,9 @@ ideon series add "AI Deep Dives" --topic "Exploring cutting-edge AI technologies
 
 # Series with keywords
 ideon series add "SEO Playbook" --topic "SEO best practices" --keywords "organic marketing, content strategy, seo"
+
+# Series with market defaults
+ideon series add "DACH AI" --publication tech-blog --country DE,AT,CH --language de
 
 # Series with full options
 ideon series add "Startup Stories" --topic "Founder interviews and case studies" --publication my-blog --style storytelling --intent case-study --tone conversational
@@ -164,6 +169,8 @@ ideon series edit <slug> [--name <name>] [--topic <topic>] [--publication <slug>
 | `--length <size>` | No | enum or integer | New default target length. |
 | `--type <type>` | No | enum | New default content type. |
 | `--audience <description>` | No | string | New audience hint. |
+| `--country <codes>` | No | string | New comma-separated ISO country codes for market defaults. |
+| `--language <code>` | No | string | New ISO language code for market defaults. |
 | `--keywords <keywords>` | No | string | New comma-separated SEO keywords. Supports compound keywords. |
 | `--tone <tone>` | No | string | New editorial tone. |
 | `--forbidden-topics <topics>` | No | string | New comma-separated forbidden topics. |
@@ -179,6 +186,9 @@ ideon series edit ai-deep-dives --topic "New topic description"
 
 # Re-associate to different publication
 ideon series edit ai-deep-dives --publication new-pub
+
+# Update market defaults
+ideon series edit ai-deep-dives --country US,CA --language en
 
 # Remove publication association
 ideon series edit ai-deep-dives --unset-publication
@@ -254,3 +264,10 @@ When both are specified:
 - Series overrides publication defaults where it has its own values
 - Series editorial policy is appended to publication policy in prompts
 - CLI flags still override everything
+
+## Validation Notes
+
+- `--country` values are strictly validated against Google Ads supported ISO country codes.
+- `--language` is strictly validated against Google Ads supported ISO language codes.
+- Country codes are normalized to uppercase on save.
+- Language code is normalized to lowercase on save.

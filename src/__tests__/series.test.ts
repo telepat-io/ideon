@@ -71,6 +71,51 @@ describe('series types', () => {
       const result = seriesDefaultsSchema.parse({});
       expect(result.keywords).toBeUndefined();
     });
+
+    it('parses normalized country codes and language', () => {
+      const result = seriesDefaultsSchema.parse({
+        countryCodes: ['us', 'ca'],
+        language: 'EN',
+      });
+
+      expect(result.countryCodes).toEqual(['US', 'CA']);
+      expect(result.language).toBe('en');
+    });
+
+    it('rejects invalid country code', () => {
+      expect(() => seriesDefaultsSchema.parse({ countryCodes: ['zzz'] })).toThrow();
+    });
+
+    it('rejects invalid language code', () => {
+      expect(() => seriesDefaultsSchema.parse({ language: 'zz' })).toThrow();
+    });
+
+    it('accepts contentTargets with exactly one primary target', () => {
+      const result = seriesDefaultsSchema.parse({
+        contentTargets: [
+          { contentType: 'article', role: 'primary', count: 1 },
+          { contentType: 'blog-post', role: 'secondary', count: 2 },
+        ],
+      });
+
+      expect(result.contentTargets).toHaveLength(2);
+    });
+
+    it('rejects contentTargets without exactly one primary target', () => {
+      expect(() => seriesDefaultsSchema.parse({
+        contentTargets: [
+          { contentType: 'article', role: 'secondary', count: 1 },
+          { contentType: 'blog-post', role: 'secondary', count: 1 },
+        ],
+      })).toThrow('contentTargets must include exactly one primary target.');
+
+      expect(() => seriesDefaultsSchema.parse({
+        contentTargets: [
+          { contentType: 'article', role: 'primary', count: 1 },
+          { contentType: 'blog-post', role: 'primary', count: 1 },
+        ],
+      })).toThrow('contentTargets must include exactly one primary target.');
+    });
   });
 
   describe('seriesSchema', () => {
@@ -324,9 +369,54 @@ describe('series commands', () => {
       expect(series.publication).toBe('tech-blog');
     });
 
+    it('creates series with market defaults', async () => {
+      const { runSeriesAddCommand } = await import('../cli/commands/series.js');
+
+      await runSeriesAddCommand(
+        {
+          name: 'EU Compliance Series',
+          country: 'de,fr',
+          language: 'DE',
+        },
+        { log: () => {} },
+      );
+
+      const series = await loadSeries('eu-compliance-series');
+      expect(series.defaults.countryCodes).toEqual(['DE', 'FR']);
+      expect(series.defaults.language).toBe('de');
+    });
+
+    it('rejects invalid country code in add command', async () => {
+      const { runSeriesAddCommand } = await import('../cli/commands/series.js');
+
+      await expect(
+        runSeriesAddCommand({
+          name: 'Bad Countries',
+          country: 'xx',
+        }),
+      ).rejects.toThrow('Invalid country codes');
+    });
+
+    it('rejects invalid language code in add command', async () => {
+      const { runSeriesAddCommand } = await import('../cli/commands/series.js');
+
+      await expect(
+        runSeriesAddCommand({
+          name: 'Bad Language',
+          language: 'zz',
+        }),
+      ).rejects.toThrow('Invalid language code');
+    });
+
     it('throws when name is missing in non-interactive mode', async () => {
       const { runSeriesAddCommand } = await import('../cli/commands/series.js');
-      await expect(runSeriesAddCommand({})).rejects.toThrow('Series name is required');
+      const restoreTty = mockTty(false, false);
+
+      try {
+        await expect(runSeriesAddCommand({})).rejects.toThrow('Series name is required');
+      } finally {
+        restoreTty();
+      }
     });
 
     it('throws when slug already exists', async () => {
@@ -448,6 +538,45 @@ describe('series commands', () => {
       expect(series.defaults.style).toBe('technical');
       expect(series.defaults.intent).toBe('how-to-guide');
       expect(series.editorialPolicy.tone).toBe('casual');
+    });
+
+    it('edits country and language defaults', async () => {
+      const { runSeriesEditCommand } = await import('../cli/commands/series.js');
+      await saveSeries(seriesSchema.parse({ name: 'Test', slug: 'test' }));
+
+      const origLog = console.log;
+      console.log = () => {};
+      try {
+        await runSeriesEditCommand({
+          slug: 'test',
+          country: 'us,gb',
+          language: 'EN',
+        });
+      } finally {
+        console.log = origLog;
+      }
+
+      const series = await loadSeries('test');
+      expect(series.defaults.countryCodes).toEqual(['US', 'GB']);
+      expect(series.defaults.language).toBe('en');
+    });
+
+    it('rejects invalid country code in edit command', async () => {
+      const { runSeriesEditCommand } = await import('../cli/commands/series.js');
+      await saveSeries(seriesSchema.parse({ name: 'Test', slug: 'test' }));
+
+      await expect(
+        runSeriesEditCommand({ slug: 'test', country: 'xx' }),
+      ).rejects.toThrow('Invalid country codes');
+    });
+
+    it('rejects invalid language code in edit command', async () => {
+      const { runSeriesEditCommand } = await import('../cli/commands/series.js');
+      await saveSeries(seriesSchema.parse({ name: 'Test', slug: 'test' }));
+
+      await expect(
+        runSeriesEditCommand({ slug: 'test', language: 'zz' }),
+      ).rejects.toThrow('Invalid language code');
     });
 
     it('rejects invalid style', async () => {

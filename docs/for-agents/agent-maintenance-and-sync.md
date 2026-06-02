@@ -17,7 +17,7 @@ In scope:
 - first-party skill contract metadata
 
 Note: "skill contract metadata" here refers to internal identifiers in `src/integrations/skills/registry.ts` (for example `ideon-write-primary`).
-This is separate from the external installable skill package at `skill/ideon-cli/`.
+This is separate from external installable skill packages at `skill/ideon-cli/` and `skill/ideon-plan/`.
 
 Out of scope:
 
@@ -33,9 +33,9 @@ When a CLI command contract changes, update all affected artifacts in the same c
 3. skill contract metadata surfaces.
 4. command reference docs and examples.
 5. localized docs parity pages.
-6. `skill/ideon-cli/` package (`SKILL.md`, `references/command-catalog.md`, and other companion references).
+6. installable skill packages (`skill/ideon-cli/` and `skill/ideon-plan/`, including each `SKILL.md` and companion references).
 
-A change is incomplete if exported CLI, MCP, skill contracts, and the installable skill package are not synchronized.
+A change is incomplete if exported CLI, MCP, skill contracts, and installable skill packages are not synchronized.
 
 ## Required Validation
 

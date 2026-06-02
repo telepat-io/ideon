@@ -172,11 +172,15 @@ Query real keyword data from Google Ads directly from the CLI or through MCP too
 - **Keyword ideas** — Generate related keywords from seed keywords, a URL, or a site
 - **Historical metrics** — Get search volume, competition, and CPC data for any keyword
 - **Forecast data** — Project impressions, clicks, and cost for keyword campaigns
+- **Query history** — List cached research runs with filters using `ideon gkp list`
+- **Cache controls** — Reuse fresh cached responses by default and force live refresh with `--refresh`
+- **Editorial context** — Tag GKP queries with `--publication` and `--series`
 
 ```bash
 ideon gkp ideas --keywords seo,marketing --country US
 ideon gkp historical --keywords seo --json
 ideon gkp forecast --keywords seo --match-type EXACT --country US
+ideon gkp list --publication tech-blog --verbose
 ```
 
 Set up credentials once with `ideon gads login`, then query keyword data from the CLI or expose it to any MCP-compatible agent.

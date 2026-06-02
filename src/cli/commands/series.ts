@@ -20,6 +20,7 @@ import {
   type SeriesDefaults,
   type SeriesEditorialPolicy,
 } from '../../types/series.js';
+import { normalizeCountryCodes, normalizeLanguage } from '../../config/marketLocale.js';
 import { ReportedError } from '../reportedError.js';
 
 interface SeriesAddOptions {
@@ -31,6 +32,8 @@ interface SeriesAddOptions {
   length?: string;
   type?: string;
   audience?: string;
+  country?: string;
+  language?: string;
   keywords?: string;
   tone?: string;
   forbiddenTopics?: string;
@@ -56,6 +59,8 @@ interface SeriesEditOptions {
   length?: string;
   type?: string;
   audience?: string;
+  country?: string;
+  language?: string;
   keywords?: string;
   tone?: string;
   forbiddenTopics?: string;
@@ -91,7 +96,7 @@ export async function runSeriesAddCommand(
   }
 
   const hasAnyFlag = options.topic || options.publication || options.style || options.intent || options.length || options.type
-    || options.audience || options.keywords || options.tone || options.forbiddenTopics
+    || options.audience || options.country || options.language || options.keywords || options.tone || options.forbiddenTopics
     || options.disclosureRequirements || options.audienceRestrictions || options.editorialPolicy;
 
   let defaults: SeriesDefaults = {};
@@ -152,6 +157,8 @@ export async function runSeriesListCommand(options: SeriesListOptions): Promise<
       if (series.defaults.style) console.log(`    Style: ${series.defaults.style}`);
       if (series.defaults.intent) console.log(`    Intent: ${series.defaults.intent}`);
       if (series.defaults.targetLength) console.log(`    Length: ${resolveTargetLengthAlias(series.defaults.targetLength)}`);
+      if (series.defaults.countryCodes && series.defaults.countryCodes.length > 0) console.log(`    Countries: ${series.defaults.countryCodes.join(', ')}`);
+      if (series.defaults.language) console.log(`    Language: ${series.defaults.language}`);
       if (series.defaults.keywords && series.defaults.keywords.length > 0) console.log(`    Keywords: ${series.defaults.keywords.join(', ')}`);
       if (series.defaults.contentTargets) {
         const primary = series.defaults.contentTargets.find((t) => t.role === 'primary');
@@ -249,6 +256,14 @@ export async function runSeriesEditCommand(options: SeriesEditOptions): Promise<
     series.defaults.targetAudienceHint = options.audience;
   }
 
+  if (options.country !== undefined) {
+    series.defaults.countryCodes = parseAndValidateCountryCodes(options.country);
+  }
+
+  if (options.language !== undefined) {
+    series.defaults.language = parseAndValidateLanguage(options.language);
+  }
+
   if (options.keywords) {
     series.defaults.keywords = parseCommaSeparated(options.keywords);
   }
@@ -327,6 +342,14 @@ function buildDefaultsFromFlags(options: SeriesAddOptions): SeriesDefaults {
     defaults.targetAudienceHint = options.audience;
   }
 
+  if (options.country !== undefined) {
+    defaults.countryCodes = parseAndValidateCountryCodes(options.country);
+  }
+
+  if (options.language !== undefined) {
+    defaults.language = parseAndValidateLanguage(options.language);
+  }
+
   if (options.keywords) {
     defaults.keywords = parseCommaSeparated(options.keywords);
   }
@@ -346,6 +369,39 @@ function buildPolicyFromFlags(options: SeriesAddOptions): SeriesEditorialPolicy 
 
 function parseCommaSeparated(value: string): string[] {
   return value.split(',').map((item) => item.trim()).filter((item) => item.length > 0);
+}
+
+function parseAndValidateCountryCodes(value: string): string[] {
+  const parsed = parseCommaSeparated(value);
+  if (parsed.length === 0) {
+    throw new ReportedError('Invalid country list. Provide comma-separated ISO country codes, e.g. US,GB,DE.');
+  }
+
+  try {
+    return normalizeCountryCodes(parsed) ?? [];
+  } catch (error) {
+    throw new ReportedError(formatMarketValidationError(error, 'country codes'));
+  }
+}
+
+function parseAndValidateLanguage(value: string): string {
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new ReportedError('Invalid language code. Provide an ISO 639-1 code, e.g. en, de, es.');
+  }
+
+  try {
+    return normalizeLanguage(normalized)!;
+  } catch (error) {
+    throw new ReportedError(formatMarketValidationError(error, 'language code'));
+  }
+}
+
+function formatMarketValidationError(error: unknown, label: string): string {
+  if (error instanceof Error && error.message) {
+    return `Invalid ${label}: ${error.message}`;
+  }
+  return `Invalid ${label}.`;
 }
 
 function parseTargetLength(value: string): number | undefined {

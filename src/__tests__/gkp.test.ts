@@ -18,14 +18,35 @@ const mockGkpClient = {
   getForecastData: jest.fn(),
 };
 
+const computeGkpFingerprintMock = jest.fn(() => 'fingerprint-1');
+const isGkpQuerySnapshotFreshMock = jest.fn(() => true);
+const listGkpQuerySnapshotsMock = jest.fn(async () => []);
+const loadGkpKeywordRecordMock = jest.fn(async () => null);
+const loadGkpQuerySnapshotMock = jest.fn(async () => null);
+const normalizeKeywordKeyMock = jest.fn((keyword: string) => keyword.toLowerCase().replace(/\s+/g, '-'));
+const saveGkpKeywordRecordMock = jest.fn(async (record) => record);
+const saveGkpQuerySnapshotMock = jest.fn(async (snapshot) => ({ version: 1, ...snapshot }));
+
 jest.unstable_mockModule('../integrations/keywordplanner/client.js', () => ({
   GkpClient: jest.fn().mockImplementation(() => mockGkpClient),
+}));
+
+jest.unstable_mockModule('../config/gkpStore.js', () => ({
+  computeGkpFingerprint: computeGkpFingerprintMock,
+  isGkpQuerySnapshotFresh: isGkpQuerySnapshotFreshMock,
+  listGkpQuerySnapshots: listGkpQuerySnapshotsMock,
+  loadGkpKeywordRecord: loadGkpKeywordRecordMock,
+  loadGkpQuerySnapshot: loadGkpQuerySnapshotMock,
+  normalizeKeywordKey: normalizeKeywordKeyMock,
+  saveGkpKeywordRecord: saveGkpKeywordRecordMock,
+  saveGkpQuerySnapshot: saveGkpQuerySnapshotMock,
 }));
 
 const {
   runGkpIdeasCommand,
   runGkpHistoricalCommand,
   runGkpForecastCommand,
+  runGkpListCommand,
 } = await import('../cli/commands/gkp.js');
 
 function createMockEnvSettings(overrides: Record<string, string | undefined> = {}) {
@@ -80,6 +101,13 @@ function mockAllCredentials() {
 describe('gkp commands', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    computeGkpFingerprintMock.mockReturnValue('fingerprint-1');
+    isGkpQuerySnapshotFreshMock.mockReturnValue(true);
+    listGkpQuerySnapshotsMock.mockResolvedValue([]);
+    loadGkpKeywordRecordMock.mockResolvedValue(null);
+    loadGkpQuerySnapshotMock.mockResolvedValue(null);
+    saveGkpKeywordRecordMock.mockImplementation(async (record) => record);
+    saveGkpQuerySnapshotMock.mockImplementation(async (snapshot) => ({ version: 1, ...snapshot }));
   });
 
   describe('runGkpIdeasCommand', () => {
@@ -225,6 +253,48 @@ describe('gkp commands', () => {
 
       const parsed = JSON.parse(logs[0]);
       expect(parsed).toEqual(expectedResult);
+    });
+
+    it('returns a fresh cached ideas response without calling the API', async () => {
+      mockAllCredentials();
+      loadGkpQuerySnapshotMock.mockResolvedValue({
+        version: 1,
+        fingerprint: 'fingerprint-1',
+        mode: 'ideas',
+        savedAt: '2026-06-01T00:00:00.000Z',
+        ttlDays: 30,
+        count: 1,
+        response: { ideas: [{ text: 'cached seo', avgMonthlySearches: 300, competition: 'LOW', competitionIndex: 10, lowTopOfPageBidMicros: 100000, highTopOfPageBidMicros: 200000, closeVariants: [] }], count: 1 },
+      });
+
+      const logs: string[] = [];
+      await runGkpIdeasCommand({ keywords: 'seo', json: true }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      expect(mockGkpClient.generateKeywordIdeas).not.toHaveBeenCalled();
+      expect(JSON.parse(logs[0])).toEqual({
+        ideas: [{ text: 'cached seo', avgMonthlySearches: 300, competition: 'LOW', competitionIndex: 10, lowTopOfPageBidMicros: 100000, highTopOfPageBidMicros: 200000, closeVariants: [] }],
+        count: 1,
+      });
+    });
+
+    it('bypasses cache when --refresh is set', async () => {
+      mockAllCredentials();
+      loadGkpQuerySnapshotMock.mockResolvedValue({
+        version: 1,
+        fingerprint: 'fingerprint-1',
+        mode: 'ideas',
+        savedAt: '2026-06-01T00:00:00.000Z',
+        ttlDays: 30,
+        count: 1,
+        response: { ideas: [], count: 0 },
+      });
+      mockGkpClient.generateKeywordIdeas.mockResolvedValue({ ideas: [], count: 0 });
+
+      await runGkpIdeasCommand({ keywords: 'seo', refresh: true });
+
+      expect(mockGkpClient.generateKeywordIdeas).toHaveBeenCalledTimes(1);
     });
 
     it('wraps API errors with actionable message', async () => {
@@ -504,6 +574,61 @@ describe('gkp commands', () => {
       await expect(
         runGkpForecastCommand({ keywords: 'test' }),
       ).rejects.toThrow('Failed to get forecast data');
+    });
+  });
+
+  describe('runGkpListCommand', () => {
+    it('prints json output for cached entries', async () => {
+      listGkpQuerySnapshotsMock.mockResolvedValue([
+        {
+          version: 1,
+          fingerprint: 'fingerprint-1',
+          mode: 'ideas',
+          savedAt: '2026-06-03T12:00:00.000Z',
+          ttlDays: 30,
+          publication: 'tech-blog',
+          series: 'seo-playbooks',
+          keywords: ['content strategy'],
+          count: 12,
+          response: {},
+        },
+      ]);
+
+      const logs: string[] = [];
+      await runGkpListCommand({ json: true, verbose: false }, {
+        log: (msg: string) => logs.push(msg),
+      });
+
+      expect(JSON.parse(logs[0])).toEqual([
+        {
+          fingerprint: 'fingerprint-1',
+          mode: 'ideas',
+          query: 'content strategy',
+          publication: 'tech-blog',
+          series: 'seo-playbooks',
+          count: 12,
+          savedAt: '2026-06-03T12:00:00.000Z',
+          ttlDays: 30,
+          fresh: true,
+          countryCodes: undefined,
+          language: undefined,
+          matchType: undefined,
+          startDate: undefined,
+          endDate: undefined,
+        },
+      ]);
+    });
+
+    it('forwards list filters to the store', async () => {
+      await runGkpListCommand({ publication: 'tech-blog', series: 'seo-playbooks', search: 'content', fresh: true, stale: false, json: true, verbose: false });
+
+      expect(listGkpQuerySnapshotsMock).toHaveBeenCalledWith({
+        publication: 'tech-blog',
+        series: 'seo-playbooks',
+        search: 'content',
+        freshOnly: true,
+        staleOnly: false,
+      });
     });
   });
 });

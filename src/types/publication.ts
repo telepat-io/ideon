@@ -6,6 +6,7 @@ import {
   targetLengthWordsSchema,
   contentTargetRoleValues,
 } from '../config/schema.js';
+import { countryCodeSchema, languageCodeSchema } from '../config/marketLocale.js';
 
 export const editorialPolicySchema = z.object({
   tone: z.string().default(''),
@@ -33,6 +34,8 @@ export const publicationDefaultsSchema = z.object({
     })
     .optional(),
   targetAudienceHint: z.string().optional(),
+  countryCodes: z.array(countryCodeSchema).min(1).optional(),
+  language: languageCodeSchema.optional(),
   maxImages: z.number().int().positive().optional(),
   maxLinks: z.number().int().positive().optional(),
   model: z.string().optional(),

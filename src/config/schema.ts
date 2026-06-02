@@ -6,6 +6,7 @@ import {
   isReplicateModelIdForFamily,
   resolveFamilyFromReplicateModelId,
 } from '../images/limnModelCatalog.js';
+import { countryCodeSchema, languageCodeSchema } from './marketLocale.js';
 
 export const contentTypeValues = [
   'article',
@@ -254,6 +255,8 @@ export const jobInputSchema = z.object({
   targetAudience: z.string().min(1).optional(),
   publication: z.string().min(1).optional(),
   series: z.string().min(1).optional(),
+  countryCodes: z.array(countryCodeSchema).min(1).optional(),
+  language: languageCodeSchema.optional(),
   keywords: z.array(z.string().min(1)).optional(),
   settings: appSettingsSchema.partial().optional(),
 });

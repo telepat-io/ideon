@@ -15,6 +15,7 @@ import {
   type ResolvedConfig,
   type TargetLength,
 } from './schema.js';
+import { normalizeCountryCodes, normalizeLanguage } from './marketLocale.js';
 import type { Publication } from '../types/publication.js';
 import type { Series } from '../types/series.js';
 
@@ -34,6 +35,8 @@ export interface ResolveConfigInput {
   intent?: (typeof contentIntentValues)[number] | string;
   contentTargets?: ContentTargetInput[];
   targetLength?: TargetLength | string;
+  countryCodes?: string[];
+  language?: string;
   keywords?: string[];
 }
 
@@ -44,6 +47,8 @@ export interface ResolvedRunInput {
   job: JobInput | null;
   publication: Publication | null;
   series: Series | null;
+  countryCodes?: string[];
+  language?: string;
   keywords?: string[];
 }
 
@@ -171,6 +176,16 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     input.keywords,
   );
 
+  const mergedCountryCodes = normalizeCountryCodes(input.countryCodes)
+    ?? normalizeCountryCodes(job?.countryCodes)
+    ?? normalizeCountryCodes(seriesDefaults.countryCodes)
+    ?? normalizeCountryCodes(pubDefaults.countryCodes);
+
+  const mergedLanguage = normalizeLanguage(input.language)
+    ?? normalizeLanguage(job?.language)
+    ?? normalizeLanguage(seriesDefaults.language)
+    ?? normalizeLanguage(pubDefaults.language);
+
   return {
     config: {
       settings: mergedSettings,
@@ -190,6 +205,8 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     job,
     publication,
     series,
+    countryCodes: mergedCountryCodes,
+    language: mergedLanguage,
     keywords: mergedKeywords,
   };
 }

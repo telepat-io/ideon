@@ -36,7 +36,7 @@ ideon gads test           # 通过测试 API 调用验证凭据
 | `ideon gads logout` | 清除刷新令牌（保留其他凭据） |
 | `ideon gads logout --all` | 清除所有 6 个 Google Ads 凭据 |
 
-对于 CI/CD 或非交互式环境，请参阅下面的[手动设置](#手动设置)部分。
+对于 CI/CD 或非交互式环境，请使用下面第 8 步中的凭据与环境变量配置流程。
 
 ---
 

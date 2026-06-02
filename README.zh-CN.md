@@ -75,17 +75,19 @@ ideon write --job ./job.json
 ideon write resume
 ideon delete my-article-slug
 ideon preview --no-open
+ideon gads login
+ideon gkp ideas --keywords seo,marketing
 ```
 
 ## 与 AI Agent 一起使用
 
 Ideon 专为智能体工作流打造：
 
-- **MCP 服务器** — `ideon mcp serve` 通过 stdio 暴露 5 个工具，覆盖内容生成、恢复、删除和配置管理。兼容 Claude Code、ChatGPT、Gemini 及任何通用 MCP 主机。
+- **MCP 服务器** — `ideon mcp serve` 通过 stdio 暴露工具，覆盖内容生成、恢复、删除、配置管理与 Google Keyword Planner 查询。兼容 Claude Code、ChatGPT、Gemini 及任何通用 MCP 主机。
 - **Agent 运行时注册** — `ideon agent install <runtime>` 为支持的平台注册集成配置文件。使用 `ideon agent status --json` 查看状态。
 - **非交互模式** — `ideon write --no-interactive ...` 移除所有提示，适用于 CI 和自动化场景。
 - **机器可读配置** — `ideon config list --json` 与 `ideon config get <key> --json` 供智能体 inspection。
-- **Skill 包** — 将 `skill/ideon-cli/` 安装到智能体主机，获得覆盖安装、配置、操作与调试的完整生命周期 skill。
+- **Skill 包** — 安装 `skill/ideon-cli/` 用于全生命周期写作工作流，并安装 `skill/ideon-plan/` 用于审批门控的内容规划与基于 GKP 的策略工作流。
 - **Agent 文档** — [For Agents](https://docs.telepat.io/ideon/for-agents) 涵盖 MCP 服务器、skill 与维护指南。
 
 ## 安全与信任

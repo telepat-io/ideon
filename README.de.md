@@ -88,7 +88,7 @@ Ideon ist für agentische Workflows konzipiert:
 - **Agent-Runtime-Registrierung** — `ideon agent install <runtime>` registriert Integrationsprofile für unterstützte Plattformen. Status prüfen mit `ideon agent status --json`.
 - **Nicht-interaktiver Modus** — `ideon write --no-interactive ...` entfernt alle Prompts für CI und Automatisierung.
 - **Maschinenlesbare Konfiguration** — `ideon config list --json` und `ideon config get <key> --json` für Agent-Inspektion.
-- **Skill-Paket** — Installieren Sie `skill/ideon-cli/` in Ihren Agent-Host für einen vollständigen Lifecycle-Skill, der Installation, Einrichtung, Betrieb und Debugging abdeckt.
+- **Skill-Pakete** — Installieren Sie `skill/ideon-cli/` für Lifecycle-Schreibworkflows und `skill/ideon-plan/` für freigabegesteuerte Content-Planung sowie GKP-gestützte Strategieworkflows.
 - **Agent-Dokumentation** — [For Agents](https://docs.telepat.io/ideon/for-agents) behandelt MCP-Server, Skills und Wartung.
 
 ## Security And Trust

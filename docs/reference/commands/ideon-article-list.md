@@ -70,9 +70,9 @@ The `--search` flag uses a two-phase matching strategy:
 
 ## Related Commands
 
-- [ideon write [idea]](./ideon-write.md)
-- [ideon export <generationId> <path>](./ideon-export.md)
-- [ideon delete <slug>](./ideon-delete.md)
+- `ideon write`
+- `ideon export`
+- `ideon delete`
 
 ## Versioning and Deprecation Notes
 

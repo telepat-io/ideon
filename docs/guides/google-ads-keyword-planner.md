@@ -36,7 +36,7 @@ The `gads login` command prompts for each credential, saves them as you go, and 
 | `ideon gads logout` | Clear the refresh token (keeps other credentials) |
 | `ideon gads logout --all` | Clear all 6 Google Ads credentials |
 
-For CI/CD or non-interactive environments, see the [Manual Setup](#manual-setup) section below.
+For CI/CD or non-interactive environments, use the credential and environment-variable flow in Step 8 below.
 
 ---
 
@@ -54,7 +54,12 @@ ideon gkp historical --keywords seo,marketing --country US
 
 # Get forecast data
 ideon gkp forecast --keywords seo --match-type EXACT --country US
+
+# List cached query history
+ideon gkp list --publication tech-blog --verbose
 ```
+
+`ideon gkp ideas`, `historical`, and `forecast` are cache-aware by default. Use `--refresh` to force a live read, and use `--publication` / `--series` to tag and filter keyword research by editorial context.
 
 All three subcommands support `--json` for machine-readable output:
 

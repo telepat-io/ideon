@@ -19,6 +19,7 @@ import {
   type PublicationDefaults,
   type EditorialPolicy,
 } from '../../types/publication.js';
+import { normalizeCountryCodes, normalizeLanguage } from '../../config/marketLocale.js';
 import { ReportedError } from '../reportedError.js';
 
 interface PublicationAddOptions {
@@ -28,6 +29,8 @@ interface PublicationAddOptions {
   length?: string;
   type?: string;
   audience?: string;
+  country?: string;
+  language?: string;
   tone?: string;
   forbiddenTopics?: string;
   disclosureRequirements?: string;
@@ -48,6 +51,8 @@ interface PublicationEditOptions {
   length?: string;
   type?: string;
   audience?: string;
+  country?: string;
+  language?: string;
   tone?: string;
   forbiddenTopics?: string;
   disclosureRequirements?: string;
@@ -82,7 +87,7 @@ export async function runPublicationAddCommand(
   }
 
   const hasAnyFlag = options.style || options.intent || options.length || options.type
-    || options.audience || options.tone || options.forbiddenTopics
+    || options.audience || options.country || options.language || options.tone || options.forbiddenTopics
     || options.disclosureRequirements || options.audienceRestrictions || options.editorialPolicy;
 
   let defaults: PublicationDefaults = {};
@@ -134,6 +139,8 @@ export async function runPublicationListCommand(options: PublicationListOptions)
       if (pub.defaults.style) console.log(`    Style: ${pub.defaults.style}`);
       if (pub.defaults.intent) console.log(`    Intent: ${pub.defaults.intent}`);
       if (pub.defaults.targetLength) console.log(`    Length: ${resolveTargetLengthAlias(pub.defaults.targetLength)}`);
+      if (pub.defaults.countryCodes && pub.defaults.countryCodes.length > 0) console.log(`    Countries: ${pub.defaults.countryCodes.join(', ')}`);
+      if (pub.defaults.language) console.log(`    Language: ${pub.defaults.language}`);
       if (pub.defaults.contentTargets) {
         const primary = pub.defaults.contentTargets.find((t) => t.role === 'primary');
         if (primary) console.log(`    Type: ${primary.contentType}`);
@@ -223,6 +230,14 @@ export async function runPublicationEditCommand(options: PublicationEditOptions)
     publication.defaults.targetAudienceHint = options.audience;
   }
 
+  if (options.country !== undefined) {
+    publication.defaults.countryCodes = parseAndValidateCountryCodes(options.country);
+  }
+
+  if (options.language !== undefined) {
+    publication.defaults.language = parseAndValidateLanguage(options.language);
+  }
+
   if (options.tone) {
     publication.editorialPolicy.tone = options.tone;
   }
@@ -297,6 +312,14 @@ function buildDefaultsFromFlags(options: PublicationAddOptions): PublicationDefa
     defaults.targetAudienceHint = options.audience;
   }
 
+  if (options.country !== undefined) {
+    defaults.countryCodes = parseAndValidateCountryCodes(options.country);
+  }
+
+  if (options.language !== undefined) {
+    defaults.language = parseAndValidateLanguage(options.language);
+  }
+
   return defaults;
 }
 
@@ -312,6 +335,39 @@ function buildPolicyFromFlags(options: PublicationAddOptions): EditorialPolicy {
 
 function parseCommaSeparated(value: string): string[] {
   return value.split(',').map((item) => item.trim()).filter((item) => item.length > 0);
+}
+
+function parseAndValidateCountryCodes(value: string): string[] {
+  const parsed = parseCommaSeparated(value);
+  if (parsed.length === 0) {
+    throw new ReportedError('Invalid country list. Provide comma-separated ISO country codes, e.g. US,GB,DE.');
+  }
+
+  try {
+    return normalizeCountryCodes(parsed) ?? [];
+  } catch (error) {
+    throw new ReportedError(formatMarketValidationError(error, 'country codes'));
+  }
+}
+
+function parseAndValidateLanguage(value: string): string {
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new ReportedError('Invalid language code. Provide an ISO 639-1 code, e.g. en, de, es.');
+  }
+
+  try {
+    return normalizeLanguage(normalized)!;
+  } catch (error) {
+    throw new ReportedError(formatMarketValidationError(error, 'language code'));
+  }
+}
+
+function formatMarketValidationError(error: unknown, label: string): string {
+  if (error instanceof Error && error.message) {
+    return `Invalid ${label}: ${error.message}`;
+  }
+  return `Invalid ${label}.`;
 }
 
 function parseTargetLength(value: string): number | undefined {

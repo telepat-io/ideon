@@ -22,6 +22,7 @@ import {
   runGkpIdeasCommand,
   runGkpHistoricalCommand,
   runGkpForecastCommand,
+  runGkpListCommand,
 } from './commands/gkp.js';
 import { runLinksCommand } from './commands/links.js';
 import { runOutputCommand } from './commands/export.js';
@@ -182,8 +183,11 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--country <codes>', 'Comma-separated ISO country codes (omit for all countries)')
     .option('--language <code>', 'ISO 639-1 language code (default: en)')
     .option('--page-size <n>', 'Number of results per page', (v) => Number.parseInt(v, 10))
+    .option('--publication <slug>', 'Attach cache context to a publication slug')
+    .option('--series <slug>', 'Attach cache context to a series slug')
+    .option('--refresh', 'Bypass cache and fetch fresh data', false)
     .option('--json', 'Print machine-readable JSON output', false)
-    .action(async (options: { keywords?: string; url?: string; site?: string; country?: string; language?: string; pageSize?: number; json: boolean }) => {
+    .action(async (options: { keywords?: string; url?: string; site?: string; country?: string; language?: string; pageSize?: number; publication?: string; series?: string; refresh: boolean; json: boolean }) => {
       await runGkpIdeasCommand(options);
     });
 
@@ -194,8 +198,11 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--country <codes>', 'Comma-separated ISO country codes (omit for all countries)')
     .option('--language <code>', 'ISO 639-1 language code (default: en)')
     .option('--no-include-cpc', 'Exclude average CPC from results')
+    .option('--publication <slug>', 'Attach cache context to a publication slug')
+    .option('--series <slug>', 'Attach cache context to a series slug')
+    .option('--refresh', 'Bypass cache and fetch fresh data', false)
     .option('--json', 'Print machine-readable JSON output', false)
-    .action(async (options: { keywords: string; country?: string; language?: string; includeCpc: boolean; json: boolean }) => {
+    .action(async (options: { keywords: string; country?: string; language?: string; includeCpc: boolean; publication?: string; series?: string; refresh: boolean; json: boolean }) => {
       await runGkpHistoricalCommand({ ...options, includeCpc: options.includeCpc });
     });
 
@@ -209,9 +216,26 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--language <code>', 'ISO 639-1 language code (default: en)')
     .option('--start-date <date>', 'Forecast start date (YYYY-MM-DD)')
     .option('--end-date <date>', 'Forecast end date (YYYY-MM-DD)')
+    .option('--publication <slug>', 'Attach cache context to a publication slug')
+    .option('--series <slug>', 'Attach cache context to a series slug')
+    .option('--refresh', 'Bypass cache and fetch fresh data', false)
     .option('--json', 'Print machine-readable JSON output', false)
-    .action(async (options: { keywords: string; matchType?: string; maxCpcBid?: number; country?: string; language?: string; startDate?: string; endDate?: string; json: boolean }) => {
+    .action(async (options: { keywords: string; matchType?: string; maxCpcBid?: number; country?: string; language?: string; startDate?: string; endDate?: string; publication?: string; series?: string; refresh: boolean; json: boolean }) => {
       await runGkpForecastCommand(options);
+    });
+
+  gkpCommand
+    .command('list')
+    .description('List cached GKP query history.')
+    .option('--publication <slug>', 'Filter by publication slug')
+    .option('--series <slug>', 'Filter by series slug')
+    .option('--search <query>', 'Filter by keyword, URL, site, publication, or series text')
+    .option('--fresh', 'Show only fresh cache entries', false)
+    .option('--stale', 'Show only stale cache entries', false)
+    .option('--json', 'Print machine-readable JSON output', false)
+    .option('--verbose', 'Show full cache entry details', false)
+    .action(async (options: { publication?: string; series?: string; search?: string; fresh: boolean; stale: boolean; json: boolean; verbose: boolean }) => {
+      await runGkpListCommand(options);
     });
 
   const agentCommand = program
@@ -257,6 +281,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Default target length: small, medium, large, or word count')
     .option('--type <type>', 'Default primary content type')
     .option('--audience <description>', 'Default target audience hint')
+    .option('--country <codes>', 'Comma-separated ISO country codes')
+    .option('--language <code>', 'ISO 639-1 language code')
     .option('--tone <tone>', 'Editorial policy tone')
     .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
@@ -268,6 +294,8 @@ export async function runCli(argv: string[]): Promise<void> {
       length?: string;
       type?: string;
       audience?: string;
+      country?: string;
+      language?: string;
       tone?: string;
       forbiddenTopics?: string;
       disclosureRequirements?: string;
@@ -296,6 +324,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Default target length: small, medium, large, or word count')
     .option('--type <type>', 'Default primary content type')
     .option('--audience <description>', 'Default target audience hint')
+    .option('--country <codes>', 'Comma-separated ISO country codes')
+    .option('--language <code>', 'ISO 639-1 language code')
     .option('--tone <tone>', 'Editorial policy tone')
     .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
@@ -308,6 +338,8 @@ export async function runCli(argv: string[]): Promise<void> {
       length?: string;
       type?: string;
       audience?: string;
+      country?: string;
+      language?: string;
       tone?: string;
       forbiddenTopics?: string;
       disclosureRequirements?: string;
@@ -341,6 +373,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Default target length: small, medium, large, or word count')
     .option('--type <type>', 'Default primary content type')
     .option('--audience <description>', 'Default target audience hint')
+    .option('--country <codes>', 'Comma-separated ISO country codes')
+    .option('--language <code>', 'ISO 639-1 language code')
     .option('--keywords <keywords>', 'Comma-separated SEO keywords')
     .option('--tone <tone>', 'Editorial policy tone')
     .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
@@ -355,6 +389,8 @@ export async function runCli(argv: string[]): Promise<void> {
       length?: string;
       type?: string;
       audience?: string;
+      country?: string;
+      language?: string;
       keywords?: string;
       tone?: string;
       forbiddenTopics?: string;
@@ -388,6 +424,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--length <size>', 'Default target length: small, medium, large, or word count')
     .option('--type <type>', 'Default primary content type')
     .option('--audience <description>', 'Default target audience hint')
+    .option('--country <codes>', 'Comma-separated ISO country codes')
+    .option('--language <code>', 'ISO 639-1 language code')
     .option('--keywords <keywords>', 'Comma-separated SEO keywords')
     .option('--tone <tone>', 'Editorial policy tone')
     .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
@@ -404,6 +442,8 @@ export async function runCli(argv: string[]): Promise<void> {
       length?: string;
       type?: string;
       audience?: string;
+      country?: string;
+      language?: string;
       keywords?: string;
       tone?: string;
       forbiddenTopics?: string;

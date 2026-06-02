@@ -82,6 +82,51 @@ describe('publication types', () => {
     it('rejects invalid style', () => {
       expect(() => publicationDefaultsSchema.parse({ style: 'invalid' })).toThrow();
     });
+
+    it('parses normalized country codes and language', () => {
+      const result = publicationDefaultsSchema.parse({
+        countryCodes: ['us', 'gb'],
+        language: 'EN',
+      });
+
+      expect(result.countryCodes).toEqual(['US', 'GB']);
+      expect(result.language).toBe('en');
+    });
+
+    it('rejects invalid country code', () => {
+      expect(() => publicationDefaultsSchema.parse({ countryCodes: ['ZZZ'] })).toThrow();
+    });
+
+    it('rejects invalid language code', () => {
+      expect(() => publicationDefaultsSchema.parse({ language: 'zz' })).toThrow();
+    });
+
+    it('accepts contentTargets with exactly one primary target', () => {
+      const result = publicationDefaultsSchema.parse({
+        contentTargets: [
+          { contentType: 'article', role: 'primary', count: 1 },
+          { contentType: 'blog-post', role: 'secondary', count: 2 },
+        ],
+      });
+
+      expect(result.contentTargets).toHaveLength(2);
+    });
+
+    it('rejects contentTargets without exactly one primary target', () => {
+      expect(() => publicationDefaultsSchema.parse({
+        contentTargets: [
+          { contentType: 'article', role: 'secondary', count: 1 },
+          { contentType: 'blog-post', role: 'secondary', count: 1 },
+        ],
+      })).toThrow('contentTargets must include exactly one primary target.');
+
+      expect(() => publicationDefaultsSchema.parse({
+        contentTargets: [
+          { contentType: 'article', role: 'primary', count: 1 },
+          { contentType: 'blog-post', role: 'primary', count: 1 },
+        ],
+      })).toThrow('contentTargets must include exactly one primary target.');
+    });
   });
 
   describe('publicationSchema', () => {
@@ -319,6 +364,45 @@ describe('publication commands', () => {
       expect(logs[0]).toContain('Created publication "Tech Blog"');
     });
 
+    it('creates publication with market defaults', async () => {
+      const { runPublicationAddCommand } = await import('../cli/commands/publication.js');
+
+      await runPublicationAddCommand(
+        {
+          name: 'Global Tech Blog',
+          country: 'us,gb',
+          language: 'EN',
+        },
+        { log: () => {} },
+      );
+
+      const pub = await loadPublication('global-tech-blog');
+      expect(pub.defaults.countryCodes).toEqual(['US', 'GB']);
+      expect(pub.defaults.language).toBe('en');
+    });
+
+    it('rejects invalid country code in add command', async () => {
+      const { runPublicationAddCommand } = await import('../cli/commands/publication.js');
+
+      await expect(
+        runPublicationAddCommand({
+          name: 'Bad Market',
+          country: 'zz',
+        }),
+      ).rejects.toThrow('Invalid country codes');
+    });
+
+    it('rejects invalid language code in add command', async () => {
+      const { runPublicationAddCommand } = await import('../cli/commands/publication.js');
+
+      await expect(
+        runPublicationAddCommand({
+          name: 'Bad Locale',
+          language: 'zz',
+        }),
+      ).rejects.toThrow('Invalid language code');
+    });
+
     it('throws when name is missing in non-interactive mode', async () => {
       const origDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
       Object.defineProperty(process.stdout, 'isTTY', { value: undefined, writable: true, configurable: true });
@@ -423,6 +507,45 @@ describe('publication commands', () => {
       expect(pub.editorialPolicy.tone).toBe('casual');
       expect(pub.editorialPolicy.forbiddenTopics).toEqual(['sports', 'weather']);
       expect(pub.editorialPolicy.notes).toBe('New policy notes.');
+    });
+
+    it('edits country and language defaults', async () => {
+      const { runPublicationEditCommand } = await import('../cli/commands/publication.js');
+      await savePublication(publicationSchema.parse({ name: 'Test', slug: 'test' }));
+
+      const origLog = console.log;
+      console.log = () => {};
+      try {
+        await runPublicationEditCommand({
+          slug: 'test',
+          country: 'de,fr',
+          language: 'DE',
+        });
+      } finally {
+        console.log = origLog;
+      }
+
+      const pub = await loadPublication('test');
+      expect(pub.defaults.countryCodes).toEqual(['DE', 'FR']);
+      expect(pub.defaults.language).toBe('de');
+    });
+
+    it('rejects invalid country code in edit command', async () => {
+      const { runPublicationEditCommand } = await import('../cli/commands/publication.js');
+      await savePublication(publicationSchema.parse({ name: 'Test', slug: 'test' }));
+
+      await expect(
+        runPublicationEditCommand({ slug: 'test', country: 'xx' }),
+      ).rejects.toThrow('Invalid country codes');
+    });
+
+    it('rejects invalid language code in edit command', async () => {
+      const { runPublicationEditCommand } = await import('../cli/commands/publication.js');
+      await savePublication(publicationSchema.parse({ name: 'Test', slug: 'test' }));
+
+      await expect(
+        runPublicationEditCommand({ slug: 'test', language: 'zz' }),
+      ).rejects.toThrow('Invalid language code');
     });
 
     it('rejects invalid style', async () => {

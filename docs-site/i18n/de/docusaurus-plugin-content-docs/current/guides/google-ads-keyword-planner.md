@@ -36,7 +36,7 @@ Der `gads login`-Befehl fragt jede Anmeldeinformation ab, speichert sie nach und
 | `ideon gads logout` | Refresh-Token löschen (behält andere Anmeldeinformationen) |
 | `ideon gads logout --all` | Alle 6 Google Ads-Anmeldeinformationen löschen |
 
-Für CI/CD oder nicht-interaktive Umgebungen siehen Sie den Abschnitt [Manuelle Einrichtung](#manuelle-einrichtung) unten.
+Für CI/CD oder nicht-interaktive Umgebungen verwenden Sie den Ablauf für Anmeldeinformationen und Umgebungsvariablen in Schritt 8 unten.
 
 ---
 

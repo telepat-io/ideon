@@ -465,4 +465,155 @@ describe('resolveRunInput', () => {
       expect(result.keywords!.length).toBe(3);
     });
   });
+
+  describe('market and locale precedence', () => {
+    it('resolves market fields from publication defaults', async () => {
+      const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-market-pub-'));
+
+      try {
+        const publicationPath = path.join(tempDir, 'publication.json');
+        await writeFile(
+          publicationPath,
+          JSON.stringify({
+            name: 'Tech Blog',
+            slug: 'tech-blog',
+            defaults: {
+              countryCodes: ['US', 'GB'],
+              language: 'en',
+            },
+          }),
+          'utf8',
+        );
+
+        const { savePublication } = await import('../config/publicationStore.js');
+        const { publicationSchema } = await import('../types/publication.js');
+        await savePublication(publicationSchema.parse(JSON.parse(await (await import('node:fs/promises')).readFile(publicationPath, 'utf8'))));
+
+        const result = await resolveRunInput({
+          idea: 'market from publication',
+          publication: 'tech-blog',
+        });
+
+        expect(result.countryCodes).toEqual(['US', 'GB']);
+        expect(result.language).toBe('en');
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('series defaults override publication defaults', async () => {
+      const { savePublication } = await import('../config/publicationStore.js');
+      const { publicationSchema } = await import('../types/publication.js');
+      const { saveSeries } = await import('../config/seriesStore.js');
+      const { seriesSchema } = await import('../types/series.js');
+
+      await savePublication(publicationSchema.parse({
+        name: 'Pub',
+        slug: 'pub',
+        defaults: { countryCodes: ['US'], language: 'en' },
+      }));
+
+      await saveSeries(seriesSchema.parse({
+        name: 'Series',
+        slug: 'series',
+        publication: 'pub',
+        defaults: { countryCodes: ['DE'], language: 'de' },
+      }));
+
+      const result = await resolveRunInput({
+        idea: 'market from series',
+        series: 'series',
+      });
+
+      expect(result.countryCodes).toEqual(['DE']);
+      expect(result.language).toBe('de');
+    });
+
+    it('job overrides series and publication defaults', async () => {
+      const { savePublication } = await import('../config/publicationStore.js');
+      const { publicationSchema } = await import('../types/publication.js');
+      const { saveSeries } = await import('../config/seriesStore.js');
+      const { seriesSchema } = await import('../types/series.js');
+
+      await savePublication(publicationSchema.parse({
+        name: 'Pub',
+        slug: 'pub',
+        defaults: { countryCodes: ['US'], language: 'en' },
+      }));
+
+      await saveSeries(seriesSchema.parse({
+        name: 'Series',
+        slug: 'series',
+        publication: 'pub',
+        defaults: { countryCodes: ['DE'], language: 'de' },
+      }));
+
+      const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-market-job-'));
+      try {
+        const jobPath = path.join(tempDir, 'job.json');
+        await writeFile(
+          jobPath,
+          JSON.stringify({
+            idea: 'job market',
+            series: 'series',
+            countryCodes: ['FR'],
+            language: 'fr',
+          }),
+          'utf8',
+        );
+
+        const result = await resolveRunInput({ jobPath });
+        expect(result.countryCodes).toEqual(['FR']);
+        expect(result.language).toBe('fr');
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('CLI market fields override job, series, and publication defaults', async () => {
+      const { savePublication } = await import('../config/publicationStore.js');
+      const { publicationSchema } = await import('../types/publication.js');
+      const { saveSeries } = await import('../config/seriesStore.js');
+      const { seriesSchema } = await import('../types/series.js');
+
+      await savePublication(publicationSchema.parse({
+        name: 'Pub',
+        slug: 'pub',
+        defaults: { countryCodes: ['US'], language: 'en' },
+      }));
+
+      await saveSeries(seriesSchema.parse({
+        name: 'Series',
+        slug: 'series',
+        publication: 'pub',
+        defaults: { countryCodes: ['DE'], language: 'de' },
+      }));
+
+      const tempDir = await mkdtemp(path.join(os.tmpdir(), 'ideon-config-market-cli-'));
+      try {
+        const jobPath = path.join(tempDir, 'job.json');
+        await writeFile(
+          jobPath,
+          JSON.stringify({
+            idea: 'job market',
+            series: 'series',
+            countryCodes: ['FR'],
+            language: 'fr',
+          }),
+          'utf8',
+        );
+
+        const result = await resolveRunInput({
+          jobPath,
+          countryCodes: ['GB', 'IE'],
+          language: 'en',
+        });
+
+        expect(result.countryCodes).toEqual(['GB', 'IE']);
+        expect(result.language).toBe('en');
+      } finally {
+        await rm(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
 });

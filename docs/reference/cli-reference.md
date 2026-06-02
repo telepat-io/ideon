@@ -52,6 +52,9 @@ ideon --version
 
 - Reference reflects Ideon CLI version `0.1.33`.
 - `ideon queue` manages a global content queue for scheduling future writes.
+- `ideon gkp` supports `ideas`, `historical`, `forecast`, and cache-aware history browsing with `list`.
+- `ideon gkp` accepts `--publication` and `--series` context filters plus `--refresh` for live reads.
+- publication and series defaults support first-class market/locale fields via `--country` and `--language`.
 - Deprecated syntax `--target` was replaced by `--primary` and repeatable `--secondary` flags.
 - `ideon write` now supports strict one-shot behavior with `--no-interactive`.
 - Agent runtime integrations support CLI/MCP workflows and do not support Cursor or VS Code integrations.
