@@ -320,16 +320,20 @@ describe('publication commands', () => {
     });
 
     it('throws when name is missing in non-interactive mode', async () => {
-      const originalStdoutIsTTY = process.stdout.isTTY;
-      const originalStdinIsTTY = process.stdin.isTTY;
-      (process.stdout as { isTTY?: boolean }).isTTY = undefined;
-      (process.stdin as { isTTY?: boolean }).isTTY = undefined;
+      const origDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
+      Object.defineProperty(process.stdout, 'isTTY', { value: undefined, writable: true, configurable: true });
+      Object.defineProperty(process.stdin, 'isTTY', { value: undefined, writable: true, configurable: true });
       try {
         const { runPublicationAddCommand } = await import('../cli/commands/publication.js');
         await expect(runPublicationAddCommand({})).rejects.toThrow('Publication name is required');
       } finally {
-        process.stdout.isTTY = originalStdoutIsTTY;
-        process.stdin.isTTY = originalStdinIsTTY;
+        if (origDescriptor) {
+          Object.defineProperty(process.stdout, 'isTTY', origDescriptor);
+        }
+        const origStdinDescriptor = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+        if (origStdinDescriptor) {
+          Object.defineProperty(process.stdin, 'isTTY', origStdinDescriptor);
+        }
       }
     });
 
