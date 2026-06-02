@@ -243,6 +243,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         targetAudienceHint: input.targetAudienceHint,
         settings: input.config.settings,
         publication: input.publication,
+        series: input.series,
         openRouter,
         dryRun,
         onInteraction(interaction) {
@@ -301,6 +302,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         contentPlan,
         settings: input.config.settings,
         publication: input.publication,
+        series: input.series,
         markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
         openRouter,
         dryRun,
@@ -380,6 +382,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           plan: longPlan,
           settings: input.config.settings,
           publication: input.publication,
+          series: input.series,
           openRouter,
           dryRun,
           onInteraction(interaction) {
@@ -585,6 +588,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         plan,
         settings: input.config.settings,
         publication: input.publication,
+        series: input.series,
         openRouter,
         dryRun,
         onInteraction(interaction) {
@@ -925,6 +929,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           plan,
           settings: input.config.settings,
           publication: input.publication,
+          series: input.series,
           openRouter,
           dryRun,
           role: 'secondary',

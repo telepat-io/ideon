@@ -24,6 +24,7 @@ Built for marketers, founders, and lean teams who need to ship high-quality cont
 
 - **Write once, publish everywhere** — One idea turns into article, blog, newsletter, X, LinkedIn, and Reddit posts in a single run. Your article anchors the campaign. Everything else promotes it.
 - **Style and intent control** — 13 styles × 13 intents. Every output shares one consistent voice across every channel.
+- **Publications and series** — Organize content with editorial policies per publication, and group related articles under series with shared topics, defaults, and thematic prompt injection.
 - **Research-backed links** — Ideon browses the web and inserts contextual external links like a human writer would. No manual research.
 - **SEO-optimized output** — On-page SEO, E-E-A-T credibility signals, and fact density baked into the writing pipeline. Content built to rank in both traditional search and AI-generated summaries.
 - **Any model via OpenRouter** — Plug in Claude, GPT-4, or any supported model. Switch without changing your workflow.

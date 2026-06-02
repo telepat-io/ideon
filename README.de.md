@@ -24,6 +24,7 @@ Entwickelt für Marketer, Gründer und schlanke Teams, die hochwertige Inhalte i
 
 - **Einmal schreiben, überall veröffentlichen** — Eine Idee wird in einem einzigen Durchlauf zu Artikel, Blog, Newsletter, X-, LinkedIn- und Reddit-Posts. Der Artikel bildet das Fundament der Kampagne. Alles andere dient seiner Verbreitung.
 - **Stil- und Intent-Steuerung** — 13 Stile × 13 Intents. Jedes Ergebnis teilt eine konsistente Stimme über alle Kanäle hinweg.
+- **Veröffentlichungen und Serien** — Inhalte mit redaktionellen Richtlinien pro Veröffentlichung organisieren und verwandte Artikel unter Serien mit gemeinsamen Themen, Standardwerten und thematischer Prompt-Injektion gruppieren.
 - **Recherchegestützte Links** — Ideon durchsucht das Web und fügt kontextbezogene externe Links ein, wie es ein menschlicher Autor tun würde. Keine manuelle Recherche.
 - **SEO-optimierte Ausgabe** — On-Page-SEO, E-E-A-T-Glaubwürdigkeitssignale und Fakten-Dichte sind in die Schreib-Pipeline integriert. Inhalte, die sowohl in der klassischen Suche als auch in KI-generierten Zusammenfassungen ranken.
 - **Beliebiges Modell via OpenRouter** — Nutzen Sie Claude, GPT-4 oder jedes unterstützte Modell. Wechseln Sie ohne Änderung Ihres Workflows.

@@ -1,5 +1,6 @@
 import type { AppSettings } from '../config/schema.js';
 import type { Publication } from '../types/publication.js';
+import type { Series } from '../types/series.js';
 import {
   buildContentPlanMessages,
   contentPlanSchema,
@@ -17,6 +18,7 @@ export async function planContentPlan({
   targetAudienceHint,
   settings,
   publication,
+  series,
   openRouter,
   dryRun,
   onLlmMetrics,
@@ -26,6 +28,7 @@ export async function planContentPlan({
   targetAudienceHint?: string;
   settings: AppSettings;
   publication?: Publication | null;
+  series?: Series | null;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
@@ -54,6 +57,7 @@ export async function planContentPlan({
         .filter((target) => target.role === 'secondary')
         .map((target) => target.contentType),
       publication,
+      series,
     }),
     settings: sharedPlanSettings,
     interactionContext: {

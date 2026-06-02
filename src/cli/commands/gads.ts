@@ -31,6 +31,7 @@ interface GadsCommandDependencies {
   readEnvSettings: typeof readEnvSettings;
   loadSecrets: typeof loadSecrets;
   isTTY: boolean;
+  close: () => void;
 }
 
 function createDefaultDependencies(): GadsCommandDependencies {
@@ -45,6 +46,7 @@ function createDefaultDependencies(): GadsCommandDependencies {
     readEnvSettings,
     loadSecrets,
     isTTY: Boolean(input?.isTTY),
+    close: () => rl.close(),
   };
 }
 
@@ -63,66 +65,70 @@ export async function runGadsLoginCommand(
 ): Promise<void> {
   const deps = { ...createDefaultDependencies(), ...dependencies };
 
-  if (!deps.isTTY) {
-    throw new ReportedError(
-      'OAuth login requires an interactive terminal with browser access.\n\n' +
-      'For CI/CD or headless environments, set credentials via environment variables:\n' +
-      '  TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN\n' +
-      '  TELEPAT_GOOGLE_ADS_CLIENT_ID\n' +
-      '  TELEPAT_GOOGLE_ADS_CLIENT_SECRET\n' +
-      '  TELEPAT_GOOGLE_ADS_REFRESH_TOKEN\n' +
-      '  TELEPAT_GOOGLE_ADS_CUSTOMER_ID\n' +
-      '  TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID (optional)\n\n' +
-      'Environment variables bypass keychain storage entirely.',
-    );
+  try {
+    if (!deps.isTTY) {
+      throw new ReportedError(
+        'OAuth login requires an interactive terminal with browser access.\n\n' +
+        'For CI/CD or headless environments, set credentials via environment variables:\n' +
+        '  TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN\n' +
+        '  TELEPAT_GOOGLE_ADS_CLIENT_ID\n' +
+        '  TELEPAT_GOOGLE_ADS_CLIENT_SECRET\n' +
+        '  TELEPAT_GOOGLE_ADS_REFRESH_TOKEN\n' +
+        '  TELEPAT_GOOGLE_ADS_CUSTOMER_ID\n' +
+        '  TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID (optional)\n\n' +
+        'Environment variables bypass keychain storage entirely.',
+      );
+    }
+
+    const envSettings = deps.readEnvSettings();
+    const secrets = await deps.loadSecrets({ disableKeytar: envSettings.disableKeytar });
+
+    const hasRefreshToken = Boolean(envSettings.googleAdsRefreshToken ?? secrets.googleAdsRefreshToken);
+    if (hasRefreshToken && !options.force) {
+      deps.log('Already authenticated with Google Ads. Use --force to re-authorize.');
+      return;
+    }
+
+    const developerToken = options.developerToken ?? await deps.prompt('Google Ads developer token: ');
+    if (!developerToken.trim()) {
+      throw new ReportedError('Developer token cannot be empty.');
+    }
+
+    const clientId = options.clientId ?? await deps.prompt('OAuth2 client ID: ');
+    if (!clientId.trim()) {
+      throw new ReportedError('Client ID cannot be empty.');
+    }
+
+    const clientSecret = options.clientSecret ?? await deps.prompt('OAuth2 client secret: ');
+    if (!clientSecret.trim()) {
+      throw new ReportedError('Client secret cannot be empty.');
+    }
+
+    const customerId = options.customerId ?? await deps.prompt('Google Ads customer ID (10 digits, dashes optional): ');
+    if (!customerId.trim()) {
+      throw new ReportedError('Customer ID cannot be empty.');
+    }
+
+    if (options.loginCustomerId) {
+      await deps.configSet('googleAdsLoginCustomerId', options.loginCustomerId);
+    }
+
+    await deps.configSet('googleAdsDeveloperToken', developerToken);
+    await deps.configSet('googleAdsClientId', clientId);
+    await deps.configSet('googleAdsClientSecret', clientSecret);
+    await deps.configSet('googleAdsCustomerId', customerId);
+
+    deps.log('Starting OAuth2 authorization flow...');
+    deps.log('A browser window will open for Google Ads authorization.');
+
+    const result = await deps.startOAuthFlow({ clientId, clientSecret });
+    await deps.configSet('googleAdsRefreshToken', result.refreshToken);
+
+    deps.log('Google Ads credentials saved successfully.');
+    deps.log('Run `ideon gads test` to verify your credentials work.');
+  } finally {
+    deps.close();
   }
-
-  const envSettings = deps.readEnvSettings();
-  const secrets = await deps.loadSecrets({ disableKeytar: envSettings.disableKeytar });
-
-  const hasRefreshToken = Boolean(envSettings.googleAdsRefreshToken ?? secrets.googleAdsRefreshToken);
-  if (hasRefreshToken && !options.force) {
-    deps.log('Already authenticated with Google Ads. Use --force to re-authorize.');
-    return;
-  }
-
-  const developerToken = options.developerToken ?? await deps.prompt('Google Ads developer token: ');
-  if (!developerToken.trim()) {
-    throw new ReportedError('Developer token cannot be empty.');
-  }
-
-  const clientId = options.clientId ?? await deps.prompt('OAuth2 client ID: ');
-  if (!clientId.trim()) {
-    throw new ReportedError('Client ID cannot be empty.');
-  }
-
-  const clientSecret = options.clientSecret ?? await deps.prompt('OAuth2 client secret: ');
-  if (!clientSecret.trim()) {
-    throw new ReportedError('Client secret cannot be empty.');
-  }
-
-  const customerId = options.customerId ?? await deps.prompt('Google Ads customer ID (10 digits, dashes optional): ');
-  if (!customerId.trim()) {
-    throw new ReportedError('Customer ID cannot be empty.');
-  }
-
-  if (options.loginCustomerId) {
-    await deps.configSet('googleAdsLoginCustomerId', options.loginCustomerId);
-  }
-
-  await deps.configSet('googleAdsDeveloperToken', developerToken);
-  await deps.configSet('googleAdsClientId', clientId);
-  await deps.configSet('googleAdsClientSecret', clientSecret);
-  await deps.configSet('googleAdsCustomerId', customerId);
-
-  deps.log('Starting OAuth2 authorization flow...');
-  deps.log('A browser window will open for Google Ads authorization.');
-
-  const result = await deps.startOAuthFlow({ clientId, clientSecret });
-  await deps.configSet('googleAdsRefreshToken', result.refreshToken);
-
-  deps.log('Google Ads credentials saved successfully.');
-  deps.log('Run `ideon gads test` to verify your credentials work.');
 }
 
 interface LogoutOptions {
@@ -145,6 +151,7 @@ export async function runGadsLogoutCommand(
 
   const label = options.all ? 'All Google Ads credentials' : 'Google Ads refresh token';
   deps.log(`${label} cleared.`);
+  deps.close();
 }
 
 interface StatusOptions {
@@ -222,10 +229,12 @@ export async function runGadsStatusCommand(
 
   if (options.json) {
     deps.log(JSON.stringify(result, null, 2));
+    deps.close();
     return;
   }
 
   deps.log(formatStatusTTY(result));
+  deps.close();
 }
 
 export async function runGadsTestCommand(
@@ -280,5 +289,7 @@ export async function runGadsTestCommand(
     throw new ReportedError(
       `Google Ads credentials test failed:\n${message}\n\nRun \`ideon gads status\` to check configuration, or \`ideon gads login\` to re-authorize.`,
     );
+  } finally {
+    deps.close();
   }
 }

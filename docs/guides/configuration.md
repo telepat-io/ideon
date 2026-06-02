@@ -15,7 +15,9 @@ Lowest to highest priority:
 1. Saved settings file
 2. Job file settings
 3. Environment variables
-4. Direct CLI arguments (`--style`, `--intent`, `--primary`, `--secondary`, idea input)
+4. Publication defaults (when `--publication` is set)
+5. Series defaults (when `--series` is set; overrides publication defaults)
+6. Direct CLI arguments (`--style`, `--intent`, `--primary`, `--secondary`, idea input)
 
 Secret precedence:
 

@@ -15,7 +15,9 @@ Ideon 会从多个来源合并配置，并在执行前完成校验。
 1. Saved settings file
 2. Job file settings
 3. Environment variables
-4. Direct CLI arguments (`--style`, `--intent`, `--primary`, `--secondary`, idea input)
+4. Publication defaults（当设置了 `--publication` 时生效）
+5. Series defaults（当设置了 `--series` 时生效；会覆盖 Publication defaults）
+6. Direct CLI arguments (`--style`, `--intent`, `--primary`, `--secondary`, idea input)
 
 密钥优先级：
 

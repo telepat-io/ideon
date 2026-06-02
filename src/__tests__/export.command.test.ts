@@ -391,6 +391,7 @@ function makeResolvedInput(_markdownOutputDir: string): ResolvedRunInput {
     targetAudienceHint: undefined,
     job: null,
     publication: null,
+    series: null,
     config: {
       settings: {
         ...defaultAppSettings,

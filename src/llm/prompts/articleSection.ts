@@ -1,5 +1,6 @@
 import type { ArticlePlan, ArticleSectionPlan } from '../../types/article.js';
 import type { Publication } from '../../types/publication.js';
+import type { Series } from '../../types/series.js';
 import { resolveTargetLengthAlias } from '../../config/schema.js';
 import type { ChatMessage } from '../openRouterClient.js';
 import {
@@ -8,6 +9,7 @@ import {
 } from './writingFramework.js';
 import { buildArticleSectionGuideInstruction } from './guideBundles.js';
 import { buildEditorialPolicyDirective } from './publicationPolicy.js';
+import { buildSeriesDirective } from './seriesPolicy.js';
 
 const INTRO_PARAGRAPH_COUNTS: Record<string, string> = {
   small: '1 to 2',
@@ -35,6 +37,7 @@ function buildSystemInstruction(
   targetLengthWords: number,
   contentType: string,
   publication: Publication | null,
+  series: Series | null,
 ): string {
   return [
     base,
@@ -42,6 +45,7 @@ function buildSystemInstruction(
     buildRunContextDirective(contentTypes),
     buildTargetLengthDirective(contentType, targetLengthWords),
     buildEditorialPolicyDirective(publication),
+    buildSeriesDirective(series),
   ].filter((part) => part.length > 0).join(' ');
 }
 
@@ -80,6 +84,7 @@ export function buildIntroMessages(
   targetLengthWords: number,
   introTargetWords: number,
   publication: Publication | null = null,
+  series: Series | null = null,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
@@ -89,6 +94,7 @@ export function buildIntroMessages(
     targetLengthWords,
     plan.contentType,
     publication,
+    series,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = INTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? INTRO_PARAGRAPH_COUNTS['medium']!;
@@ -124,6 +130,7 @@ export function buildSectionMessages(
   targetLengthWords: number,
   sectionTargetWords: number,
   publication: Publication | null = null,
+  series: Series | null = null,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
@@ -133,6 +140,7 @@ export function buildSectionMessages(
     targetLengthWords,
     plan.contentType,
     publication,
+    series,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = SECTION_PARAGRAPH_COUNTS[targetLengthAlias] ?? SECTION_PARAGRAPH_COUNTS['medium']!;
@@ -171,6 +179,7 @@ export function buildOutroMessages(
   targetLengthWords: number,
   outroTargetWords: number,
   publication: Publication | null = null,
+  series: Series | null = null,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
@@ -180,6 +189,7 @@ export function buildOutroMessages(
     targetLengthWords,
     plan.contentType,
     publication,
+    series,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = OUTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? OUTRO_PARAGRAPH_COUNTS['medium']!;

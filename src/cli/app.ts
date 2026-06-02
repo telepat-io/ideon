@@ -33,6 +33,12 @@ import {
   runPublicationEditCommand,
   runPublicationRemoveCommand,
 } from './commands/publication.js';
+import {
+  runSeriesAddCommand,
+  runSeriesListCommand,
+  runSeriesEditCommand,
+  runSeriesRemoveCommand,
+} from './commands/series.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
@@ -315,6 +321,99 @@ export async function runCli(argv: string[]): Promise<void> {
       await runPublicationRemoveCommand({ slug, force: options.force });
     });
 
+  const seriesCommand = program
+    .command('series')
+    .description('Manage content series with topic, defaults, and optional publication association.');
+
+  seriesCommand
+    .command('add')
+    .description('Create a new content series.')
+    .argument('[name]', 'Series name')
+    .option('--topic <topic>', 'Series topic (freeform text)')
+    .option('--publication <slug>', 'Associate series to a publication')
+    .option('--style <style>', 'Default writing style')
+    .option('--intent <intent>', 'Default content intent')
+    .option('--length <size>', 'Default target length: small, medium, large, or word count')
+    .option('--type <type>', 'Default primary content type')
+    .option('--audience <description>', 'Default target audience hint')
+    .option('--tone <tone>', 'Editorial policy tone')
+    .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
+    .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
+    .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
+    .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .action(async (name: string | undefined, options: {
+      topic?: string;
+      publication?: string;
+      style?: string;
+      intent?: string;
+      length?: string;
+      type?: string;
+      audience?: string;
+      tone?: string;
+      forbiddenTopics?: string;
+      disclosureRequirements?: string;
+      audienceRestrictions?: string;
+      editorialPolicy?: string;
+    }) => {
+      await runSeriesAddCommand({ name, ...options });
+    });
+
+  seriesCommand
+    .command('list')
+    .description('List all series.')
+    .option('--json', 'Print machine-readable JSON output', false)
+    .option('--verbose', 'Show editorial policy details', false)
+    .option('--publication <slug>', 'Filter by publication slug')
+    .action(async (options: { json: boolean; verbose: boolean; publication?: string }) => {
+      await runSeriesListCommand(options);
+    });
+
+  seriesCommand
+    .command('edit')
+    .description('Edit an existing series.')
+    .argument('<slug>', 'Series slug')
+    .option('--name <name>', 'New series name')
+    .option('--topic <topic>', 'Series topic (freeform text)')
+    .option('--publication <slug>', 'Associate series to a publication')
+    .option('--unset-publication', 'Remove publication association')
+    .option('--style <style>', 'Default writing style')
+    .option('--intent <intent>', 'Default content intent')
+    .option('--length <size>', 'Default target length: small, medium, large, or word count')
+    .option('--type <type>', 'Default primary content type')
+    .option('--audience <description>', 'Default target audience hint')
+    .option('--tone <tone>', 'Editorial policy tone')
+    .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
+    .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
+    .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
+    .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .action(async (slug: string, options: {
+      name?: string;
+      topic?: string;
+      publication?: string;
+      unsetPublication?: boolean;
+      style?: string;
+      intent?: string;
+      length?: string;
+      type?: string;
+      audience?: string;
+      tone?: string;
+      forbiddenTopics?: string;
+      disclosureRequirements?: string;
+      audienceRestrictions?: string;
+      editorialPolicy?: string;
+    }) => {
+      await runSeriesEditCommand({ slug, ...options });
+    });
+
+  seriesCommand
+    .command('remove')
+    .description('Delete a series.')
+    .argument('<slug>', 'Series slug')
+    .option('-f, --force', 'Skip the confirmation prompt', false)
+    .action(async (slug: string, options: { force: boolean }) => {
+      await runSeriesRemoveCommand({ slug, force: options.force });
+    });
+
   program
     .command('delete')
     .description('Delete a generated article by slug, including its assets and analytics sidecar.')
@@ -398,11 +497,13 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
     .option('--export <path>', 'Export the generated article to the given directory after writing')
     .option('--publication <slug>', 'Publication slug to use for defaults and editorial policy')
+    .option('--series <slug>', 'Content series slug to use for defaults and thematic context')
     .action(async (ideaArg: string | undefined, options: {
       idea?: string;
       audience?: string;
       job?: string;
       publication?: string;
+      series?: string;
       primary?: string;
       secondary?: string[];
       style?: string;
@@ -422,6 +523,7 @@ export async function runCli(argv: string[]): Promise<void> {
         audience: options.audience,
         jobPath: options.job,
         publication: options.publication,
+        series: options.series,
         primarySpec: options.primary,
         secondarySpecs: options.secondary,
         style: options.style,

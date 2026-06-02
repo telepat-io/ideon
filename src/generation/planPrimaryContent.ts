@@ -1,5 +1,6 @@
 import type { AppSettings } from '../config/schema.js';
 import type { Publication } from '../types/publication.js';
+import type { Series } from '../types/series.js';
 import { buildPrimaryPlanMessages, buildPrimaryPlanJsonSchema } from '../llm/prompts/primaryPlan.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { resolveUniqueSlug } from '../output/filesystem.js';
@@ -16,6 +17,7 @@ export async function planPrimaryContent({
   contentPlan,
   settings,
   publication,
+  series,
   markdownOutputDir,
   openRouter,
   dryRun,
@@ -27,6 +29,7 @@ export async function planPrimaryContent({
   contentPlan: ContentPlan;
   settings: AppSettings;
   publication?: Publication | null;
+  series?: Series | null;
   markdownOutputDir: string;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
@@ -47,6 +50,7 @@ export async function planPrimaryContent({
           contentPlan,
           targetLength: settings.targetLength,
           publication,
+          series,
         }),
         settings,
         interactionContext: {

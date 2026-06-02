@@ -36,6 +36,8 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--link <expression->url>` | Kein | Nein | Wiederholbare Zeichenfolge | Keine | `"text->https://..."` | Fügt einen benutzerdefinierten Link in die Sidecar hinzu oder aktualisiert ihn. Format: `expression->url`. Wiederholbar. Benutzerdefinierte Links haben Vorrang vor generierten. |
 | `--unlink <expression>` | Kein | Nein | Wiederholbare Zeichenfolge | Keine | Beliebiger Ausdrucksstring | Entfernt einen benutzerdefinierten Link nach Ausdruck. Wiederholbar. |
 | `--max-links <n>` | Kein | Nein | Positive Ganzzahl | Abgeleitet von `--length` | Beliebige positive Ganzzahl | Begrenzt die Anzahl der generierten Links. Gilt nicht für benutzerdefinierte Links. Erfordert `--enrich-links`. |
+| `--publication <slug>` | Kein | Nein | Zeichenfolge | n/a | Gültiger Veröffentlichungs-Slug | Veröffentlichungs-Slug für Standardwerte und redaktionelle Richtlinie. |
+| `--series <slug>` | Kein | Nein | Zeichenfolge | n/a | Gültiger Serien-Slug | Serien-Slug für Standardwerte und thematischen Kontext. Serie überschreibt Veröffentlichungs-Standardwerte. |
 
 ## Beispiele
 
@@ -45,6 +47,10 @@ ideon write "How AI changes technical publishing"
 
 ```bash title="Häufiger realer Pfad"
 ideon write "How small editorial teams scale content" --primary article=1 --secondary x-thread=2 --style technical --intent how-to-guide --length large
+```
+
+```bash title="Mit Serienverknüpfung"
+ideon write "Deep dive into transformer architectures" --primary article=1 --series ki-tiefenanalysen --publication tech-blog
 ```
 
 ```bash title="Sicherheits- und Debug-Pfad"

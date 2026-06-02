@@ -3,6 +3,7 @@ import { readEnvSettings } from './env.js';
 import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
 import { loadPublication } from './publicationStore.js';
+import { loadSeries } from './seriesStore.js';
 import {
   appSettingsSchema,
   contentIntentValues,
@@ -15,6 +16,7 @@ import {
   type TargetLength,
 } from './schema.js';
 import type { Publication } from '../types/publication.js';
+import type { Series } from '../types/series.js';
 
 export interface ContentTargetInput {
   contentType: (typeof contentTypeValues)[number] | string;
@@ -27,6 +29,7 @@ export interface ResolveConfigInput {
   audience?: string;
   jobPath?: string;
   publication?: string;
+  series?: string;
   style?: (typeof writingStyleValues)[number] | string;
   intent?: (typeof contentIntentValues)[number] | string;
   contentTargets?: ContentTargetInput[];
@@ -39,6 +42,7 @@ export interface ResolvedRunInput {
   targetAudienceHint?: string;
   job: JobInput | null;
   publication: Publication | null;
+  series: Series | null;
 }
 
 export async function resolveRunInput(input: ResolveConfigInput): Promise<ResolvedRunInput> {
@@ -54,9 +58,23 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
   assertNoLegacyXMode(input.contentTargets, 'CLI contentTargets');
   assertExactlyOnePrimary(input.contentTargets, 'CLI contentTargets');
 
-  const publicationSlug = input.publication ?? job?.publication ?? savedSettings.defaultPublication;
+  const seriesSlug = input.series ?? job?.series;
+  const series = seriesSlug ? await loadSeries(seriesSlug) : null;
+
+  // If series has a publication reference and user didn't explicitly pass --publication, use it
+  const publicationSlug = input.publication ?? series?.publication ?? job?.publication ?? savedSettings.defaultPublication;
   const publication = publicationSlug ? await loadPublication(publicationSlug) : null;
   const pubDefaults = publication?.defaults ?? {};
+  const seriesDefaults = series?.defaults ?? {};
+
+  // Track whether a value was explicitly provided by env or higher precedence,
+  // so series defaults can fill in when publication didn't.
+  const hasStyleOverride = !!input.style || !!envSettings.style;
+  const hasIntentOverride = !!input.intent || !!envSettings.intent;
+  const hasLengthOverride = !!input.targetLength || !!envSettings.targetLength;
+  const hasContentTargetsOverride = !!input.contentTargets;
+  const hasModelOverride = !!envSettings.model;
+  const hasModelSettingsOverride = envSettings.temperature !== undefined || envSettings.maxTokens !== undefined || envSettings.topP !== undefined;
 
   const mergedSettings = appSettingsSchema.parse({
     ...savedSettings,
@@ -91,13 +109,14 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ...(envSettings.style ? { style: envSettings.style } : {}),
     ...(envSettings.intent ? { intent: envSettings.intent } : {}),
     ...(envSettings.targetLength ? { targetLength: envSettings.targetLength } : {}),
-    ...(pubDefaults.style && !input.style && !envSettings.style ? { style: pubDefaults.style } : {}),
-    ...(pubDefaults.intent && !input.intent && !envSettings.intent ? { intent: pubDefaults.intent } : {}),
-    ...(pubDefaults.targetLength && !input.targetLength && !envSettings.targetLength ? { targetLength: pubDefaults.targetLength } : {}),
-    ...(pubDefaults.contentTargets && !input.contentTargets ? { contentTargets: pubDefaults.contentTargets } : {}),
-    ...(pubDefaults.model && !envSettings.model ? { model: pubDefaults.model } : {}),
+    // Publication defaults (applied when no higher-precedence override exists)
+    ...(pubDefaults.style && !hasStyleOverride ? { style: pubDefaults.style } : {}),
+    ...(pubDefaults.intent && !hasIntentOverride ? { intent: pubDefaults.intent } : {}),
+    ...(pubDefaults.targetLength && !hasLengthOverride ? { targetLength: pubDefaults.targetLength } : {}),
+    ...(pubDefaults.contentTargets && !hasContentTargetsOverride ? { contentTargets: pubDefaults.contentTargets } : {}),
+    ...(pubDefaults.model && !hasModelOverride ? { model: pubDefaults.model } : {}),
     ...((pubDefaults.temperature !== undefined || pubDefaults.maxTokens !== undefined || pubDefaults.topP !== undefined)
-      && envSettings.temperature === undefined && envSettings.maxTokens === undefined && envSettings.topP === undefined
+      && !hasModelSettingsOverride
       ? {
           modelSettings: {
             ...savedSettings.modelSettings,
@@ -108,6 +127,26 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
           },
         }
       : {}),
+    // Series defaults (applied after publication, before CLI flags)
+    ...(seriesDefaults.style && !hasStyleOverride && !pubDefaults.style ? { style: seriesDefaults.style } : {}),
+    ...(seriesDefaults.intent && !hasIntentOverride && !pubDefaults.intent ? { intent: seriesDefaults.intent } : {}),
+    ...(seriesDefaults.targetLength && !hasLengthOverride && !pubDefaults.targetLength ? { targetLength: seriesDefaults.targetLength } : {}),
+    ...(seriesDefaults.contentTargets && !hasContentTargetsOverride && !pubDefaults.contentTargets ? { contentTargets: seriesDefaults.contentTargets } : {}),
+    ...(seriesDefaults.model && !hasModelOverride && !pubDefaults.model ? { model: seriesDefaults.model } : {}),
+    ...((seriesDefaults.temperature !== undefined || seriesDefaults.maxTokens !== undefined || seriesDefaults.topP !== undefined)
+      && !hasModelSettingsOverride
+      && pubDefaults.temperature === undefined && pubDefaults.maxTokens === undefined && pubDefaults.topP === undefined
+      ? {
+          modelSettings: {
+            ...savedSettings.modelSettings,
+            ...(job?.settings?.modelSettings ?? {}),
+            ...(seriesDefaults.temperature !== undefined ? { temperature: seriesDefaults.temperature } : {}),
+            ...(seriesDefaults.maxTokens !== undefined ? { maxTokens: seriesDefaults.maxTokens } : {}),
+            ...(seriesDefaults.topP !== undefined ? { topP: seriesDefaults.topP } : {}),
+          },
+        }
+      : {}),
+    // CLI flags (highest precedence)
     ...(input.style ? { style: input.style } : {}),
     ...(input.intent ? { intent: input.intent } : {}),
     ...(input.targetLength ? { targetLength: input.targetLength } : {}),
@@ -120,6 +159,7 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
   }
 
   const targetAudienceHint = normalizeOptionalText(input.audience)
+    ?? normalizeOptionalText(seriesDefaults.targetAudienceHint)
     ?? normalizeOptionalText(pubDefaults.targetAudienceHint)
     ?? normalizeOptionalText(job?.targetAudience);
 
@@ -141,6 +181,7 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     targetAudienceHint,
     job,
     publication,
+    series,
   };
 }
 

@@ -15,7 +15,9 @@ Niedrigste bis höchste Priorität:
 1. Gespeicherte Einstellungsdatei
 2. Job-Datei-Einstellungen
 3. Umgebungsvariablen
-4. Direkte CLI-Argumente (`--style`, `--intent`, `--primary`, `--secondary`, Ideeneingabe)
+4. Veröffentlichungs-Standardwerte (wenn `--publication` gesetzt ist)
+5. Serien-Standardwerte (wenn `--series` gesetzt ist; überschreibt Veröffentlichungs-Standardwerte)
+6. Direkte CLI-Argumente (`--style`, `--intent`, `--primary`, `--secondary`, Ideeneingabe)
 
 Geheimnis-Vorrang:
 

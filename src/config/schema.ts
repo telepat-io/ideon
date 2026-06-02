@@ -253,6 +253,7 @@ export const jobInputSchema = z.object({
   prompt: z.string().min(1).optional(),
   targetAudience: z.string().min(1).optional(),
   publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
   settings: appSettingsSchema.partial().optional(),
 });
 

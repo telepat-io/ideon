@@ -47,6 +47,32 @@ Wählen Sie einen Stil und eine Absicht. Jede Ausgabe im Lauf teilt sich dieselb
 
 ---
 
+## Veröffentlichungen und Serien
+
+Organisieren Sie Ihre Inhaltsstrategie mit **Veröffentlichungen** und **Serien**.
+
+**Veröffentlichungen** ermöglichen es Ihnen, redaktionelle Richtlinien, Standardstile, Absichten und Zielgruppenhinweise pro Veröffentlichung zu definieren. Einmal eingerichtet, erbt jeder Schreibdurchlauf unter dieser Veröffentlichung die richtige Stimme.
+
+**Serien** gruppieren verwandte Artikel unter einem gemeinsamen Thema und redaktionellen Faden. Eine Serie kann Veröffentlichungs-Standardwerte überschreiben, und jeder unter ihr geschriebene Artikel erhält kontextbezogene Prompt-Injektion — das LLM weiß, dass es Teil einer größeren Erzählung ist, und behält die thematische Kohärenz bei.
+
+```bash
+# Veröffentlichung erstellen
+ideon publication add "Tech-Blog" --style technical --intent tutorial --tone authoritative
+
+# Serie darunter erstellen
+ideon series add "KI-Tiefenanalysen" --topic "Spitzentechnologien der KI erkunden" --publication tech-blog
+
+# Mit Serienkontext schreiben
+ideon write "Wie RAG-Systeme funktionieren" --series ki-tiefenanalysen --primary article=1
+```
+
+- **Schichtete Standardwerte** — gespeicherte Einstellungen → Job → Umgebung → Veröffentlichung → Serie → CLI-Argumente
+- **Alles überschreibbar** — Serie kann Stil, Absicht, Länge, Inhaltsziele, Modelleinstellungen und redaktionelle Richtlinie überschreiben
+- **Eigenständig oder verknüpft** — Serien funktionieren mit oder ohne Veröffentlichung
+- **Thematische Injektion** — Serienname und Thema werden in jeden Prompt injiziert für kohärente Multi-Artikel-Erzählbögen
+
+---
+
 ## Recherchegestützte Entwürfe
 
 Ideon durchsucht das Web und fügt kontextbezogene externe Links ein, wie ein menschlicher Autor es tun würde — keine manuelle Recherche, keine generischen Platzhalter-URLs. Nur glaubwürdige, relevante Links, die Ihren Entwürfen Tiefe und Autorität verleihen.

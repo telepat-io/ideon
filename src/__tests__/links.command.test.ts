@@ -382,6 +382,7 @@ function makeResolvedInput(_markdownOutputDir: string, _assetOutputDir: string):
     targetAudienceHint: undefined,
     job: null,
     publication: null,
+    series: null,
     config: {
       settings: {
         ...defaultAppSettings,

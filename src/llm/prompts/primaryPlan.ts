@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentPlan } from '../../types/contentPlan.js';
 import type { Publication } from '../../types/publication.js';
+import type { Series } from '../../types/series.js';
 import { isLongFormContentType } from '../../types/article.js';
 import { resolveDefaultInlineImageCount } from '../../config/schema.js';
 import {
@@ -9,6 +10,7 @@ import {
 } from './writingFramework.js';
 import { buildPrimaryPlanGuideInstruction } from './guideBundles.js';
 import { buildEditorialPolicyDirective } from './publicationPolicy.js';
+import { buildSeriesDirective } from './seriesPolicy.js';
 
 function deriveSectionCounts(targetLengthWords: number): { min: number; max: number; label: string } {
   const normalizedWords = Number.isFinite(targetLengthWords) && targetLengthWords > 0 ? targetLengthWords : 900;
@@ -128,6 +130,7 @@ export function buildPrimaryPlanMessages(
     contentPlan: ContentPlan;
     targetLength: number;
     publication?: Publication | null;
+    series?: Series | null;
   },
 ): ChatMessage[] {
   if (!isLongFormContentType(options.contentType)) {
@@ -146,6 +149,7 @@ function buildLongFormPlanMessages(
     contentPlan: ContentPlan;
     targetLength: number;
     publication?: Publication | null;
+    series?: Series | null;
   },
 ): ChatMessage[] {
   const sectionCounts = deriveSectionCounts(options.targetLength);
@@ -156,6 +160,7 @@ function buildLongFormPlanMessages(
     buildRunContextDirective(options.contentTypes),
     buildTargetLengthDirective(options.contentType, options.targetLength),
     buildEditorialPolicyDirective(options.publication ?? null),
+    buildSeriesDirective(options.series ?? null),
     'Return only the requested JSON.',
   ].filter((part) => part.length > 0).join(' ');
 
@@ -219,6 +224,7 @@ function buildShortFormPlanMessages(
     contentPlan: ContentPlan;
     targetLength: number;
     publication?: Publication | null;
+    series?: Series | null;
   },
 ): ChatMessage[] {
   const systemInstruction = [
@@ -226,6 +232,7 @@ function buildShortFormPlanMessages(
     buildPrimaryPlanGuideInstruction(options.intent, options.contentType),
     buildRunContextDirective(options.contentTypes),
     buildEditorialPolicyDirective(options.publication ?? null),
+    buildSeriesDirective(options.series ?? null),
     'Return only the requested JSON.',
   ].filter((part) => part.length > 0).join(' ');
 

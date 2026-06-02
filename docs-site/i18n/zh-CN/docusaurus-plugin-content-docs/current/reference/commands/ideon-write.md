@@ -36,6 +36,8 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--link <expression->url>` | 无 | 否 | 可重复 string | 无 | `"文字->https://..."` | 添加或更新自定义链接。格式：`expression->url`。需要 `--enrich-links`。可重复。自定义链接优先于生成链接。 |
 | `--unlink <expression>` | 无 | 否 | 可重复 string | 无 | 任意 expression 字符串 | 按 expression 删除自定义链接。可重复，需要 `--enrich-links`。 |
 | `--max-links <n>` | 无 | 否 | 正整数 | 由 `--length` 决定 | 任意正整数 | 限制生成链接数量，不影响自定义链接。需要 `--enrich-links`。 |
+| `--publication <slug>` | 无 | 否 | string | 无 | 有效的 publication slug | 用于获取默认值和编辑策略的出版物 slug。 |
+| `--series <slug>` | 无 | 否 | string | 无 | 有效的 series slug | 用于获取默认值和主题上下文的内容系列 slug。系列会覆盖出版物默认值。 |
 
 ## 示例
 
@@ -45,6 +47,10 @@ ideon write "How AI changes technical publishing"
 
 ```bash title="常见生产示例"
 ideon write "How small editorial teams scale content" --primary article=1 --secondary x-thread=2 --style technical --intent how-to-guide --length large
+```
+
+```bash title="关联系列示例"
+ideon write "Deep dive into transformer architectures" --primary article=1 --series ai-深度探索 --publication tech-blog
 ```
 
 ```bash title="排障与安全示例"

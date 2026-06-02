@@ -47,6 +47,32 @@ Pick a style and an intent. Every output in the run shares the same voice — so
 
 ---
 
+## Publications and Series
+
+Organize your content strategy with **publications** and **series**.
+
+**Publications** let you define editorial policies, default styles, intents, and audience hints per publication. Set it once, and every write run under that publication inherits the right voice.
+
+**Series** group related articles under a shared topic and editorial thread. A series can override publication defaults, and every article written under it gets contextual prompt injection — the LLM knows it's part of a larger narrative and maintains thematic coherence.
+
+```bash
+# Create a publication
+ideon publication add "Tech Blog" --style technical --intent tutorial --tone authoritative
+
+# Create a series under it
+ideon series add "AI Deep Dives" --topic "Exploring cutting-edge AI technologies" --publication tech-blog
+
+# Write with series context
+ideon write "How RAG systems work" --series ai-deep-dives --primary article=1
+```
+
+- **Layered defaults** — saved settings → job → env → publication → series → CLI flags
+- **Override anything** — series can override style, intent, length, content targets, model settings, and editorial policy
+- **Standalone or linked** — series work with or without a publication
+- **Thematic injection** — series name and topic are injected into every prompt for coherent multi-article arcs
+
+---
+
 ## Research-Backed Drafts
 
 Ideon browses the web and inserts contextual external links like a human writer would — no manual research, no generic placeholder URLs. Just credible, relevant links that add depth and authority to your drafts.

@@ -1,11 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import SelectInput from 'ink-select-input';
 import TextInput from 'ink-text-input';
 import { contentIntentValues, contentTypeValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
 import type { ContentTargetInput } from '../../config/resolver.js';
+import { listSeries } from '../../config/seriesStore.js';
+import type { Series } from '../../types/series.js';
 
 interface WriteOptionsFlowProps {
+  askSeries: boolean;
   askStyle: boolean;
   askIntent: boolean;
   askTargets: boolean;
@@ -14,10 +17,10 @@ interface WriteOptionsFlowProps {
   initialIntent: string;
   initialTargetLength: string;
   initialTargets: ContentTargetInput[];
-  onDone: (result: { style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => void;
+  onDone: (result: { series?: string; style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => void;
 }
 
-type Step = 'primary' | 'secondary' | 'counts' | 'style' | 'intent' | 'length';
+type Step = 'series' | 'primary' | 'secondary' | 'counts' | 'style' | 'intent' | 'length';
 
 interface SecondarySelection {
   contentType: string;
@@ -25,6 +28,7 @@ interface SecondarySelection {
 }
 
 export function WriteOptionsFlow({
+  askSeries,
   askStyle,
   askIntent,
   askTargets,
@@ -37,12 +41,21 @@ export function WriteOptionsFlow({
 }: WriteOptionsFlowProps): React.JSX.Element {
   const { exit } = useApp();
   const [step, setStep] = useState<Step>(() => {
+    if (askSeries) return 'series';
     if (askTargets) return 'primary';
     if (askStyle) return 'style';
     if (askIntent) return 'intent';
     if (askLength) return 'length';
     return 'primary';
   });
+  const [availableSeries, setAvailableSeries] = useState<Series[]>([]);
+  const [selectedSeries, setSelectedSeries] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (askSeries) {
+      listSeries().then(setAvailableSeries).catch(() => setAvailableSeries([]));
+    }
+  }, [askSeries]);
   const initialPrimary = initialTargets.find((target) => target.role === 'primary')?.contentType
     ?? initialTargets[0]?.contentType
     ?? 'article';
@@ -130,6 +143,44 @@ export function WriteOptionsFlow({
       setStep('counts');
     }
   });
+
+  if (step === 'series' && askSeries) {
+    const items = [
+      { label: '(none)', value: '' },
+      ...availableSeries.map((s) => ({ label: `${s.name} (${s.slug})`, value: s.slug })),
+    ];
+
+    return (
+      <Box flexDirection="column">
+        <Text bold color="cyanBright">
+          Select Content Series
+        </Text>
+        <Text color="gray">Associate this run with an existing series (or skip).</Text>
+        <Box marginTop={1}>
+          <SelectInput
+            items={items}
+            onSelect={(item) => {
+              const seriesSlug = item.value || undefined;
+              setSelectedSeries(seriesSlug);
+
+              if (askTargets) {
+                setStep('primary');
+              } else if (askStyle) {
+                setStep('style');
+              } else if (askIntent) {
+                setStep('intent');
+              } else if (askLength) {
+                setStep('length');
+              } else {
+                onDone({ series: seriesSlug });
+                exit();
+              }
+            }}
+          />
+        </Box>
+      </Box>
+    );
+  }
 
   if (step === 'primary' && askTargets) {
     const items = contentTypeValues.map((value) => ({
@@ -224,7 +275,7 @@ export function WriteOptionsFlow({
                     ...target,
                     count: target.contentType === currentType ? nextCount : (counts[target.contentType] ?? target.count),
                   }));
-                  onDone({ contentTargets });
+                  onDone({ series: selectedSeries, contentTargets });
                   exit();
                 }
                 return;
@@ -274,6 +325,7 @@ export function WriteOptionsFlow({
               }
 
               onDone({
+                series: selectedSeries,
                 style: item.value,
                 ...(contentTargets ? { contentTargets } : {}),
               });
@@ -314,6 +366,7 @@ export function WriteOptionsFlow({
               }
 
               onDone({
+                series: selectedSeries,
                 ...(askStyle ? { style } : {}),
                 intent: item.value,
                 ...(contentTargets ? { contentTargets } : {}),
@@ -350,6 +403,7 @@ export function WriteOptionsFlow({
               setTargetLength(item.value);
 
               onDone({
+                series: selectedSeries,
                 ...(askStyle ? { style } : {}),
                 ...(askIntent ? { intent } : {}),
                 targetLength: item.value,

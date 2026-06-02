@@ -31,6 +31,7 @@ interface WriteCommandOptions {
   audience?: string;
   jobPath?: string;
   publication?: string;
+  series?: string;
   primarySpec?: string;
   secondarySpecs?: string[];
   style?: string;
@@ -308,6 +309,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       audience: options.audience,
       jobPath: options.jobPath,
       publication: options.publication,
+      series: options.series,
       style: options.style,
       intent: options.intent,
       targetLength: options.length,
@@ -330,6 +332,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       audience: options.audience,
       jobPath: options.jobPath,
       publication: options.publication,
+      series: options.series,
       style: options.style,
       intent: options.intent,
       targetLength: options.length,
@@ -345,6 +348,7 @@ async function applyInteractiveWriteOptionsIfNeeded(
   options: WriteCommandOptions,
   parsedTargets: ContentTargetInput[] | undefined,
 ): Promise<Awaited<ReturnType<typeof resolveRunInput>>> {
+  const seriesProvided = Boolean(options.series ?? resolved.job?.series);
   const styleProvided = Boolean(options.style ?? resolved.job?.settings?.style);
   const intentProvided = Boolean(options.intent);
   const lengthProvided = Boolean(options.length ?? resolved.job?.settings?.targetLength);
@@ -370,11 +374,12 @@ async function applyInteractiveWriteOptionsIfNeeded(
     return resolved;
   }
 
-  if (styleProvided && intentProvided && targetsProvided && lengthProvided) {
+  if (seriesProvided && styleProvided && intentProvided && targetsProvided && lengthProvided) {
     return resolved;
   }
 
   const prompted = await promptForMissingWriteOptions({
+    askSeries: !seriesProvided,
     askStyle: !styleProvided,
     askIntent: !intentProvided,
     askTargets: !targetsProvided,
@@ -385,8 +390,15 @@ async function applyInteractiveWriteOptionsIfNeeded(
     targets: providedTargets,
   });
 
+  let resolvedSeries = resolved.series;
+  if (prompted.series && !resolved.series) {
+    const { loadSeries } = await import('../../config/seriesStore.js');
+    resolvedSeries = await loadSeries(prompted.series).catch(() => null);
+  }
+
   return {
     ...resolved,
+    series: resolvedSeries,
     config: {
       ...resolved.config,
       settings: appSettingsSchema.parse({
@@ -401,6 +413,7 @@ async function applyInteractiveWriteOptionsIfNeeded(
 }
 
 async function promptForMissingWriteOptions(params: {
+  askSeries: boolean;
   askStyle: boolean;
   askIntent: boolean;
   askTargets: boolean;
@@ -409,11 +422,12 @@ async function promptForMissingWriteOptions(params: {
   intent: string;
   targetLength: number;
   targets: ContentTargetInput[];
-}): Promise<{ style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] }> {
-  let flowResult: { style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null = null;
+}): Promise<{ series?: string; style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] }> {
+  let flowResult: { series?: string; style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null = null;
 
   const app = render(
     React.createElement(WriteOptionsFlow, {
+      askSeries: params.askSeries,
       askStyle: params.askStyle,
       askIntent: params.askIntent,
       askTargets: params.askTargets,
@@ -426,7 +440,7 @@ async function promptForMissingWriteOptions(params: {
         : 'tutorial',
       initialTargetLength: resolveTargetLengthAlias(params.targetLength),
       initialTargets: params.targets,
-      onDone: (result: { style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => {
+      onDone: (result: { series?: string; style?: string; intent?: string; targetLength?: string; contentTargets?: ContentTargetInput[] } | null) => {
         flowResult = result;
       },
     }),
