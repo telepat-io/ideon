@@ -27,6 +27,12 @@ import { runLinksCommand } from './commands/links.js';
 import { runOutputCommand } from './commands/export.js';
 import { openSettings } from './commands/settings.js';
 import { runServeCommand } from './commands/serve.js';
+import {
+  runPublicationAddCommand,
+  runPublicationListCommand,
+  runPublicationEditCommand,
+  runPublicationRemoveCommand,
+} from './commands/publication.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
@@ -227,6 +233,88 @@ export async function runCli(argv: string[]): Promise<void> {
       await runAgentStatusCommand({ json: options.json });
     });
 
+  const publicationCommand = program
+    .command('publication')
+    .description('Manage publications with editorial policies and default settings.');
+
+  publicationCommand
+    .command('add')
+    .description('Create a new publication with defaults and editorial policy.')
+    .argument('[name]', 'Publication name')
+    .option('--style <style>', 'Default writing style')
+    .option('--intent <intent>', 'Default content intent')
+    .option('--length <size>', 'Default target length: small, medium, large, or word count')
+    .option('--type <type>', 'Default primary content type')
+    .option('--audience <description>', 'Default target audience hint')
+    .option('--tone <tone>', 'Editorial policy tone')
+    .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
+    .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
+    .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
+    .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .action(async (name: string | undefined, options: {
+      style?: string;
+      intent?: string;
+      length?: string;
+      type?: string;
+      audience?: string;
+      tone?: string;
+      forbiddenTopics?: string;
+      disclosureRequirements?: string;
+      audienceRestrictions?: string;
+      editorialPolicy?: string;
+    }) => {
+      await runPublicationAddCommand({ name, ...options });
+    });
+
+  publicationCommand
+    .command('list')
+    .description('List all publications.')
+    .option('--json', 'Print machine-readable JSON output', false)
+    .option('--verbose', 'Show editorial policy details', false)
+    .action(async (options: { json: boolean; verbose: boolean }) => {
+      await runPublicationListCommand(options);
+    });
+
+  publicationCommand
+    .command('edit')
+    .description('Edit an existing publication.')
+    .argument('<slug>', 'Publication slug')
+    .option('--name <name>', 'New publication name')
+    .option('--style <style>', 'Default writing style')
+    .option('--intent <intent>', 'Default content intent')
+    .option('--length <size>', 'Default target length: small, medium, large, or word count')
+    .option('--type <type>', 'Default primary content type')
+    .option('--audience <description>', 'Default target audience hint')
+    .option('--tone <tone>', 'Editorial policy tone')
+    .option('--forbidden-topics <topics>', 'Comma-separated forbidden topics')
+    .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
+    .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
+    .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .action(async (slug: string, options: {
+      name?: string;
+      style?: string;
+      intent?: string;
+      length?: string;
+      type?: string;
+      audience?: string;
+      tone?: string;
+      forbiddenTopics?: string;
+      disclosureRequirements?: string;
+      audienceRestrictions?: string;
+      editorialPolicy?: string;
+    }) => {
+      await runPublicationEditCommand({ slug, ...options });
+    });
+
+  publicationCommand
+    .command('remove')
+    .description('Delete a publication.')
+    .argument('<slug>', 'Publication slug')
+    .option('-f, --force', 'Skip the confirmation prompt', false)
+    .action(async (slug: string, options: { force: boolean }) => {
+      await runPublicationRemoveCommand({ slug, force: options.force });
+    });
+
   program
     .command('delete')
     .description('Delete a generated article by slug, including its assets and analytics sidecar.')
@@ -309,10 +397,12 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
     .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
     .option('--export <path>', 'Export the generated article to the given directory after writing')
+    .option('--publication <slug>', 'Publication slug to use for defaults and editorial policy')
     .action(async (ideaArg: string | undefined, options: {
       idea?: string;
       audience?: string;
       job?: string;
+      publication?: string;
       primary?: string;
       secondary?: string[];
       style?: string;
@@ -331,6 +421,7 @@ export async function runCli(argv: string[]): Promise<void> {
         idea: options.idea ?? ideaArg,
         audience: options.audience,
         jobPath: options.job,
+        publication: options.publication,
         primarySpec: options.primary,
         secondarySpecs: options.secondary,
         style: options.style,

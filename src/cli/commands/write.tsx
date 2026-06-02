@@ -30,6 +30,7 @@ interface WriteCommandOptions {
   idea?: string;
   audience?: string;
   jobPath?: string;
+  publication?: string;
   primarySpec?: string;
   secondarySpecs?: string[];
   style?: string;
@@ -306,6 +307,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       idea: options.idea,
       audience: options.audience,
       jobPath: options.jobPath,
+      publication: options.publication,
       style: options.style,
       intent: options.intent,
       targetLength: options.length,
@@ -318,7 +320,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
 
     return await applyInteractiveWriteOptionsIfNeeded(resolved, options, parsedTargets);
   } catch (error) {
-    if (!shouldPromptForIdea(options, error)) {
+    if (shouldPromptForIdea(options, error)) {
       throw error;
     }
 
@@ -327,6 +329,7 @@ async function resolveInputWithInteractiveIdeaFallback(options: WriteCommandOpti
       idea: interactiveIdea,
       audience: options.audience,
       jobPath: options.jobPath,
+      publication: options.publication,
       style: options.style,
       intent: options.intent,
       targetLength: options.length,

@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
+import { loadPublication } from './publicationStore.js';
 import {
   appSettingsSchema,
   contentIntentValues,
@@ -13,6 +14,7 @@ import {
   type ResolvedConfig,
   type TargetLength,
 } from './schema.js';
+import type { Publication } from '../types/publication.js';
 
 export interface ContentTargetInput {
   contentType: (typeof contentTypeValues)[number] | string;
@@ -24,6 +26,7 @@ export interface ResolveConfigInput {
   idea?: string;
   audience?: string;
   jobPath?: string;
+  publication?: string;
   style?: (typeof writingStyleValues)[number] | string;
   intent?: (typeof contentIntentValues)[number] | string;
   contentTargets?: ContentTargetInput[];
@@ -35,6 +38,7 @@ export interface ResolvedRunInput {
   idea: string;
   targetAudienceHint?: string;
   job: JobInput | null;
+  publication: Publication | null;
 }
 
 export async function resolveRunInput(input: ResolveConfigInput): Promise<ResolvedRunInput> {
@@ -49,6 +53,10 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
   assertNoLegacyXMode(job?.settings?.contentTargets, 'job settings contentTargets');
   assertNoLegacyXMode(input.contentTargets, 'CLI contentTargets');
   assertExactlyOnePrimary(input.contentTargets, 'CLI contentTargets');
+
+  const publicationSlug = input.publication ?? job?.publication ?? savedSettings.defaultPublication;
+  const publication = publicationSlug ? await loadPublication(publicationSlug) : null;
+  const pubDefaults = publication?.defaults ?? {};
 
   const mergedSettings = appSettingsSchema.parse({
     ...savedSettings,
@@ -83,6 +91,23 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ...(envSettings.style ? { style: envSettings.style } : {}),
     ...(envSettings.intent ? { intent: envSettings.intent } : {}),
     ...(envSettings.targetLength ? { targetLength: envSettings.targetLength } : {}),
+    ...(pubDefaults.style && !input.style && !envSettings.style ? { style: pubDefaults.style } : {}),
+    ...(pubDefaults.intent && !input.intent && !envSettings.intent ? { intent: pubDefaults.intent } : {}),
+    ...(pubDefaults.targetLength && !input.targetLength && !envSettings.targetLength ? { targetLength: pubDefaults.targetLength } : {}),
+    ...(pubDefaults.contentTargets && !input.contentTargets ? { contentTargets: pubDefaults.contentTargets } : {}),
+    ...(pubDefaults.model && !envSettings.model ? { model: pubDefaults.model } : {}),
+    ...((pubDefaults.temperature !== undefined || pubDefaults.maxTokens !== undefined || pubDefaults.topP !== undefined)
+      && envSettings.temperature === undefined && envSettings.maxTokens === undefined && envSettings.topP === undefined
+      ? {
+          modelSettings: {
+            ...savedSettings.modelSettings,
+            ...(job?.settings?.modelSettings ?? {}),
+            ...(pubDefaults.temperature !== undefined ? { temperature: pubDefaults.temperature } : {}),
+            ...(pubDefaults.maxTokens !== undefined ? { maxTokens: pubDefaults.maxTokens } : {}),
+            ...(pubDefaults.topP !== undefined ? { topP: pubDefaults.topP } : {}),
+          },
+        }
+      : {}),
     ...(input.style ? { style: input.style } : {}),
     ...(input.intent ? { intent: input.intent } : {}),
     ...(input.targetLength ? { targetLength: input.targetLength } : {}),
@@ -94,7 +119,9 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     throw new Error('No idea provided. Pass an argument to `ideon write` or use --job with an idea in the JSON file.');
   }
 
-  const targetAudienceHint = normalizeOptionalText(input.audience) ?? normalizeOptionalText(job?.targetAudience);
+  const targetAudienceHint = normalizeOptionalText(input.audience)
+    ?? normalizeOptionalText(pubDefaults.targetAudienceHint)
+    ?? normalizeOptionalText(job?.targetAudience);
 
   return {
     config: {
@@ -113,6 +140,7 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     idea,
     targetAudienceHint,
     job,
+    publication,
   };
 }
 

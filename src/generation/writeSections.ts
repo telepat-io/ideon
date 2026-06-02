@@ -1,4 +1,5 @@
 import type { AppSettings } from '../config/schema.js';
+import type { Publication } from '../types/publication.js';
 import { buildIntroMessages, buildOutroMessages, buildSectionMessages } from '../llm/prompts/articleSection.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
@@ -8,6 +9,7 @@ import type { ArticlePlan, GeneratedArticleSection } from '../types/article.js';
 export async function writeArticleSections({
   plan,
   settings,
+  publication,
   openRouter,
   dryRun,
   onSectionStart,
@@ -16,6 +18,7 @@ export async function writeArticleSections({
 }: {
   plan: ArticlePlan;
   settings: AppSettings;
+  publication?: Publication | null;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onSectionStart?: (label: string) => void;
@@ -35,6 +38,7 @@ export async function writeArticleSections({
           settings.contentTargets.map((target) => target.contentType),
           settings.targetLength,
           wordBudgets.intro,
+          publication ?? null,
         ),
         settings,
         interactionContext: {
@@ -63,6 +67,7 @@ export async function writeArticleSections({
             settings.contentTargets.map((target) => target.contentType),
             settings.targetLength,
             wordBudgets.sections[index] ?? wordBudgets.sections[wordBudgets.sections.length - 1] ?? 150,
+            publication ?? null,
           ),
           settings,
           interactionContext: {
@@ -91,6 +96,7 @@ export async function writeArticleSections({
           settings.contentTargets.map((target) => target.contentType),
           settings.targetLength,
           wordBudgets.outro,
+          publication ?? null,
         ),
         settings,
         interactionContext: {

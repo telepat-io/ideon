@@ -43,6 +43,7 @@ describe('pipeline runner', () => {
         {
           idea: 'how editorial teams can productionize ai writing',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -211,6 +212,7 @@ describe('pipeline runner', () => {
         {
           idea: 'live interaction capture test',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -359,6 +361,7 @@ describe('pipeline runner', () => {
         {
           idea: 'retry visibility integration test',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -409,6 +412,7 @@ describe('pipeline runner', () => {
         {
           idea: 'multi target generation test',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -513,6 +517,7 @@ describe('pipeline runner', () => {
         {
           idea: 'launch update for workflow automation',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -651,6 +656,7 @@ describe('pipeline runner', () => {
         {
           idea: 'short form primary live test',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -716,6 +722,7 @@ describe('pipeline runner', () => {
           {
             idea: 'missing credentials flow',
             job: null,
+            publication: null,
             config: {
               settings: {
                 ...defaultAppSettings,
@@ -764,6 +771,7 @@ describe('pipeline runner', () => {
         {
           idea: 'skip editorial links',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -806,6 +814,7 @@ describe('pipeline runner', () => {
         {
           idea: 'custom link only sidecar',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -856,6 +865,7 @@ describe('pipeline runner', () => {
         {
           idea: 'short form only run',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -952,6 +962,7 @@ describe('pipeline runner', () => {
         {
           idea: 'resume checkpoint flow',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -1084,6 +1095,7 @@ describe('pipeline runner', () => {
         {
           idea: 'resume with saved prompts',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -1213,6 +1225,7 @@ describe('pipeline runner', () => {
         {
           idea: 'bad assets resume flow',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -1253,6 +1266,7 @@ describe('pipeline runner', () => {
           {
             idea: 'resume without prior session',
             job: null,
+            publication: null,
             config: {
               settings: {
                 ...defaultAppSettings,
@@ -1411,6 +1425,7 @@ describe('pipeline runner', () => {
         {
           idea: 'completed session reuse flow',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -1488,6 +1503,7 @@ describe('pipeline runner', () => {
         {
           idea: '   ',
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,
@@ -1530,6 +1546,7 @@ describe('pipeline runner', () => {
         {
           idea: longIdea,
           job: null,
+          publication: null,
           config: {
             settings: {
               ...defaultAppSettings,

@@ -21,6 +21,7 @@ export const configSettingKeys = [
   'style',
   'intent',
   'targetLength',
+  'defaultPublication',
 ] as const;
 
 export const configSecretKeys = [
@@ -79,6 +80,7 @@ export async function configList(): Promise<ConfigListResult> {
       style: settings.style,
       intent: settings.intent,
       targetLength: settings.targetLength,
+      defaultPublication: settings.defaultPublication ?? null,
     },
     secrets: {
       openRouterApiKey: Boolean(secrets.openRouterApiKey),
@@ -219,6 +221,11 @@ function coerceSettingValue(key: ConfigSettingKey, rawValue: string): unknown {
 
       return parsed;
     }
+    case 'defaultPublication':
+      if (trimmed.length === 0) {
+        throw new Error('defaultPublication cannot be empty. Use config unset to clear it.');
+      }
+      return trimmed;
     default:
       throw new Error(`Unsupported config key: ${key}`);
   }
@@ -246,6 +253,8 @@ function getSettingValue(settings: AppSettings, key: ConfigSettingKey): unknown 
       return settings.intent;
     case 'targetLength':
       return settings.targetLength;
+    case 'defaultPublication':
+      return settings.defaultPublication ?? null;
     default:
       return undefined;
   }
@@ -273,6 +282,8 @@ function setSettingValue(settings: AppSettings, key: ConfigSettingKey, value: un
       return { ...settings, intent: value as AppSettings['intent'] };
     case 'targetLength':
       return { ...settings, targetLength: value as AppSettings['targetLength'] };
+    case 'defaultPublication':
+      return { ...settings, defaultPublication: value as string };
     default:
       return settings;
   }

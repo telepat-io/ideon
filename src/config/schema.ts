@@ -87,7 +87,7 @@ function parseTargetLengthWords(value: unknown): number | undefined {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-const targetLengthWordsSchema = z.preprocess(
+export const targetLengthWordsSchema = z.preprocess(
   (value) => parseTargetLengthWords(value),
   z.number().int().positive(),
 );
@@ -223,6 +223,7 @@ export const appSettingsSchema = z.object({
   style: z.enum(writingStyleValues).default('professional'),
   intent: z.enum(contentIntentValues).default('tutorial'),
   targetLength: targetLengthWordsSchema.default(defaultTargetLengthWords),
+  defaultPublication: z.string().optional(),
 });
 
 export const envSettingsSchema = z.object({
@@ -251,6 +252,7 @@ export const jobInputSchema = z.object({
   idea: z.string().min(1).optional(),
   prompt: z.string().min(1).optional(),
   targetAudience: z.string().min(1).optional(),
+  publication: z.string().min(1).optional(),
   settings: appSettingsSchema.partial().optional(),
 });
 

@@ -1,8 +1,10 @@
 import type { ChatMessage } from '../openRouterClient.js';
+import type { Publication } from '../../types/publication.js';
 import {
   buildRunContextDirective,
 } from './writingFramework.js';
 import { buildContentPlanGuideInstruction } from './guideBundles.js';
+import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 
 export const contentPlanSchema = {
   type: 'object',
@@ -46,6 +48,7 @@ export function buildContentPlanMessages(
     targetAudienceHint?: string;
     primaryContentType: string;
     secondaryContentTypes: string[];
+    publication?: Publication | null;
   },
 ): ChatMessage[] {
   const audienceSeed = options.targetAudienceHint?.trim() || 'A general, non-specific audience.';
@@ -58,8 +61,9 @@ export function buildContentPlanMessages(
     buildRunContextDirective([options.primaryContentType, ...options.secondaryContentTypes]),
     'The plan must be specific, concrete, and directly usable by writers without extra clarification.',
     'This run has one explicit primary output and optional secondary outputs that should promote or incite interest in the primary while remaining independently valuable.',
+    buildEditorialPolicyDirective(options.publication ?? null),
     'Return only the requested JSON.',
-  ].join(' ');
+  ].filter((part) => part.length > 0).join(' ');
 
   return [
     {

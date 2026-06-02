@@ -1,10 +1,12 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentPlan } from '../../types/contentPlan.js';
 import type { PrimaryPlan } from '../../types/article.js';
+import type { Publication } from '../../types/publication.js';
 import {
   buildTargetLengthDirective,
 } from './writingFramework.js';
 import { buildChannelContentGuideInstruction } from './guideBundles.js';
+import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 
 function buildOutputShapeConstraint(contentType: string): string {
   if (contentType === 'x-thread') {
@@ -31,6 +33,7 @@ export function buildSingleShotContentMessages(options: {
   plan?: PrimaryPlan | null;
   articleReferenceMarkdown?: string;
   targetLength: number;
+  publication?: Publication | null;
 }): ChatMessage[] {
   const outputShapeConstraint = buildOutputShapeConstraint(options.contentType);
   const articleContext = options.articleReferenceMarkdown
@@ -70,7 +73,8 @@ export function buildSingleShotContentMessages(options: {
         buildChannelContentGuideInstruction(options.style, options.intent, options.contentType),
         roleDirective,
         outputShapeConstraint,
-      ].join(' '),
+        buildEditorialPolicyDirective(options.publication ?? null),
+      ].filter((part) => part.length > 0).join(' '),
     },
     {
       role: 'user',

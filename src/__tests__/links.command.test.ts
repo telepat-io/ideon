@@ -381,6 +381,7 @@ function makeResolvedInput(_markdownOutputDir: string, _assetOutputDir: string):
     idea: 'Enrich links for test',
     targetAudienceHint: undefined,
     job: null,
+    publication: null,
     config: {
       settings: {
         ...defaultAppSettings,

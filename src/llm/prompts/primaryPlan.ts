@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../openRouterClient.js';
 import type { ContentPlan } from '../../types/contentPlan.js';
+import type { Publication } from '../../types/publication.js';
 import { isLongFormContentType } from '../../types/article.js';
 import { resolveDefaultInlineImageCount } from '../../config/schema.js';
 import {
@@ -7,6 +8,7 @@ import {
   buildTargetLengthDirective,
 } from './writingFramework.js';
 import { buildPrimaryPlanGuideInstruction } from './guideBundles.js';
+import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 
 function deriveSectionCounts(targetLengthWords: number): { min: number; max: number; label: string } {
   const normalizedWords = Number.isFinite(targetLengthWords) && targetLengthWords > 0 ? targetLengthWords : 900;
@@ -125,6 +127,7 @@ export function buildPrimaryPlanMessages(
     contentTypes: string[];
     contentPlan: ContentPlan;
     targetLength: number;
+    publication?: Publication | null;
   },
 ): ChatMessage[] {
   if (!isLongFormContentType(options.contentType)) {
@@ -142,6 +145,7 @@ function buildLongFormPlanMessages(
     contentTypes: string[];
     contentPlan: ContentPlan;
     targetLength: number;
+    publication?: Publication | null;
   },
 ): ChatMessage[] {
   const sectionCounts = deriveSectionCounts(options.targetLength);
@@ -151,8 +155,9 @@ function buildLongFormPlanMessages(
     buildPrimaryPlanGuideInstruction(options.intent, options.contentType),
     buildRunContextDirective(options.contentTypes),
     buildTargetLengthDirective(options.contentType, options.targetLength),
+    buildEditorialPolicyDirective(options.publication ?? null),
     'Return only the requested JSON.',
-  ].join(' ');
+  ].filter((part) => part.length > 0).join(' ');
 
   return [
     {
@@ -213,14 +218,16 @@ function buildShortFormPlanMessages(
     contentTypes: string[];
     contentPlan: ContentPlan;
     targetLength: number;
+    publication?: Publication | null;
   },
 ): ChatMessage[] {
   const systemInstruction = [
     'You are a senior content strategist. Produce a concise content plan for a short-form social media post.',
     buildPrimaryPlanGuideInstruction(options.intent, options.contentType),
     buildRunContextDirective(options.contentTypes),
+    buildEditorialPolicyDirective(options.publication ?? null),
     'Return only the requested JSON.',
-  ].join(' ');
+  ].filter((part) => part.length > 0).join(' ');
 
   return [
     {

@@ -112,7 +112,62 @@ describe('config manage', () => {
     expect(isConfigKey('intent')).toBe(true);
     expect(isConfigKey('t2i.replicateModelId')).toBe(true);
     expect(isConfigKey('openRouterApiKey')).toBe(true);
+    expect(isConfigKey('defaultPublication')).toBe(true);
     expect(isConfigKey('unknown.key')).toBe(false);
+  });
+
+  it('gets defaultPublication when set', async () => {
+    loadSavedSettingsMock.mockResolvedValue({
+      model: 'deepseek/deepseek-v4-pro',
+      modelSettings: { temperature: 0.7, maxTokens: 4000, topP: 1 },
+      modelRequestTimeoutMs: 90000,
+      modelRequestMaxAttempts: 4,
+      t2i: { modelId: 'flux', replicateModelId: 'black-forest-labs/flux-schnell', inputOverrides: {}, maxAttempts: 4 },
+      notifications: { enabled: false },
+      contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 900,
+      defaultPublication: 'tech-blog',
+    });
+
+    const result = await configGet('defaultPublication');
+    expect(result.isSecret).toBe(false);
+    expect(result.value).toBe('tech-blog');
+  });
+
+  it('gets defaultPublication as null when unset', async () => {
+    const result = await configGet('defaultPublication');
+    expect(result.isSecret).toBe(false);
+    expect(result.value).toBeNull();
+  });
+
+  it('sets defaultPublication', async () => {
+    await configSet('defaultPublication', 'my-pub');
+    expect(saveSettingsMock).toHaveBeenCalledWith(expect.objectContaining({ defaultPublication: 'my-pub' }));
+  });
+
+  it('lists defaultPublication in settings', async () => {
+    loadSavedSettingsMock.mockResolvedValue({
+      model: 'deepseek/deepseek-v4-pro',
+      modelSettings: { temperature: 0.7, maxTokens: 4000, topP: 1 },
+      modelRequestTimeoutMs: 90000,
+      modelRequestMaxAttempts: 4,
+      t2i: { modelId: 'flux', replicateModelId: 'black-forest-labs/flux-schnell', inputOverrides: {}, maxAttempts: 4 },
+      notifications: { enabled: false },
+      contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 900,
+      defaultPublication: 'my-pub',
+    });
+
+    const result = await configList();
+    expect(result.settings.defaultPublication).toBe('my-pub');
+  });
+
+  it('rejects empty defaultPublication', async () => {
+    await expect(configSet('defaultPublication', '')).rejects.toThrow('defaultPublication cannot be empty');
   });
 
   it('sets and unsets t2i.replicateModelId', async () => {

@@ -390,6 +390,7 @@ function makeResolvedInput(_markdownOutputDir: string): ResolvedRunInput {
     idea: 'Export test',
     targetAudienceHint: undefined,
     job: null,
+    publication: null,
     config: {
       settings: {
         ...defaultAppSettings,
