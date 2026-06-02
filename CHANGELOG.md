@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.34](https://github.com/telepat-io/ideon/compare/ideon-v0.1.33...ideon-v0.1.34) (2026-06-02)
+
+
+### Features
+
+* add ideon article list command with search and filter options ([705ea01](https://github.com/telepat-io/ideon/commit/705ea01545ce955b9849246f5c987af2f09cc826))
+* add publication management commands and flow ([083ff61](https://github.com/telepat-io/ideon/commit/083ff6126fed4d322792fe9d184efb7934512afc))
+* add series management commands and interactive flow ([d3555dd](https://github.com/telepat-io/ideon/commit/d3555dd3a03f1a3d38b194520d5021543fd4b10a))
+* add support for SEO keywords in ideon write command and related functionalities ([a4c928c](https://github.com/telepat-io/ideon/commit/a4c928cb61439aab3d53979e6eb03b39ccf656bd))
+* enhance publication and series schemas with country codes and language support ([a2f6b14](https://github.com/telepat-io/ideon/commit/a2f6b1403d6adf34e63fbdc36b1211581cf59bec))
+* implement queue management commands and tests ([300d181](https://github.com/telepat-io/ideon/commit/300d1811af66d0e3e56e23804afff950d39269e4))
+* update GKP command and models to support campaign forecast metrics and improve error handling ([db01b2e](https://github.com/telepat-io/ideon/commit/db01b2ea6ac09f21053251b58d54840c18e461d1))
+
 ## [0.1.33](https://github.com/telepat-io/ideon/compare/ideon-v0.1.32...ideon-v0.1.33) (2026-05-31)
 
 
