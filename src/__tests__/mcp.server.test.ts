@@ -107,6 +107,29 @@ jest.unstable_mockModule('../integrations/keywordplanner/client.js', () => ({
   },
 }));
 
+jest.unstable_mockModule('../integrations/keywordplanner/cachedClient.js', () => ({
+  CachedGkpClient: class {
+    private readonly inner: any;
+    constructor(opts: any) {
+      this.inner = opts.client;
+    }
+    generateKeywordIdeas = (...args: any[]) => this.inner.generateKeywordIdeas(...args);
+    getHistoricalMetrics = (...args: any[]) => this.inner.getHistoricalMetrics(...args);
+    getForecastData = (...args: any[]) => this.inner.getForecastData(...args);
+  },
+}));
+
+jest.unstable_mockModule('../config/gkpStore.js', () => ({
+  computeGkpFingerprint: () => 'fingerprint-mcp',
+  isGkpQuerySnapshotFresh: () => false,
+  loadGkpQuerySnapshot: async () => null,
+  saveGkpQuerySnapshot: async (s: any) => s,
+  loadGkpKeywordRecord: async () => null,
+  saveGkpKeywordRecord: async (r: any) => r,
+  normalizeKeywordKey: (k: string) => k.toLowerCase().replace(/\s+/g, '-'),
+  listGkpQuerySnapshots: async () => [],
+}));
+
 const { startIdeonMcpServer } = await import('../integrations/mcp/server.js');
 
 describe('ideon MCP server', () => {

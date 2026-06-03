@@ -38,13 +38,14 @@ import {
   writeToolInputSchema,
 } from './tools.js';
 import { GkpClient } from '../keywordplanner/client.js';
+import { CachedGkpClient } from '../keywordplanner/cachedClient.js';
 import { loadSecrets } from '../../config/secretStore.js';
 import { readEnvSettings } from '../../config/env.js';
 
-let gkpClient: GkpClient | null = null;
+let cachedGkpClient: CachedGkpClient | null = null;
 
-async function getOrCreateGkpClient(): Promise<GkpClient> {
-  if (gkpClient) return gkpClient;
+async function getOrCreateCachedGkpClient(): Promise<CachedGkpClient> {
+  if (cachedGkpClient) return cachedGkpClient;
 
   const envSettings = readEnvSettings();
   const secrets = await loadSecrets({ disableKeytar: envSettings.disableKeytar });
@@ -62,7 +63,7 @@ async function getOrCreateGkpClient(): Promise<GkpClient> {
     );
   }
 
-  gkpClient = new GkpClient({
+  const client = new GkpClient({
     developerToken: devToken,
     clientId,
     clientSecret,
@@ -71,7 +72,8 @@ async function getOrCreateGkpClient(): Promise<GkpClient> {
     loginCustomerId: loginCustomerId || undefined,
   });
 
-  return gkpClient;
+  cachedGkpClient = new CachedGkpClient({ client });
+  return cachedGkpClient;
 }
 
 export async function startIdeonMcpServer(): Promise<void> {
@@ -458,7 +460,7 @@ export async function startIdeonMcpServer(): Promise<void> {
     },
     async (input: GkpGenerateIdeasToolInput) => {
       try {
-        const client = await getOrCreateGkpClient();
+        const client = await getOrCreateCachedGkpClient();
         const result = await client.generateKeywordIdeas({
           seedKeywords: input.seedKeywords,
           url: input.url,
@@ -486,7 +488,7 @@ export async function startIdeonMcpServer(): Promise<void> {
     },
     async (input: GkpGetHistoricalDataToolInput) => {
       try {
-        const client = await getOrCreateGkpClient();
+        const client = await getOrCreateCachedGkpClient();
         const result = await client.getHistoricalMetrics({
           keywords: input.keywords,
           countryCodes: input.countryCodes,
@@ -512,7 +514,7 @@ export async function startIdeonMcpServer(): Promise<void> {
     },
     async (input: GkpGetForecastDataToolInput) => {
       try {
-        const client = await getOrCreateGkpClient();
+        const client = await getOrCreateCachedGkpClient();
         const result = await client.getForecastData({
           keywords: input.keywords,
           keywordMatchType: input.keywordMatchType,

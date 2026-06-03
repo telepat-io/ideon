@@ -2,20 +2,13 @@ import { ReportedError } from '../reportedError.js';
 import { readEnvSettings } from '../../config/env.js';
 import { loadSecrets } from '../../config/secretStore.js';
 import {
-  computeGkpFingerprint,
   isGkpQuerySnapshotFresh,
   listGkpQuerySnapshots,
-  loadGkpKeywordRecord,
-  loadGkpQuerySnapshot,
-  normalizeKeywordKey,
-  saveGkpKeywordRecord,
-  saveGkpQuerySnapshot,
   type GkpQuerySnapshot,
 } from '../../config/gkpStore.js';
 import { GkpClient, type GkpClientOptions } from '../../integrations/keywordplanner/client.js';
+import { CachedGkpClient } from '../../integrations/keywordplanner/cachedClient.js';
 import {
-  type KeywordIdea,
-  type KeywordMetrics,
   type GenerateIdeasResponse,
   type GetHistoricalDataResponse,
   type GetForecastDataResponse,
@@ -26,14 +19,8 @@ export interface GkpCommandDependencies {
   readEnvSettings: typeof readEnvSettings;
   loadSecrets: typeof loadSecrets;
   GkpClientFactory: (options: GkpClientOptions) => GkpClient;
-  computeGkpFingerprint: typeof computeGkpFingerprint;
   isGkpQuerySnapshotFresh: typeof isGkpQuerySnapshotFresh;
   listGkpQuerySnapshots: typeof listGkpQuerySnapshots;
-  loadGkpKeywordRecord: typeof loadGkpKeywordRecord;
-  loadGkpQuerySnapshot: typeof loadGkpQuerySnapshot;
-  normalizeKeywordKey: typeof normalizeKeywordKey;
-  saveGkpKeywordRecord: typeof saveGkpKeywordRecord;
-  saveGkpQuerySnapshot: typeof saveGkpQuerySnapshot;
 }
 
 function createDefaultDependencies(): GkpCommandDependencies {
@@ -42,14 +29,8 @@ function createDefaultDependencies(): GkpCommandDependencies {
     readEnvSettings,
     loadSecrets,
     GkpClientFactory: (options) => new GkpClient(options),
-    computeGkpFingerprint,
     isGkpQuerySnapshotFresh,
     listGkpQuerySnapshots,
-    loadGkpKeywordRecord,
-    loadGkpQuerySnapshot,
-    normalizeKeywordKey,
-    saveGkpKeywordRecord,
-    saveGkpQuerySnapshot,
   };
 }
 
@@ -125,69 +106,6 @@ function buildQueryLabel(snapshot: Pick<GkpQuerySnapshot, 'keywords' | 'url' | '
     return snapshot.site;
   }
   return '-';
-}
-
-async function maybeLoadFreshSnapshot<T>(
-  deps: GkpCommandDependencies,
-  fingerprint: string,
-  refresh: boolean | undefined,
-): Promise<T | null> {
-  if (refresh) {
-    return null;
-  }
-
-  const snapshot = await deps.loadGkpQuerySnapshot(fingerprint);
-  if (!snapshot || !deps.isGkpQuerySnapshotFresh(snapshot)) {
-    return null;
-  }
-
-  return snapshot.response as T;
-}
-
-async function saveKeywordMetrics(
-  deps: GkpCommandDependencies,
-  keywords: Array<KeywordIdea | KeywordMetrics>,
-  context: {
-    fingerprint: string;
-    publication?: string;
-    series?: string;
-    countryCodes?: string[];
-    language?: string;
-  },
-): Promise<void> {
-  for (const keyword of keywords) {
-    const normalizedKeyword = deps.normalizeKeywordKey(keyword.text);
-    const existing = await deps.loadGkpKeywordRecord(normalizedKeyword);
-    const sourceQueries = Array.from(new Set([...(existing?.sourceQueries ?? []), context.fingerprint]));
-
-    await deps.saveGkpKeywordRecord({
-      normalizedKeyword,
-      keyword: keyword.text,
-      savedAt: new Date().toISOString(),
-      publication: context.publication,
-      series: context.series,
-      countryCodes: context.countryCodes,
-      language: context.language,
-      avgMonthlySearches: keyword.avgMonthlySearches,
-      competition: keyword.competition,
-      lowTopOfPageBidMicros: keyword.lowTopOfPageBidMicros,
-      highTopOfPageBidMicros: keyword.highTopOfPageBidMicros,
-      competitionIndex: keyword.competitionIndex,
-      sourceQueries,
-    });
-  }
-}
-
-async function saveSnapshot<T>(
-  deps: GkpCommandDependencies,
-  snapshot: Omit<GkpQuerySnapshot, 'version' | 'savedAt' | 'response'>,
-  response: T,
-): Promise<void> {
-  await deps.saveGkpQuerySnapshot({
-    ...snapshot,
-    savedAt: new Date().toISOString(),
-    response,
-  });
 }
 
 function emitResult<T>(deps: GkpCommandDependencies, options: { json?: boolean }, result: T, formatter: (result: T) => string): void {
@@ -293,58 +211,22 @@ export async function runGkpIdeasCommand(
     throw new ReportedError('At least one of --keywords or --url is required.');
   }
 
-  const fingerprint = deps.computeGkpFingerprint({
-    mode: 'ideas',
-    keywords: seedKeywords,
-    url,
-    site,
-    countryCodes,
-    language: options.language,
-    pageSize: options.pageSize,
+  const client = await createClient(deps);
+  const cachedClient = new CachedGkpClient({
+    client,
     publication: options.publication,
     series: options.series,
   });
 
-  const cached = await maybeLoadFreshSnapshot<GenerateIdeasResponse>(deps, fingerprint, options.refresh);
-  if (cached) {
-    emitResult(deps, options, cached, formatIdeasTTY);
-    return;
-  }
-
-  const client = await createClient(deps);
-
   try {
-    const result = await client.generateKeywordIdeas({
+    const result = await cachedClient.generateKeywordIdeas({
       seedKeywords: seedKeywords || undefined,
       url,
       site,
       countryCodes,
       language: options.language,
       pageSize: options.pageSize,
-    });
-
-    await saveSnapshot(deps, {
-      fingerprint,
-      mode: 'ideas',
-      ttlDays: 30,
-      publication: options.publication,
-      series: options.series,
-      keywords: seedKeywords,
-      url,
-      site,
-      countryCodes,
-      language: options.language,
-      pageSize: options.pageSize,
-      count: result.count,
-    }, result);
-
-    await saveKeywordMetrics(deps, result.ideas, {
-      fingerprint,
-      publication: options.publication,
-      series: options.series,
-      countryCodes,
-      language: options.language,
-    });
+    }, { refresh: options.refresh });
 
     emitResult(deps, options, result, formatIdeasTTY);
   } catch (error) {
@@ -380,52 +262,20 @@ export async function runGkpHistoricalCommand(
   }
 
   const countryCodes = parseCommaSeparated(options.country);
-  const fingerprint = deps.computeGkpFingerprint({
-    mode: 'historical',
-    keywords,
-    countryCodes,
-    language: options.language,
-    includeCpc: options.includeCpc,
+  const client = await createClient(deps);
+  const cachedClient = new CachedGkpClient({
+    client,
     publication: options.publication,
     series: options.series,
   });
 
-  const cached = await maybeLoadFreshSnapshot<GetHistoricalDataResponse>(deps, fingerprint, options.refresh);
-  if (cached) {
-    emitResult(deps, options, cached, formatHistoricalTTY);
-    return;
-  }
-
-  const client = await createClient(deps);
-
   try {
-    const result = await client.getHistoricalMetrics({
+    const result = await cachedClient.getHistoricalMetrics({
       keywords,
       countryCodes,
       language: options.language,
       includeAverageCpc: options.includeCpc,
-    });
-
-    await saveSnapshot(deps, {
-      fingerprint,
-      mode: 'historical',
-      ttlDays: 30,
-      publication: options.publication,
-      series: options.series,
-      keywords,
-      countryCodes,
-      language: options.language,
-      includeCpc: options.includeCpc,
-      count: result.count,
-    }, result);
-
-    await saveKeywordMetrics(deps, result.keywords, {
-      fingerprint,
-      publication: options.publication,
-      series: options.series,
-      countryCodes,
-      language: options.language,
-    });
+    }, { refresh: options.refresh });
 
     emitResult(deps, options, result, formatHistoricalTTY);
   } catch (error) {
@@ -464,29 +314,15 @@ export async function runGkpForecastCommand(
   }
 
   const countryCodes = parseCommaSeparated(options.country);
-  const fingerprint = deps.computeGkpFingerprint({
-    mode: 'forecast',
-    keywords,
-    matchType: options.matchType,
-    maxCpcBid: options.maxCpcBid,
-    countryCodes,
-    language: options.language,
-    startDate: options.startDate,
-    endDate: options.endDate,
+  const client = await createClient(deps);
+  const cachedClient = new CachedGkpClient({
+    client,
     publication: options.publication,
     series: options.series,
   });
 
-  const cached = await maybeLoadFreshSnapshot<GetForecastDataResponse>(deps, fingerprint, options.refresh);
-  if (cached) {
-    emitResult(deps, options, cached, formatForecastTTY);
-    return;
-  }
-
-  const client = await createClient(deps);
-
   try {
-    const result = await client.getForecastData({
+    const result = await cachedClient.getForecastData({
       keywords,
       keywordMatchType: options.matchType,
       maxCpcBidMicros: options.maxCpcBid,
@@ -494,22 +330,7 @@ export async function runGkpForecastCommand(
       language: options.language,
       startDate: options.startDate,
       endDate: options.endDate,
-    });
-
-    await saveSnapshot(deps, {
-      fingerprint,
-      mode: 'forecast',
-      ttlDays: 30,
-      publication: options.publication,
-      series: options.series,
-      keywords,
-      countryCodes,
-      language: options.language,
-      matchType: options.matchType,
-      maxCpcBid: options.maxCpcBid,
-      startDate: options.startDate,
-      endDate: options.endDate,
-    }, result);
+    }, { refresh: options.refresh });
 
     emitResult(deps, options, result, formatForecastTTY);
   } catch (error) {
