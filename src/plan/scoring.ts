@@ -82,7 +82,7 @@ export async function classifyIntent(
       const normalised = normalizeKeywordKey(classification.keyword);
       const candidate = chunk.find((c) => normalizeKeywordKey(c.keyword) === normalised);
       if (candidate) {
-        candidate.intentType = classification.intentType as KeywordCandidate['intentType'];
+        candidate.intentType = classification.intentType;
         candidate.intentScore = classification.intentScore;
       }
     }

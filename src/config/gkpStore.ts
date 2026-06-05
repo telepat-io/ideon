@@ -244,7 +244,7 @@ function sortKeys(value: unknown): unknown {
   }
 
   return Object.keys(value as Record<string, unknown>)
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .reduce<Record<string, unknown>>((accumulator, key) => {
       accumulator[key] = sortKeys((value as Record<string, unknown>)[key]);
       return accumulator;

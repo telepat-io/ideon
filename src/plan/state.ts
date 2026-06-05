@@ -1,11 +1,11 @@
-import { mkdir, readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import os from 'os';
+import os from 'node:os';
 import envPaths from 'env-paths';
 import { listSeries, loadSeries } from '../config/seriesStore.js';
 import { listGkpKeywordRecords, normalizeKeywordKey, type GkpKeywordRecord } from '../config/gkpStore.js';
 import type { MetaJson } from '../types/meta.js';
-import type { CoverageMap, CoverageEntry, CacheSummary, CacheKeywordRecord, ExhaustionMap, ExhaustionRecord } from '../types/plan.js';
+import type { CoverageMap, CacheSummary, ExhaustionMap, ExhaustionRecord } from '../types/plan.js';
 import type { Series } from '../types/series.js';
 
 const ideonPaths = envPaths('ideon', { suffix: '' });
@@ -192,7 +192,7 @@ function buildExhaustionMap(records: ExhaustionRecord[]): ExhaustionMap {
   const map: ExhaustionMap = {};
 
   for (const record of records) {
-    const fingerprint = record.seeds.slice().sort().join('|');
+    const fingerprint = record.seeds.slice().sort((a, b) => a.localeCompare(b)).join('|');
     map[fingerprint] = record;
   }
 

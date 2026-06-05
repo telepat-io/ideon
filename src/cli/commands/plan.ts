@@ -3,11 +3,9 @@ import { GkpClient } from '../../integrations/keywordplanner/client.js';
 import { OpenRouterClient } from '../../llm/openRouterClient.js';
 import { loadSavedSettings } from '../../config/settingsFile.js';
 import { loadSecrets } from '../../config/secretStore.js';
-import { resolveRunInput } from '../../config/resolver.js';
 import { normalizeCountryCodes, normalizeLanguage } from '../../config/marketLocale.js';
-import { listSeries } from '../../config/seriesStore.js';
 import { loadPublication } from '../../config/publicationStore.js';
-import { runPlan, type PlanEventHandler, type RunPlanOptions } from '../../plan/pipeline.js';
+import { runPlan, type PlanEventHandler } from '../../plan/pipeline.js';
 import { formatPlanOutput, formatNoResultsOutput } from '../../plan/output.js';
 import type { ExplorePlanInput, ExpandPlanInput, PlanEvent, Plan } from '../../types/plan.js';
 import { resolvePlanExploreInput, resolvePlanExpandInput } from '../planInputResolver.js';
@@ -105,7 +103,7 @@ async function resolvePlanSettings(options: {
   model?: string;
   intentModel?: string;
 }) {
-  const [savedSettings, secrets] = await Promise.all([
+  const [savedSettings] = await Promise.all([
     loadSavedSettings(),
     loadSecrets(),
   ]);

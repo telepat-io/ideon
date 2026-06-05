@@ -241,7 +241,7 @@ export function WriteOptionsFlow({
 
   if (step === 'counts') {
     const countTypes = [primaryType, ...selectedSecondaryTypes];
-    const currentType = countTypes[countIndex] ?? countTypes[0]!;
+    const currentType = countTypes[countIndex] ?? countTypes[0];
 
     return (
       <Box flexDirection="column">
@@ -282,7 +282,7 @@ export function WriteOptionsFlow({
               }
 
               setCountIndex(nextIndex);
-              const nextType = countTypes[nextIndex]!;
+              const nextType = countTypes[nextIndex];
               setCountInput(String(counts[nextType] ?? 1));
             }}
           />

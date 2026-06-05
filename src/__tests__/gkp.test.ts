@@ -129,12 +129,7 @@ describe('gkp commands', () => {
     it('includes config set commands in credential error', async () => {
       readEnvSettingsMock.mockReturnValue(createMockEnvSettings());
       loadSecretsMock.mockResolvedValue(createMockSecrets());
-      try {
-        await runGkpIdeasCommand({ keywords: 'seo' });
-        expect(true).toBe(false);
-      } catch (error) {
-        expect((error as Error).message).toContain('ideon config set');
-      }
+      await expect(runGkpIdeasCommand({ keywords: 'seo' })).rejects.toThrow(/ideon config set/);
     });
 
     it('calls generateKeywordIdeas with keywords', async () => {

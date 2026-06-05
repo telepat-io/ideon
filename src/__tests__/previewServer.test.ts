@@ -645,6 +645,7 @@ describe('preview server resilience', () => {
         openBrowser: true,
       });
 
+      expect(server.url).toBeTruthy();
       await server.close();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });

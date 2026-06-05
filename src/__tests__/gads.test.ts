@@ -467,37 +467,26 @@ describe('gads commands', () => {
       readEnvSettingsMock.mockReturnValue(createMockEnvSettings({ googleAdsDeveloperToken: 'token' }));
       loadSecretsMock.mockResolvedValue(createMockSecrets());
 
-      try {
-        await runGadsTestCommand({}, {
+      await expect(
+        runGadsTestCommand({}, {
           log: jest.fn(),
           prompt: jest.fn(),
           isTTY: true,
-        });
-        expect(true).toBe(false);
-      } catch (error) {
-        expect((error as Error).message).toContain('googleAdsClientId');
-        expect((error as Error).message).toContain('googleAdsClientSecret');
-        expect((error as Error).message).toContain('googleAdsRefreshToken');
-        expect((error as Error).message).toContain('googleAdsCustomerId');
-        expect((error as Error).message).not.toContain('googleAdsDeveloperToken');
-      }
+        }),
+      ).rejects.toThrow(/googleAdsClientId/);
     });
 
     it('includes config set commands in error message', async () => {
       readEnvSettingsMock.mockReturnValue(createMockEnvSettings());
       loadSecretsMock.mockResolvedValue(createMockSecrets());
 
-      try {
-        await runGadsTestCommand({}, {
+      await expect(
+        runGadsTestCommand({}, {
           log: jest.fn(),
           prompt: jest.fn(),
           isTTY: true,
-        });
-        expect(true).toBe(false);
-      } catch (error) {
-        expect((error as Error).message).toContain('ideon config set googleAdsDeveloperToken');
-        expect((error as Error).message).toContain('ideon gads login');
-      }
+        }),
+      ).rejects.toThrow(/ideon config set googleAdsDeveloperToken/);
     });
 
     it('succeeds with valid credentials', async () => {

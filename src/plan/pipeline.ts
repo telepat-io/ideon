@@ -4,11 +4,7 @@ import type { GkpClient } from '../integrations/keywordplanner/client.js';
 import type {
   Plan,
   PlanInput,
-  ExplorePlanInput,
-  ExpandPlanInput,
-  PlanStage,
   PlanEvent,
-  KeywordCandidate,
   PlannedSeries,
   PlannedArticle,
   ResearchStats,
@@ -47,7 +43,7 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
 
   const state = await hydrateState({
     publicationSlug: input.publicationSlug,
-    seriesSlug: input.mode === 'expand-series' ? (input as ExpandPlanInput).seriesSlug : undefined,
+    seriesSlug: input.mode === 'expand-series' ? input.seriesSlug : undefined,
     countryCodes: input.countryCodes,
     language: input.language,
   });
@@ -57,18 +53,16 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
   const cacheSummaryKeys = Object.keys(state.cacheSummary);
 
   if (input.mode === 'expand-series') {
-    const expandInput = input as ExpandPlanInput;
-    const seriesKeywords = await loadSeriesKeywords(expandInput.seriesSlug);
+    const seriesKeywords = await loadSeriesKeywords(input.seriesSlug);
     allSeeds = [...seriesKeywords, ...input.seedKeywords];
   } else {
     onEvent?.({ stage: 'seeds' });
 
-    const exploreInput = input as ExplorePlanInput;
     const exhaustionRecords = Object.values(state.exhaustionMap);
 
     const llmSeeds = await generateSeeds(llmClient, appSettings, {
-      contentIdea: exploreInput.contentIdea,
-      businessContext: exploreInput.businessContext,
+      contentIdea: input.contentIdea,
+      businessContext: input.businessContext,
       countryCodes: input.countryCodes,
       language: input.language,
       coverageMapKeys,
@@ -77,7 +71,7 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
       seedKeywords: input.seedKeywords,
     });
 
-    const { freshSeeds, querySeeds } = splitSeedsByCache(
+    const { freshSeeds } = splitSeedsByCache(
       [...input.seedKeywords, ...llmSeeds.map((s) => s.keyword)],
       state.cacheSummary,
     );
@@ -138,12 +132,11 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
   if (input.mode === 'new-idea') {
     onEvent?.({ stage: 'cluster' });
 
-    const exploreInput = input as ExplorePlanInput;
     const clusters = await formClusters(llmClient, appSettings, {
       shortlist,
       coverageMapKeys,
-      excludeSeries: exploreInput.excludeSeries,
-      desiredSeriesCount: exploreInput.desiredSeriesCount ?? 3,
+      excludeSeries: input.excludeSeries,
+      desiredSeriesCount: input.desiredSeriesCount ?? 3,
       countryCodes: input.countryCodes,
       language: input.language,
     });
@@ -162,7 +155,7 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
 
       const articles = await planArticlesForCluster(llmClient, appSettings, {
         cluster,
-        desiredArticlesPerSeries: exploreInput.desiredArticlesPerSeries ?? 5,
+        desiredArticlesPerSeries: input.desiredArticlesPerSeries ?? 5,
         targetMarket: { countryCodes: input.countryCodes, language: input.language },
         existingArticles,
         coverageOverlap,
@@ -182,8 +175,7 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
   } else {
     onEvent?.({ stage: 'plan-articles' });
 
-    const expandInput = input as ExpandPlanInput;
-    const series = state.seriesMap.get(expandInput.seriesSlug);
+    const series = state.seriesMap.get(input.seriesSlug);
 
     if (series) {
       const seriesKeywords = series.defaults.keywords ?? [];
@@ -193,7 +185,7 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
         .filter((e): e is CoverageEntry => e !== undefined);
 
       const existingArticles = Object.values(state.coverageMap)
-        .filter((e) => e.seriesSlug === expandInput.seriesSlug)
+        .filter((e) => e.seriesSlug === input.seriesSlug)
         .map((e) => ({ title: e.title, keywords: [] }));
 
       plannedArticles = await planArticlesForSeries(llmClient, appSettings, {
@@ -201,7 +193,7 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
         pillarKeyword: seriesKeywords[0] ?? '',
         supportingKeywords: seriesKeywords,
         funnelStage: 'middle',
-        desiredArticleCount: expandInput.desiredArticleCount ?? 5,
+        desiredArticleCount: input.desiredArticleCount ?? 5,
         targetMarket: { countryCodes: input.countryCodes, language: input.language },
         existingArticles,
         coverageOverlap,
@@ -236,8 +228,8 @@ export async function runPlan(options: RunPlanOptions): Promise<Plan> {
 
   await persistPlan({
     mode: input.mode,
-    contentIdea: input.mode === 'new-idea' ? (input as ExplorePlanInput).contentIdea : undefined,
-    seriesSlug: input.mode === 'expand-series' ? (input as ExpandPlanInput).seriesSlug : undefined,
+    contentIdea: input.mode === 'new-idea' ? input.contentIdea : undefined,
+    seriesSlug: input.mode === 'expand-series' ? input.seriesSlug : undefined,
     publicationSlug: input.publicationSlug,
     targetMarket: { countryCodes: input.countryCodes, language: input.language },
     researchStats,

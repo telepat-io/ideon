@@ -274,7 +274,7 @@ async function findPrimaryMarkdown(generationDir: string): Promise<string | null
   const mdFiles = entries
     .filter((e) => e.isFile() && e.name.endsWith('.md'))
     .map((e) => e.name)
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 
   // Prefer article-1.md as primary
   const articleFile = mdFiles.find((name) => /^article-\d+\.md$/.test(name));
@@ -314,6 +314,6 @@ function extractFrontmatterSlug(markdown: string): string | null {
     return null;
   }
 
-  const unquoted = rawSlug.replace(/^['""]|['""]$/g, '').trim();
+  const unquoted = rawSlug.replace(/^['"']|['"']$/g, '').trim();
   return unquoted.length > 0 ? unquoted : null;
 }

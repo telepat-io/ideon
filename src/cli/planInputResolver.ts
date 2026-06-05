@@ -56,7 +56,7 @@ export async function resolvePlanExploreInput(
   const { loadSavedSettings } = await import('../config/settingsFile.js');
   const { loadSecrets } = await import('../config/secretStore.js');
 
-  const [savedSettings, secrets, publication] = await Promise.all([
+  const [savedSettings, , publication] = await Promise.all([
     loadSavedSettings(),
     loadSecrets(),
     options.publication ? loadPublication(options.publication) : null,
@@ -139,7 +139,7 @@ export async function resolvePlanExpandInput(
   const { loadSavedSettings } = await import('../config/settingsFile.js');
   const { loadSecrets } = await import('../config/secretStore.js');
 
-  const [savedSettings, secrets, publication] = await Promise.all([
+  const [savedSettings, , publication] = await Promise.all([
     loadSavedSettings(),
     loadSecrets(),
     options.publication ? loadPublication(options.publication) : null,
@@ -196,7 +196,7 @@ async function promptForPlanExploreInput(params: {
   const { loadSavedSettings } = await import('../config/settingsFile.js');
   const { loadSecrets } = await import('../config/secretStore.js');
 
-  const [savedSettings, secrets] = await Promise.all([
+  const [savedSettings] = await Promise.all([
     loadSavedSettings(),
     loadSecrets(),
   ]);
@@ -239,7 +239,7 @@ async function promptForPlanExpandInput(params: {
   const { loadSavedSettings } = await import('../config/settingsFile.js');
   const { loadSecrets } = await import('../config/secretStore.js');
 
-  const [savedSettings, secrets] = await Promise.all([
+  const [savedSettings] = await Promise.all([
     loadSavedSettings(),
     loadSecrets(),
   ]);

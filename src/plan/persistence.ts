@@ -3,7 +3,7 @@ import path from 'node:path';
 import envPaths from 'env-paths';
 import type { QueueEntry } from '../types/queue.js';
 import type { Series } from '../types/series.js';
-import type { PlannedSeries, PlannedArticle, ResearchStats, PlanMode, DiscardedCandidate, ExhaustionRecord, ArticleQueueType, ArticleFormat } from '../types/plan.js';
+import type { PlannedSeries, PlannedArticle, ResearchStats, PlanMode, DiscardedCandidate, ExhaustionRecord, ArticleFormat } from '../types/plan.js';
 import { saveSeries } from '../config/seriesStore.js';
 import { saveQueueEntry, generateQueueId } from '../config/queueStore.js';
 import { defaultAppSettings, contentIntentValues, contentTypeValues } from '../config/schema.js';
@@ -92,7 +92,7 @@ export function buildQueueEntry(
     publication: null,
     series,
     addedAt: new Date().toISOString(),
-    type: article.type as ArticleQueueType,
+    type: article.type,
     refreshTarget: article.refreshTarget,
   };
 }
