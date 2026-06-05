@@ -4,13 +4,15 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock('../config/seriesStore.js', () => ({
-  listSeries: jest.fn().mockResolvedValue([]),
-  loadSeries: jest.fn().mockRejectedValue(new Error('not found')),
+  listSeries: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
+  loadSeries: jest.fn<() => Promise<any>>().mockRejectedValue(new Error('not found')),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock('../config/gkpStore.js', () => ({
-  listGkpKeywordRecords: jest.fn().mockResolvedValue([]),
+  listGkpKeywordRecords: jest.fn<() => Promise<any[]>>().mockResolvedValue([]),
   normalizeKeywordKey: (kw: string) => kw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled-keyword',
 }));
 

@@ -79,9 +79,12 @@ describe('runResearchLoop', () => {
           avgMonthlySearches: 50,
           competition: 'LOW',
           competitionIndex: 20,
+          lowTopOfPageBidMicros: 200000,
           highTopOfPageBidMicros: 500000,
+          closeVariants: [],
         },
       ],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -105,8 +108,11 @@ describe('runResearchLoop', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000,
         highTopOfPageBidMicros: 1000000,
+        closeVariants: [],
       })),
+      count: 10,
     });
 
     const result = await runResearchLoop(
@@ -143,8 +149,11 @@ describe('runResearchLoop', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000,
         highTopOfPageBidMicros: 1000000,
+        closeVariants: [],
       })),
+      count: 15,
     });
 
     const result = await runResearchLoop(
@@ -169,8 +178,11 @@ describe('runResearchLoop', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000,
         highTopOfPageBidMicros: 1000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     await runResearchLoop(
@@ -227,8 +239,11 @@ describe('runResearchLoop', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000,
         highTopOfPageBidMicros: 1000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     await runResearchLoop(
@@ -249,9 +264,10 @@ describe('runResearchLoop', () => {
   it('deduplicates candidates by normalized keyword', async () => {
     mockClient.generateKeywordIdeas.mockResolvedValue({
       ideas: [
-        { text: 'Duplicate Keyword', avgMonthlySearches: 100, competition: 'LOW', competitionIndex: 20, highTopOfPageBidMicros: 1000000 },
-        { text: 'duplicate-keyword', avgMonthlySearches: 200, competition: 'MEDIUM', competitionIndex: 40, highTopOfPageBidMicros: 2000000 },
+        { text: 'Duplicate Keyword', avgMonthlySearches: 100, competition: 'LOW', competitionIndex: 20, lowTopOfPageBidMicros: 500000, highTopOfPageBidMicros: 1000000, closeVariants: [] },
+        { text: 'duplicate-keyword', avgMonthlySearches: 200, competition: 'MEDIUM', competitionIndex: 40, lowTopOfPageBidMicros: 1000000, highTopOfPageBidMicros: 2000000, closeVariants: [] },
       ],
+      count: 2,
     });
 
     const result = await runResearchLoop(

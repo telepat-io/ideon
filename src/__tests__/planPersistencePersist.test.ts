@@ -6,12 +6,14 @@ import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock('../config/seriesStore.js', () => ({
-  saveSeries: jest.fn().mockResolvedValue(undefined),
+  saveSeries: jest.fn<() => Promise<any>>().mockResolvedValue(undefined),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock('../config/queueStore.js', () => ({
-  saveQueueEntry: jest.fn().mockResolvedValue(undefined),
+  saveQueueEntry: jest.fn<() => Promise<any>>().mockResolvedValue(undefined),
   generateQueueId: jest.fn().mockReturnValue('test-queue-id'),
 }));
 

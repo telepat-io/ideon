@@ -18,7 +18,7 @@ function createMockSettings(): AppSettings {
     targetLength: 'medium',
     contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
     notifications: { enabled: false },
-  } as AppSettings;
+  } as unknown as AppSettings;
 }
 
 describe('planArticlesForCluster', () => {

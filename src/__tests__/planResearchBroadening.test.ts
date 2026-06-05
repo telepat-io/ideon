@@ -30,12 +30,15 @@ describe('research - broadening logic', () => {
             avgMonthlySearches: 100,
             competition: 'LOW',
             competitionIndex: 20,
+            lowTopOfPageBidMicros: 2000000,
             highTopOfPageBidMicros: 5000000,
+            closeVariants: [],
           }],
+          count: 1,
         };
       }
       // Subsequent rounds return empty to trigger broadening
-      return { ideas: [] };
+      return { ideas: [], count: 0 };
     });
 
     const result = await runResearchLoop(
@@ -64,8 +67,11 @@ describe('research - broadening logic', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 2000000,
         highTopOfPageBidMicros: 5000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -89,7 +95,7 @@ describe('research - broadening logic', () => {
   it('generates broadened seeds with modifiers', async () => {
     const seedsQueried: string[] = [];
     mockClient.generateKeywordIdeas.mockImplementation(async ({ seedKeywords }) => {
-      const seed = seedKeywords[0];
+      const seed = seedKeywords![0];
       if (seed) {
         seedsQueried.push(seed);
       }
@@ -99,8 +105,11 @@ describe('research - broadening logic', () => {
           avgMonthlySearches: 50,
           competition: 'LOW',
           competitionIndex: 20,
+          lowTopOfPageBidMicros: 200000,
           highTopOfPageBidMicros: 500000,
+          closeVariants: [],
         }],
+        count: 1,
       };
     });
 
@@ -127,7 +136,7 @@ describe('research - broadening logic', () => {
   it('uses correct broadening modifiers', async () => {
     const seedsQueried: string[] = [];
     mockClient.generateKeywordIdeas.mockImplementation(async ({ seedKeywords }) => {
-      const seed = seedKeywords[0];
+      const seed = seedKeywords![0];
       if (seed) {
         seedsQueried.push(seed);
       }
@@ -137,8 +146,11 @@ describe('research - broadening logic', () => {
           avgMonthlySearches: 50,
           competition: 'LOW',
           competitionIndex: 20,
+          lowTopOfPageBidMicros: 200000,
           highTopOfPageBidMicros: 500000,
+          closeVariants: [],
         }],
+        count: 1,
       };
     });
 
@@ -173,7 +185,7 @@ describe('research - broadening logic', () => {
   it('excludes exhausted seeds from broadening', async () => {
     const seedsQueried: string[] = [];
     mockClient.generateKeywordIdeas.mockImplementation(async ({ seedKeywords }) => {
-      const seed = seedKeywords[0];
+      const seed = seedKeywords![0];
       if (seed) {
         seedsQueried.push(seed);
       }
@@ -183,8 +195,11 @@ describe('research - broadening logic', () => {
           avgMonthlySearches: 50,
           competition: 'LOW',
           competitionIndex: 20,
+          lowTopOfPageBidMicros: 200000,
           highTopOfPageBidMicros: 500000,
+          closeVariants: [],
         }],
+        count: 1,
       };
     });
 
@@ -210,6 +225,7 @@ describe('research - broadening logic', () => {
   it('tracks exhausted seeds correctly', async () => {
     mockClient.generateKeywordIdeas.mockResolvedValue({
       ideas: [],
+      count: 0,
     });
 
     const result = await runResearchLoop(
@@ -232,6 +248,7 @@ describe('research - broadening logic', () => {
   it('sets exhausted flag when no more seeds', async () => {
     mockClient.generateKeywordIdeas.mockResolvedValue({
       ideas: [],
+      count: 0,
     });
 
     const result = await runResearchLoop(
@@ -257,8 +274,11 @@ describe('research - broadening logic', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000,
         highTopOfPageBidMicros: 1000000,
+        closeVariants: [],
       })),
+      count: 35,
     });
 
     const result = await runResearchLoop(
@@ -285,8 +305,11 @@ describe('research - broadening logic', () => {
         avgMonthlySearches: 10,
         competition: 'HIGH',
         competitionIndex: 80,
+        lowTopOfPageBidMicros: 2000000,
         highTopOfPageBidMicros: 5000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -313,8 +336,11 @@ describe('research - broadening logic', () => {
         avgMonthlySearches: 10,
         competition: 'HIGH',
         competitionIndex: 30,
+        lowTopOfPageBidMicros: 50000,
         highTopOfPageBidMicros: 100000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -340,8 +366,11 @@ describe('research - broadening logic', () => {
         avgMonthlySearches: 10,
         competition: 'LOW',
         competitionIndex: 10,
+        lowTopOfPageBidMicros: 50000,
         highTopOfPageBidMicros: 100000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(

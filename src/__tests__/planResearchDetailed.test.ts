@@ -25,8 +25,11 @@ describe('research - generateBroadenedSeeds', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 2000000,
         highTopOfPageBidMicros: 5000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -54,8 +57,11 @@ describe('research - generateBroadenedSeeds', () => {
         avgMonthlySearches: 100 + i,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000 + (i * 50000),
         highTopOfPageBidMicros: 1000000 + (i * 100000),
+        closeVariants: [],
       })),
+      count: 20,
     });
 
     const result = await runResearchLoop(
@@ -83,8 +89,11 @@ describe('research - generateBroadenedSeeds', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 2000000,
         highTopOfPageBidMicros: 5000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -107,7 +116,7 @@ describe('research - generateBroadenedSeeds', () => {
 
   it('uses broadening modifiers', async () => {
     mockClient.generateKeywordIdeas.mockImplementation(async ({ seedKeywords }) => {
-      const seed = seedKeywords[0];
+      const seed = seedKeywords![0];
       if (seed?.includes('for beginners') || seed?.includes('vs competitors')) {
         return {
           ideas: [{
@@ -115,8 +124,11 @@ describe('research - generateBroadenedSeeds', () => {
             avgMonthlySearches: 50,
             competition: 'LOW',
             competitionIndex: 20,
+            lowTopOfPageBidMicros: 200000,
             highTopOfPageBidMicros: 500000,
+            closeVariants: [],
           }],
+          count: 1,
         };
       }
       return {
@@ -125,8 +137,11 @@ describe('research - generateBroadenedSeeds', () => {
           avgMonthlySearches: 100,
           competition: 'LOW',
           competitionIndex: 20,
+          lowTopOfPageBidMicros: 2000000,
           highTopOfPageBidMicros: 5000000,
+          closeVariants: [],
         }],
+        count: 1,
       };
     });
 
@@ -156,8 +171,11 @@ describe('research - generateBroadenedSeeds', () => {
         avgMonthlySearches: 10,
         competition: 'HIGH',
         competitionIndex: 80,
+        lowTopOfPageBidMicros: 2000000,
         highTopOfPageBidMicros: 5000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -184,8 +202,11 @@ describe('research - generateBroadenedSeeds', () => {
         avgMonthlySearches: 10,
         competition: 'HIGH',
         competitionIndex: 50,
+        lowTopOfPageBidMicros: 50000,
         highTopOfPageBidMicros: 100000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -209,7 +230,7 @@ describe('research - generateBroadenedSeeds', () => {
     mockClient.generateKeywordIdeas.mockImplementation(async () => {
       callCount++;
       if (callCount <= 2) {
-        return { ideas: [] };
+        return { ideas: [], count: 0 };
       }
       return {
         ideas: [{
@@ -217,8 +238,11 @@ describe('research - generateBroadenedSeeds', () => {
           avgMonthlySearches: 100,
           competition: 'LOW',
           competitionIndex: 20,
+          lowTopOfPageBidMicros: 500000,
           highTopOfPageBidMicros: 1000000,
+          closeVariants: [],
         }],
+        count: 1,
       };
     });
 
@@ -243,7 +267,7 @@ describe('research - generateBroadenedSeeds', () => {
   it('handles multiple seeds in single round', async () => {
     let callIndex = 0;
     mockClient.generateKeywordIdeas.mockImplementation(async ({ seedKeywords }) => {
-      const seed = seedKeywords[0];
+      const seed = seedKeywords![0];
       callIndex++;
       return {
         ideas: [{
@@ -251,8 +275,11 @@ describe('research - generateBroadenedSeeds', () => {
           avgMonthlySearches: 100,
           competition: 'LOW',
           competitionIndex: 20,
+          lowTopOfPageBidMicros: 500000,
           highTopOfPageBidMicros: 1000000,
+          closeVariants: [],
         }],
+        count: 1,
       };
     });
 
@@ -280,8 +307,11 @@ describe('research - generateBroadenedSeeds', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000,
         highTopOfPageBidMicros: 1000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     const result = await runResearchLoop(
@@ -310,8 +340,11 @@ describe('research - generateBroadenedSeeds', () => {
         avgMonthlySearches: 100,
         competition: 'LOW',
         competitionIndex: 20,
+        lowTopOfPageBidMicros: 500000,
         highTopOfPageBidMicros: 1000000,
+        closeVariants: [],
       }],
+      count: 1,
     });
 
     await runResearchLoop(
