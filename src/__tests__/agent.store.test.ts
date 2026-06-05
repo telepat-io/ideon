@@ -7,8 +7,6 @@ import {
   uninstallAgentIntegration,
 } from '../integrations/agent/store.js';
 
-jest.retryTimes(2);
-
 describe('agent integration store', () => {
   it('installs, lists, and uninstalls runtime integrations', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-agent-store-'));
@@ -29,10 +27,8 @@ describe('agent integration store', () => {
 
       const missingRemove = await uninstallAgentIntegration('gemini', storePath);
       expect(missingRemove).toBe(false);
-    } catch (err) {
-      throw new Error(`agent.store test failed: ${String(err)}\nstorePath=${storePath}\ntempRoot=${tempRoot}`);
     } finally {
-      await rm(tempRoot, { recursive: true, force: true }).catch(() => {});
+      await rm(tempRoot, { recursive: true, force: true });
     }
   });
 
@@ -46,10 +42,8 @@ describe('agent integration store', () => {
 
       expect(firstInstall.installedAt).toBe(secondInstall.installedAt);
       expect(new Date(secondInstall.updatedAt).getTime()).toBeGreaterThanOrEqual(new Date(firstInstall.updatedAt).getTime());
-    } catch (err) {
-      throw new Error(`agent.store reinstall test failed: ${String(err)}\nstorePath=${storePath}\ntempRoot=${tempRoot}`);
     } finally {
-      await rm(tempRoot, { recursive: true, force: true }).catch(() => {});
+      await rm(tempRoot, { recursive: true, force: true });
     }
   });
 });

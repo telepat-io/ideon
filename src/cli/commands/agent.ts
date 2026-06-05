@@ -120,7 +120,7 @@ async function collectAgentStatus(deps: AgentCommandDependencies): Promise<Agent
       configSurfaceReady: isConfigKey('style') && isConfigKey('openRouterApiKey'),
     },
     metadata: {
-      storePath: getAgentIntegrationStorePath(),
+      storePath: await getAgentIntegrationStorePath(),
       checkedAt: deps.now().toISOString(),
     },
   };

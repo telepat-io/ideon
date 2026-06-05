@@ -7,7 +7,6 @@ export default {
       testEnvironment: 'node',
       moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
-        '^env-paths$': '<rootDir>/src/__mocks__/env-paths.ts',
       },
       transform: {
         '^.+\\.tsx?$': [

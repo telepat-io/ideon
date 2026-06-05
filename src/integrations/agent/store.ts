@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import envPaths from 'env-paths';
 import { z } from 'zod';
 
 export const supportedAgentRuntimeValues = ['claude', 'claude-desktop', 'chatgpt', 'gemini', 'codex', 'cursor', 'vscode', 'opencode', 'generic-mcp'] as const;
@@ -19,9 +18,15 @@ const integrationStoreSchema = z.object({
 
 type IntegrationStore = z.infer<typeof integrationStoreSchema>;
 
-const ideonPaths = envPaths('ideon', { suffix: '' });
-const storeDir = ideonPaths.config;
-const storePath = path.join(storeDir, 'agent-integrations.json');
+let _defaultStorePath: string | undefined;
+async function getDefaultStorePath(): Promise<string> {
+  if (!_defaultStorePath) {
+    const envPaths = (await import('env-paths')).default;
+    const ideonPaths = envPaths('ideon', { suffix: '' });
+    _defaultStorePath = path.join(ideonPaths.config, 'agent-integrations.json');
+  }
+  return _defaultStorePath;
+}
 
 export interface InstalledAgentIntegration {
   runtime: SupportedAgentRuntime;
@@ -29,12 +34,13 @@ export interface InstalledAgentIntegration {
   updatedAt: string;
 }
 
-export function getAgentIntegrationStorePath(): string {
-  return storePath;
+export async function getAgentIntegrationStorePath(): Promise<string> {
+  return getDefaultStorePath();
 }
 
-export async function listInstalledAgentIntegrations(targetStorePath = storePath): Promise<InstalledAgentIntegration[]> {
-  const store = await readStore(targetStorePath);
+export async function listInstalledAgentIntegrations(targetStorePath?: string): Promise<InstalledAgentIntegration[]> {
+  const resolvedPath = targetStorePath ?? await getDefaultStorePath();
+  const store = await readStore(resolvedPath);
   const entries = Object.values(store.integrations);
   entries.sort((a, b) => a.runtime.localeCompare(b.runtime));
   return entries;
@@ -42,10 +48,11 @@ export async function listInstalledAgentIntegrations(targetStorePath = storePath
 
 export async function installAgentIntegration(
   runtime: SupportedAgentRuntime,
-  targetStorePath = storePath,
+  targetStorePath?: string,
 ): Promise<InstalledAgentIntegration> {
+  const resolvedPath = targetStorePath ?? await getDefaultStorePath();
   const nowIso = new Date().toISOString();
-  const store = await readStore(targetStorePath);
+  const store = await readStore(resolvedPath);
   const existing = store.integrations[runtime];
 
   const nextEntry: InstalledAgentIntegration = {
@@ -62,15 +69,16 @@ export async function installAgentIntegration(
     },
   };
 
-  await writeStore(nextStore, targetStorePath);
+  await writeStore(nextStore, resolvedPath);
   return nextEntry;
 }
 
 export async function uninstallAgentIntegration(
   runtime: SupportedAgentRuntime,
-  targetStorePath = storePath,
+  targetStorePath?: string,
 ): Promise<boolean> {
-  const store = await readStore(targetStorePath);
+  const resolvedPath = targetStorePath ?? await getDefaultStorePath();
+  const store = await readStore(resolvedPath);
   if (!store.integrations[runtime]) {
     return false;
   }
@@ -83,7 +91,7 @@ export async function uninstallAgentIntegration(
     integrations: nextIntegrations,
   };
 
-  await writeStore(nextStore, targetStorePath);
+  await writeStore(nextStore, resolvedPath);
   return true;
 }
 
