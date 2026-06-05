@@ -58,6 +58,7 @@ export default {
     '!src/cli/**',
     '!src/preview-app/testSetup.ts',
     '!src/preview-app/testFileMock.ts',
+    '!src/integrations/keywordplanner/oauth.ts',
   ],
   coverageThreshold: {
     global: {

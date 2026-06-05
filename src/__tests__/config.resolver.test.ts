@@ -37,6 +37,8 @@ describe('resolveRunInput', () => {
       style: 'professional',
       intent: 'tutorial',
       targetLength: 900,
+      planModel: 'deepseek/deepseek-v4-pro',
+      planIntentModel: 'deepseek/deepseek-v4-flash',
     });
 
     loadSecretsMock.mockResolvedValue({
@@ -260,6 +262,8 @@ describe('resolveRunInput', () => {
       intent: 'tutorial',
       contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
       targetLength: 900,
+      planModel: 'deepseek/deepseek-v4-pro',
+      planIntentModel: 'deepseek/deepseek-v4-flash',
     });
 
     const result = await resolveRunInput({ idea: 'defaults test' });
@@ -364,6 +368,8 @@ describe('resolveRunInput', () => {
       style: 'professional',
       intent: 'tutorial',
       targetLength: 900,
+      planModel: 'deepseek/deepseek-v4-pro',
+      planIntentModel: 'deepseek/deepseek-v4-flash',
     });
 
     const result = await resolveRunInput({ idea: 'family only' });

@@ -225,6 +225,8 @@ export const appSettingsSchema = z.object({
   intent: z.enum(contentIntentValues).default('tutorial'),
   targetLength: targetLengthWordsSchema.default(defaultTargetLengthWords),
   defaultPublication: z.string().optional(),
+  planModel: z.string().default('deepseek/deepseek-v4-pro'),
+  planIntentModel: z.string().default('deepseek/deepseek-v4-flash'),
 });
 
 export const envSettingsSchema = z.object({

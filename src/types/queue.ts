@@ -17,6 +17,8 @@ export const queueEntrySchema = z.object({
   exportPath: z.string().optional(),
   addedAt: z.string().datetime(),
   startedAt: z.string().datetime().optional(),
+  type: z.enum(['new', 'refresh']).default('new'),
+  refreshTarget: z.string().optional(),
 });
 
 export type QueueEntry = z.infer<typeof queueEntrySchema>;

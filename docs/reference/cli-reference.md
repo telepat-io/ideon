@@ -32,6 +32,8 @@ ideon --version
 - [ideon gkp](./commands/ideon-gkp.md)
 - [ideon series](./commands/ideon-series.md)
 - [ideon article list](./commands/ideon-article-list.md)
+- [ideon plan explore](./commands/ideon-plan-explore.md)
+- [ideon plan expand](./commands/ideon-plan-expand.md)
 
 ## Common Exit Codes
 

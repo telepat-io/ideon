@@ -99,6 +99,35 @@ ideon write --from-queue --publication tech-blog
 
 ---
 
+## Datengestützte Inhaltsplanung
+
+Hören Sie auf zu raten, was Sie schreiben sollen. Der `plan`-Befehl von Ideon recherchiert Ihre Inhaltsidee anhand echter Google Keyword Planner-Daten, bewertet Keyword-Chancen, gruppiert sie in thematische Serien und plant einzelne Artikel — alles überprüft durch eine interaktive Terminal-UI, bevor es in Ihrer Warteschlange gespeichert wird.
+
+```bash
+# Ein neues Thema erkunden
+ideon plan explore "Content-Strategie für B2B SaaS" \
+  --publication tech-blog \
+  --series-count 3 \
+  --articles-per-series 5
+
+# Eine bestehende Serie erweitern
+ideon plan expand ai-deep-dives \
+  --publication tech-blog \
+  --article-count 6
+```
+
+- **Zwei Modi** — `explore` für neue Themen, `expand` für die Erweiterung bestehender Serien
+- **GKP-gestützt** — Echtes Suchvolumen, Wettbewerb und CPC-Daten untermauern jede Entscheidung
+- **KOB-Bewertung** — Keyword Opportunity Benchmark gewichtet Volumen, Intent und Wettbewerb zur Priorisierung
+- **Themen-Clustering** — LLM gruppiert ausgewählte Keywords in kohärente Serien mit Pillar-Keywords und Funnel-Stufen
+- **Abdeckungsbewusst** — Überspringt bereits veröffentlichte Keywords; zeigt veraltete Inhalte zur Aktualisierung an
+- **Interaktive Überprüfung** — Navigieren Sie durch Serien und Artikel im Terminal; genehmigen oder ablehnen Sie vor dem Speichern
+- **Agent-bereit** — `--non-interactive` und `--auto-save` für CI- und Automatisierungs-Workflows
+
+[Mehr erfahren →](./guides/content-planning.md)
+
+---
+
 ## Recherchegestützte Entwürfe
 
 Ideon durchsucht das Web und fügt kontextbezogene externe Links ein, wie ein menschlicher Autor es tun würde — keine manuelle Recherche, keine generischen Platzhalter-URLs. Nur glaubwürdige, relevante Links, die Ihren Entwürfen Tiefe und Autorität verleihen.

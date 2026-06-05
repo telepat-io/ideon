@@ -10,7 +10,9 @@ Ideon runs a seven-stage pipeline with live status updates and per-stage analyti
 
 ## Stage Flow
 
-All runs follow the same seven stages:
+### Writing Pipeline
+
+All write runs follow the same seven stages:
 
 1. **Planning Shared Plan**
 2. **Planning Primary Content**
@@ -131,3 +133,26 @@ When a stage fails:
 - Custom links take precedence: if the LLM selects an expression already covered by a custom link, the generated entry for that expression is discarded.
 - **Custom links replace every unprotected occurrence** of their expression in the article body; generated links only replace the first occurrence.
 - **Max links** (`--max-links <n>`) caps the number of generated links. Defaults to 5 / 8 / 12 based on the article's target word count (≤700 / ≤1150 / >1150).
+
+## Content Planning Pipeline
+
+The `ideon plan` command uses a separate seven-stage pipeline optimized for keyword research and content strategy rather than prose generation. See the [Content Planning guide](./content-planning.md) for full details.
+
+| Stage | Label | What happens |
+|-------|-------|--------------|
+| 1 | `hydrate` | Load publication, series, output history, and GKP cache |
+| 2 | `seeds` | Generate seed keywords from the content idea or existing series |
+| 3 | `research` | Iterative GKP queries with broadening and low-volume detection |
+| 4 | `score` | KOB scoring, intent classification, and candidate filtering |
+| 5 | `cluster` | Group shortlisted keywords into thematic series (explore mode only) |
+| 6 | `plan-articles` | Plan individual articles with keywords, intent, format, and priority |
+| 7 | `persist` | Save series, update keywords, and queue articles |
+
+### Key differences from the writing pipeline
+
+- **No image stages** — Planning doesn't generate images
+- **No link enrichment** — Planning focuses on keyword strategy, not link insertion
+- **No section writing** — Articles are planned, not drafted
+- **GKP integration** — Every research round queries live Google Ads Keyword Planner data
+- **Two modes** — `explore` creates new series from scratch; `expand` adds articles to an existing series
+- **Approval gates** — All state mutations wait for explicit user approval (unless `--auto-save`)

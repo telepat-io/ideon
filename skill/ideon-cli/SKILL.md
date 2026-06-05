@@ -35,13 +35,7 @@ ideon --version
 
 ## Setup and first run
 
-Interactive setup path:
-
-```bash
-ideon settings
-```
-
-Non-interactive setup path (CI/agents/containers):
+Non-interactive setup (agents, CI, containers — always use this):
 
 ```bash
 TELEPAT_DISABLE_KEYTAR=true \
@@ -49,6 +43,8 @@ TELEPAT_OPENROUTER_KEY=sk-... \
 TELEPAT_REPLICATE_TOKEN=r8_... \
 ideon config list --json
 ```
+
+Human users may also run `ideon settings` for an interactive setup wizard. Agents should never invoke `ideon settings` — it prompts for user input on stdin.
 
 Setup verification checks:
 
@@ -94,27 +90,97 @@ Do not use this skill when:
 
 ## Inputs to collect from user
 
+Always collect all relevant inputs before running any command. Ask the user for the values needed based on the operation they want.
+
+### Write / resume
+
 | Input | Required | Why it matters |
 | --- | --- | --- |
 | Idea text | Yes | Required by `ideon write` unless a job file provides it. |
-| Primary target (`--primary`) | Yes (non-interactive) | Must be exactly one primary with count `1`. |
+| Primary target (`--primary`) | Yes | Must be exactly one primary with count `1`. |
 | Secondary targets (`--secondary`) | No | Optional channel variants and counts. |
-| Style (`--style`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied via job. |
-| Intent (`--intent`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied explicitly. |
-| Length (`--length`) | Yes (non-interactive) | Required for strict non-interactive runs when not supplied via job. |
+| Style (`--style`) | Yes | Required for non-interactive runs when not supplied via job. |
+| Intent (`--intent`) | Yes | Required for non-interactive runs when not supplied explicitly. |
+| Length (`--length`) | Yes | Required for non-interactive runs when not supplied via job. `small` / `medium` / `large`. |
 | Publication (`--publication`) | No | Publication slug for defaults and editorial policy. |
 | Series (`--series`) | No | Content series slug for defaults and thematic context. |
 | Keywords (`--keywords`) | No | Comma-separated SEO keywords. Supports compound keywords. Merges with series keywords. |
-| Credentials strategy | Yes | Keychain via `ideon settings` or env-based secrets for CI. |
+| Audience (`--audience`) | No | Target audience description injected into editorial policy. |
+| Enrich links (`--enrich-links`) | No | Opt-in web research link enrichment for long-form outputs. |
+| Max links (`--max-links`) | No | Cap generated links (defaults: ≤700w→5, ≤1150w→8, >1150w→12). |
+| Max images (`--max-images`) | No | Cap total images (1=cover only, higher=cover+inline). |
+| Credentials strategy | Yes | Env-based secrets for CI/agents (`TELEPAT_OPENROUTER_KEY`, `TELEPAT_REPLICATE_TOKEN`). |
 | Run mode | Yes | Fresh run vs `ideon write resume` vs `ideon write --from-queue`. |
+
+### Plan explore / expand
+
+| Input | Required | Why it matters |
+| --- | --- | --- |
+| Content idea | Yes (explore) | The topic to research. |
+| Series slug | Yes (expand) | The existing series to expand. |
+| Publication (`--publication`) | Yes | Publication slug. Must exist. |
+| Context (`--context`) | No (explore) | Business context or ICP description for better LLM results. |
+| Series count (`--series-count`) | No (explore) | Number of series to aim for (default 3). |
+| Articles per series (`--articles-per-series`) | No (explore) | Articles per series (default 5). |
+| Article count (`--article-count`) | No (expand) | New articles to plan (default 5). |
+| Seed keywords (`--seed-keywords`) | No | Comma-separated keywords to always include in research. |
+| Exclude series (`--exclude-series`) | No (explore) | Series slugs to avoid duplicating. |
+| Country (`--country`) | No | Comma-separated ISO codes for GKP queries (defaults from publication). |
+| Language (`--language`) | No | ISO 639-1 code for GKP queries (defaults from publication). |
+| Content type (`--content-type`) | No | Content type for queue entries (default `article`). |
+| Model (`--model`) | No | LLM model for reasoning calls (default `deepseek/deepseek-v4-pro`). |
+| Intent model (`--intent-model`) | No | LLM model for intent classification (default `deepseek/deepseek-v4-flash`). |
+| Dry run (`--dry-run`) | No | Run research without persisting. |
+
+### GKP research
+
+| Input | Required | Why it matters |
+| --- | --- | --- |
+| Keywords (`--keywords`) | Yes (except ideas) | Comma-separated keywords to query. |
+| URL (`--url`) | No (ideas only) | URL to generate keyword ideas from. |
+| Site (`--site`) | No (ideas only) | Site domain to generate keyword ideas from. |
+| Country (`--country`) | No | ISO country code for geography-specific volume (default `US`). |
+| Language (`--language`) | No | ISO 639-1 language code (default `en`). |
+| Match type (`--match-type`) | No (forecast) | `EXACT`, `PHRASE`, or `BROAD`. |
+| Max CPC bid (`--max-cpc-bid`) | No (forecast) | Max CPC bid in micros for forecast projections. |
+| Start date (`--start-date`) | No (forecast) | Forecast start date (YYYY-MM-DD). |
+| End date (`--end-date`) | No (forecast) | Forecast end date (YYYY-MM-DD). |
+| Include CPC (`--no-include-cpc`) | No (historical) | Omit CPC data from historical results. |
+| Page size (`--page-size`) | No (ideas) | Number of results per page. |
+
+### Queue
+
+| Input | Required | Why it matters |
+| --- | --- | --- |
+| Idea text | Yes | Article idea to enqueue. |
+| Primary target (`--primary`) | No | Defaults to `article=1`. |
+| Secondary targets (`--secondary`) | No | Optional channel variants. |
+| Publication (`--publication`) | No | Publication slug. |
+| Series (`--series`) | No | Series slug. |
+| Style (`--style`) | No | Writing style. |
+| Intent (`--intent`) | No | Content intent. |
+| Length (`--length`) | No | Target word count alias (`small`/`medium`/`large`). |
+| Keywords (`--keywords`) | No | Comma-separated SEO keywords. |
+| Audience (`--audience`) | No | Target audience description. |
+
+### Other commands
+
+| Command | Required inputs |
+| --- | --- |
+| `ideon links <slug>` | `slug` (required), `--mode` (fresh/append, optional), `--link` (optional, repeatable), `--unlink` (optional, repeatable), `--max-links` (optional) |
+| `ideon export <genId> <path>` | `generationId` (required), `path` (required), `--index` (optional, default 1), `--overwrite` (optional) |
+| `ideon delete <slug>` | `slug` (required), must ask user for confirmation, then use `--force` |
+| `ideon preview` | `--port` (optional, default 4173), `--no-open` (always use for agents), `--watch` (optional) |
 
 ## Deterministic workflow
 
-1. Discover user intent and risk class.
-2. Confirm install and setup state using readiness checks.
-3. Choose operation path:
+1. Discover the user's intent — what operation do they need (write, plan, query GKP, queue, links, export, delete, preview)?
+2. **Collect all required inputs from the user** by consulting the [Inputs to collect](#inputs-to-collect-from-user) table above. Ask the user for each required value before choosing an operation path or running any command. Do not guess or default missing values without asking.
+3. Confirm install and setup state using readiness checks.
+4. Choose operation path:
    - Create content: `ideon write ...`
    - Resume interrupted run: `ideon write resume`
+   - Plan content series and articles: `ideon plan explore` / `ideon plan expand`
    - Queue articles for later: `ideon queue add ...`
    - List queued articles: `ideon queue list`
    - Write from queue: `ideon write --from-queue`
@@ -126,9 +192,9 @@ Do not use this skill when:
    - Manage config: `ideon config ...`
    - Manage runtime registrations: `ideon agent ...`
    - Start MCP server: `ideon mcp serve`
-4. Run minimal safe command first (dry-run or read-only status command).
-5. Escalate to full workflow only after verification succeeds.
-6. Report:
+5. Run minimal safe command first (dry-run or read-only status command).
+6. Escalate to full workflow only after verification succeeds.
+7. Report:
    - command run
    - artifacts/paths touched
    - exit/result
@@ -159,14 +225,31 @@ ideon write "Your idea" --primary article=1 --enrich-links
 # Add custom links during write
 ideon write "Your idea" --primary article=1 --link "React->https://react.dev"
 
+# Remove a custom link during write
+ideon write "Your idea" --primary article=1 --unlink "OldLink"
+
+# Cap generated links
+ideon write "Your idea" --primary article=1 --max-links 8
+
 # Use job file
 ideon write --job ./job.json
 
 # Cap images (1=cover only, 2=cover+1 inline, 3=cover+2 inline)
 ideon write "Your idea" --primary article=1 --max-images 1
 
-# Resume last failed/interrupted run
-ideon write resume
+# With publication, series, keywords, and audience
+ideon write "Your idea" \
+  --primary article=1 \
+  --publication tech-blog \
+  --series ai-deep-dives \
+  --keywords "machine learning, neural networks" \
+  --audience "ML engineers at mid-stage startups"
+
+# Resume last failed/interrupted run (always --no-interactive)
+ideon write resume --no-interactive
+
+# Resume with link enrichment
+ideon write resume --no-interactive --enrich-links
 
 # Re-run only link enrichment for a previous article (default: fresh)
 ideon links my-article-slug
@@ -196,11 +279,21 @@ ideon export my-article-slug ./export-dir --overwrite
 ideon write "Your idea" --primary article=1 --export ./out
 
 # Auto-export after resume
-ideon write resume --export ./out
+ideon write resume --no-interactive --export ./out
 
-# Queue articles for later
-ideon queue add "Your idea" --primary article=1 --style technical --intent tutorial
-ideon queue add "Another idea" --primary article=1 --publication tech-blog
+# Queue articles for later (always --no-interactive)
+ideon queue add "Your idea" \
+  --primary article=1 \
+  --style technical \
+  --intent tutorial \
+  --no-interactive
+
+ideon queue add "Another idea" \
+  --primary article=1 \
+  --publication tech-blog \
+  --series ai-deep-dives \
+  --keywords "ML, AI" \
+  --no-interactive
 
 # List queued articles
 ideon queue list
@@ -224,6 +317,15 @@ ideon write --from-queue --publication tech-blog
 
 # Write from queue with overrides
 ideon write --from-queue --style playful
+
+# Plan content (use --non-interactive; ask user before --auto-save)
+ideon plan explore "Your idea" \
+  --publication my-blog \
+  --non-interactive
+
+ideon plan expand my-series \
+  --publication my-blog \
+  --non-interactive
 ```
 
 Monitoring / status:
@@ -234,6 +336,8 @@ ideon agent status --json
 ideon article list
 ideon article list --search "react hooks"
 ideon article list --publication tech-blog --json
+ideon plan explore --help
+ideon plan expand --help
 ```
 
 Update / upgrade:
@@ -246,8 +350,8 @@ ideon --version
 Cleanup / uninstall:
 
 ```bash
-# Remove generated output by slug
-ideon delete my-article-slug
+# Remove generated output by slug (always --force for agents)
+ideon delete my-article-slug --force
 
 # Uninstall global CLI
 npm uninstall -g @telepat/ideon
@@ -301,28 +405,7 @@ The three `gkp_*` tools provide access to Google Ads Keyword Planner data. They 
 | Customer ID | `googleAdsCustomerId` | `TELEPAT_GOOGLE_ADS_CUSTOMER_ID` | Google Ads account number |
 | Login customer ID | `googleAdsLoginCustomerId` | `TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Manager account ID (optional) |
 
-**Recommended setup** — use `ideon gads login` for interactive guided setup:
-
-```bash
-ideon gads login                    # Interactive OAuth flow
-ideon gads status                   # Check which credentials are set
-ideon gads test                     # Verify credentials work
-ideon gads logout                   # Clear refresh token only
-ideon gads logout --all             # Clear all 6 credentials
-```
-
-**CLI data queries** — use `ideon gkp` to query keyword data directly:
-
-```bash
-ideon gkp ideas --keywords seo,marketing           # Keyword ideas from seeds
-ideon gkp ideas --url https://example.com           # Keyword ideas from URL
-ideon gkp historical --keywords seo --country US    # Historical metrics
-ideon gkp forecast --keywords seo --match-type EXACT  # Forecast projections
-```
-
-All `gkp` subcommands support `--json` for machine-readable output. See [references/command-catalog.md](references/command-catalog.md) for full option details.
-
-**Manual setup** — configure credentials individually:
+**Setup** — agents should set GKP credentials via `ideon config set`:
 
 ```bash
 ideon config set googleAdsDeveloperToken "your-token"
@@ -332,6 +415,39 @@ ideon config set googleAdsRefreshToken "your-refresh-token"
 ideon config set googleAdsCustomerId "123-456-7890"
 ideon config set googleAdsLoginCustomerId "123-456-7890"  # only if needed
 ```
+
+Check credential state:
+
+```bash
+ideon gads status                   # Check which credentials are set
+ideon gads test                     # Verify credentials work
+```
+
+Human users may run `ideon gads login` for an interactive OAuth flow. Agents should never invoke `ideon gads login` — it opens a browser for user interaction.
+
+**CLI data queries** — use `ideon gkp` to query keyword data directly:
+
+```bash
+# Keyword ideas from seeds
+ideon gkp ideas --keywords seo,marketing --country US --language en --page-size 20
+
+# Keyword ideas from URL
+ideon gkp ideas --url https://example.com --country US
+
+# Keyword ideas from site
+ideon gkp ideas --site example.com --country US
+
+# Historical metrics
+ideon gkp historical --keywords seo --country US --language en
+
+# Historical metrics without CPC data
+ideon gkp historical --keywords seo --country US --no-include-cpc
+
+# Forecast projections
+ideon gkp forecast --keywords seo --match-type EXACT --country US --start-date 2026-07-01 --end-date 2026-07-31 --max-cpc-bid 5000000
+```
+
+All `gkp` subcommands support `--json` for machine-readable output. See [references/command-catalog.md](references/command-catalog.md) for full option details.
 
 **GKP tool error messages include setup instructions.** If a GKP tool fails with a credential error, the error message will tell the user exactly which credential is missing and how to set it.
 
@@ -409,10 +525,6 @@ When a publication or series is active, the following data is injected into all 
 - Publication name, tone, forbidden topics, disclosure requirements, audience restrictions, and notes
 - Series name, topic, and editorial policy (appended after publication policy)
 
-### Interactive series selection
-
-When running `ideon write` in interactive mode without `--series`, a series selection step is presented. Users can pick an existing series or skip.
-
 ## Content queue
 
 The content queue is a global list of pending articles stored as individual JSON files in `~/.config/ideon/queue/`.
@@ -436,6 +548,132 @@ The content queue is a global list of pending articles stored as individual JSON
 - Queue entries store the full publication and series objects. If a publication is deleted, existing queue entries still reference it.
 - `--export` paths are stored as-is. If the directory moves before writing, export will fail at write time.
 - Concurrent `--from-queue` calls use best-effort atomic rename. Two processes won't pick the same entry, but both may see an empty queue if they check simultaneously.
+
+## Content planning
+
+The `ideon plan` command provides data-backed content strategy using Google Keyword Planner research, KOB (Keyword Opportunity Benchmark) scoring, intent classification, topic clustering, and article planning.
+
+**Agents must always use `--non-interactive`.** Without this flag, the command opens an interactive terminal UI for human review — it will hang waiting for keyboard input.
+
+After research completes, ask the user whether to auto-save results. If they decline, present the plan output and ask for confirmation before saving.
+
+### Canonical agent invocation
+
+```bash
+# Explore new topics — research only, no auto-save
+ideon plan explore "Your content idea" \
+  --publication my-blog \
+  --non-interactive
+
+# Expand an existing series — research only, no auto-save
+ideon plan expand my-series-slug \
+  --publication my-blog \
+  --non-interactive
+
+# Auto-save (only after user confirms)
+ideon plan explore "Your content idea" \
+  --publication my-blog \
+  --non-interactive \
+  --auto-save
+```
+
+### Automation flags
+
+| Flag | Effect |
+|------|--------|
+| `--non-interactive` | Required for agents. Skips TUI; writes plan output to stdout |
+| `--auto-save` | Optional. Bypasses approval gates; persists plan without human confirmation. Only use after user explicitly agrees to save |
+| `--dry-run` | Runs research but writes nothing to disk |
+
+### Two planning modes
+
+| Mode | Command | When to use |
+|------|---------|-------------|
+| **Explore** | `ideon plan explore [idea]` | Research a new content idea and generate series and article plans |
+| **Expand** | `ideon plan expand [series-slug]` | Add new article ideas to an existing series |
+
+Both modes require `--publication <slug>`, Google Ads credentials, and an OpenRouter API key.
+
+### Planning pipeline stages
+
+The plan pipeline runs automatically:
+
+```
+hydrate → seeds → research → score → cluster (explore only) → plan-articles → persist
+```
+
+- **hydrate**: loads publication, series, and output history to build a coverage map
+- **seeds**: generates seed keywords from the content idea or existing series
+- **research**: iterative GKP queries with broadening and low-volume detection
+- **score**: KOB scoring, intent classification, and candidate filtering
+- **cluster**: groups shortlisted keywords into thematic series (explore only)
+- **plan-articles**: plans individual articles with keywords, intent, format, and priority
+- **persist**: saves series, updates keywords, and queues articles (with `--auto-save`)
+
+### Non-interactive output
+
+With `--non-interactive`, the plan is written to stdout as plain text. Progress is logged to stderr in real time:
+
+- **Stage transitions**: `hydrate`, `seeds`, `research`, `score`, `cluster`, `plan-articles`, `persist` (one line per stage)
+- **Research rounds**: `research round N: M candidates` (per round)
+
+In TTY contexts (interactive terminals), progress lines use carriage return to overwrite. In non-TTY contexts (agents, CI), each progress line is written with a newline.
+
+The final plan output includes:
+
+- Mode, publication, and series names
+- Research stats (rounds, candidates evaluated/passed, cache hits, API calls)
+- Series details (pillar keyword, funnel stage, rationale, coverage gap)
+- Per-article details (title, keywords, intent, format, priority)
+- `ideon queue add` commands ready for copy-paste execution
+
+If no results are found (exit code `2`), the output includes pivot suggestions for alternative angles.
+
+### User confirmation flow
+
+After `--non-interactive` research completes:
+
+1. Ask the user: "Should I auto-save these plan results?"
+2. If **yes**: re-run with `--auto-save` to persist.
+3. If **no**: present the stdout results, ask for confirmation, then save using the individual `ideon queue add` commands from the output.
+
+### Key explore options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--publication <slug>` | Publication slug (required) | — |
+| `--context <text>` | Business context or ICP description | — |
+| `--country <codes>` | Comma-separated ISO country codes for GKP queries | Publication default or `US` |
+| `--language <code>` | ISO 639-1 language code for GKP queries | Publication default or `en` |
+| `--series-count <n>` | Target number of series | 3 |
+| `--articles-per-series <n>` | Target articles per series | 5 |
+| `--seed-keywords <kw>` | Comma-separated seed keywords to always include | — |
+| `--exclude-series <slugs>` | Series slugs to avoid duplicating | — |
+| `--content-type <type>` | Content type for queue entries | `article` |
+| `--model <model>` | Model for reasoning calls | deepseek/deepseek-v4-pro |
+| `--intent-model <model>` | Model for intent classification | deepseek/deepseek-v4-flash |
+
+### Key expand options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--publication <slug>` | Publication slug (required) | — |
+| `--country <codes>` | Comma-separated ISO country codes for GKP queries | Publication default or `US` |
+| `--language <code>` | ISO 639-1 language code for GKP queries | Publication default or `en` |
+| `--article-count <n>` | Target new articles | 5 |
+| `--seed-keywords <kw>` | Additional seed keywords | — |
+| `--content-type <type>` | Content type for queue entries | `article` |
+| `--model <model>` | Model for reasoning calls | deepseek/deepseek-v4-pro |
+| `--intent-model <model>` | Model for intent classification | deepseek/deepseek-v4-flash |
+| `--dry-run` | Run research but persist nothing | `false` |
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Plan completed and persisted (with `--auto-save`) |
+| `1` | Pipeline failed (API error, missing credentials) |
+| `2` | No results found (topic exhausted) |
 
 ## Argument semantics and constraints
 
@@ -507,8 +745,8 @@ Range constraints:
 
 Mode behavior:
 
-- Interactive (TTY default): prompts for missing idea/style/intent/targets/length.
-- Non-interactive (`--no-interactive` or non-TTY): fails fast on missing required inputs.
+- Agents must always use `--no-interactive`. Without it, commands prompt for missing inputs on stdin and will hang.
+- Non-interactive mode fails fast on missing required inputs rather than prompting.
 
 Export behavior:
 
@@ -669,6 +907,8 @@ Should trigger:
 2. Run Ideon non-interactively in CI with strict flag and secret handling.
 3. Use Ideon MCP server and map tool arguments safely.
 4. Queue articles and write from queue with publication filtering.
+5. Run `ideon plan explore ... --non-interactive` and verify plan output on stdout, then ask user whether to auto-save.
+6. Run `ideon plan expand ... --non-interactive` and verify plan output on stdout, then ask user whether to auto-save.
 
 Should not trigger:
 

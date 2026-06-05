@@ -33,6 +33,7 @@ Built for marketers, founders, and lean teams who need to ship high-quality cont
 - **Visual storytelling** — Auto-generated cover and inline images via Replicate for article-led runs.
 - **Agent and CI ready** — MCP server, non-interactive mode, machine-readable config, and resumable runs.
 - **Google Keyword Planner** — Query real keyword data from Google Ads: ideas, historical metrics, and forecasts. Set up with `ideon gads login`, query with `ideon gkp`.
+- **Data-backed content planning** — `ideon plan explore` / `ideon plan expand` research your content ideas against real search data, cluster keywords into series, and plan articles — all reviewed through an interactive TUI before saving to your queue.
 
 ## Quick Start
 
@@ -78,6 +79,8 @@ ideon delete my-article-slug
 ideon preview --no-open
 ideon gads login
 ideon gkp ideas --keywords seo,marketing
+ideon plan explore "Your next big topic" --publication my-blog
+ideon plan expand my-series --publication my-blog
 ```
 
 ## Using With AI Agents

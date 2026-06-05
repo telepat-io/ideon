@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.35](https://github.com/telepat-io/ideon/compare/ideon-v0.1.34...ideon-v0.1.35) (2026-06-05)
+
+
+### Features
+
+* add content planning pipeline with explore and expand modes ([plan])
+* add interactive TUI flow for plan input and review ([plan])
+* add KOB scoring, intent classification, and topic clustering ([plan])
+* add coverage-aware deduplication with refresh candidate detection ([plan])
+* add non-interactive and auto-save modes for agent workflows ([plan])
+* add `ideon plan explore` command ([plan])
+* add `ideon plan expand` command ([plan])
+
 ## [0.1.34](https://github.com/telepat-io/ideon/compare/ideon-v0.1.33...ideon-v0.1.34) (2026-06-02)
 
 

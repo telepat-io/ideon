@@ -46,6 +46,7 @@ export async function runQueueAddCommand(
     series: resolved.series,
     exportPath: options.exportPath,
     addedAt: new Date().toISOString(),
+    type: 'new',
   };
 
   await saveQueueEntry(entry);

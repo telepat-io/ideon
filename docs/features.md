@@ -99,6 +99,35 @@ ideon write --from-queue --publication tech-blog
 
 ---
 
+## Data-Backed Content Planning
+
+Stop guessing what to write. Ideon's `plan` command researches your content idea against real Google Keyword Planner data, scores keyword opportunities, groups them into thematic series, and plans individual articles — all reviewed through an interactive terminal UI before hitting your queue.
+
+```bash
+# Explore a new topic
+ideon plan explore "Content strategy for B2B SaaS" \
+  --publication tech-blog \
+  --series-count 3 \
+  --articles-per-series 5
+
+# Expand an existing series
+ideon plan expand ai-deep-dives \
+  --publication tech-blog \
+  --article-count 6
+```
+
+- **Dual modes** — `explore` for new topics, `expand` for growing existing series
+- **GKP-powered** — Real search volume, competition, and CPC data back every decision
+- **KOB scoring** — Keyword Opportunity Benchmark weights volume, intent, and competition to prioritize what matters
+- **Topic clustering** — LLM groups shortlisted keywords into coherent series with pillar keywords and funnel stages
+- **Coverage-aware** — Skips keywords you've already published; surfaces stale content for refresh
+- **Interactive review** — Navigate series and articles in the terminal; approve or reject before saving
+- **Agent-ready** — `--non-interactive` and `--auto-save` for CI and automation workflows
+
+[Learn more →](./guides/content-planning.md)
+
+---
+
 ## Research-Backed Drafts
 
 Ideon browses the web and inserts contextual external links like a human writer would — no manual research, no generic placeholder URLs. Just credible, relevant links that add depth and authority to your drafts.

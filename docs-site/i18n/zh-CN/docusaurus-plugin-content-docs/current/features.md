@@ -99,6 +99,35 @@ ideon write --from-queue --publication tech-blog
 
 ---
 
+## 数据支持的内容规划
+
+不再猜测该写什么。Ideon 的 `plan` 命令会根据真实的 Google Keyword Planner 数据研究您的内容创意，对关键词机会进行评分，将其分组为主题系列，并规划单独的文章 — 全部通过交互式终端 UI 进行审查，然后再进入您的队列。
+
+```bash
+# 探索新主题
+ideon plan explore "B2B SaaS 内容策略" \
+  --publication tech-blog \
+  --series-count 3 \
+  --articles-per-series 5
+
+# 扩展现有系列
+ideon plan expand ai-deep-dives \
+  --publication tech-blog \
+  --article-count 6
+```
+
+- **双模式** — `explore` 用于新主题，`expand` 用于扩展现有系列
+- **GKP 驱动** — 真实的搜索量、竞争度和 CPC 数据支持每个决策
+- **KOB 评分** — 关键词机会基准综合权重搜索量、意图和竞争度，优先处理最重要的内容
+- **主题聚类** — LLM 将入围关键词分组为具有支柱关键词和漏斗阶段的连贯系列
+- **覆盖感知** — 跳过已发布的关键词；标记过时内容以供刷新
+- **交互式审查** — 在终端中导航系列和文章；在保存前批准或拒绝
+- **代理就绪** — `--non-interactive` 和 `--auto-save` 适用于 CI 和自动化工作流
+
+[了解更多 →](./guides/content-planning.md)
+
+---
+
 ## 有研究支撑的草稿
 
 Ideon 会浏览网络并像人类作者一样插入与上下文相关的外部链接——无需手动研究，没有通用占位符链接。只有可信、相关的链接，为您的草稿增添深度和权威性。

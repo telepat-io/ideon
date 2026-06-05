@@ -12,7 +12,7 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon config set <key> <value>` | Set one setting or secret | `<key> <value>` | none | no |
 | `ideon config unset <key>` | Reset setting to default or delete stored secret | `<key>` | none | no |
 | `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--audience`, `--publication`, `--series`, `--keywords`, `--from-queue` | no |
-| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images` | no |
+| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--export` | no |
 | `ideon delete <slug>` | Delete generated output by slug | `<slug>` | `--force` | no |
 | `ideon links <slug>` | Run link enrichment for an existing article | `<slug>` | `--mode`, `--link`, `--unlink`, `--max-links` | no |
 | `ideon export <generationId> <path>` | Export a generated article as a standalone markdown file with inline links and copied images | `<generationId> <path>` | `--index`, `--overwrite` | no |
@@ -42,6 +42,8 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon queue peek` | Show next pending article without consuming | none | `--publication` | no |
 | `ideon queue remove <id>` | Delete a queued article by ID | `<id>` | `--force` | no |
 | `ideon queue clear` | Delete all queued articles | none | `--force` | no |
+| `ideon plan explore [idea]` | Research a new content idea with GKP data, generate series and article plans | `--publication` | `--context`, `--country`, `--language`, `--series-count`, `--articles-per-series`, `--seed-keywords`, `--exclude-series`, `--content-type`, `--model`, `--intent-model`, `--auto-save`, `--non-interactive`, `--dry-run` | yes (non-interactive) |
+| `ideon plan expand [series-slug]` | Expand an existing series with new GKP-backed article ideas | `--publication` | `--country`, `--language`, `--article-count`, `--seed-keywords`, `--content-type`, `--model`, `--intent-model`, `--auto-save`, `--non-interactive`, `--dry-run` | yes (non-interactive) |
 
 ## Argument and option semantics
 
@@ -156,9 +158,8 @@ Secrets precedence:
 
 ## Interactive and non-interactive behavior
 
-- Interactive (TTY, default): prompts for missing inputs in write flows.
-- Non-interactive (`--no-interactive` or non-TTY): fails on missing required inputs.
-- `ideon delete` requires interactive confirmation unless `--force` is supplied.
+- Agents must always use `--no-interactive`. Without it, write commands prompt for missing inputs on stdin and will hang. Non-interactive mode fails fast on missing required inputs.
+- `ideon delete` requires `--force` in non-TTY contexts.
 
 ## Signal and exit behavior
 
@@ -233,6 +234,36 @@ ideon write resume
 ideon write resume --no-interactive
 ```
 
+### Planning path
+
+```bash
+# Explore new topics — research only, ask user before auto-save
+ideon plan explore "Content strategy for SaaS" \
+  --publication tech-blog \
+  --series-count 3 \
+  --articles-per-series 5 \
+  --context "Target: early-stage B2B SaaS companies" \
+  --non-interactive
+
+# Expand existing series — research only, ask user before auto-save
+ideon plan expand ai-deep-dives \
+  --publication tech-blog \
+  --article-count 6 \
+  --non-interactive
+
+# Auto-save (only after user confirms)
+ideon plan explore "Content strategy for SaaS" \
+  --publication tech-blog \
+  --non-interactive \
+  --auto-save
+
+# Dry-run to validate without persisting
+ideon plan explore "DevOps trends" \
+  --publication tech-blog \
+  --non-interactive \
+  --dry-run
+```
+
 ### GKP path
 
 ```bash
@@ -278,6 +309,10 @@ MCP tools currently registered:
 - `src/config/secretStore.ts`
 - `src/cli/commands/agent.ts`
 - `src/cli/commands/gkp.ts`
+- `src/cli/commands/plan.ts`
+- `src/cli/planInputResolver.ts`
+- `src/cli/planReviewFlow.tsx`
+- `src/plan/pipeline.ts`
 - `src/integrations/agent/store.ts`
 - `src/cli/commands/mcp.ts`
 - `src/integrations/mcp/server.ts`
@@ -290,6 +325,9 @@ MCP tools currently registered:
 - `docs/reference/commands/ideon-agent.md`
 - `docs/reference/commands/ideon-mcp-serve.md`
 - `docs/reference/commands/ideon-gkp.md`
+- `docs/reference/commands/ideon-plan-explore.md`
+- `docs/reference/commands/ideon-plan-expand.md`
+- `docs/guides/content-planning.md`
 - `docs/reference/environment-variables.md`
 - `docs/guides/configuration.md`
 - `docs/for-agents/command-index.md`

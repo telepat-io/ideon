@@ -42,6 +42,8 @@ const baseSettings: AppSettings = {
   style: 'professional',
   intent: 'tutorial',
   targetLength: 900,
+  planModel: 'deepseek/deepseek-v4-pro',
+  planIntentModel: 'deepseek/deepseek-v4-flash',
 };
 
 const baseSecrets: SecretSettings = {

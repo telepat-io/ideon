@@ -28,6 +28,11 @@ ideon --version
 - [ideon preview [markdownPath]](./commands/ideon-preview.md)
 - [ideon mcp serve](./commands/ideon-mcp-serve.md)
 - [ideon agent](./commands/ideon-agent.md)
+- [ideon gads](./commands/ideon-gads.md)
+- [ideon gkp](./commands/ideon-gkp.md)
+- [ideon series](./commands/ideon-series.md)
+- [ideon plan explore](./commands/ideon-plan-explore.md)
+- [ideon plan expand](./commands/ideon-plan-expand.md)
 
 ## Häufige Beendigungscodes
 

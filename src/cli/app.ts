@@ -50,6 +50,7 @@ import {
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
 import { runArticleListCommand } from './commands/article.js';
 import { applyContentOptions, parseContentOptions, collectOptionValue } from './contentOptions.js';
+import { registerPlanCommands } from './commands/plan.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
 const { version } = packageJson;
@@ -650,6 +651,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .action(async (options: { force: boolean }) => {
       await runQueueClearCommand({ force: options.force });
     });
+
+  registerPlanCommands(program);
 
   await program.parseAsync(argv);
 }

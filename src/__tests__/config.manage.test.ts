@@ -44,6 +44,8 @@ describe('config manage', () => {
       style: 'professional',
       intent: 'tutorial',
       targetLength: 900,
+      planModel: 'deepseek/deepseek-v4-pro',
+      planIntentModel: 'deepseek/deepseek-v4-flash',
     });
 
     loadSecretsMock.mockResolvedValue({
@@ -129,6 +131,8 @@ describe('config manage', () => {
       intent: 'tutorial',
       targetLength: 900,
       defaultPublication: 'tech-blog',
+      planModel: 'deepseek/deepseek-v4-pro',
+      planIntentModel: 'deepseek/deepseek-v4-flash',
     });
 
     const result = await configGet('defaultPublication');
@@ -160,6 +164,8 @@ describe('config manage', () => {
       intent: 'tutorial',
       targetLength: 900,
       defaultPublication: 'my-pub',
+      planModel: 'deepseek/deepseek-v4-pro',
+      planIntentModel: 'deepseek/deepseek-v4-flash',
     });
 
     const result = await configList();
