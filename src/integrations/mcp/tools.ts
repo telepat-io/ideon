@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { configSettingKeys, configSecretKeys } from '../../config/manage.js';
-import { contentIntentValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
+import { contentIntentValues, contentTypeValues, targetLengthValues, writingStyleValues } from '../../config/schema.js';
+import { queueEntryStatusValues } from '../../types/queue.js';
 
 const configKeys = [...configSettingKeys, ...configSecretKeys] as const;
 
@@ -114,6 +115,211 @@ export const gkpGetForecastDataToolInputSchema = {
 export const gkpGetForecastDataToolInputZodSchema = z.object(gkpGetForecastDataToolInputSchema);
 export type GkpGetForecastDataToolInput = z.infer<typeof gkpGetForecastDataToolInputZodSchema>;
 
+// ─── Publication tools ───────────────────────────────────────────────────────
+
+export const publicationAddToolInputSchema = {
+  name: z.string().min(1),
+  style: z.enum(writingStyleValues).optional(),
+  intent: z.enum(contentIntentValues).optional(),
+  length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
+  type: z.enum(contentTypeValues).optional(),
+  audience: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  tone: z.string().optional(),
+  forbiddenTopics: z.array(z.string()).optional(),
+  disclosureRequirements: z.array(z.string()).optional(),
+  audienceRestrictions: z.array(z.string()).optional(),
+  editorialPolicy: z.string().optional(),
+};
+export const publicationAddToolInputZodSchema = z.object(publicationAddToolInputSchema);
+export type PublicationAddToolInput = z.infer<typeof publicationAddToolInputZodSchema>;
+
+export const publicationListToolInputSchema = {};
+export const publicationListToolInputZodSchema = z.object(publicationListToolInputSchema);
+export type PublicationListToolInput = z.infer<typeof publicationListToolInputZodSchema>;
+
+export const publicationEditToolInputSchema = {
+  slug: z.string().min(1),
+  name: z.string().min(1).optional(),
+  style: z.enum(writingStyleValues).optional(),
+  intent: z.enum(contentIntentValues).optional(),
+  length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
+  type: z.enum(contentTypeValues).optional(),
+  audience: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  tone: z.string().optional(),
+  forbiddenTopics: z.array(z.string()).optional(),
+  disclosureRequirements: z.array(z.string()).optional(),
+  audienceRestrictions: z.array(z.string()).optional(),
+  editorialPolicy: z.string().optional(),
+};
+export const publicationEditToolInputZodSchema = z.object(publicationEditToolInputSchema);
+export type PublicationEditToolInput = z.infer<typeof publicationEditToolInputZodSchema>;
+
+export const publicationRemoveToolInputSchema = {
+  slug: z.string().min(1),
+};
+export const publicationRemoveToolInputZodSchema = z.object(publicationRemoveToolInputSchema);
+export type PublicationRemoveToolInput = z.infer<typeof publicationRemoveToolInputZodSchema>;
+
+// ─── Series tools ────────────────────────────────────────────────────────────
+
+export const seriesAddToolInputSchema = {
+  name: z.string().min(1),
+  topic: z.string().optional(),
+  publication: z.string().min(1).optional(),
+  style: z.enum(writingStyleValues).optional(),
+  intent: z.enum(contentIntentValues).optional(),
+  length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
+  type: z.enum(contentTypeValues).optional(),
+  audience: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  keywords: z.array(z.string().min(1)).optional(),
+  tone: z.string().optional(),
+  forbiddenTopics: z.array(z.string()).optional(),
+  disclosureRequirements: z.array(z.string()).optional(),
+  audienceRestrictions: z.array(z.string()).optional(),
+  editorialPolicy: z.string().optional(),
+};
+export const seriesAddToolInputZodSchema = z.object(seriesAddToolInputSchema);
+export type SeriesAddToolInput = z.infer<typeof seriesAddToolInputZodSchema>;
+
+export const seriesListToolInputSchema = {
+  publication: z.string().min(1).optional(),
+};
+export const seriesListToolInputZodSchema = z.object(seriesListToolInputSchema);
+export type SeriesListToolInput = z.infer<typeof seriesListToolInputZodSchema>;
+
+export const seriesEditToolInputSchema = {
+  slug: z.string().min(1),
+  name: z.string().min(1).optional(),
+  topic: z.string().optional(),
+  publication: z.string().min(1).optional(),
+  unsetPublication: z.boolean().optional(),
+  style: z.enum(writingStyleValues).optional(),
+  intent: z.enum(contentIntentValues).optional(),
+  length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
+  type: z.enum(contentTypeValues).optional(),
+  audience: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  keywords: z.array(z.string().min(1)).optional(),
+  tone: z.string().optional(),
+  forbiddenTopics: z.array(z.string()).optional(),
+  disclosureRequirements: z.array(z.string()).optional(),
+  audienceRestrictions: z.array(z.string()).optional(),
+  editorialPolicy: z.string().optional(),
+};
+export const seriesEditToolInputZodSchema = z.object(seriesEditToolInputSchema);
+export type SeriesEditToolInput = z.infer<typeof seriesEditToolInputZodSchema>;
+
+export const seriesRemoveToolInputSchema = {
+  slug: z.string().min(1),
+};
+export const seriesRemoveToolInputZodSchema = z.object(seriesRemoveToolInputSchema);
+export type SeriesRemoveToolInput = z.infer<typeof seriesRemoveToolInputZodSchema>;
+
+// ─── Queue tools ─────────────────────────────────────────────────────────────
+
+export const queueAddToolInputSchema = {
+  idea: z.string().min(1),
+  publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
+  style: z.enum(writingStyleValues).optional(),
+  intent: z.enum(contentIntentValues).optional(),
+  length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
+  type: z.enum(contentTypeValues).optional(),
+  audience: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  exportPath: z.string().min(1).optional(),
+};
+export const queueAddToolInputZodSchema = z.object(queueAddToolInputSchema);
+export type QueueAddToolInput = z.infer<typeof queueAddToolInputZodSchema>;
+
+export const queueListToolInputSchema = {
+  status: z.enum(queueEntryStatusValues).optional(),
+  publication: z.string().min(1).optional(),
+};
+export const queueListToolInputZodSchema = z.object(queueListToolInputSchema);
+export type QueueListToolInput = z.infer<typeof queueListToolInputZodSchema>;
+
+export const queuePeekToolInputSchema = {
+  publication: z.string().min(1).optional(),
+};
+export const queuePeekToolInputZodSchema = z.object(queuePeekToolInputSchema);
+export type QueuePeekToolInput = z.infer<typeof queuePeekToolInputZodSchema>;
+
+export const queueRemoveToolInputSchema = {
+  id: z.string().min(1),
+};
+export const queueRemoveToolInputZodSchema = z.object(queueRemoveToolInputSchema);
+export type QueueRemoveToolInput = z.infer<typeof queueRemoveToolInputZodSchema>;
+
+export const queueClearToolInputSchema = {};
+export const queueClearToolInputZodSchema = z.object(queueClearToolInputSchema);
+export type QueueClearToolInput = z.infer<typeof queueClearToolInputZodSchema>;
+
+export const queueWriteToolInputSchema = {
+  publication: z.string().min(1).optional(),
+  dryRun: z.boolean().optional(),
+  enrichLinks: z.boolean().optional(),
+  link: z.array(z.string()).optional(),
+  unlink: z.array(z.string()).optional(),
+  maxLinks: z.coerce.number().int().positive().optional(),
+  maxImages: z.coerce.number().int().min(1).optional(),
+};
+export const queueWriteToolInputZodSchema = z.object(queueWriteToolInputSchema);
+export type QueueWriteToolInput = z.infer<typeof queueWriteToolInputZodSchema>;
+
+// ─── Plan tools ──────────────────────────────────────────────────────────────
+
+export const planExploreToolInputSchema = {
+  idea: z.string().min(1),
+  publication: z.string().min(1),
+  context: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  seriesCount: z.coerce.number().int().positive().optional(),
+  articlesPerSeries: z.coerce.number().int().positive().optional(),
+  seedKeywords: z.array(z.string().min(1)).optional(),
+  excludeSeries: z.array(z.string().min(1)).optional(),
+  contentType: z.enum(contentTypeValues).optional(),
+  model: z.string().min(1).optional(),
+  intentModel: z.string().min(1).optional(),
+  autoSave: z.boolean().optional(),
+  dryRun: z.boolean().optional(),
+  timeout: z.coerce.number().int().positive().optional(),
+};
+export const planExploreToolInputZodSchema = z.object(planExploreToolInputSchema);
+export type PlanExploreToolInput = z.infer<typeof planExploreToolInputZodSchema>;
+
+export const planExpandToolInputSchema = {
+  seriesSlug: z.string().min(1),
+  publication: z.string().min(1).optional(),
+  country: z.string().min(1).optional(),
+  language: z.string().min(1).optional(),
+  articleCount: z.coerce.number().int().positive().optional(),
+  seedKeywords: z.array(z.string().min(1)).optional(),
+  contentType: z.enum(contentTypeValues).optional(),
+  model: z.string().min(1).optional(),
+  intentModel: z.string().min(1).optional(),
+  autoSave: z.boolean().optional(),
+  dryRun: z.boolean().optional(),
+  timeout: z.coerce.number().int().positive().optional(),
+};
+export const planExpandToolInputZodSchema = z.object(planExpandToolInputSchema);
+export type PlanExpandToolInput = z.infer<typeof planExpandToolInputZodSchema>;
+
+// ─── Article tools ───────────────────────────────────────────────────────────
+
+export const articleListToolInputSchema = {};
+export const articleListToolInputZodSchema = z.object(articleListToolInputSchema);
+export type ArticleListToolInput = z.infer<typeof articleListToolInputZodSchema>;
+
 export interface ToolContract {
   name: string;
   required: string[];
@@ -194,5 +400,121 @@ export const ideonToolContracts: ToolContract[] = [
     enums: {
       keywordMatchType: ['BROAD', 'EXACT', 'PHRASE'],
     },
+  },
+  {
+    name: 'ideon_publication_add',
+    required: ['name'],
+    enums: {
+      style: [...writingStyleValues],
+      intent: [...contentIntentValues],
+      length: [...targetLengthValues],
+      type: [...contentTypeValues],
+    },
+  },
+  {
+    name: 'ideon_publication_list',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'ideon_publication_edit',
+    required: ['slug'],
+    enums: {
+      style: [...writingStyleValues],
+      intent: [...contentIntentValues],
+      length: [...targetLengthValues],
+      type: [...contentTypeValues],
+    },
+  },
+  {
+    name: 'ideon_publication_remove',
+    required: ['slug'],
+    enums: {},
+  },
+  {
+    name: 'ideon_series_add',
+    required: ['name'],
+    enums: {
+      style: [...writingStyleValues],
+      intent: [...contentIntentValues],
+      length: [...targetLengthValues],
+      type: [...contentTypeValues],
+    },
+  },
+  {
+    name: 'ideon_series_list',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'ideon_series_edit',
+    required: ['slug'],
+    enums: {
+      style: [...writingStyleValues],
+      intent: [...contentIntentValues],
+      length: [...targetLengthValues],
+      type: [...contentTypeValues],
+    },
+  },
+  {
+    name: 'ideon_series_remove',
+    required: ['slug'],
+    enums: {},
+  },
+  {
+    name: 'ideon_queue_add',
+    required: ['idea'],
+    enums: {
+      style: [...writingStyleValues],
+      intent: [...contentIntentValues],
+      length: [...targetLengthValues],
+      type: [...contentTypeValues],
+    },
+  },
+  {
+    name: 'ideon_queue_list',
+    required: [],
+    enums: {
+      status: [...queueEntryStatusValues],
+    },
+  },
+  {
+    name: 'ideon_queue_peek',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'ideon_queue_remove',
+    required: ['id'],
+    enums: {},
+  },
+  {
+    name: 'ideon_queue_clear',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'ideon_queue_write',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'ideon_plan_explore',
+    required: ['idea', 'publication'],
+    enums: {
+      contentType: [...contentTypeValues],
+    },
+  },
+  {
+    name: 'ideon_plan_expand',
+    required: ['seriesSlug'],
+    enums: {
+      contentType: [...contentTypeValues],
+    },
+  },
+  {
+    name: 'ideon_article_list',
+    required: [],
+    enums: {},
   },
 ];

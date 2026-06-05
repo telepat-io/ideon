@@ -33,6 +33,32 @@ const gkpClientMock = {
   getForecastData: jest.fn<(...args: any[]) => Promise<any>>(),
 };
 
+const savePublicationMock = jest.fn<(...args: any[]) => Promise<void>>();
+const listPublicationsMock = jest.fn<(...args: any[]) => Promise<any>>();
+const loadPublicationMock = jest.fn<(...args: any[]) => Promise<any>>();
+const deletePublicationMock = jest.fn<(...args: any[]) => Promise<void>>();
+const publicationExistsMock = jest.fn<(...args: any[]) => Promise<boolean>>();
+
+const saveSeriesMock = jest.fn<(...args: any[]) => Promise<void>>();
+const listSeriesMock = jest.fn<(...args: any[]) => Promise<any>>();
+const loadSeriesMock = jest.fn<(...args: any[]) => Promise<any>>();
+const deleteSeriesMock = jest.fn<(...args: any[]) => Promise<void>>();
+const seriesExistsMock = jest.fn<(...args: any[]) => Promise<boolean>>();
+
+const generateQueueIdMock = jest.fn(() => 'test-uuid-1234');
+const saveQueueEntryMock = jest.fn<(...args: any[]) => Promise<void>>();
+const listQueueEntriesMock = jest.fn<(...args: any[]) => Promise<any>>();
+const getNextPendingEntryMock = jest.fn<(...args: any[]) => Promise<any>>();
+const deleteQueueEntryMock = jest.fn<(...args: any[]) => Promise<void>>();
+const clearQueueMock = jest.fn<(...args: any[]) => Promise<number>>();
+const claimNextPendingEntryMock = jest.fn<(...args: any[]) => Promise<any>>();
+const deleteClaimedEntryMock = jest.fn<(...args: any[]) => Promise<void>>();
+const revertClaimedEntryMock = jest.fn<(...args: any[]) => Promise<void>>();
+
+const runPlanMock = jest.fn<(...args: any[]) => Promise<any>>();
+const loadSavedSettingsMock = jest.fn<(...args: any[]) => Promise<any>>();
+const runArticleListCommandMock = jest.fn<(...args: any[]) => Promise<void>>();
+
 jest.unstable_mockModule('@modelcontextprotocol/sdk/server/mcp.js', () => ({
   McpServer: MockMcpServer,
 }));
@@ -130,6 +156,50 @@ jest.unstable_mockModule('../config/gkpStore.js', () => ({
   listGkpQuerySnapshots: async () => [],
 }));
 
+jest.unstable_mockModule('../config/publicationStore.js', () => ({
+  savePublication: savePublicationMock,
+  listPublications: listPublicationsMock,
+  loadPublication: loadPublicationMock,
+  deletePublication: deletePublicationMock,
+  publicationExists: publicationExistsMock,
+}));
+
+jest.unstable_mockModule('../config/seriesStore.js', () => ({
+  saveSeries: saveSeriesMock,
+  listSeries: listSeriesMock,
+  loadSeries: loadSeriesMock,
+  deleteSeries: deleteSeriesMock,
+  seriesExists: seriesExistsMock,
+}));
+
+jest.unstable_mockModule('../config/queueStore.js', () => ({
+  generateQueueId: generateQueueIdMock,
+  saveQueueEntry: saveQueueEntryMock,
+  listQueueEntries: listQueueEntriesMock,
+  getNextPendingEntry: getNextPendingEntryMock,
+  deleteQueueEntry: deleteQueueEntryMock,
+  clearQueue: clearQueueMock,
+  claimNextPendingEntry: claimNextPendingEntryMock,
+  deleteClaimedEntry: deleteClaimedEntryMock,
+  revertClaimedEntry: revertClaimedEntryMock,
+}));
+
+jest.unstable_mockModule('../plan/pipeline.js', () => ({
+  runPlan: runPlanMock,
+}));
+
+jest.unstable_mockModule('../config/settingsFile.js', () => ({
+  loadSavedSettings: loadSavedSettingsMock,
+}));
+
+jest.unstable_mockModule('../llm/openRouterClient.js', () => ({
+  OpenRouterClient: class {},
+}));
+
+jest.unstable_mockModule('../cli/commands/article.js', () => ({
+  runArticleListCommand: runArticleListCommandMock,
+}));
+
 const { startIdeonMcpServer } = await import('../integrations/mcp/server.js');
 
 describe('ideon MCP server', () => {
@@ -214,6 +284,67 @@ describe('ideon MCP server', () => {
     gkpClientMock.generateKeywordIdeas.mockResolvedValue({ ideas: [], count: 0 });
     gkpClientMock.getHistoricalMetrics.mockResolvedValue({ keywords: [], count: 0 });
     gkpClientMock.getForecastData.mockResolvedValue({ keywords: [], count: 0 });
+
+    // Publication store mocks
+    publicationExistsMock.mockResolvedValue(false);
+    savePublicationMock.mockResolvedValue(undefined);
+    listPublicationsMock.mockResolvedValue([]);
+    loadPublicationMock.mockResolvedValue({
+      name: 'Test Pub',
+      slug: 'test-pub',
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+      defaults: {},
+    });
+    deletePublicationMock.mockResolvedValue(undefined);
+
+    // Series store mocks
+    seriesExistsMock.mockResolvedValue(false);
+    saveSeriesMock.mockResolvedValue(undefined);
+    listSeriesMock.mockResolvedValue([]);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Test Series',
+      slug: 'test-series',
+      topic: 'testing',
+      publication: undefined,
+      editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' },
+      defaults: {},
+    });
+    deleteSeriesMock.mockResolvedValue(undefined);
+
+    // Queue store mocks
+    generateQueueIdMock.mockReturnValue('test-uuid-1234');
+    saveQueueEntryMock.mockResolvedValue(undefined);
+    listQueueEntriesMock.mockResolvedValue([]);
+    getNextPendingEntryMock.mockResolvedValue(null);
+    deleteQueueEntryMock.mockResolvedValue(undefined);
+    clearQueueMock.mockResolvedValue(0);
+    claimNextPendingEntryMock.mockResolvedValue(null);
+    deleteClaimedEntryMock.mockResolvedValue(undefined);
+    revertClaimedEntryMock.mockResolvedValue(undefined);
+
+    // Plan pipeline mock
+    runPlanMock.mockResolvedValue({
+      mode: 'new-idea',
+      lowVolumeMode: false,
+      researchStats: { queryRoundsCompleted: 1, candidatesEvaluated: 5, candidatesPassed: 3, cacheHits: 0, apiCallsMade: 1 },
+      series: [{ name: 'Test Series', pillarKeyword: 'test', funnelStage: 'middle', clusterRationale: 'rationale', coverageGapNote: '', articles: [] }],
+      articles: [],
+      discardedCandidates: [],
+    });
+
+    // Settings file mock
+    loadSavedSettingsMock.mockResolvedValue({
+      model: 'deepseek/deepseek-v4-pro',
+      planModel: 'deepseek/deepseek-v4-pro',
+      planIntentModel: 'deepseek/deepseek-v4-flash',
+      contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 900,
+    });
+
+    // Article list mock
+    runArticleListCommandMock.mockResolvedValue(undefined);
   });
 
   it('registers tools and connects transport', async () => {
@@ -592,5 +723,357 @@ describe('ideon MCP server', () => {
 
     expect(result?.isError).toBe(true);
     expect(result?.content?.[0]?.text).toContain('API error');
+  });
+
+  // ─── Publication tool tests ──────────────────────────────────────────────
+
+  it('registers all 17 new tools', async () => {
+    await startIdeonMcpServer();
+
+    const newTools = [
+      'ideon_publication_add', 'ideon_publication_list', 'ideon_publication_edit', 'ideon_publication_remove',
+      'ideon_series_add', 'ideon_series_list', 'ideon_series_edit', 'ideon_series_remove',
+      'ideon_queue_add', 'ideon_queue_list', 'ideon_queue_peek', 'ideon_queue_remove', 'ideon_queue_clear', 'ideon_queue_write',
+      'ideon_plan_explore', 'ideon_plan_expand',
+      'ideon_article_list',
+    ];
+    for (const name of newTools) {
+      expect(registeredTools.has(name)).toBe(true);
+    }
+  });
+
+  it('executes ideon_publication_add handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_publication_add');
+
+    const result = await tool?.handler({ name: 'My Pub', style: 'technical', tone: 'formal' });
+
+    expect(publicationExistsMock).toHaveBeenCalledWith('my-pub');
+    expect(savePublicationMock).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'My Pub',
+      slug: 'my-pub',
+      defaults: expect.objectContaining({ style: 'technical' }),
+      editorialPolicy: expect.objectContaining({ tone: 'formal' }),
+    }));
+    expect(result?.content?.[0]?.text).toContain('My Pub');
+  });
+
+  it('returns tool error when publication already exists', async () => {
+    publicationExistsMock.mockResolvedValue(true);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_publication_add');
+
+    const result = await tool?.handler({ name: 'Existing Pub' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('already exists');
+  });
+
+  it('executes ideon_publication_list handler', async () => {
+    listPublicationsMock.mockResolvedValue([
+      { name: 'Pub 1', slug: 'pub-1', editorialPolicy: {}, defaults: {} },
+      { name: 'Pub 2', slug: 'pub-2', editorialPolicy: {}, defaults: {} },
+    ]);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_publication_list');
+
+    const result = await tool?.handler({});
+
+    expect(listPublicationsMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('pub-1');
+  });
+
+  it('executes ideon_publication_edit handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_publication_edit');
+
+    const result = await tool?.handler({ slug: 'test-pub', style: 'academic', tone: 'scholarly' });
+
+    expect(loadPublicationMock).toHaveBeenCalledWith('test-pub');
+    expect(savePublicationMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('test-pub');
+  });
+
+  it('executes ideon_publication_remove handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_publication_remove');
+
+    const result = await tool?.handler({ slug: 'test-pub' });
+
+    expect(deletePublicationMock).toHaveBeenCalledWith('test-pub');
+    expect(result?.content?.[0]?.text).toContain('true');
+  });
+
+  // ─── Series tool tests ───────────────────────────────────────────────────
+
+  it('executes ideon_series_add handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_series_add');
+
+    const result = await tool?.handler({ name: 'My Series', topic: 'testing', publication: 'my-pub', keywords: ['test', 'series'] });
+
+    expect(seriesExistsMock).toHaveBeenCalledWith('my-series');
+    expect(saveSeriesMock).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'My Series',
+      slug: 'my-series',
+      topic: 'testing',
+      publication: 'my-pub',
+      defaults: expect.objectContaining({ keywords: ['test', 'series'] }),
+    }));
+    expect(result?.content?.[0]?.text).toContain('My Series');
+  });
+
+  it('returns tool error when series already exists', async () => {
+    seriesExistsMock.mockResolvedValue(true);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_series_add');
+
+    const result = await tool?.handler({ name: 'Existing Series' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('already exists');
+  });
+
+  it('executes ideon_series_list handler', async () => {
+    listSeriesMock.mockResolvedValue([
+      { name: 'Series 1', slug: 'series-1', topic: 't1', editorialPolicy: {}, defaults: {} },
+    ]);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_series_list');
+
+    const result = await tool?.handler({ publication: 'my-pub' });
+
+    expect(listSeriesMock).toHaveBeenCalledWith({ publicationSlug: 'my-pub' });
+    expect(result?.content?.[0]?.text).toContain('series-1');
+  });
+
+  it('executes ideon_series_edit handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_series_edit');
+
+    const result = await tool?.handler({ slug: 'test-series', topic: 'updated topic', keywords: ['new'] });
+
+    expect(loadSeriesMock).toHaveBeenCalledWith('test-series');
+    expect(saveSeriesMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('test-series');
+  });
+
+  it('executes ideon_series_remove handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_series_remove');
+
+    const result = await tool?.handler({ slug: 'test-series' });
+
+    expect(deleteSeriesMock).toHaveBeenCalledWith('test-series');
+    expect(result?.content?.[0]?.text).toContain('true');
+  });
+
+  // ─── Queue tool tests ────────────────────────────────────────────────────
+
+  it('executes ideon_queue_add handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_add');
+
+    const result = await tool?.handler({ idea: 'Write about testing', publication: 'my-pub' });
+
+    expect(resolveRunInputMock).toHaveBeenCalled();
+    expect(saveQueueEntryMock).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'test-uuid-1234',
+      status: 'pending',
+      idea: 'Write about testing',
+    }));
+    expect(result?.content?.[0]?.text).toContain('test-uuid-1234');
+  });
+
+  it('executes ideon_queue_list handler', async () => {
+    listQueueEntriesMock.mockResolvedValue([
+      { id: 'q1', status: 'pending', idea: 'idea 1', addedAt: '2025-01-01T00:00:00Z', type: 'new' },
+    ]);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_list');
+
+    const result = await tool?.handler({ status: 'pending' });
+
+    expect(listQueueEntriesMock).toHaveBeenCalledWith({ status: 'pending', publicationSlug: undefined });
+    expect(result?.content?.[0]?.text).toContain('q1');
+  });
+
+  it('executes ideon_queue_peek handler', async () => {
+    getNextPendingEntryMock.mockResolvedValue({ id: 'q1', status: 'pending', idea: 'next idea' });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_peek');
+
+    const result = await tool?.handler({});
+
+    expect(getNextPendingEntryMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('next idea');
+  });
+
+  it('returns null when queue is empty on peek', async () => {
+    getNextPendingEntryMock.mockResolvedValue(null);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_peek');
+
+    const result = await tool?.handler({});
+
+    expect(result?.content?.[0]?.text).toContain('null');
+  });
+
+  it('executes ideon_queue_remove handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_remove');
+
+    const result = await tool?.handler({ id: 'q1' });
+
+    expect(deleteQueueEntryMock).toHaveBeenCalledWith('q1');
+    expect(result?.content?.[0]?.text).toContain('true');
+  });
+
+  it('executes ideon_queue_clear handler', async () => {
+    clearQueueMock.mockResolvedValue(3);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_clear');
+
+    const result = await tool?.handler({});
+
+    expect(clearQueueMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('3');
+  });
+
+  it('executes ideon_queue_write handler successfully', async () => {
+    claimNextPendingEntryMock.mockResolvedValue({
+      id: 'q1',
+      status: 'in-progress',
+      idea: 'queued idea',
+      settings: { contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }] },
+      job: null,
+      publication: null,
+      series: null,
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_write');
+
+    const result = await tool?.handler({ dryRun: true });
+
+    expect(claimNextPendingEntryMock).toHaveBeenCalled();
+    expect(runPipelineShellMock).toHaveBeenCalled();
+    expect(deleteClaimedEntryMock).toHaveBeenCalledWith('q1');
+    expect(result?.content?.[0]?.text).toContain('Generated');
+  });
+
+  it('reverts claimed entry when ideon_queue_write fails', async () => {
+    const entry = {
+      id: 'q1',
+      status: 'in-progress' as const,
+      idea: 'queued idea',
+      settings: { contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }] },
+      job: null,
+      publication: null,
+      series: null,
+    };
+    claimNextPendingEntryMock.mockResolvedValue(entry);
+    runPipelineShellMock.mockRejectedValue(new Error('write failed'));
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_write');
+
+    const result = await tool?.handler({});
+
+    expect(revertClaimedEntryMock).toHaveBeenCalledWith(entry);
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('write failed');
+  });
+
+  it('returns tool error when no pending entries for ideon_queue_write', async () => {
+    claimNextPendingEntryMock.mockResolvedValue(null);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_write');
+
+    const result = await tool?.handler({});
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('No pending articles');
+  });
+
+  // ─── Plan tool tests ─────────────────────────────────────────────────────
+
+  it('executes ideon_plan_explore handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_plan_explore');
+
+    const result = await tool?.handler({ idea: 'content marketing', publication: 'test-pub', dryRun: true });
+
+    expect(loadPublicationMock).toHaveBeenCalledWith('test-pub');
+    expect(runPlanMock).toHaveBeenCalledWith(expect.objectContaining({
+      input: expect.objectContaining({ mode: 'new-idea', contentIdea: 'content marketing' }),
+    }));
+    expect(result?.content?.[0]?.text).toContain('Test Series');
+  });
+
+  it('returns tool error when plan explore GKP credentials are missing', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: 'token',
+      replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_plan_explore');
+
+    const result = await tool?.handler({ idea: 'test', publication: 'test-pub' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('Google Ads developer token not configured');
+  });
+
+  it('executes ideon_plan_expand handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_plan_expand');
+
+    const result = await tool?.handler({ seriesSlug: 'test-series', publication: 'test-pub', dryRun: true });
+
+    expect(loadSeriesMock).toHaveBeenCalledWith('test-series');
+    expect(runPlanMock).toHaveBeenCalledWith(expect.objectContaining({
+      input: expect.objectContaining({ mode: 'expand-series', seriesSlug: 'test-series' }),
+    }));
+    expect(result?.content?.[0]?.text).toContain('Test Series');
+  });
+
+  it('returns tool error when plan expand OpenRouter key is missing', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: null,
+      replicateApiToken: null,
+      googleAdsDeveloperToken: 'gkp-dev-token',
+      googleAdsClientId: 'gkp-client-id',
+      googleAdsClientSecret: 'gkp-client-secret',
+      googleAdsRefreshToken: 'gkp-refresh-token',
+      googleAdsCustomerId: '1234567890',
+      googleAdsLoginCustomerId: null,
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_plan_expand');
+
+    const result = await tool?.handler({ seriesSlug: 'test-series' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('OpenRouter API key not configured');
+  });
+
+  // ─── Article tool tests ──────────────────────────────────────────────────
+
+  it('executes ideon_article_list handler', async () => {
+    runArticleListCommandMock.mockImplementation(async (_opts: any, deps: any) => {
+      deps.log(JSON.stringify([{ slug: 'art-1', title: 'Article 1' }]));
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_article_list');
+
+    const result = await tool?.handler({});
+
+    expect(runArticleListCommandMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('art-1');
   });
 });

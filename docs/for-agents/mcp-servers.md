@@ -55,22 +55,62 @@ Security:
 
 Both transports expose the same tools:
 
-- `ideon_write`
-- `ideon_write_resume`
-- `ideon_delete`
-- `ideon_links`
-- `ideon_export`
-- `ideon_config_get`
-- `ideon_config_set`
-- `ideon_config_list`
-- `ideon_config_unset`
-- `gkp_generate_ideas`
-- `gkp_get_historical_data`
-- `gkp_get_forecast_data`
+### Content Generation
+
+- `ideon_write` — Generate content from an idea using the Ideon pipeline
+- `ideon_write_resume` — Resume the last failed or interrupted write session
+- `ideon_delete` — Delete generated output and assets by slug
+- `ideon_links` — Run link enrichment for a previously generated article
+- `ideon_export` — Export a generated article as a standalone markdown file
+
+### Configuration
+
+- `ideon_config_get` — Read a configuration value or secret availability flag
+- `ideon_config_set` — Set a configuration value or secret token
+- `ideon_config_list` — List current settings and secret availability flags
+- `ideon_config_unset` — Reset a setting to its default or delete a stored secret
+
+### Publications
+
+- `ideon_publication_add` — Create a new publication with editorial policy and defaults
+- `ideon_publication_list` — List all publications
+- `ideon_publication_edit` — Update fields on an existing publication (patch semantics)
+- `ideon_publication_remove` — Delete a publication by slug
+
+### Series
+
+- `ideon_series_add` — Create a new content series with editorial policy and defaults
+- `ideon_series_list` — List all content series, optionally filtered by publication
+- `ideon_series_edit` — Update fields on an existing series (patch semantics)
+- `ideon_series_remove` — Delete a series by slug
+
+### Queue
+
+- `ideon_queue_add` — Add an article idea to the content queue
+- `ideon_queue_list` — List queued articles, optionally filtered by status and publication
+- `ideon_queue_peek` — Show the next pending queue entry without claiming it
+- `ideon_queue_remove` — Delete a queue entry by ID
+- `ideon_queue_clear` — Delete all queue entries
+- `ideon_queue_write` — Claim the next pending entry and write it; deletes on success, reverts on failure
+
+### Research & Planning
+
+- `ideon_plan_explore` — Research a content idea using keyword planner and generate series/article plans
+- `ideon_plan_expand` — Expand an existing series with new article ideas using keyword research
+
+### Articles
+
+- `ideon_article_list` — List generated articles in the current workspace
+
+### Google Keyword Planner
+
+- `gkp_generate_ideas` — Generate keyword ideas from seed keywords, a URL, or a site
+- `gkp_get_historical_data` — Get historical search volume and competition metrics
+- `gkp_get_forecast_data` — Get projected impressions, clicks, and cost for keywords
 
 ## Google Keyword Planner Tools
 
-The three `gkp_*` tools provide access to Google Ads Keyword Planner data. They require six Google Ads credentials to be configured before use.
+The three `gkp_*` tools and the two `ideon_plan_*` tools provide access to Google Ads Keyword Planner data. They require six Google Ads credentials to be configured before use.
 
 For setup instructions, see [Google Ads Keyword Planner Setup](../guides/google-ads-keyword-planner.md).
 
