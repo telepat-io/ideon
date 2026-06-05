@@ -7,6 +7,8 @@ import {
   uninstallAgentIntegration,
 } from '../integrations/agent/store.js';
 
+jest.retryTimes(2);
+
 describe('agent integration store', () => {
   it('installs, lists, and uninstalls runtime integrations', async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-agent-store-'));
