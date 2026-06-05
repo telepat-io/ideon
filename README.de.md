@@ -12,6 +12,7 @@
 <p align="center">
   <a href="https://github.com/telepat-io/ideon/actions/workflows/ci.yml"><img src="https://github.com/telepat-io/ideon/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build"></a>
   <a href="https://codecov.io/gh/telepat-io/ideon"><img src="https://codecov.io/gh/telepat-io/ideon/graph/badge.svg" alt="Codecov"></a>
+  <a href="https://sonarcloud.io/summary/new_code?id=telepat-io_ideon"><img src="https://sonarcloud.io/api/project_badges/measure?project=telepat-io_ideon&metric=alert_status" alt="Quality Gate Status"></a>
   <a href="https://www.npmjs.com/package/@telepat/ideon"><img src="https://img.shields.io/npm/v/@telepat/ideon" alt="npm"></a>
   <a href="https://github.com/telepat-io/ideon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License"></a>
 </p>
