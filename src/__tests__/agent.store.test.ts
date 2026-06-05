@@ -1,6 +1,14 @@
-import { mkdtemp, rm } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
+import { jest } from '@jest/globals';
+
+const readFileMock = jest.fn<(path: string, encoding: string) => Promise<string>>();
+const writeFileMock = jest.fn<(path: string, data: string, encoding: string) => Promise<void>>();
+const mkdirMock = jest.fn<(path: string, opts: any) => Promise<void>>();
+
+jest.unstable_mockModule('node:fs/promises', () => ({
+  readFile: readFileMock,
+  writeFile: writeFileMock,
+  mkdir: mkdirMock,
+}));
 
 const {
   installAgentIntegration,
@@ -8,58 +16,95 @@ const {
   uninstallAgentIntegration,
 } = await import('../integrations/agent/store.js');
 
-let tempDir: string;
-let storePath: string;
-
-beforeEach(async () => {
-  tempDir = await mkdtemp(path.join(os.tmpdir(), 'agent-store-test-'));
-  storePath = path.join(tempDir, 'agent-integrations.json');
-});
-
-afterEach(async () => {
-  await rm(tempDir, { recursive: true, force: true });
-});
+const STORE_PATH = '/tmp/test-agent-integrations.json';
 
 describe('agent integration store', () => {
-  it('installs, lists, and uninstalls runtime integrations', async () => {
-    const installed = await installAgentIntegration('claude', storePath);
-    expect(installed.runtime).toBe('claude');
-    expect(installed.installedAt).toBeTruthy();
-
-    const listed = await listInstalledAgentIntegrations(storePath);
-    expect(listed).toHaveLength(1);
-    expect(listed[0].runtime).toBe('claude');
-
-    const removed = await uninstallAgentIntegration('claude', storePath);
-    expect(removed).toBe(true);
-
-    const afterRemove = await listInstalledAgentIntegrations(storePath);
-    expect(afterRemove).toHaveLength(0);
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mkdirMock.mockResolvedValue(undefined);
+    writeFileMock.mockResolvedValue(undefined);
   });
 
-  it('returns empty list when store does not exist', async () => {
-    const entries = await listInstalledAgentIntegrations(storePath);
+  it('lists empty integrations when file does not exist', async () => {
+    readFileMock.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
+
+    const entries = await listInstalledAgentIntegrations(STORE_PATH);
+
     expect(entries).toEqual([]);
   });
 
-  it('preserves installedAt on reinstall', async () => {
-    const first = await installAgentIntegration('chatgpt', storePath);
-    const second = await installAgentIntegration('chatgpt', storePath);
+  it('installs a new integration', async () => {
+    readFileMock.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
 
-    expect(second.installedAt).toBe(first.installedAt);
-    expect(second.updatedAt).not.toBe(first.updatedAt);
+    const result = await installAgentIntegration('claude', STORE_PATH);
+
+    expect(result.runtime).toBe('claude');
+    expect(result.installedAt).toBeTruthy();
+    expect(writeFileMock).toHaveBeenCalledTimes(1);
+    const written = JSON.parse(writeFileMock.mock.calls[0]![1] as string);
+    expect(written.integrations.claude).toBeDefined();
+  });
+
+  it('lists installed integrations sorted by runtime', async () => {
+    readFileMock.mockResolvedValue(JSON.stringify({
+      version: 1,
+      integrations: {
+        chatgpt: { runtime: 'chatgpt', installedAt: '2025-01-01', updatedAt: '2025-01-01' },
+        claude: { runtime: 'claude', installedAt: '2025-01-01', updatedAt: '2025-01-01' },
+      },
+    }));
+
+    const entries = await listInstalledAgentIntegrations(STORE_PATH);
+
+    expect(entries).toHaveLength(2);
+    expect(entries[0].runtime).toBe('chatgpt');
+    expect(entries[1].runtime).toBe('claude');
+  });
+
+  it('preserves installedAt on reinstall', async () => {
+    readFileMock.mockResolvedValue(JSON.stringify({
+      version: 1,
+      integrations: {
+        claude: { runtime: 'claude', installedAt: '2025-01-01T00:00:00.000Z', updatedAt: '2025-01-01T00:00:00.000Z' },
+      },
+    }));
+
+    const result = await installAgentIntegration('claude', STORE_PATH);
+
+    expect(result.installedAt).toBe('2025-01-01T00:00:00.000Z');
+    expect(result.updatedAt).not.toBe('2025-01-01T00:00:00.000Z');
+  });
+
+  it('uninstalls an existing integration', async () => {
+    readFileMock.mockResolvedValue(JSON.stringify({
+      version: 1,
+      integrations: {
+        claude: { runtime: 'claude', installedAt: '2025-01-01', updatedAt: '2025-01-01' },
+      },
+    }));
+
+    const result = await uninstallAgentIntegration('claude', STORE_PATH);
+
+    expect(result).toBe(true);
+    const written = JSON.parse(writeFileMock.mock.calls[0]![1] as string);
+    expect(written.integrations.claude).toBeUndefined();
   });
 
   it('returns false when uninstalling non-existent runtime', async () => {
-    const result = await uninstallAgentIntegration('gemini', storePath);
+    readFileMock.mockResolvedValue(JSON.stringify({
+      version: 1,
+      integrations: {},
+    }));
+
+    const result = await uninstallAgentIntegration('gemini', STORE_PATH);
+
     expect(result).toBe(false);
+    expect(writeFileMock).not.toHaveBeenCalled();
   });
 
-  it('installs multiple runtimes', async () => {
-    await installAgentIntegration('claude', storePath);
-    await installAgentIntegration('chatgpt', storePath);
+  it('rethrows non-ENOENT read errors', async () => {
+    readFileMock.mockRejectedValue(new Error('permission denied'));
 
-    const entries = await listInstalledAgentIntegrations(storePath);
-    expect(entries).toHaveLength(2);
+    await expect(listInstalledAgentIntegrations(STORE_PATH)).rejects.toThrow('permission denied');
   });
 });
