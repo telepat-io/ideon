@@ -191,7 +191,7 @@ Always collect all relevant inputs before running any command. Ask the user for 
    - Delete outputs: `ideon delete <slug>`
    - Manage config: `ideon config ...`
    - Manage runtime registrations: `ideon agent ...`
-   - Start MCP server: `ideon mcp serve`
+   - Start MCP server: `ideon mcp serve` (stdio) or `ideon mcp serve-http --api-key <key>` (HTTP)
 5. Run minimal safe command first (dry-run or read-only status command).
 6. Escalate to full workflow only after verification succeeds.
 7. Report:
@@ -380,17 +380,26 @@ ideon preview --watch --no-open
 
 ## MCP and integrations
 
-First-party MCP server:
+First-party MCP server (stdio — local):
 
 ```bash
 ideon mcp serve
 ```
 
+First-party MCP server (Streamable HTTP — remote):
+
+```bash
+ideon mcp serve-http --api-key <key> [--port <port>] [--host <host>] [--endpoint <path>]
+```
+
 Documented MCP characteristics:
 
-- Transport: stdio
-- Intended usage: local process-spawned MCP clients
-- Tool set: `ideon_write`, `ideon_write_resume`, `ideon_delete`, `ideon_links`, `ideon_config_get`, `ideon_config_set`, `ideon_config_list`, `ideon_config_unset`, `gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`
+- Transports: stdio (local) and Streamable HTTP (remote, MCP spec 2025-11-25)
+- HTTP transport requires bearer token auth via `--api-key` or `IDEON_MCP_API_KEY` env var
+- HTTP transport defaults: `127.0.0.1:3001`, endpoint `/mcp`
+- Both transports expose the same tool set
+- Intended usage: stdio for local process-spawned clients, HTTP for remote/network clients
+- Tool set: `ideon_write`, `ideon_write_resume`, `ideon_delete`, `ideon_links`, `ideon_export`, `ideon_config_get`, `ideon_config_set`, `ideon_config_list`, `ideon_config_unset`, `gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`
 
 ### Google Keyword Planner (GKP) Tools
 

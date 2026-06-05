@@ -11,7 +11,7 @@ import {
   runConfigSetCommand,
   runConfigUnsetCommand,
 } from './commands/config.js';
-import { runMcpServeCommand } from './commands/mcp.js';
+import { runMcpServeCommand, runMcpServeHttpCommand } from './commands/mcp.js';
 import {
   runGadsLoginCommand,
   runGadsLogoutCommand,
@@ -108,13 +108,26 @@ export async function runCli(argv: string[]): Promise<void> {
       await runConfigUnsetCommand({ key });
     });
 
-  program
+  const mcpCommand = program
     .command('mcp')
-    .description('Model Context Protocol server operations.')
+    .description('Model Context Protocol server operations.');
+
+  mcpCommand
     .command('serve')
     .description('Start the Ideon MCP server over stdio transport.')
     .action(async () => {
       await runMcpServeCommand();
+    });
+
+  mcpCommand
+    .command('serve-http')
+    .description('Start the Ideon MCP server over Streamable HTTP transport.')
+    .requiredOption('--api-key <key>', 'API key for bearer authentication (or set IDEON_MCP_API_KEY)', process.env.IDEON_MCP_API_KEY)
+    .option('--port <port>', 'Port to listen on', '3001')
+    .option('--host <host>', 'Host to bind to', '127.0.0.1')
+    .option('--endpoint <path>', 'MCP endpoint path', '/mcp')
+    .action(async (opts: { apiKey: string; port: string; host: string; endpoint: string }) => {
+      await runMcpServeHttpCommand(opts);
     });
 
   const gadsCommand = program

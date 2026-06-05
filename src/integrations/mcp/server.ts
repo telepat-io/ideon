@@ -76,12 +76,7 @@ async function getOrCreateCachedGkpClient(): Promise<CachedGkpClient> {
   return cachedGkpClient;
 }
 
-export async function startIdeonMcpServer(): Promise<void> {
-  const server = new McpServer({
-    name: 'ideon',
-    version: packageJson.version,
-  });
-
+export function registerIdeonTools(server: McpServer): void {
   server.registerTool(
     'ideon_write',
     {
@@ -533,6 +528,15 @@ export async function startIdeonMcpServer(): Promise<void> {
       }
     },
   );
+}
+
+export async function startIdeonMcpServer(): Promise<void> {
+  const server = new McpServer({
+    name: 'ideon',
+    version: packageJson.version,
+  });
+
+  registerIdeonTools(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
