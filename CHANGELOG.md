@@ -5,6 +5,14 @@
 
 ### Features
 
+* implement CachedGkpClient with caching logic for keyword ideas, historical metrics, and forecast data ([18ed49c](https://github.com/telepat-io/ideon/commit/18ed49c76a642db13bd4ce42d35d897bdc88bf73))
+* implement keyword research pipeline with scoring and planning logic ([bcf8db3](https://github.com/telepat-io/ideon/commit/bcf8db3c9f6d1ff7f1c96cbf0e7c3ad7aed71036))
+
+## [0.1.35](https://github.com/telepat-io/ideon/compare/ideon-v0.1.34...ideon-v0.1.35) (2026-06-05)
+
+
+### Features
+
 * add content planning pipeline with explore and expand modes ([plan])
 * add interactive TUI flow for plan input and review ([plan])
 * add KOB scoring, intent classification, and topic clustering ([plan])
