@@ -27,8 +27,10 @@ describe('agent integration store', () => {
 
       const missingRemove = await uninstallAgentIntegration('gemini', storePath);
       expect(missingRemove).toBe(false);
+    } catch (err) {
+      throw new Error(`agent.store test failed: ${String(err)}\nstorePath=${storePath}\ntempRoot=${tempRoot}`);
     } finally {
-      await rm(tempRoot, { recursive: true, force: true });
+      await rm(tempRoot, { recursive: true, force: true }).catch(() => {});
     }
   });
 
@@ -42,8 +44,10 @@ describe('agent integration store', () => {
 
       expect(firstInstall.installedAt).toBe(secondInstall.installedAt);
       expect(new Date(secondInstall.updatedAt).getTime()).toBeGreaterThanOrEqual(new Date(firstInstall.updatedAt).getTime());
+    } catch (err) {
+      throw new Error(`agent.store reinstall test failed: ${String(err)}\nstorePath=${storePath}\ntempRoot=${tempRoot}`);
     } finally {
-      await rm(tempRoot, { recursive: true, force: true });
+      await rm(tempRoot, { recursive: true, force: true }).catch(() => {});
     }
   });
 });
