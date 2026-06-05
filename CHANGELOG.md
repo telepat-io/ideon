@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.37](https://github.com/telepat-io/ideon/compare/ideon-v0.1.36...ideon-v0.1.37) (2026-06-05)
+
+
+### Features
+
+* add Ideon MCP skill ([71732cb](https://github.com/telepat-io/ideon/commit/71732cb6c7894e642296ed9e1d3f0b41b6945fc7))
+
 ## [0.1.36](https://github.com/telepat-io/ideon/compare/ideon-v0.1.35...ideon-v0.1.36) (2026-06-05)
 
 
