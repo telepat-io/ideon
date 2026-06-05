@@ -6,7 +6,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Local Preview
 
-Ideon serves generated content through a React-based local web app so you can review copy, assets, and model interactions in one place.
+Ideon serves generated content through a React-based local web app so you can review copy, assets, plan metadata, and model interactions in one place.
 
 ## Quick Start
 
@@ -26,29 +26,46 @@ This command:
 
 ## What You See In The UI
 
-### Left Rail
+The preview app uses the Telepat dark visual system (glow backgrounds, Poppins typography, violet accents).
 
-- one item per generation directory
-- title, timestamp, and snippet preview
-- quick reload button
+### Header
 
-### Main Content Area
+- brand and refresh controls
+- **Info** opens the metadata drawer (publication, series, and generation context)
+- **Actions** menu: Copy Markdown, Download meta.json, Open Source Folder (copies the generation path)
 
-- compact summary row (source path, generation count, output count, interaction count)
-- active generation title and slug
-- top-level channel tabs (`article`, `x-post`, `linkedin-post`, etc.)
-- variant tabs within each channel (`Article 1`, `X Post 2`, and so on)
-- rendered markdown body for the selected output
+### Left Sidebar
 
-### Logs View
+- search across titles, snippets, keywords, and slugs
+- publication and series dropdown filters (resolved from your Ideon config)
+- generation list grouped by date, with cover thumbnails when available
+- publication and keyword badges on each list item
 
-- stage-grouped interaction list (`shared-plan`, `planning`, `sections`, `image-prompts`, `images`, `output`, `links`)
-- per-call inspector with metadata (model, status, duration)
-- mode toggle for `Prompt / Response` and `Full JSON`
+### Main Views
+
+Three tabs are available for the active generation:
+
+| View | Purpose |
+|------|---------|
+| **Content** | Channel-specific preview frames per output type (article, blog post, X post, LinkedIn, etc.) with format tabs, variant tabs, and a section outline for long-form types |
+| **Plan & Assets** | Original idea, content-plan sections, image gallery, and style/intent metadata from `meta.json` |
+| **Logs** | Stage-grouped LLM and image interaction inspector (`Prompt / Response` and `Full JSON`) |
+
+Publication and series are optional. Generations without them still preview normally; related UI sections are omitted.
+
+### Content format previews
+
+Each supported Ideon output type maps to a channel-specific preview frame in the Content tab:
+
+- Long-form types (`article`, `blog-post`, `science-paper`) show supplementary chrome from `meta.json` (cover, keywords, byline or abstract) plus the real markdown body, with a scroll-synced section outline.
+- Social and distribution types (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`, `newsletter`, `press-release`) wrap the real output in platform-style cards with decorative scaffolding (avatars, action bars, static engagement placeholders).
+- Author chrome is derived from the resolved publication name when available; otherwise a neutral preview label is used.
+- Decorative UI (comment threads, reaction counts, sponsor blocks) is static preview scaffolding, not data from the generation pipeline.
+- Unknown output types fall back to generic markdown typography.
 
 ## Runtime Architecture
 
-`ideon preview` now runs two layers:
+`ideon preview` runs two layers:
 
 1. API + static server (`src/server/previewServer.ts`)
 2. React client app (`src/preview-app/`, built by Vite into `dist/preview/`)
@@ -63,8 +80,10 @@ On startup, the server tries to find the built React client and serves `index.ht
 The React app reads data from:
 
 - `GET /api/bootstrap`: initial source-path and active-generation selection
-- `GET /api/articles`: generation list for the left rail
-- `GET /api/articles/:slug`: full output + interaction payload for one generation
+- `GET /api/articles`: generation list (includes `publication`, `series`, and `keywords` when present in `meta.json`)
+- `GET /api/articles/:slug`: full output payload, typed `metaJson`, and `markdownBody` per output
+- `GET /api/publications`: configured publications for sidebar filters and the metadata drawer
+- `GET /api/series`: configured series for sidebar filters and the metadata drawer
 - `GET /api/generations/:generationId/assets/*assetPath`: generation-scoped asset serving
 
 ## Selection And Fallback Behavior
@@ -73,12 +92,7 @@ The React app reads data from:
 - If `markdownPath` is provided, preview uses that generation as the initial selection when found.
 - If the active generation disappears while preview is open, refresh safely falls back to the newest remaining generation.
 - If no markdown remains, preview shows an empty-state message instead of crashing.
-
-## Theme Behavior
-
-- First load follows OS color scheme (`prefers-color-scheme`).
-- Light/Dark toggle is persisted in local storage.
-- The app uses Ant Design theme tokens and custom CSS for channel-specific output cards.
+- Sidebar filters auto-reselect the first matching generation when the current selection is filtered out.
 
 ## Preview a Specific Article
 
@@ -145,3 +159,9 @@ If images do not load:
 1. Ensure preview is pointed at the same workspace output root used for generation.
 2. Verify markdown uses generation-relative asset paths.
 3. Open browser devtools and confirm `/api/generations/:id/assets/...` returns `200`.
+
+If publication or series filters are empty:
+
+1. Create publications with `ideon publication add`.
+2. Create series with `ideon series add`.
+3. Re-run generation so `meta.json` records the chosen publication/series slugs.

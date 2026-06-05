@@ -20,6 +20,7 @@ describe('preview interaction utilities', () => {
         slug: 'rome',
         title: 'Second',
         htmlBody: '<p>Second</p>',
+        markdownBody: 'Second',
       },
       {
         id: 'article-1',
@@ -29,6 +30,7 @@ describe('preview interaction utilities', () => {
         slug: 'rome',
         title: 'Primary',
         htmlBody: '<p>Primary</p>',
+        markdownBody: 'Primary',
       },
       {
         id: 'x-post-1',
@@ -38,6 +40,7 @@ describe('preview interaction utilities', () => {
         slug: 'rome',
         title: 'First',
         htmlBody: '<p>First</p>',
+        markdownBody: 'First',
       },
     ]);
 

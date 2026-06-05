@@ -1,9 +1,14 @@
+import type { MetaJson } from './meta.js';
+
 export interface PreviewArticleListItem {
   slug: string;
   title: string;
   mtime: number;
   previewSnippet: string;
   coverImageUrl: string | null;
+  publication: string | null;
+  series: string | null;
+  keywords: string[];
 }
 
 export interface PreviewArticleOutput {
@@ -14,6 +19,57 @@ export interface PreviewArticleOutput {
   slug: string;
   title: string;
   htmlBody: string;
+  markdownBody: string;
+}
+
+export interface PreviewEditorialPolicy {
+  tone: string;
+  forbiddenTopics: string[];
+  disclosureRequirements: string[];
+  audienceRestrictions: string[];
+  notes: string;
+}
+
+export interface PreviewContentTarget {
+  contentType: string;
+  role: 'primary' | 'secondary';
+  count: number;
+}
+
+export interface PreviewPublicationDefaults {
+  style?: string;
+  intent?: string;
+  targetLength?: number;
+  contentTargets?: PreviewContentTarget[];
+  targetAudienceHint?: string;
+  countryCodes?: string[];
+  language?: string;
+  maxImages?: number;
+  maxLinks?: number;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+}
+
+export interface PreviewPublicationSummary {
+  name: string;
+  slug: string;
+  editorialPolicy: PreviewEditorialPolicy;
+  defaults: PreviewPublicationDefaults;
+}
+
+export interface PreviewSeriesDefaults extends PreviewPublicationDefaults {
+  keywords?: string[];
+}
+
+export interface PreviewSeriesSummary {
+  name: string;
+  slug: string;
+  topic: string;
+  publication?: string;
+  editorialPolicy: PreviewEditorialPolicy;
+  defaults: PreviewSeriesDefaults;
 }
 
 export interface PreviewLlmInteraction {
@@ -69,7 +125,7 @@ export interface PreviewArticleContent {
   sourcePath: string;
   interactions: PreviewInteractionsPayload;
   analyticsSummary: PreviewAnalyticsSummary | null;
-  metaJson: unknown | null;
+  metaJson: MetaJson | null;
   outputs: PreviewArticleOutput[];
 }
 

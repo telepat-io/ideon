@@ -2,6 +2,8 @@ import type {
   PreviewArticleContent,
   PreviewArticleListItem,
   PreviewBootstrapData,
+  PreviewPublicationSummary,
+  PreviewSeriesSummary,
 } from '../types/preview.js';
 
 async function fetchJson<T>(input: string): Promise<T> {
@@ -35,4 +37,12 @@ export function loadPreviewArticles(): Promise<PreviewArticleListItem[]> {
 
 export function loadPreviewArticle(slug: string): Promise<PreviewArticleContent> {
   return fetchJson<PreviewArticleContent>(`/api/articles/${encodeURIComponent(slug)}`);
+}
+
+export function loadPreviewPublications(): Promise<PreviewPublicationSummary[]> {
+  return fetchJson<PreviewPublicationSummary[]>('/api/publications');
+}
+
+export function loadPreviewSeries(): Promise<PreviewSeriesSummary[]> {
+  return fetchJson<PreviewSeriesSummary[]>('/api/series');
 }

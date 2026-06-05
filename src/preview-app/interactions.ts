@@ -9,11 +9,13 @@ import type {
 export const contentTypeOrder = [
   'article',
   'blog-post',
+  'science-paper',
   'x-thread',
   'x-post',
   'linkedin-post',
   'reddit-post',
   'newsletter',
+  'press-release',
 ] as const;
 
 export const interactionStageOrder = [

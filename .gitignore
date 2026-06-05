@@ -6,6 +6,7 @@ docs-site/node_modules/
 dist/
 docs-site/build/
 coverage/
+src/preview-app/public/ideon-avatar.webp
 
 # Generated runtime output
 .ideon/

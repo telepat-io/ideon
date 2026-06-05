@@ -53,6 +53,17 @@ jest.unstable_mockModule('../server/previewHelpers.js', () => ({
   stripFrontmatter: stripFrontmatterMock,
 }));
 
+const listPublicationsMock = jest.fn<() => Promise<unknown[]>>();
+const listSeriesMock = jest.fn<() => Promise<unknown[]>>();
+
+jest.unstable_mockModule('../config/publicationStore.js', () => ({
+  listPublications: listPublicationsMock,
+}));
+
+jest.unstable_mockModule('../config/seriesStore.js', () => ({
+  listSeries: listSeriesMock,
+}));
+
 const { startPreviewServer } = await import('../server/previewServer.js');
 
 describe('preview server branch coverage', () => {
@@ -67,6 +78,17 @@ describe('preview server branch coverage', () => {
     statMock.mockResolvedValue({ isFile: () => true });
     execFileAsyncMock.mockResolvedValue(undefined);
     writeFileMock.mockResolvedValue(undefined);
+    listPublicationsMock.mockResolvedValue([]);
+    listSeriesMock.mockResolvedValue([]);
+    readFileMock.mockImplementation(async (filePath: string) => {
+      if (filePath.endsWith('meta.json')) {
+        const error = new Error('ENOENT') as NodeJS.ErrnoException;
+        error.code = 'ENOENT';
+        throw error;
+      }
+
+      return '# Article\n\nBody';
+    });
   });
 
   function createGeneration(id = 'gen-1') {
@@ -289,6 +311,118 @@ describe('preview server branch coverage', () => {
     } finally {
       await server.close();
       process.env.JEST_WORKER_ID = originalJestWorkerId;
+    }
+  });
+
+  it('returns publications and series summaries from config stores', async () => {
+    listPublicationsMock.mockResolvedValueOnce([
+      {
+        name: 'Tech Blog',
+        slug: 'tech-blog',
+        editorialPolicy: {
+          tone: 'Professional',
+          forbiddenTopics: [],
+          disclosureRequirements: [],
+          audienceRestrictions: [],
+          notes: '',
+        },
+        defaults: { style: 'professional' },
+      },
+    ]);
+    listSeriesMock.mockResolvedValueOnce([
+      {
+        name: 'SEO Fundamentals',
+        slug: 'seo-fundamentals',
+        topic: 'SEO basics',
+        publication: 'tech-blog',
+        editorialPolicy: {
+          tone: '',
+          forbiddenTopics: [],
+          disclosureRequirements: [],
+          audienceRestrictions: [],
+          notes: '',
+        },
+        defaults: {},
+      },
+    ]);
+
+    const server = await startPreviewServer({
+      markdownPath: '/tmp/out/article-1.md',
+      assetDir: '/tmp/out/assets',
+      markdownOutputDir: '/tmp/out',
+      port: 0,
+      openBrowser: false,
+    });
+
+    try {
+      const publicationsResponse = await fetch(`${server.url}/api/publications`);
+      const seriesResponse = await fetch(`${server.url}/api/series`);
+
+      expect(publicationsResponse.status).toBe(200);
+      expect(seriesResponse.status).toBe(200);
+      await expect(publicationsResponse.json()).resolves.toEqual([
+        expect.objectContaining({ slug: 'tech-blog', name: 'Tech Blog' }),
+      ]);
+      await expect(seriesResponse.json()).resolves.toEqual([
+        expect.objectContaining({ slug: 'seo-fundamentals', name: 'SEO Fundamentals' }),
+      ]);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('includes publication, series, and keywords in article list items when meta.json is present', async () => {
+    listAllGenerationsMock.mockResolvedValueOnce([createGeneration()]);
+    readFileMock.mockImplementation(async (filePath: string) => {
+      if (filePath.endsWith('meta.json')) {
+        return JSON.stringify({
+          version: 1,
+          title: 'Generation 1',
+          slug: 'gen-1',
+          idea: 'idea',
+          description: 'description',
+          subtitle: null,
+          keywords: ['seo', 'ai'],
+          contentType: 'article',
+          style: 'professional',
+          intent: 'guide',
+          targetLength: 'medium',
+          angle: null,
+          cover: null,
+          sections: [],
+          images: [],
+          outputs: [],
+          generatedAt: '2026-06-01T00:00:00.000Z',
+          generationDir: '/tmp/out/gen-1',
+          publication: 'tech-blog',
+          series: 'seo-fundamentals',
+        });
+      }
+
+      return '# Article\n\nBody';
+    });
+
+    const server = await startPreviewServer({
+      markdownPath: '/tmp/out/gen-1/article-1.md',
+      assetDir: '/tmp/out/assets',
+      markdownOutputDir: '/tmp/out',
+      port: 0,
+      openBrowser: false,
+    });
+
+    try {
+      const response = await fetch(`${server.url}/api/articles`);
+      const payload = (await response.json()) as Array<Record<string, unknown>>;
+
+      expect(response.status).toBe(200);
+      expect(payload[0]).toMatchObject({
+        slug: 'gen-1',
+        publication: 'tech-blog',
+        series: 'seo-fundamentals',
+        keywords: ['seo', 'ai'],
+      });
+    } finally {
+      await server.close();
     }
   });
 });

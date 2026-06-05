@@ -1,5 +1,11 @@
 import { jest } from '@jest/globals';
-import { loadPreviewArticle, loadPreviewArticles, loadPreviewBootstrap } from './api.js';
+import {
+  loadPreviewArticle,
+  loadPreviewArticles,
+  loadPreviewBootstrap,
+  loadPreviewPublications,
+  loadPreviewSeries,
+} from './api.js';
 
 describe('preview api client', () => {
   let originalFetch: typeof globalThis.fetch;
@@ -60,6 +66,35 @@ describe('preview api client', () => {
     })) as unknown as typeof fetch;
 
     await expect(loadPreviewArticles()).rejects.toThrow('Request failed with status 503');
+  });
+
+  it('loads publications and series summaries', async () => {
+    globalThis.fetch = jest.fn(async (input: string | URL | Request) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
+
+      if (url === '/api/publications') {
+        return {
+          ok: true,
+          json: async () => [{ name: 'Tech Blog', slug: 'tech-blog', editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' }, defaults: {} }],
+        } as Response;
+      }
+
+      if (url === '/api/series') {
+        return {
+          ok: true,
+          json: async () => [{ name: 'SEO Fundamentals', slug: 'seo-fundamentals', topic: 'SEO', editorialPolicy: { tone: '', forbiddenTopics: [], disclosureRequirements: [], audienceRestrictions: [], notes: '' }, defaults: {} }],
+        } as Response;
+      }
+
+      throw new Error(`Unexpected url: ${url}`);
+    }) as typeof fetch;
+
+    await expect(loadPreviewPublications()).resolves.toEqual([
+      expect.objectContaining({ slug: 'tech-blog' }),
+    ]);
+    await expect(loadPreviewSeries()).resolves.toEqual([
+      expect.objectContaining({ slug: 'seo-fundamentals' }),
+    ]);
   });
 
   it('falls back to status text when error payload is present but not a non-empty string', async () => {

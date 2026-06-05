@@ -58,10 +58,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@ant-design/icons": "^6.1.1",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@telepat/limn": "^0.1.5",
-    "antd": "^6.3.4",
     "commander": "^14.0.1",
     "env-paths": "^3.0.0",
     "express": "^5.2.1",

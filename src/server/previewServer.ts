@@ -8,12 +8,17 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { marked } from 'marked';
 import { enrichMarkdownWithLinks, loadLinksFromSidecar } from '../output/enrichMarkdownWithLinks.js';
+import { listPublications } from '../config/publicationStore.js';
+import { listSeries } from '../config/seriesStore.js';
+import { metaJsonSchema, type MetaJson } from '../types/meta.js';
 import type {
   PreviewArticleContent,
   PreviewAnalyticsSummary,
   PreviewBootstrapData,
   PreviewInteractionsPayload,
   PreviewLlmInteraction,
+  PreviewPublicationSummary,
+  PreviewSeriesSummary,
   PreviewT2IInteraction,
 } from '../types/preview.js';
 import { stripFrontmatter, listAllGenerations, deriveGenerationId } from './previewHelpers.js';
@@ -101,18 +106,62 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   app.get('/api/articles', async (_req, res) => {
     try {
       const generations = await listAllGenerations(options.markdownOutputDir);
-      const articles = generations.map((generation) => ({
-        slug: generation.id,
-        title: generation.title,
-        mtime: generation.mtime,
-        previewSnippet: generation.previewSnippet,
-        coverImageUrl: generation.coverImageUrl
-          ? toGenerationAssetUrl(generation.coverImageUrl, generation.id)
-          : null,
-      }));
+      const articles = await Promise.all(
+        generations.map(async (generation) => {
+          const generationDir = path.dirname(generation.outputs[0]?.sourcePath ?? '');
+          const metaJson = generationDir ? await loadSavedMetaJson(generationDir) : null;
+
+          return {
+            slug: generation.id,
+            title: generation.title,
+            mtime: generation.mtime,
+            previewSnippet: generation.previewSnippet,
+            coverImageUrl: generation.coverImageUrl
+              ? toGenerationAssetUrl(generation.coverImageUrl, generation.id)
+              : null,
+            publication: metaJson?.publication ?? null,
+            series: metaJson?.series ?? null,
+            keywords: metaJson?.keywords ?? [],
+          };
+        }),
+      );
       res.status(200).type('application/json').json(articles);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error listing articles';
+      res.status(500).type('application/json').json({ error: message });
+    }
+  });
+
+  app.get('/api/publications', async (_req, res) => {
+    try {
+      const publications = await listPublications();
+      const summaries: PreviewPublicationSummary[] = publications.map((publication) => ({
+        name: publication.name,
+        slug: publication.slug,
+        editorialPolicy: publication.editorialPolicy,
+        defaults: publication.defaults,
+      }));
+      res.status(200).type('application/json').json(summaries);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error listing publications';
+      res.status(500).type('application/json').json({ error: message });
+    }
+  });
+
+  app.get('/api/series', async (_req, res) => {
+    try {
+      const seriesList = await listSeries();
+      const summaries: PreviewSeriesSummary[] = seriesList.map((series) => ({
+        name: series.name,
+        slug: series.slug,
+        topic: series.topic,
+        publication: series.publication,
+        editorialPolicy: series.editorialPolicy,
+        defaults: series.defaults,
+      }));
+      res.status(200).type('application/json').json(summaries);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error listing series';
       res.status(500).type('application/json').json({ error: message });
     }
   });
@@ -249,6 +298,7 @@ async function getArticleContent(generationId: string, markdownOutputDir: string
         slug: canonicalSlug,
         title: output.title,
         htmlBody: await renderArticleHtml(markdown, generationId, output.sourcePath),
+        markdownBody: markdown,
       };
     }),
   );
@@ -383,12 +433,12 @@ async function loadSavedAnalyticsSummary(generationDir: string): Promise<Preview
   }
 }
 
-async function loadSavedMetaJson(generationDir: string): Promise<unknown | null> {
+async function loadSavedMetaJson(generationDir: string): Promise<MetaJson | null> {
   const metaJsonPath = path.join(generationDir, 'meta.json');
 
   try {
     const raw = await readFile(metaJsonPath, 'utf8');
-    return JSON.parse(raw) as unknown;
+    return metaJsonSchema.parse(JSON.parse(raw));
   } catch {
     return null;
   }
