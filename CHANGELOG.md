@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.36](https://github.com/telepat-io/ideon/compare/ideon-v0.1.35...ideon-v0.1.36) (2026-06-05)
+
+
+### Features
+
+* add publication, series, and queue management tools ([8003571](https://github.com/telepat-io/ideon/commit/8003571fcf1f5e4be400139e95305defdc764929))
+* add Streamable HTTP transport for MCP server with bearer authentication ([1c2fa25](https://github.com/telepat-io/ideon/commit/1c2fa252f8025d52a1ff4d6bf8a73747f3297111))
+
+
+### Bug Fixes
+
+* lazy-load env-paths to eliminate ESM mock flakiness ([e66e5b9](https://github.com/telepat-io/ideon/commit/e66e5b960c815f87306b8c613a1dc1c03bc416d3))
+
 ## [0.1.35](https://github.com/telepat-io/ideon/compare/ideon-v0.1.34...ideon-v0.1.35) (2026-06-05)
 
 
