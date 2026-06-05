@@ -38,6 +38,9 @@ import {
   type QueueWriteToolInput,
   type PlanExploreToolInput,
   type PlanExpandToolInput,
+  type GadsLoginToolInput,
+  type GadsLoginStatusToolInput,
+  type GadsTestToolInput,
   configGetToolInputSchema,
   configListToolInputSchema,
   configSetToolInputSchema,
@@ -67,6 +70,9 @@ import {
   planExploreToolInputZodSchema,
   planExpandToolInputZodSchema,
   articleListToolInputZodSchema,
+  gadsLoginToolInputZodSchema,
+  gadsLoginStatusToolInputZodSchema,
+  gadsTestToolInputZodSchema,
 } from './tools.js';
 import { GkpClient } from '../keywordplanner/client.js';
 import { CachedGkpClient } from '../keywordplanner/cachedClient.js';
@@ -106,6 +112,7 @@ import { normalizeCountryCodes, normalizeLanguage } from '../../config/marketLoc
 import { loadSavedSettings } from '../../config/settingsFile.js';
 import { OpenRouterClient } from '../../llm/openRouterClient.js';
 import { runArticleListCommand } from '../../cli/commands/article.js';
+import { startGadsLogin, getGadsLoginStatus, resetGadsLoginState } from './oauthFlowManager.js';
 
 let cachedGkpClient: CachedGkpClient | null = null;
 
@@ -1209,6 +1216,188 @@ export function registerIdeonTools(server: McpServer): void {
         return { content: [{ type: 'text', text: output || '[]' }] };
       } catch (error) {
         return formatToolError(error);
+      }
+    },
+  );
+
+  // ─── GAds login tools ───────────────────────────────────────────────────
+
+  server.registerTool(
+    'gads_login',
+    {
+      title: 'Google Ads Login',
+      description: 'Start the Google Ads OAuth2 authorization flow. Saves credentials and returns an auth URL for the user to open in their browser. The OAuth callback runs in the background — call gads_login_status to check completion.',
+      inputSchema: gadsLoginToolInputZodSchema,
+    },
+    async (input: GadsLoginToolInput) => {
+      try {
+        const state = await startGadsLogin({
+          developerToken: input.developerToken,
+          clientId: input.clientId,
+          clientSecret: input.clientSecret,
+          customerId: input.customerId,
+          loginCustomerId: input.loginCustomerId,
+          force: input.force,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text:
+                `Google Ads credentials saved. A temporary OAuth server is running on http://localhost:${state.port}.\n\n` +
+                `Open this URL in your browser to authorize:\n${state.authUrl}\n\n` +
+                `After authorization, call gads_login_status to confirm completion.`,
+            },
+          ],
+          structuredContent: {
+            authUrl: state.authUrl,
+            port: state.port,
+            status: state.status,
+          },
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'gads_login_status',
+    {
+      title: 'Google Ads Login Status',
+      description: 'Check the status of the Google Ads OAuth flow started by gads_login.',
+      inputSchema: gadsLoginStatusToolInputZodSchema,
+    },
+    async (_input: GadsLoginStatusToolInput) => {
+      try {
+        const state = getGadsLoginStatus();
+
+        if (state.status === 'not_started') {
+          return {
+            content: [{ type: 'text', text: 'No OAuth flow has been started. Call gads_login first.' }],
+            structuredContent: { status: state.status },
+          };
+        }
+
+        if (state.status === 'pending') {
+          const elapsed = Math.round((Date.now() - state.startedAt) / 1000);
+          return {
+            content: [
+              {
+                type: 'text',
+                text:
+                  `OAuth flow pending. Waiting for browser authorization.\n\n` +
+                  `Auth URL: ${state.authUrl}\n` +
+                  `Elapsed: ${elapsed}s / 120s`,
+              },
+            ],
+            structuredContent: { status: state.status, authUrl: state.authUrl, elapsed },
+          };
+        }
+
+        if (state.status === 'completed') {
+          resetGadsLoginState();
+          return {
+            content: [{ type: 'text', text: 'Google Ads OAuth completed successfully. Refresh token saved.' }],
+            structuredContent: { status: state.status },
+          };
+        }
+
+        // timed_out
+        const message = state.message ?? 'OAuth flow timed out.';
+        resetGadsLoginState();
+        return {
+          content: [{ type: 'text', text: message }],
+          structuredContent: { status: state.status, message },
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'gads_test',
+    {
+      title: 'Google Ads Test',
+      description: 'Verify Google Ads credentials by making a test Keyword Planner API call.',
+      inputSchema: gadsTestToolInputZodSchema,
+    },
+    async (_input: GadsTestToolInput) => {
+      try {
+        const envSettings = readEnvSettings();
+        const secrets = await loadSecrets({ disableKeytar: envSettings.disableKeytar });
+
+        const devToken = envSettings.googleAdsDeveloperToken ?? secrets.googleAdsDeveloperToken;
+        const clientId = envSettings.googleAdsClientId ?? secrets.googleAdsClientId;
+        const clientSecret = envSettings.googleAdsClientSecret ?? secrets.googleAdsClientSecret;
+        const refreshToken = envSettings.googleAdsRefreshToken ?? secrets.googleAdsRefreshToken;
+        const customerId = envSettings.googleAdsCustomerId ?? secrets.googleAdsCustomerId;
+        const loginCustomerId = envSettings.googleAdsLoginCustomerId ?? secrets.googleAdsLoginCustomerId;
+
+        const missing: string[] = [];
+        if (!devToken) missing.push('googleAdsDeveloperToken');
+        if (!clientId) missing.push('googleAdsClientId');
+        if (!clientSecret) missing.push('googleAdsClientSecret');
+        if (!refreshToken) missing.push('googleAdsRefreshToken');
+        if (!customerId) missing.push('googleAdsCustomerId');
+
+        if (missing.length > 0) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text:
+                  `Missing required Google Ads credentials:\n  ${missing.join(', ')}\n\n` +
+                  `Set them via ideon_config_set or run gads_login for guided setup.`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const client = new GkpClient({
+          developerToken: devToken!,
+          clientId: clientId!,
+          clientSecret: clientSecret!,
+          refreshToken: refreshToken!,
+          customerId: customerId!,
+          loginCustomerId: loginCustomerId || undefined,
+        });
+
+        const result = await client.generateKeywordIdeas({
+          seedKeywords: ['test'],
+          pageSize: 1,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text:
+                `Google Ads credentials verified.\n` +
+                `  Customer ID: ${customerId}\n` +
+                `  API response received successfully (${result.count} keyword${result.count === 1 ? '' : 's'} returned).`,
+            },
+          ],
+          structuredContent: {
+            verified: true,
+            customerId: customerId!,
+            keywordsReturned: result.count,
+          },
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Google Ads credentials test failed:\n${message}\n\nRun gads_login to re-authorize.`,
+            },
+          ],
+          isError: true,
+        };
       }
     },
   );

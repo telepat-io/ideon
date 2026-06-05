@@ -320,6 +320,27 @@ export const articleListToolInputSchema = {};
 export const articleListToolInputZodSchema = z.object(articleListToolInputSchema);
 export type ArticleListToolInput = z.infer<typeof articleListToolInputZodSchema>;
 
+// ─── GAds login tools ───────────────────────────────────────────────────────
+
+export const gadsLoginToolInputSchema = {
+  developerToken: z.string().min(1),
+  clientId: z.string().min(1),
+  clientSecret: z.string().min(1),
+  customerId: z.string().min(1),
+  loginCustomerId: z.string().optional(),
+  force: z.boolean().optional(),
+};
+export const gadsLoginToolInputZodSchema = z.object(gadsLoginToolInputSchema);
+export type GadsLoginToolInput = z.infer<typeof gadsLoginToolInputZodSchema>;
+
+export const gadsLoginStatusToolInputSchema = {};
+export const gadsLoginStatusToolInputZodSchema = z.object(gadsLoginStatusToolInputSchema);
+export type GadsLoginStatusToolInput = z.infer<typeof gadsLoginStatusToolInputZodSchema>;
+
+export const gadsTestToolInputSchema = {};
+export const gadsTestToolInputZodSchema = z.object(gadsTestToolInputSchema);
+export type GadsTestToolInput = z.infer<typeof gadsTestToolInputZodSchema>;
+
 export interface ToolContract {
   name: string;
   required: string[];
@@ -514,6 +535,21 @@ export const ideonToolContracts: ToolContract[] = [
   },
   {
     name: 'ideon_article_list',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'gads_login',
+    required: ['developerToken', 'clientId', 'clientSecret', 'customerId'],
+    enums: {},
+  },
+  {
+    name: 'gads_login_status',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'gads_test',
     required: [],
     enums: {},
   },

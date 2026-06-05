@@ -47,7 +47,7 @@ const defaultDependencies: OAuthFlowDependencies = {
   log: (message: string) => console.log(message),
 };
 
-function buildAuthUrl(clientId: string, redirectUri: string): string {
+export function buildAuthUrl(clientId: string, redirectUri: string): string {
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -66,12 +66,12 @@ interface TokenResponse {
   token_type: string;
 }
 
-async function exchangeCode(
+export async function exchangeCode(
   code: string,
   clientId: string,
   clientSecret: string,
   redirectUri: string,
-  deps: OAuthFlowDependencies,
+  deps: Pick<OAuthFlowDependencies, 'fetch'>,
 ): Promise<string> {
   const body = new URLSearchParams({
     code,
@@ -100,7 +100,7 @@ async function exchangeCode(
   return data.refresh_token;
 }
 
-function waitForCode(
+export function waitForCode(
   server: Server,
   redirectPath: string,
   redirectUri: string,
@@ -153,9 +153,9 @@ function waitForCode(
   });
 }
 
-async function startServerOnPort(
+export async function startServerOnPort(
   port: number,
-  deps: OAuthFlowDependencies,
+  deps: Pick<OAuthFlowDependencies, 'createHttpServer'>,
 ): Promise<{ server: Server; redirectPath: string; redirectUri: string }> {
   const redirectPath = '/callback';
   const redirectUri = `http://localhost:${port}${redirectPath}`;
