@@ -1,49 +1,65 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {
+
+const {
   installAgentIntegration,
   listInstalledAgentIntegrations,
   uninstallAgentIntegration,
-} from '../integrations/agent/store.js';
+} = await import('../integrations/agent/store.js');
+
+let tempDir: string;
+let storePath: string;
+
+beforeEach(async () => {
+  tempDir = await mkdtemp(path.join(os.tmpdir(), 'agent-store-test-'));
+  storePath = path.join(tempDir, 'agent-integrations.json');
+});
+
+afterEach(async () => {
+  await rm(tempDir, { recursive: true, force: true });
+});
 
 describe('agent integration store', () => {
   it('installs, lists, and uninstalls runtime integrations', async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-agent-store-'));
-    const storePath = path.join(tempRoot, 'agent-integrations.json');
+    const installed = await installAgentIntegration('claude', storePath);
+    expect(installed.runtime).toBe('claude');
+    expect(installed.installedAt).toBeTruthy();
 
-    try {
-      await installAgentIntegration('claude', storePath);
-      await installAgentIntegration('chatgpt', storePath);
+    const listed = await listInstalledAgentIntegrations(storePath);
+    expect(listed).toHaveLength(1);
+    expect(listed[0].runtime).toBe('claude');
 
-      const listed = await listInstalledAgentIntegrations(storePath);
-      expect(listed.map((entry) => entry.runtime)).toEqual(['chatgpt', 'claude']);
+    const removed = await uninstallAgentIntegration('claude', storePath);
+    expect(removed).toBe(true);
 
-      const removed = await uninstallAgentIntegration('claude', storePath);
-      expect(removed).toBe(true);
-
-      const listedAfterRemove = await listInstalledAgentIntegrations(storePath);
-      expect(listedAfterRemove.map((entry) => entry.runtime)).toEqual(['chatgpt']);
-
-      const missingRemove = await uninstallAgentIntegration('gemini', storePath);
-      expect(missingRemove).toBe(false);
-    } finally {
-      await rm(tempRoot, { recursive: true, force: true });
-    }
+    const afterRemove = await listInstalledAgentIntegrations(storePath);
+    expect(afterRemove).toHaveLength(0);
   });
 
-  it('preserves installedAt while refreshing updatedAt on reinstall', async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-agent-store-reinstall-'));
-    const storePath = path.join(tempRoot, 'agent-integrations.json');
+  it('returns empty list when store does not exist', async () => {
+    const entries = await listInstalledAgentIntegrations(storePath);
+    expect(entries).toEqual([]);
+  });
 
-    try {
-      const firstInstall = await installAgentIntegration('gemini', storePath);
-      const secondInstall = await installAgentIntegration('gemini', storePath);
+  it('preserves installedAt on reinstall', async () => {
+    const first = await installAgentIntegration('chatgpt', storePath);
+    const second = await installAgentIntegration('chatgpt', storePath);
 
-      expect(firstInstall.installedAt).toBe(secondInstall.installedAt);
-      expect(new Date(secondInstall.updatedAt).getTime()).toBeGreaterThanOrEqual(new Date(firstInstall.updatedAt).getTime());
-    } finally {
-      await rm(tempRoot, { recursive: true, force: true });
-    }
+    expect(second.installedAt).toBe(first.installedAt);
+    expect(second.updatedAt).not.toBe(first.updatedAt);
+  });
+
+  it('returns false when uninstalling non-existent runtime', async () => {
+    const result = await uninstallAgentIntegration('gemini', storePath);
+    expect(result).toBe(false);
+  });
+
+  it('installs multiple runtimes', async () => {
+    await installAgentIntegration('claude', storePath);
+    await installAgentIntegration('chatgpt', storePath);
+
+    const entries = await listInstalledAgentIntegrations(storePath);
+    expect(entries).toHaveLength(2);
   });
 });

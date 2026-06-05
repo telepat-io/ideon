@@ -200,6 +200,16 @@ jest.unstable_mockModule('../cli/commands/article.js', () => ({
   runArticleListCommand: runArticleListCommandMock,
 }));
 
+const startGadsLoginMock = jest.fn<(...args: any[]) => Promise<any>>();
+const getGadsLoginStatusMock = jest.fn<() => any>();
+const resetGadsLoginStateMock = jest.fn();
+
+jest.unstable_mockModule('../integrations/mcp/oauthFlowManager.js', () => ({
+  startGadsLogin: startGadsLoginMock,
+  getGadsLoginStatus: getGadsLoginStatusMock,
+  resetGadsLoginState: resetGadsLoginStateMock,
+}));
+
 const { startIdeonMcpServer } = await import('../integrations/mcp/server.js');
 
 describe('ideon MCP server', () => {
@@ -345,6 +355,16 @@ describe('ideon MCP server', () => {
 
     // Article list mock
     runArticleListCommandMock.mockResolvedValue(undefined);
+
+    // GAds login mocks
+    startGadsLoginMock.mockResolvedValue({
+      status: 'pending',
+      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth?test=1',
+      port: 9876,
+      startedAt: Date.now(),
+    });
+    getGadsLoginStatusMock.mockReturnValue({ status: 'not_started', authUrl: '', port: 0, startedAt: 0 });
+    resetGadsLoginStateMock.mockReturnValue(undefined);
   });
 
   it('registers tools and connects transport', async () => {
@@ -736,6 +756,7 @@ describe('ideon MCP server', () => {
       'ideon_queue_add', 'ideon_queue_list', 'ideon_queue_peek', 'ideon_queue_remove', 'ideon_queue_clear', 'ideon_queue_write',
       'ideon_plan_explore', 'ideon_plan_expand',
       'ideon_article_list',
+      'gads_login', 'gads_login_status', 'gads_test',
     ];
     for (const name of newTools) {
       expect(registeredTools.has(name)).toBe(true);
@@ -1075,5 +1096,140 @@ describe('ideon MCP server', () => {
 
     expect(runArticleListCommandMock).toHaveBeenCalled();
     expect(result?.content?.[0]?.text).toContain('art-1');
+  });
+
+  // ─── GAds login tool tests ─────────────────────────────────────────────
+
+  it('executes gads_login handler and returns auth URL', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_login');
+
+    const result = await tool?.handler({
+      developerToken: 'dev-token',
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      customerId: '1234567890',
+    });
+
+    expect(startGadsLoginMock).toHaveBeenCalledWith({
+      developerToken: 'dev-token',
+      clientId: 'client-id',
+      clientSecret: 'client-secret',
+      customerId: '1234567890',
+      loginCustomerId: undefined,
+      force: undefined,
+    });
+    expect(result?.structuredContent?.authUrl).toBe('https://accounts.google.com/o/oauth2/v2/auth?test=1');
+    expect(result?.structuredContent?.status).toBe('pending');
+  });
+
+  it('returns tool error when gads_login fails', async () => {
+    startGadsLoginMock.mockRejectedValue(new Error('Already authenticated'));
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_login');
+
+    const result = await tool?.handler({
+      developerToken: 'dev',
+      clientId: 'id',
+      clientSecret: 'secret',
+      customerId: '123',
+    });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('Already authenticated');
+  });
+
+  it('executes gads_login_status handler for not_started', async () => {
+    getGadsLoginStatusMock.mockReturnValue({ status: 'not_started', authUrl: '', port: 0, startedAt: 0 });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_login_status');
+
+    const result = await tool?.handler({});
+
+    expect(result?.structuredContent?.status).toBe('not_started');
+    expect(result?.content?.[0]?.text).toContain('No OAuth flow');
+  });
+
+  it('executes gads_login_status handler for pending', async () => {
+    getGadsLoginStatusMock.mockReturnValue({
+      status: 'pending',
+      authUrl: 'https://accounts.google.com/test',
+      port: 9876,
+      startedAt: Date.now() - 5000,
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_login_status');
+
+    const result = await tool?.handler({});
+
+    expect(result?.structuredContent?.status).toBe('pending');
+    expect(result?.content?.[0]?.text).toContain('pending');
+  });
+
+  it('executes gads_login_status handler for completed', async () => {
+    getGadsLoginStatusMock.mockReturnValue({ status: 'completed', authUrl: '', port: 0, startedAt: 0 });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_login_status');
+
+    const result = await tool?.handler({});
+
+    expect(result?.structuredContent?.status).toBe('completed');
+    expect(result?.content?.[0]?.text).toContain('completed');
+    expect(resetGadsLoginStateMock).toHaveBeenCalled();
+  });
+
+  it('executes gads_login_status handler for timed_out', async () => {
+    getGadsLoginStatusMock.mockReturnValue({ status: 'timed_out', authUrl: '', port: 0, startedAt: 0, message: 'Timed out after 120 seconds.' });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_login_status');
+
+    const result = await tool?.handler({});
+
+    expect(result?.structuredContent?.status).toBe('timed_out');
+    expect(result?.content?.[0]?.text).toContain('Timed out');
+    expect(resetGadsLoginStateMock).toHaveBeenCalled();
+  });
+
+  it('executes gads_test handler with valid credentials', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: 'token',
+      replicateApiToken: 'token',
+      googleAdsDeveloperToken: 'dev-token',
+      googleAdsClientId: 'client-id',
+      googleAdsClientSecret: 'client-secret',
+      googleAdsRefreshToken: 'refresh-token',
+      customerId: '1234567890',
+      googleAdsCustomerId: '1234567890',
+      googleAdsLoginCustomerId: null,
+    });
+    readEnvSettingsMock.mockReturnValue({ disableKeytar: undefined });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_test');
+
+    const result = await tool?.handler({});
+
+    expect(result?.structuredContent?.verified).toBe(true);
+    expect(result?.structuredContent?.customerId).toBe('1234567890');
+  });
+
+  it('returns error when gads_test has missing credentials', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: 'token',
+      replicateApiToken: 'token',
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
+    });
+    readEnvSettingsMock.mockReturnValue({ disableKeytar: undefined });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_test');
+
+    const result = await tool?.handler({});
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('Missing required Google Ads credentials');
   });
 });
