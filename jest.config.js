@@ -8,9 +8,6 @@ export default {
       moduleNameMapper: {
         '^(\\.{1,2}/.*)\\.js$': '$1',
       },
-      transformIgnorePatterns: [
-        'node_modules/(?!env-paths)',
-      ],
       transform: {
         '^.+\\.tsx?$': [
           'ts-jest',
@@ -18,16 +15,6 @@ export default {
             useESM: true,
             tsconfig: {
               module: 'esnext',
-            },
-          },
-        ],
-        '^.+\\.js$': [
-          'ts-jest',
-          {
-            useESM: true,
-            tsconfig: {
-              module: 'esnext',
-              allowJs: true,
             },
           },
         ],
