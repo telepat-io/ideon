@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
+import envPaths from 'env-paths';
 
 export const supportedAgentRuntimeValues = ['claude', 'claude-desktop', 'chatgpt', 'gemini', 'codex', 'cursor', 'vscode', 'opencode', 'generic-mcp'] as const;
 export type SupportedAgentRuntime = (typeof supportedAgentRuntimeValues)[number];
@@ -18,10 +19,9 @@ const integrationStoreSchema = z.object({
 
 type IntegrationStore = z.infer<typeof integrationStoreSchema>;
 
-let _defaultStorePath: string | undefined;
-async function getDefaultStorePath(): Promise<string> {
+let _defaultStorePath: string;
+function getDefaultStorePath(): string {
   if (!_defaultStorePath) {
-    const envPaths = (await import('env-paths')).default;
     const ideonPaths = envPaths('ideon', { suffix: '' });
     _defaultStorePath = path.join(ideonPaths.config, 'agent-integrations.json');
   }
@@ -39,7 +39,7 @@ export async function getAgentIntegrationStorePath(): Promise<string> {
 }
 
 export async function listInstalledAgentIntegrations(targetStorePath?: string): Promise<InstalledAgentIntegration[]> {
-  const resolvedPath = targetStorePath ?? await getDefaultStorePath();
+  const resolvedPath = targetStorePath ?? getDefaultStorePath();
   const store = await readStore(resolvedPath);
   const entries = Object.values(store.integrations);
   entries.sort((a, b) => a.runtime.localeCompare(b.runtime));
@@ -50,7 +50,7 @@ export async function installAgentIntegration(
   runtime: SupportedAgentRuntime,
   targetStorePath?: string,
 ): Promise<InstalledAgentIntegration> {
-  const resolvedPath = targetStorePath ?? await getDefaultStorePath();
+  const resolvedPath = targetStorePath ?? getDefaultStorePath();
   const nowIso = new Date().toISOString();
   const store = await readStore(resolvedPath);
   const existing = store.integrations[runtime];
@@ -77,7 +77,7 @@ export async function uninstallAgentIntegration(
   runtime: SupportedAgentRuntime,
   targetStorePath?: string,
 ): Promise<boolean> {
-  const resolvedPath = targetStorePath ?? await getDefaultStorePath();
+  const resolvedPath = targetStorePath ?? getDefaultStorePath();
   const store = await readStore(resolvedPath);
   if (!store.integrations[runtime]) {
     return false;
