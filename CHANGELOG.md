@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.38](https://github.com/telepat-io/ideon/compare/ideon-v0.1.37...ideon-v0.1.38) (2026-06-06)
+
+
+### Features
+
+* add ideon_preview tool for managing local preview server ([d0bc421](https://github.com/telepat-io/ideon/commit/d0bc42183c73fc1cc265c12fd13afde45c7676ba))
+* improve error handling and message clarity in GAds and GKP tests; enhance sorting logic in various files ([5f19b96](https://github.com/telepat-io/ideon/commit/5f19b961d83bb46641f3c674a1061ae700c189aa))
+* new preview layout ([16fefb2](https://github.com/telepat-io/ideon/commit/16fefb23e9f575e81c26f9bddcd917037d38714f))
+
 ## [0.1.37](https://github.com/telepat-io/ideon/compare/ideon-v0.1.36...ideon-v0.1.37) (2026-06-05)
 
 
