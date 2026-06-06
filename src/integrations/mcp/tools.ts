@@ -320,6 +320,16 @@ export const articleListToolInputSchema = {};
 export const articleListToolInputZodSchema = z.object(articleListToolInputSchema);
 export type ArticleListToolInput = z.infer<typeof articleListToolInputZodSchema>;
 
+// ─── Preview tools ───────────────────────────────────────────────────────────
+
+export const previewToolInputSchema = {
+  action: z.enum(['start', 'stop', 'status']),
+  port: z.number().int().min(1).max(65535).optional(),
+  markdownPath: z.string().min(1).optional(),
+};
+export const previewToolInputZodSchema = z.object(previewToolInputSchema);
+export type PreviewToolInput = z.infer<typeof previewToolInputZodSchema>;
+
 // ─── GAds login tools ───────────────────────────────────────────────────────
 
 export const gadsLoginToolInputSchema = {
@@ -537,6 +547,13 @@ export const ideonToolContracts: ToolContract[] = [
     name: 'ideon_article_list',
     required: [],
     enums: {},
+  },
+  {
+    name: 'ideon_preview',
+    required: ['action'],
+    enums: {
+      action: ['start', 'stop', 'status'],
+    },
   },
   {
     name: 'gads_login',

@@ -56,6 +56,10 @@ Bei Erfolg druckt Ideon die Vorschau-URL, den ausgew Artikel-Pfad und das bereit
 - [`ideon delete <slug>`](./ideon-delete.md)
 - [Lokale Vorschau-Anleitung](../../guides/local-preview.md)
 
+## MCP-Äquivalent
+
+Agenten, die den Ideon-MCP-Server verwenden, können den Vorschau-Server mit `ideon_preview` steuern (`action`: `start`, `stop` oder `status`). Siehe [MCP-Server](../../for-agents/mcp-servers.md).
+
 ## Versionierung und Veraltungshinweise
 
 - Aktuelles Verhalten gilt für Ideon `0.1.6`.

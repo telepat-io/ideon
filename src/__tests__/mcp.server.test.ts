@@ -210,6 +210,16 @@ jest.unstable_mockModule('../integrations/mcp/oauthFlowManager.js', () => ({
   resetGadsLoginState: resetGadsLoginStateMock,
 }));
 
+const startManagedPreviewMock = jest.fn<(...args: any[]) => Promise<any>>();
+const stopManagedPreviewMock = jest.fn<(...args: any[]) => Promise<any>>();
+const getManagedPreviewStatusMock = jest.fn<() => any>();
+
+jest.unstable_mockModule('../server/previewServerManager.js', () => ({
+  startManagedPreview: startManagedPreviewMock,
+  stopManagedPreview: stopManagedPreviewMock,
+  getManagedPreviewStatus: getManagedPreviewStatusMock,
+}));
+
 const { startIdeonMcpServer } = await import('../integrations/mcp/server.js');
 
 describe('ideon MCP server', () => {
@@ -1137,6 +1147,90 @@ describe('ideon MCP server', () => {
 
     expect(result?.isError).toBe(true);
     expect(result?.content?.[0]?.text).toContain('Already authenticated');
+  });
+
+  it('executes ideon_preview start handler', async () => {
+    startManagedPreviewMock.mockResolvedValue({
+      status: 'running',
+      url: 'http://localhost:4173',
+      port: 4173,
+      markdownPath: '/tmp/sample.md',
+      startedAt: Date.now(),
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_preview');
+
+    const result = await tool?.handler({ action: 'start', port: 4173 });
+
+    expect(startManagedPreviewMock).toHaveBeenCalledWith({
+      port: 4173,
+      markdownPath: undefined,
+      cwd: expect.any(String),
+    });
+    expect(result?.structuredContent).toEqual({
+      status: 'running',
+      url: 'http://localhost:4173',
+      port: 4173,
+      markdownPath: '/tmp/sample.md',
+    });
+    expect(result?.content?.[0]?.text).toContain('http://localhost:4173');
+  });
+
+  it('executes ideon_preview stop handler', async () => {
+    stopManagedPreviewMock.mockResolvedValue({ status: 'stopped', url: '', port: 0, markdownPath: '', startedAt: 0 });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_preview');
+
+    const result = await tool?.handler({ action: 'stop' });
+
+    expect(stopManagedPreviewMock).toHaveBeenCalled();
+    expect(result?.structuredContent).toEqual({ status: 'stopped' });
+    expect(result?.content?.[0]?.text).toContain('stopped');
+  });
+
+  it('executes ideon_preview status handler when running', async () => {
+    getManagedPreviewStatusMock.mockReturnValue({
+      status: 'running',
+      url: 'http://localhost:4173',
+      port: 4173,
+      markdownPath: '/tmp/sample.md',
+      startedAt: 1234,
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_preview');
+
+    const result = await tool?.handler({ action: 'status' });
+
+    expect(getManagedPreviewStatusMock).toHaveBeenCalled();
+    expect(result?.structuredContent).toEqual({
+      status: 'running',
+      url: 'http://localhost:4173',
+      port: 4173,
+      markdownPath: '/tmp/sample.md',
+      startedAt: 1234,
+    });
+  });
+
+  it('executes ideon_preview status handler when stopped', async () => {
+    getManagedPreviewStatusMock.mockReturnValue({ status: 'stopped', url: '', port: 0, markdownPath: '', startedAt: 0 });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_preview');
+
+    const result = await tool?.handler({ action: 'status' });
+
+    expect(result?.structuredContent).toEqual({ status: 'stopped' });
+    expect(result?.content?.[0]?.text).toContain('not running');
+  });
+
+  it('returns error when ideon_preview start fails', async () => {
+    startManagedPreviewMock.mockRejectedValue(new Error('No generated articles found'));
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_preview');
+
+    const result = await tool?.handler({ action: 'start' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('No generated articles found');
   });
 
   it('executes gads_login_status handler for not_started', async () => {

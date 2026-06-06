@@ -58,7 +58,8 @@ Concise reference for AI agents working on this codebase.
 
 - Primary docs live in `docs/`.
 - Site workspace is `docs-site/`.
-- Keep user-visible docs and `zh-CN` parity in sync.
+- Docusaurus locales: `en` (default, from `docs/`), `zh-CN`, and `de`. Translations live under `docs-site/i18n/<locale>/docusaurus-plugin-content-docs/current/` (mirror paths from `docs/`).
+- Keep user-visible docs and `zh-CN` + `de` parity in sync when changing guides or user-facing reference pages.
 
 ---
 

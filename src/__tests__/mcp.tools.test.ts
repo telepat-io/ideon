@@ -25,6 +25,7 @@ import {
   planExploreToolInputZodSchema,
   planExpandToolInputZodSchema,
   articleListToolInputZodSchema,
+  previewToolInputZodSchema,
 } from '../integrations/mcp/tools.js';
 
 describe('MCP tool schemas', () => {
@@ -465,6 +466,28 @@ describe('Article tool schemas', () => {
   });
 });
 
+describe('Preview tool schemas', () => {
+  it('validates preview start input', () => {
+    const result = previewToolInputZodSchema.safeParse({
+      action: 'start',
+      port: 4173,
+      markdownPath: './output/article.md',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects preview input without action', () => {
+    const result = previewToolInputZodSchema.safeParse({ port: 4173 });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects invalid preview action', () => {
+    const result = previewToolInputZodSchema.safeParse({ action: 'restart' });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe('New MCP tool contracts', () => {
   it('includes ideon_publication_add with name required', () => {
     const contract = ideonToolContracts.find((tool) => tool.name === 'ideon_publication_add');
@@ -509,6 +532,13 @@ describe('New MCP tool contracts', () => {
     const contract = ideonToolContracts.find((tool) => tool.name === 'ideon_article_list');
     expect(contract).toBeDefined();
     expect(contract?.required).toEqual([]);
+  });
+
+  it('includes ideon_preview with action required', () => {
+    const contract = ideonToolContracts.find((tool) => tool.name === 'ideon_preview');
+    expect(contract).toBeDefined();
+    expect(contract?.required).toEqual(['action']);
+    expect(contract?.enums.action).toEqual(['start', 'stop', 'status']);
   });
 
   it('includes all 17 new tool contracts', () => {

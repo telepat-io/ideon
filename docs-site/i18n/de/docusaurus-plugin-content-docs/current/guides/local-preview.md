@@ -6,7 +6,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Lokale Vorschau
 
-Ideon stellt generierte Inhalte über eine React-basierte lokale Web-App bereit, sodass Sie Text, Ressourcen und Modellinteraktionen an einem Ort überprüfen können.
+Ideon stellt generierte Inhalte über eine React-basierte lokale Web-App bereit, sodass Sie Text, Ressourcen, Plan-Metadaten und Modellinteraktionen an einem Ort überprüfen können.
 
 ## Schnellstart
 
@@ -26,36 +26,53 @@ Dieser Befehl:
 
 ## Was Sie in der Benutzoberfläche sehen
 
+Die Vorschau-App verwendet das Telepat-Dunkeldesign (Leuchthintergründe, Poppins-Typografie, violette Akzente).
+
+### Kopfzeile
+
+- Markenlogo und Aktualisierungssteuerung
+- **Info** öffnet die Metadaten-Schublade (Publikation, Serie und Generierungskontext)
+- **Actions**-Menü: Markdown kopieren, meta.json herunterladen, Quellordner öffnen (kopiert den Generierungspfad)
+
 ### Linke Leiste
 
-- ein Element pro Generierungsverzeichnis
-- Titel, Zeitstempel und Snippet-Vorschau
-- Schnell-Lade-Button
+- Suche über Titel, Snippets, Keywords und Slugs
+- Dropdown-Filter für Publikationen und Serien (aus Ihrer Ideon-Konfiguration)
+- nach Datum gruppierte Generierungsliste mit Cover-Vorschaubildern, sofern vorhanden
+- Publikations- und Keyword-Badges auf jedem Listeneintrag
 
-### Hauptinhaltsbereich
+### Hauptansichten
 
-- kompakte Zusammenfassungszeile (Quellpfad, Generierungsanzahl, Ausgabeanzahl, Interaktionsanzahl)
-- aktiver Generierungstitel und -slug
-- Kanal-Registerkarten auf oberster Ebene (`article`, `x-post`, `linkedin-post`, usw.)
-- Varianten-Registerkarten innerhalb jedes Kanals (`Article 1`, `X Post 2`, usw.)
-- gerenderter Markdown-Body für die ausgewählte Ausgabe
+Für die aktive Generierung stehen drei Registerkarten zur Verfügung:
 
-### Protokollansicht
+| Ansicht | Zweck |
+|--------|--------|
+| **Content** | Kanalspezifische Vorschaurahmen pro Ausgabetyp (Artikel, Blogpost, X-Post, LinkedIn usw.) mit Format- und Varianten-Tabs sowie Kapitelübersicht für Langform-Inhalte |
+| **Plan & Assets** | Original-Idee, Content-Plan-Abschnitte, Bildergalerie sowie Stil-/Intent-Metadaten aus `meta.json` |
+| **Logs** | Nach Stufen gruppierte LLM- und Bild-Interaktionsinspektion (`Prompt / Response` und `Full JSON`) |
 
-- stufen gruppierte Interaktionsliste (`shared-plan`, `planning`, `sections`, `image-prompts`, `images`, `output`, `links`)
-- pro-Aufruf-Inspektor mit Metadaten (Modell, Status, Dauer)
-- Modus-Umschaltung für `Prompt / Response` und `Full JSON`
+Publikation und Serie sind optional. Generierungen ohne diese Zuordnung lassen sich weiterhin normal anzeigen; zugehörige UI-Bereiche werden ausgeblendet.
+
+### Inhaltsformat-Vorschau
+
+Jeder unterstützte Ideon-Ausgabetyp wird im Content-Tab einem kanalspezifischen Vorschaurahmen zugeordnet:
+
+- Langform-Typen (`article`, `blog-post`, `science-paper`) zeigen ergänzende Elemente aus `meta.json` (Cover, Keywords, Byline oder Abstract) plus den echten Markdown-Body, mit scroll-synchronisierter Kapitelübersicht.
+- Social- und Verteilungstypen (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`, `newsletter`, `press-release`) verpacken die echte Ausgabe in plattformähnliche Karten mit dekorativer Umrahmung (Avatare, Aktionsleisten, statische Engagement-Platzhalter).
+- Autoren-Chrome leitet sich vom aufgelösten Publikationsnamen ab, sofern vorhanden; andernfalls wird eine neutrale Vorschau-Bezeichnung verwendet.
+- Dekorative UI (Kommentarthreads, Reaktionszahlen, Sponsor-Blöcke) ist statische Vorschau-Dekoration, keine Daten aus der Generierungspipeline.
+- Unbekannte Ausgabetypen fallen auf generische Markdown-Typografie zurück.
 
 ## Laufzeitarchitektur
 
-`ideon preview` führt nun zwei Ebenen aus:
+`ideon preview` führt zwei Ebenen aus:
 
 1. API + statischer Server (`src/server/previewServer.ts`)
 2. React-Client-App (`src/preview-app/`, gebaut von Vite in `dist/preview/`)
 
 Beim Start versucht der Server, den gebauten React-Client zu finden und `index.html` unter `/` bereitzustellen.
 
-- Wenn die React-Build existiert, wird die SPA-Benutzoberfläche bereitgestellt.
+- Wenn der React-Build existiert, wird die SPA-Oberfläche bereitgestellt.
 - Wenn der Build fehlt, fällt die Vorschau auf eine servergerenderte Hülle zurück, sodass die Vorschau dennoch funktioniert.
 
 ## Vorschau-API-Endpunkte
@@ -63,9 +80,11 @@ Beim Start versucht der Server, den gebauten React-Client zu finden und `index.h
 Die React-App liest Daten von:
 
 - `GET /api/bootstrap`: initiale Quellpfad- und aktive-Generierung-Auswahl
-- `GET /api/articles`: Generierungsliste für die linke Leiste
-- `GET /api/articles/:slug`: vollständige Ausgabe + Interaktions-Payload für eine Generierung
-- `GET /api/generations/:generationId/assets/*assetPath`: generierungsbereichsbezogene Ressourcenbereitstellung
+- `GET /api/articles`: Generierungsliste (enthält `publication`, `series` und `keywords`, sofern in `meta.json` vorhanden)
+- `GET /api/articles/:slug`: vollständige Ausgabe, typisiertes `metaJson` und `markdownBody` pro Ausgabe
+- `GET /api/publications`: konfigurierte Publikationen für Seitenleisten-Filter und Metadaten-Schublade
+- `GET /api/series`: konfigurierte Serien für Seitenleisten-Filter und Metadaten-Schublade
+- `GET /api/generations/:generationId/assets/*assetPath`: generierungsbezogene Ressourcenbereitstellung
 
 ## Auswahl- und Rückfallverhalten
 
@@ -73,12 +92,7 @@ Die React-App liest Daten von:
 - Wenn `markdownPath` bereitgestellt wird, verwendet die Vorschau diese Generierung als initiale Auswahl, wenn gefunden.
 - Wenn die aktive Generierung verschwindet, während die Vorschau geöffnet ist, fällt das Aktualisieren sicher auf die neueste verbleibende Generierung zurück.
 - Wenn kein Markdown mehr vorhanden ist, zeigt die Vorschau eine Leerzustandsnachricht statt eines Absturzes.
-
-## Design-Verhalten
-
-- Erstes Laden folgt dem OS-Farbmodell (`prefers-color-scheme`).
-- Hell/Dunkel-Umschaltung wird im lokalen Speicher persistiert.
-- Die App verwendet Ant Design-Design-Token und benutzerdefiniertes CSS für kanalspezifische Ausgabekarten.
+- Seitenleisten-Filter wählen automatisch die erste passende Generierung, wenn die aktuelle Auswahl herausgefiltert wird.
 
 ## Vorschau eines bestimmten Artikels
 
@@ -99,7 +113,7 @@ Optionale Flags:
 
 ## Mitwirkenden-Hinweise
 
-Wenn Sie die Vorschau-Benutzoberfläche lokal entwickeln:
+Wenn Sie die Vorschau-Benutzeroberfläche lokal entwickeln:
 
 1. Bauen Sie den React-Client einmal:
 
@@ -145,3 +159,9 @@ Wenn Bilder nicht laden:
 1. Stellen Sie sicher, dass die Vorschau auf denselben Workspace-Ausgaberoot zeigt, der für die Generierung verwendet wurde.
 2. Überprüfen Sie, dass Markdown generierungsrelative Ressourcenpfade verwendet.
 3. Öffnen Sie die Browser-Entwicklertools und bestätigen Sie, dass `/api/generations/:id/assets/...` `200` zurückgibt.
+
+Wenn Publikations- oder Serienfilter leer sind:
+
+1. Erstellen Sie Publikationen mit `ideon publication add`.
+2. Erstellen Sie Serien mit `ideon series add`.
+3. Führen Sie die Generierung erneut aus, damit `meta.json` die gewählten Publikations-/Serien-Slugs speichert.

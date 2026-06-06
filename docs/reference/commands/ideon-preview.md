@@ -56,6 +56,10 @@ On success, Ideon prints the preview URL, selected article path, and served asse
 - [`ideon delete <slug>`](./ideon-delete.md)
 - [Local Preview Guide](../../guides/local-preview.md)
 
+## MCP Equivalent
+
+Agents using the Ideon MCP server can control the preview server with `ideon_preview` (`action`: `start`, `stop`, or `status`). See [MCP Servers](../../for-agents/mcp-servers.md).
+
 ## Versioning and Deprecation Notes
 
 - Current behavior applies to Ideon `0.1.6`.

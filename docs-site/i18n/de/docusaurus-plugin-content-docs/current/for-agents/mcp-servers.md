@@ -25,6 +25,19 @@ Ideon veröffentlicht einen ersten Partei Model Context Protocol Server über st
 	- `gkp_generate_ideas`
 	- `gkp_get_historical_data`
 	- `gkp_get_forecast_data`
+	- `ideon_preview`
+
+### Vorschau
+
+- `ideon_preview` — Lokalen Vorschau-Server starten, stoppen oder Status abfragen
+
+| Parameter | Typ | Erforderlich | Standard | Beschreibung |
+| --- | --- | --- | --- | --- |
+| `action` | Enum | Ja | — | `start`, `stop` oder `status` |
+| `port` | Ganzzahl | Nein | `4173` | Port des Vorschau-Servers (nur bei `start`) |
+| `markdownPath` | Zeichenkette | Nein | Neuestes generiertes Markdown | Bestimmte Markdown-Datei für die Vorschau (nur bei `start`) |
+
+Der Status gilt nur für Vorschau-Server, die vom aktuellen MCP-Prozess gestartet wurden. Separat über `ideon preview` gestartete Server werden nicht erfasst.
 
 ## Google Keyword Planner-Werkzeuge
 

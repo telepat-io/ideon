@@ -1,6 +1,6 @@
 # Ideon MCP Tool Catalog
 
-Complete parameter reference for all 29 Ideon MCP tools.
+Complete parameter reference for all 33 Ideon MCP tools.
 
 ## Tool index
 
@@ -10,32 +10,33 @@ Complete parameter reference for all 29 Ideon MCP tools.
 4. [ideon_links](#ideon_links)
 5. [ideon_export](#ideon_export)
 6. [ideon_article_list](#ideon_article_list)
-7. [ideon_config_list](#ideon_config_list)
-8. [ideon_config_get](#ideon_config_get)
-9. [ideon_config_set](#ideon_config_set)
-10. [ideon_config_unset](#ideon_config_unset)
-11. [ideon_publication_add](#ideon_publication_add)
-12. [ideon_publication_list](#ideon_publication_list)
-13. [ideon_publication_edit](#ideon_publication_edit)
-14. [ideon_publication_remove](#ideon_publication_remove)
-15. [ideon_series_add](#ideon_series_add)
-16. [ideon_series_list](#ideon_series_list)
-17. [ideon_series_edit](#ideon_series_edit)
-18. [ideon_series_remove](#ideon_series_remove)
-19. [ideon_queue_add](#ideon_queue_add)
-20. [ideon_queue_list](#ideon_queue_list)
-21. [ideon_queue_peek](#ideon_queue_peek)
-22. [ideon_queue_remove](#ideon_queue_remove)
-23. [ideon_queue_clear](#ideon_queue_clear)
-24. [ideon_queue_write](#ideon_queue_write)
-25. [ideon_plan_explore](#ideon_plan_explore)
-26. [ideon_plan_expand](#ideon_plan_expand)
-27. [gkp_generate_ideas](#gkp_generate_ideas)
-28. [gkp_get_historical_data](#gkp_get_historical_data)
-29. [gkp_get_forecast_data](#gkp_get_forecast_data)
-30. [gads_login](#gads_login)
-31. [gads_login_status](#gads_login_status)
-32. [gads_test](#gads_test)
+7. [ideon_preview](#ideon_preview)
+8. [ideon_config_list](#ideon_config_list)
+9. [ideon_config_get](#ideon_config_get)
+10. [ideon_config_set](#ideon_config_set)
+11. [ideon_config_unset](#ideon_config_unset)
+12. [ideon_publication_add](#ideon_publication_add)
+13. [ideon_publication_list](#ideon_publication_list)
+14. [ideon_publication_edit](#ideon_publication_edit)
+15. [ideon_publication_remove](#ideon_publication_remove)
+16. [ideon_series_add](#ideon_series_add)
+17. [ideon_series_list](#ideon_series_list)
+18. [ideon_series_edit](#ideon_series_edit)
+19. [ideon_series_remove](#ideon_series_remove)
+20. [ideon_queue_add](#ideon_queue_add)
+21. [ideon_queue_list](#ideon_queue_list)
+22. [ideon_queue_peek](#ideon_queue_peek)
+23. [ideon_queue_remove](#ideon_queue_remove)
+24. [ideon_queue_clear](#ideon_queue_clear)
+25. [ideon_queue_write](#ideon_queue_write)
+26. [ideon_plan_explore](#ideon_plan_explore)
+27. [ideon_plan_expand](#ideon_plan_expand)
+28. [gkp_generate_ideas](#gkp_generate_ideas)
+29. [gkp_get_historical_data](#gkp_get_historical_data)
+30. [gkp_get_forecast_data](#gkp_get_forecast_data)
+31. [gads_login](#gads_login)
+32. [gads_login_status](#gads_login_status)
+33. [gads_test](#gads_test)
 
 ---
 
@@ -179,6 +180,28 @@ List generated articles in the current workspace.
 | — | — | — | — | No parameters. |
 
 Returns a JSON array of article objects with slug, title, and metadata.
+
+---
+
+### `ideon_preview`
+
+Start, stop, or check status of the local preview server for generated Ideon content.
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `action` | enum | Yes | — | `start`, `stop`, or `status` |
+| `port` | integer | No | `4173` | TCP port for the preview server (start only) |
+| `markdownPath` | string | No | Newest generated markdown | Specific markdown file to preview (start only) |
+
+**Response `structuredContent`:**
+
+| action | Fields |
+| --- | --- |
+| `start` | `status`, `url`, `port`, `markdownPath` |
+| `stop` | `status` |
+| `status` | `status`, and when running: `url`, `port`, `markdownPath`, `startedAt` |
+
+Status reflects preview servers started by the current MCP process only.
 
 ---
 

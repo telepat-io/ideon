@@ -41,6 +41,7 @@ import {
   type GadsLoginToolInput,
   type GadsLoginStatusToolInput,
   type GadsTestToolInput,
+  type PreviewToolInput,
   configGetToolInputSchema,
   configListToolInputSchema,
   configSetToolInputSchema,
@@ -73,6 +74,7 @@ import {
   gadsLoginToolInputZodSchema,
   gadsLoginStatusToolInputZodSchema,
   gadsTestToolInputZodSchema,
+  previewToolInputZodSchema,
 } from './tools.js';
 import { GkpClient } from '../keywordplanner/client.js';
 import { CachedGkpClient } from '../keywordplanner/cachedClient.js';
@@ -113,6 +115,11 @@ import { loadSavedSettings } from '../../config/settingsFile.js';
 import { OpenRouterClient } from '../../llm/openRouterClient.js';
 import { runArticleListCommand } from '../../cli/commands/article.js';
 import { startGadsLogin, getGadsLoginStatus, resetGadsLoginState } from './oauthFlowManager.js';
+import {
+  getManagedPreviewStatus,
+  startManagedPreview,
+  stopManagedPreview,
+} from '../../server/previewServerManager.js';
 
 let cachedGkpClient: CachedGkpClient | null = null;
 
@@ -1214,6 +1221,87 @@ export function registerIdeonTools(server: McpServer): void {
         );
         const output = messages.join('\n');
         return { content: [{ type: 'text', text: output || '[]' }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  // ─── Preview tools ──────────────────────────────────────────────────────
+
+  server.registerTool(
+    'ideon_preview',
+    {
+      title: 'Ideon Preview',
+      description: 'Start, stop, or check status of the local preview server for generated Ideon content.',
+      inputSchema: previewToolInputZodSchema,
+    },
+    async (input: PreviewToolInput) => {
+      try {
+        if (input.action === 'start') {
+          const state = await startManagedPreview({
+            port: input.port,
+            markdownPath: input.markdownPath,
+            cwd: cwd(),
+          });
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text:
+                  `Preview server started.\n` +
+                  `URL: ${state.url}\n` +
+                  `Port: ${state.port}\n` +
+                  `Markdown: ${state.markdownPath}`,
+              },
+            ],
+            structuredContent: {
+              status: state.status,
+              url: state.url,
+              port: state.port,
+              markdownPath: state.markdownPath,
+            },
+          };
+        }
+
+        if (input.action === 'stop') {
+          const state = await stopManagedPreview();
+
+          return {
+            content: [{ type: 'text', text: 'Preview server stopped.' }],
+            structuredContent: { status: state.status },
+          };
+        }
+
+        const state = getManagedPreviewStatus();
+
+        if (state.status === 'running') {
+          return {
+            content: [
+              {
+                type: 'text',
+                text:
+                  `Preview server is running.\n` +
+                  `URL: ${state.url}\n` +
+                  `Port: ${state.port}\n` +
+                  `Markdown: ${state.markdownPath}`,
+              },
+            ],
+            structuredContent: {
+              status: state.status,
+              url: state.url,
+              port: state.port,
+              markdownPath: state.markdownPath,
+              startedAt: state.startedAt,
+            },
+          };
+        }
+
+        return {
+          content: [{ type: 'text', text: 'Preview server is not running.' }],
+          structuredContent: { status: state.status },
+        };
       } catch (error) {
         return formatToolError(error);
       }

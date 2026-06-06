@@ -1,6 +1,6 @@
 ---
 name: ideon-mcp
-description: Use this skill when users need to operate Ideon through its MCP tool surface — generating content, managing config, planning content strategy with Google Keyword Planner data, organizing publications, series, and queues, enriching links, exporting articles, or deleting outputs — all via MCP tool calls rather than CLI commands. Use this skill whenever the user mentions Ideon MCP tools, is running Ideon inside an MCP client (Claude, Claude Desktop, Gemini, opencode, Cursor, VS Code, ChatGPT, Codex), asks about ideon_write, ideon_config_set, ideon_delete, ideon_links, ideon_export, ideon_publication_*, ideon_series_*, ideon_queue_*, ideon_plan_*, ideon_article_list, gkp_generate_ideas, gkp_get_historical_data, gkp_get_forecast_data, wants to set up or configure the Ideon MCP server, or needs content generation workflows through the MCP protocol — even if they do not explicitly say "MCP".
+description: Use this skill when users need to operate Ideon through its MCP tool surface — generating content, managing config, planning content strategy with Google Keyword Planner data, organizing publications, series, and queues, enriching links, exporting articles, previewing generated content, or deleting outputs — all via MCP tool calls rather than CLI commands. Use this skill whenever the user mentions Ideon MCP tools, is running Ideon inside an MCP client (Claude, Claude Desktop, Gemini, opencode, Cursor, VS Code, ChatGPT, Codex), asks about ideon_write, ideon_config_set, ideon_delete, ideon_links, ideon_export, ideon_preview, ideon_publication_*, ideon_series_*, ideon_queue_*, ideon_plan_*, ideon_article_list, gkp_generate_ideas, gkp_get_historical_data, gkp_get_forecast_data, wants to set up or configure the Ideon MCP server, or needs content generation workflows through the MCP protocol — even if they do not explicitly say "MCP".
 ---
 
 # Ideon MCP Skill
@@ -248,6 +248,7 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 | `ideon_delete` | `slug` | Delete generated output by slug. |
 | `ideon_links` | `slug` | Run link enrichment for an existing article. |
 | `ideon_article_list` | — | List generated articles in current workspace. |
+| `ideon_preview` | `action` | Start, stop, or check status of the local preview server. |
 
 ### Configuration
 

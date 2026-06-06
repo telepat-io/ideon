@@ -102,6 +102,27 @@ Both transports expose the same tools:
 
 - `ideon_article_list` — List generated articles in the current workspace
 
+### Preview
+
+- `ideon_preview` — Start, stop, or check status of the local preview server
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `action` | enum | Yes | — | `start`, `stop`, or `status` |
+| `port` | integer | No | `4173` | TCP port for the preview server (start only) |
+| `markdownPath` | string | No | Newest generated markdown | Specific markdown file to preview (start only) |
+
+Example calls:
+
+```json
+{"tool": "ideon_preview", "parameters": {"action": "start"}}
+{"tool": "ideon_preview", "parameters": {"action": "start", "port": 4173}}
+{"tool": "ideon_preview", "parameters": {"action": "status"}}
+{"tool": "ideon_preview", "parameters": {"action": "stop"}}
+```
+
+Status reflects preview servers started by the current MCP process only. Servers started separately via `ideon preview` are not tracked.
+
 ### Google Keyword Planner
 
 - `gkp_generate_ideas` — Generate keyword ideas from seed keywords, a URL, or a site
