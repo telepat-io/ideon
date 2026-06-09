@@ -60,6 +60,8 @@ export default {
     '!src/preview-app/testFileMock.ts',
     '!src/integrations/keywordplanner/oauth.ts',
   ],
+  // Branch totals vary slightly between macOS dev and Linux CI (~0.1–0.2%).
+  // Keep new tests landing at least ~1% above the gate so CI stays green.
   coverageThreshold: {
     global: {
       lines: 90,

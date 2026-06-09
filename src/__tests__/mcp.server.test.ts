@@ -45,6 +45,12 @@ const loadSeriesMock = jest.fn<(...args: any[]) => Promise<any>>();
 const deleteSeriesMock = jest.fn<(...args: any[]) => Promise<void>>();
 const seriesExistsMock = jest.fn<(...args: any[]) => Promise<boolean>>();
 
+const saveAuthorMock = jest.fn<(...args: any[]) => Promise<void>>();
+const listAuthorsMock = jest.fn<(...args: any[]) => Promise<any>>();
+const loadAuthorMock = jest.fn<(...args: any[]) => Promise<any>>();
+const deleteAuthorMock = jest.fn<(...args: any[]) => Promise<void>>();
+const authorExistsMock = jest.fn<(...args: any[]) => Promise<boolean>>();
+
 const generateQueueIdMock = jest.fn(() => 'test-uuid-1234');
 const saveQueueEntryMock = jest.fn<(...args: any[]) => Promise<void>>();
 const listQueueEntriesMock = jest.fn<(...args: any[]) => Promise<any>>();
@@ -170,6 +176,14 @@ jest.unstable_mockModule('../config/seriesStore.js', () => ({
   loadSeries: loadSeriesMock,
   deleteSeries: deleteSeriesMock,
   seriesExists: seriesExistsMock,
+}));
+
+jest.unstable_mockModule('../config/authorStore.js', () => ({
+  saveAuthor: saveAuthorMock,
+  listAuthors: listAuthorsMock,
+  loadAuthor: loadAuthorMock,
+  deleteAuthor: deleteAuthorMock,
+  authorExists: authorExistsMock,
 }));
 
 jest.unstable_mockModule('../config/queueStore.js', () => ({
@@ -330,6 +344,17 @@ describe('ideon MCP server', () => {
       defaults: {},
     });
     deleteSeriesMock.mockResolvedValue(undefined);
+
+    // Author store mocks
+    authorExistsMock.mockResolvedValue(false);
+    saveAuthorMock.mockResolvedValue(undefined);
+    listAuthorsMock.mockResolvedValue([]);
+    loadAuthorMock.mockResolvedValue({
+      name: 'Test Author',
+      slug: 'test-author',
+      profile: 'Writes about testing.',
+    });
+    deleteAuthorMock.mockResolvedValue(undefined);
 
     // Queue store mocks
     generateQueueIdMock.mockReturnValue('test-uuid-1234');
@@ -757,12 +782,13 @@ describe('ideon MCP server', () => {
 
   // ─── Publication tool tests ──────────────────────────────────────────────
 
-  it('registers all 17 new tools', async () => {
+  it('registers all entity and planning tools', async () => {
     await startIdeonMcpServer();
 
     const newTools = [
       'ideon_publication_add', 'ideon_publication_list', 'ideon_publication_edit', 'ideon_publication_remove',
       'ideon_series_add', 'ideon_series_list', 'ideon_series_edit', 'ideon_series_remove',
+      'ideon_author_add', 'ideon_author_list', 'ideon_author_edit', 'ideon_author_remove',
       'ideon_queue_add', 'ideon_queue_list', 'ideon_queue_peek', 'ideon_queue_remove', 'ideon_queue_clear', 'ideon_queue_write',
       'ideon_plan_explore', 'ideon_plan_expand',
       'ideon_article_list',
@@ -897,6 +923,79 @@ describe('ideon MCP server', () => {
 
     expect(deleteSeriesMock).toHaveBeenCalledWith('test-series');
     expect(result?.content?.[0]?.text).toContain('true');
+  });
+
+  // ─── Author tool tests ───────────────────────────────────────────────────
+
+  it('executes ideon_author_add handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_author_add');
+
+    const result = await tool?.handler({ name: 'Alex Chen', profile: 'Staff SRE.' });
+
+    expect(authorExistsMock).toHaveBeenCalledWith('alex-chen');
+    expect(saveAuthorMock).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Alex Chen',
+      slug: 'alex-chen',
+      profile: 'Staff SRE.',
+    }));
+    expect(result?.content?.[0]?.text).toContain('alex-chen');
+  });
+
+  it('returns tool error when author already exists', async () => {
+    authorExistsMock.mockResolvedValue(true);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_author_add');
+
+    const result = await tool?.handler({ name: 'Alex Chen' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('already exists');
+  });
+
+  it('executes ideon_author_list handler', async () => {
+    listAuthorsMock.mockResolvedValue([
+      { name: 'Alex Chen', slug: 'alex-chen', profile: 'Staff SRE.' },
+    ]);
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_author_list');
+
+    const result = await tool?.handler({});
+
+    expect(listAuthorsMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('alex-chen');
+  });
+
+  it('executes ideon_author_edit handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_author_edit');
+
+    const result = await tool?.handler({ slug: 'test-author', profile: 'Updated profile.' });
+
+    expect(loadAuthorMock).toHaveBeenCalledWith('test-author');
+    expect(saveAuthorMock).toHaveBeenCalled();
+    expect(result?.content?.[0]?.text).toContain('test-author');
+  });
+
+  it('executes ideon_author_remove handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_author_remove');
+
+    const result = await tool?.handler({ slug: 'test-author' });
+
+    expect(deleteAuthorMock).toHaveBeenCalledWith('test-author');
+    expect(result?.content?.[0]?.text).toContain('true');
+  });
+
+  it('returns tool error when author edit fails', async () => {
+    loadAuthorMock.mockRejectedValue(new Error('Author "missing" not found.'));
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_author_edit');
+
+    const result = await tool?.handler({ slug: 'missing' });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content?.[0]?.text).toContain('not found');
   });
 
   // ─── Queue tool tests ────────────────────────────────────────────────────
