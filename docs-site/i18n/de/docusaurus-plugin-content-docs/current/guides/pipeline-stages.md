@@ -114,7 +114,7 @@ Wenn eine Stufe fehlschlägt:
 ## SEO-Check-Stufenverhalten
 
 - Läuft standardmäßig nach dem Abschnittsschreiben für Langform-Primäre.
-- **Deterministisches Lint** prüft Titel-/Beschreibungslänge, Primary-Keyword-Platzierung, Keyword-Abdeckung, BLUF-Eröffner und Fact-Density-Heuristiken.
+- **Deterministisches Lint** prüft Titel-/Beschreibungslänge, Primary-Keyword-Platzierung, Keyword-Abdeckung, BLUF-Eröffner (≥40 Wörter im ersten Absatz oder im `**Key takeaway:**`-Block) und Fact-Density-Heuristiken.
 - **Pass-Modi** (`seoCheckMode`, Standard `errors-only`):
   - `errors-only`: Stufe besteht, wenn keine Lint-Probleme `severity: error` haben; Warnungen werden erfasst, lösen aber keinen Agenten aus und lassen die Stufe bestehen.
   - `strict`: Stufe besteht nur bei null Lint-Problemen; jede Warnung löst den Editor-Agenten aus.

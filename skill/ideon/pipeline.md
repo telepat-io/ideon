@@ -107,7 +107,7 @@ This document details the execution flow for all 8 stages of the Ideon content g
 
 **Inputs:** Plan (`primaryKeyword`, section `targetKeywords`), intro/section/outro drafts, keyword-integration guide excerpt
 
-**Process:** Run deterministic `lintArticleSeo` with `seoCheckMode` (`errors-only` default | `strict`). Agent runs when errors exist (`errors-only`), any issue exists (`strict`), or `force` is set. Surgical editor uses five tools only: `edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro`. Prompt includes full draft markdown, keyword-integration guide, and inline issue playbook. Max turns from `seoCheckMaxTurns` (default 10).
+**Process:** Run deterministic `lintArticleSeo` with `seoCheckMode` (`errors-only` default | `strict`). BLUF lint measures the `**Key takeaway:**` block when present, otherwise the first paragraph (≥40 words). Agent runs when errors exist (`errors-only`), any issue exists (`strict`), or `force` is set. Surgical editor uses five tools only: `edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro`. Prompt includes full draft markdown, keyword-integration guide, opener stats per issue, and inline issue playbook. Max turns from `seoCheckMaxTurns` (default 10).
 
 **Output:** Patched plan/text in session; `seoCheck` block in `meta.json` with `seoCheckMode`, `warningsRemaining`, mode-aware `passed`, and full `issues[]`
 

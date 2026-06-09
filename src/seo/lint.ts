@@ -38,6 +38,23 @@ export function countSeoWarnings(issues: SeoIssue[]): number {
   return issues.filter((issue) => issue.severity === 'warning').length;
 }
 
+export const BLUF_MIN_WORDS = 40;
+
+export type SectionOpenerKind = 'key_takeaway' | 'paragraph';
+
+export interface SectionOpenerStats {
+  kind: SectionOpenerKind;
+  text: string;
+  wordCount: number;
+}
+
+export function measureSectionOpener(body: string): SectionOpenerStats {
+  const text = firstParagraphText(body);
+  const wordCount = countWords(text);
+  const kind = /^\*\*Key takeaway:\*\*/i.test(text.trim()) ? 'key_takeaway' : 'paragraph';
+  return { kind, text, wordCount };
+}
+
 export function computeSeoPassed(issues: SeoIssue[], mode: SeoCheckMode): boolean {
   if (mode === 'strict') {
     return issues.length === 0;
@@ -109,9 +126,9 @@ export function lintArticleSeo({
   for (let index = 0; index < text.sections.length; index += 1) {
     const section = text.sections[index]!;
     const planSection = plan.sections[index];
-    const firstParagraph = firstParagraphText(section.body);
+    const opener = measureSectionOpener(section.body);
 
-    if (firstParagraph.split(/\s+/).filter(Boolean).length < 40) {
+    if (opener.wordCount < BLUF_MIN_WORDS) {
       issues.push({
         id: `bluf-length-${index}`,
         severity: 'warning',
@@ -182,6 +199,10 @@ function containsKeyword(haystack: string, keyword: string | undefined): boolean
 function containsKeywordInFirstWords(text: string, keyword: string, wordLimit: number): boolean {
   const words = text.trim().split(/\s+/).filter(Boolean).slice(0, wordLimit);
   return containsKeyword(words.join(' '), keyword);
+}
+
+function countWords(text: string): number {
+  return text.split(/\s+/).filter(Boolean).length;
 }
 
 function firstParagraphText(body: string): string {

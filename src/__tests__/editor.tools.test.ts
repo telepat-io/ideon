@@ -129,4 +129,29 @@ describe('editor tools', () => {
     expect(result.remainingWarnings).toBeDefined();
     expect((result.remainingErrors ?? 0) + (result.remainingWarnings ?? 0)).toBe(result.remainingIssues);
   });
+
+  it('appends a BLUF hint when edit_section_body leaves a short key takeaway opener', () => {
+    const snapshot = cloneEditorSnapshot(mockPlan(), {
+      intro: 'Alpha keyword appears here in the introduction for coverage.',
+      sections: [
+        {
+          title: 'First Section',
+          body: '**Key takeaway:** Too short.\n\nLonger supporting paragraph with enough words because operators need concrete scheduling constraints failure domains capacity signals affinity rules and rollout practices before they tune workloads for reliability in production environments according to recent surveys.',
+        },
+        { title: 'Second Section', body: 'Second body with enough words for BLUF checks and supporting detail across environments.' },
+      ],
+      outro: 'Outro text.',
+    });
+    const handlers = createEditorToolHandlers(() => snapshot, { mode: 'strict' });
+
+    const result = handlers.edit_section_body({
+      sectionIndex: 0,
+      body: '**Key takeaway:** Still short.\n\nLonger supporting paragraph with enough words because operators need concrete scheduling constraints failure domains capacity signals affinity rules and rollout practices before they tune workloads for reliability in production environments according to recent surveys.',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.message).toContain('Opener still');
+    expect(result.message).toContain('key_takeaway');
+    expect(result.message).toContain('expand **Key takeaway:**');
+  });
 });

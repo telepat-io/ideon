@@ -117,7 +117,7 @@ When a stage fails:
 ## SEO Check Stage Behavior
 
 - Runs by default after section writing for long-form primaries.
-- **Deterministic lint** checks title/description length, primary keyword placement, keyword coverage, BLUF openers, and fact-density heuristics.
+- **Deterministic lint** checks title/description length, primary keyword placement, keyword coverage, BLUF openers (≥40 words in the first paragraph, or in the `**Key takeaway:**` block when present), and fact-density heuristics.
 - **Pass modes** (`seoCheckMode`, default `errors-only`):
   - `errors-only`: stage passes when no lint issues have `severity: error`; warnings are recorded but do not trigger the agent or fail the stage.
   - `strict`: stage passes only when zero lint issues remain; any warning triggers the editor agent.

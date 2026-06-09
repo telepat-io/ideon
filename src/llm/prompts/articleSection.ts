@@ -198,6 +198,7 @@ export function buildSectionMessages(
         `- ${paragraphCount} paragraphs.`,
         `- Target length: about ${sectionTargetWords} words.`,
         '- Open with a 40-to-60-word definition-first paragraph that directly answers the section heading.',
+        '- If the section opens with **Key takeaway:**, that labeled line must be at least 40 words (definition-first), matching on-page-essentials.',
         '- Be concrete and specific. Support key claims with statistics, data points, or authoritative citations.',
         '- Include at least one practical insight that sounds like first-hand practitioner experience.',
         '- Continue naturally from the article draft so far without rehashing prior sections.',

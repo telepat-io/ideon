@@ -1,13 +1,29 @@
-import { countSeoErrors, countSeoWarnings, lintArticleSeo, type SeoCheckMode } from '../seo/lint.js';
+import {
+  countSeoErrors,
+  countSeoWarnings,
+  lintArticleSeo,
+  measureSectionOpener,
+  type SeoCheckMode,
+} from '../seo/lint.js';
 import type { EditorSessionSnapshot, EditorToolResult } from './snapshot.js';
 
-function success(snapshot: EditorSessionSnapshot, mode: SeoCheckMode, message?: string): EditorToolResult {
+function success(
+  snapshot: EditorSessionSnapshot,
+  mode: SeoCheckMode,
+  message?: string,
+  blufSectionIndex?: number,
+): EditorToolResult {
   const lint = lintArticleSeo({ plan: snapshot.plan, text: snapshot.text, mode });
   const remainingErrors = countSeoErrors(lint.issues);
   const remainingWarnings = countSeoWarnings(lint.issues);
+  let finalMessage = message;
+  if (blufSectionIndex !== undefined && finalMessage) {
+    const body = snapshot.text.sections[blufSectionIndex]?.body ?? '';
+    finalMessage = appendBlufHintIfNeeded(finalMessage, blufSectionIndex, lint.issues, body);
+  }
   return {
     ok: true,
-    message,
+    message: finalMessage,
     remainingErrors,
     remainingWarnings,
     remainingIssues: lint.issues.length,
@@ -31,6 +47,23 @@ function syncSectionTitle(snapshot: EditorSessionSnapshot, index: number): void 
   if (planSection && textSection) {
     textSection.title = planSection.title;
   }
+}
+
+function appendBlufHintIfNeeded(
+  message: string,
+  sectionIndex: number,
+  issues: ReturnType<typeof lintArticleSeo>['issues'],
+  body: string,
+): string {
+  if (!issues.some((issue) => issue.id === `bluf-length-${sectionIndex}`)) {
+    return message;
+  }
+
+  const opener = measureSectionOpener(body);
+  const expandTarget = opener.kind === 'key_takeaway'
+    ? 'expand **Key takeaway:** line to at least 40 words'
+    : 'expand the first paragraph to at least 40 words';
+  return `${message} Opener still ${opener.wordCount} words (${opener.kind}); ${expandTarget}.`;
 }
 
 export function createEditorToolHandlers(
@@ -93,7 +126,7 @@ export function createEditorToolHandlers(
         return failure('body is required');
       }
       snapshot.text.sections[sectionIndex]!.body = args.body.trim();
-      return success(snapshot, mode, 'Section body updated');
+      return success(snapshot, mode, 'Section body updated', sectionIndex);
     },
 
     edit_outro(args) {

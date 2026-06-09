@@ -1,5 +1,5 @@
 import { readGuideFile } from '../llm/prompts/guideBundles.js';
-import type { SeoCheckMode, SeoIssue } from '../seo/lint.js';
+import { measureSectionOpener, type SeoCheckMode, type SeoIssue } from '../seo/lint.js';
 import type { ArticlePlan } from '../types/article.js';
 import type { EditorTextSnapshot } from './snapshot.js';
 
@@ -10,7 +10,7 @@ const ISSUE_PLAYBOOK = [
   '- title-length / description-length → edit_plan_metadata (adjust length to SEO targets)',
   '- keyword-coverage-* → edit_section_heading or edit_section_body (place keyword in heading or body)',
   '- section-target-keyword-* → edit_section_body or edit_section_heading for that sectionIndex',
-  '- bluf-length-* → edit_section_body (rewrite first paragraph to ≥40 words, definition-first)',
+  '- bluf-length-N → edit_section_body for sectionIndex N. If opener is key_takeaway, expand the **Key takeaway:** line to ≥40 words (definition-first). Do not only edit paragraphs below the takeaway.',
   '- fact-density-* → edit_section_body (add a statistic or citation-like phrase in prose; do not invent URLs)',
 ].join('\n');
 
@@ -47,7 +47,7 @@ export function buildEditorUserPrompt(
 ): string {
   const issueSummary = issues.length === 0
     ? '(none)'
-    : issues.map((issue) => `- [${issue.severity}] ${issue.id}: ${issue.message}`).join('\n');
+    : issues.map((issue) => formatIssueLine(issue, text)).join('\n');
 
   const sectionBlocks = text.sections.map((section, index) => {
     const planSection = plan.sections[index];
@@ -86,4 +86,22 @@ export function buildEditorUserPrompt(
     '## Outro',
     text.outro,
   ].join('\n');
+}
+
+function formatIssueLine(issue: SeoIssue, text: EditorTextSnapshot): string {
+  const context = formatIssueContext(issue, text);
+  return `- [${issue.severity}] ${issue.id}${context}: ${issue.message}`;
+}
+
+function formatIssueContext(issue: SeoIssue, text: EditorTextSnapshot): string {
+  if (typeof issue.location === 'object' && 'sectionIndex' in issue.location) {
+    const sectionIndex = issue.location.sectionIndex;
+    const body = text.sections[sectionIndex]?.body ?? '';
+    const opener = measureSectionOpener(body);
+    return ` @ sectionIndex=${sectionIndex} (${opener.kind}, ${opener.wordCount} words)`;
+  }
+  if (issue.location !== 'plan') {
+    return ` @ ${issue.location}`;
+  }
+  return '';
 }

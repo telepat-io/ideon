@@ -121,7 +121,7 @@ Analytics 会写入每个生成目录下的 `generation.analytics.json`。
 ## SEO Check 阶段行为
 
 - 默认在长文主内容的章节写作之后运行。
-- **确定性 lint** 检查标题/描述长度、主关键词布局、关键词覆盖、BLUF 开篇与事实密度启发式。
+- **确定性 lint** 检查标题/描述长度、主关键词布局、关键词覆盖、BLUF 开篇（首段或 `**Key takeaway:**` 块 ≥40 词）与事实密度启发式。
 - **通过模式**（`seoCheckMode`，默认 `errors-only`）：
   - `errors-only`：无 `severity: error` 的 lint 问题时阶段通过；警告会记录但不触发智能体。
   - `strict`：仅当零 lint 问题时通过；任何警告都会触发编辑器智能体。

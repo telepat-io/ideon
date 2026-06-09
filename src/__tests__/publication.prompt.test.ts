@@ -177,8 +177,10 @@ describe('prompt builders inject editorial policy', () => {
       );
 
       const systemContent = messages[0]!.content as string;
+      const userContent = messages[1]!.content as string;
       expect(systemContent).toContain('Publication: "Tech Blog"');
       expect(systemContent).toContain('Forbidden topics: competitor names');
+      expect(userContent).toContain('If the section opens with **Key takeaway:**, that labeled line must be at least 40 words');
     });
   });
 
