@@ -23,7 +23,11 @@ Complete parameter reference for all 33 Ideon MCP tools.
 17. [ideon_series_list](#ideon_series_list)
 18. [ideon_series_edit](#ideon_series_edit)
 19. [ideon_series_remove](#ideon_series_remove)
-20. [ideon_queue_add](#ideon_queue_add)
+20. [ideon_author_add](#ideon_author_add)
+21. [ideon_author_list](#ideon_author_list)
+22. [ideon_author_edit](#ideon_author_edit)
+23. [ideon_author_remove](#ideon_author_remove)
+24. [ideon_queue_add](#ideon_queue_add)
 21. [ideon_queue_list](#ideon_queue_list)
 22. [ideon_queue_peek](#ideon_queue_peek)
 23. [ideon_queue_remove](#ideon_queue_remove)
@@ -50,6 +54,8 @@ Generate content from an idea using the Ideon pipeline.
 | --- | --- | --- | --- | --- |
 | `idea` | string | Yes | — | The content idea or prompt. |
 | `audience` | string | No | — | Target audience description. |
+| `author` | string | No | — | Author slug (overrides publication/series defaults). |
+| `experienceNotes` | string | No | — | Per-run anecdotes or first-hand experience. |
 | `jobPath` | string | No | — | Path to a job JSON file. |
 | `primary` | string | No | — | Primary target spec: `<content-type=1>`. |
 | `secondary` | string[] | No | — | Secondary target specs: `["<type=count>", ...]`. |
@@ -383,6 +389,37 @@ Delete a publication by slug.
 | `slug` | string | Yes | — | Publication slug. |
 
 Returns `{ deleted: true, slug: "..." }`.
+
+---
+
+## Author tools
+
+### `ideon_author_add`
+
+Create an author profile with experience, voice, and credentials.
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `name` | string | Yes | — | Author display name. |
+| `profile` | string | No | — | Freeform author profile text. |
+
+### `ideon_author_list`
+
+List all author profiles. No parameters.
+
+### `ideon_author_edit`
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `slug` | string | Yes | — | Author slug. |
+| `name` | string | No | — | Updated name. |
+| `profile` | string | No | — | Updated profile. |
+
+### `ideon_author_remove`
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `slug` | string | Yes | — | Author slug to delete. |
 
 ---
 

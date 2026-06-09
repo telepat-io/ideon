@@ -72,6 +72,8 @@ ideon series add [name] [--topic <topic>] [--publication <slug>] [--style <style
 | `--country <codes>` | No | string | Comma-separated ISO 3166-1 alpha-2 country codes (for example: `US,GB,DE`). |
 | `--language <code>` | No | string | ISO 639-1 language code (for example: `en`, `de`, `es`). |
 | `--keywords <keywords>` | No | string | Comma-separated SEO keywords inherited by all articles in this series. Supports compound keywords (e.g., "organic marketing, content strategy, seo"). |
+| `--author <slug>` | No | string | Default author slug for articles in this series. |
+| `--experience <text>` | No | string | Standing anecdotes or first-hand experience for this series (supplemented per run with `--experience`). |
 | `--tone <tone>` | No | string | Editorial policy tone. |
 | `--forbidden-topics <topics>` | No | string | Comma-separated forbidden topics. |
 | `--disclosure-requirements <requirements>` | No | string | Comma-separated disclosure requirements. |
@@ -172,6 +174,9 @@ ideon series edit <slug> [--name <name>] [--topic <topic>] [--publication <slug>
 | `--country <codes>` | No | string | New comma-separated ISO country codes for market defaults. |
 | `--language <code>` | No | string | New ISO language code for market defaults. |
 | `--keywords <keywords>` | No | string | New comma-separated SEO keywords. Supports compound keywords. |
+| `--author <slug>` | No | string | Default author slug for this series. |
+| `--experience <text>` | No | string | Standing anecdotes or first-hand experience for this series. |
+| `--unset-author` | No | boolean | Remove default author association. |
 | `--tone <tone>` | No | string | New editorial tone. |
 | `--forbidden-topics <topics>` | No | string | New comma-separated forbidden topics. |
 | `--disclosure-requirements <requirements>` | No | string | New disclosure requirements. |

@@ -85,7 +85,7 @@ Different stages of the pipeline benefit from different guides:
 - **Outro calls:** `buildOutroGuideInstruction` — lighter bundle (no keyword-integration)
 - **Purpose:** Write intro, body sections, and conclusion with strong E-E-A-T signals and fact density
 - **Keyword rules:** Primary keyword in intro first 100 words; section `targetKeywords` in BLUF openers (40-60 words, definition-first)
-- **On-demand references:** Skimmability patterns, content frameworks, AI prose detection avoidance (for post-draft cleanup)
+- **On-demand references:** Skimmability patterns, content frameworks, natural prose quality (for post-draft cleanup)
 
 ### Stage 4: SEO Check
 - **Load:** Full draft markdown, keyword-integration guide, lint issue list, inline issue playbook (runtime)
@@ -210,7 +210,7 @@ See list of available references below.
 - `references/target-length-guidance.md` — How to hit word count targets
 - `references/visual-storytelling.md` — How images enhance narrative
 - `references/link-integration-best-practices.md` — How to integrate external links naturally
-- `references/ai-prose-detection-avoidance.md` — How to reduce AI-detectable linguistic patterns (prohibited vocabulary, hedging, formulaic transitions)
+- `references/natural-prose-quality.md` — Polish draft prose for readability and natural voice (overused vocabulary, hedging, rhythm, transitions)
 
 ## Caching & Reuse Within a Run
 

@@ -2,13 +2,15 @@
 
 Use this guide to embed signals that demonstrate real-world credibility in generated content. E-E-A-T is how Google's quality raters evaluate whether content deserves to rank, especially for topics that impact health, finances, or safety.
 
-## Rule: Inject First-Person Practitioner Observations
-Description: Simulate the perspective of someone who has done the work. Use concrete, situational details that an LLM would not produce by default — specific failure modes, unexpected edge cases, or counterintuitive lessons.
-Negative example: "It is important to test your code before deploying to production."
-Positive example: "The first time I deployed a Kubernetes cluster to production, the readiness probe passed but the liveness probe failed silently because the health check endpoint returned 200 OK for a database connection that had already timed out. We shipped a broken service for six hours before a customer reported it."
+Google's helpful-content guidance frames this as **Who**, **How**, and **Why**: who created the content, how it was produced, and why it exists. Ideon drafts omit bylines and AI disclosures — a human editor adds Who and How at publish time.
+
+## Rule: Weave Supplied Experience Only
+Description: Use first-person practitioner voice only when the author profile or experience notes provide real anecdotes, credentials, or situational detail. Do not invent "I deployed..." stories. Without supplied experience, write in third-person expert voice or insert explicit `[AUTHOR: add first-hand example here]` placeholders for human review.
+Negative example: Inventing a Kubernetes production failure story when no author context was provided.
+Positive example: Weaving a supplied anecdote from the author profile into a section where it directly supports the argument.
 
 ## Rule: Go Beyond Surface-Level Summaries
-Description: Demonstrate expertise by naming specific mechanisms, trade-offs, and edge cases — not just restating common knowledge. If every competitor already says the same thing, the content adds no Information Gain.
+Description: Demonstrate expertise by naming specific mechanisms, trade-offs, and edge cases — not just restating common knowledge. If every competitor already says the same thing, the content adds no information gain.
 Negative example: "Cloud computing offers many benefits including scalability, cost savings, and flexibility."
 Positive example: "Cloud scalability is not automatic. Auto-scaling groups react to CPU metrics with a 60-to-90-second lag, which means traffic spikes shorter than that window will hit your existing instances before new ones spin up. For sub-minute spikes, you need provisioned capacity or a queue-backed architecture."
 
@@ -27,7 +29,7 @@ Description: Every number, every named source, and every credential must be veri
 Negative example: "According to a 2024 Gartner report, 78% of enterprises have adopted AI." (fabricated)
 Positive example: "While adoption numbers vary by sector, the pattern is clear: engineering teams that adopt AI-assisted code review report faster cycle times, with one Shopify engineering team documenting a 15% reduction in review latency after six months."
 
-## Rule: Date Content and Note AI Involvement Where Appropriate
-Description: Prominent dates signal freshness to both users and search crawlers. If automation was used substantially in content creation, disclosing it builds trust — Google's guidelines encourage transparency rather than penalizing it.
-Negative example: Publishing an article with no date, no author information, and no indication of how the content was produced.
-Positive example: A visible publication date, an author byline (even if the author is an AI-assisted editorial system), and a brief methodology note: "This article was drafted with AI assistance and reviewed for accuracy by our editorial team."
+## Rule: Defer Authorship and AI Disclosure to Publish Time
+Description: Do not add author bylines or AI/methodology notes to draft body copy. A human editor adds a named author byline and a brief disclosure (for example, "Drafted with AI assistance and reviewed by…") before publish. Publication dates are added at publish time, not in the pipeline draft.
+Negative example: Adding "Written by AI" or a fabricated author name in the article body.
+Positive example: Draft ends with substantive content only; editorial checklist reminds the reviewer to add byline and disclosure before publish.

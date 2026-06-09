@@ -14,6 +14,7 @@ import {
   seriesExists,
 } from '../../config/seriesStore.js';
 import { listPublications } from '../../config/publicationStore.js';
+import { assertAuthorExists } from './author.js';
 import {
   deriveSeriesSlugFromName,
   type Series,
@@ -40,6 +41,8 @@ interface SeriesAddOptions {
   disclosureRequirements?: string;
   audienceRestrictions?: string;
   editorialPolicy?: string;
+  author?: string;
+  experience?: string;
 }
 
 interface SeriesListOptions {
@@ -67,6 +70,9 @@ interface SeriesEditOptions {
   disclosureRequirements?: string;
   audienceRestrictions?: string;
   editorialPolicy?: string;
+  author?: string;
+  experience?: string;
+  unsetAuthor?: boolean;
 }
 
 interface SeriesRemoveOptions {
@@ -97,7 +103,7 @@ export async function runSeriesAddCommand(
 
   const hasAnyFlag = options.topic || options.publication || options.style || options.intent || options.length || options.type
     || options.audience || options.country || options.language || options.keywords || options.tone || options.forbiddenTopics
-    || options.disclosureRequirements || options.audienceRestrictions || options.editorialPolicy;
+    || options.disclosureRequirements || options.audienceRestrictions || options.editorialPolicy || options.author || options.experience;
 
   let defaults: SeriesDefaults = {};
   let editorialPolicy: SeriesEditorialPolicy = {
@@ -120,6 +126,8 @@ export async function runSeriesAddCommand(
     topic = prompted.topic;
     publication = prompted.publication;
   }
+
+  await validateAuthorFlag(defaults.defaultAuthor);
 
   const series: Series = {
     name,
@@ -160,6 +168,13 @@ export async function runSeriesListCommand(options: SeriesListOptions): Promise<
       if (series.defaults.countryCodes && series.defaults.countryCodes.length > 0) console.log(`    Countries: ${series.defaults.countryCodes.join(', ')}`);
       if (series.defaults.language) console.log(`    Language: ${series.defaults.language}`);
       if (series.defaults.keywords && series.defaults.keywords.length > 0) console.log(`    Keywords: ${series.defaults.keywords.join(', ')}`);
+      if (series.defaults.defaultAuthor) console.log(`    Author: ${series.defaults.defaultAuthor}`);
+      if (series.defaults.experienceNotes) {
+        const preview = series.defaults.experienceNotes.length > 120
+          ? `${series.defaults.experienceNotes.slice(0, 120)}...`
+          : series.defaults.experienceNotes;
+        console.log(`    Experience: ${preview}`);
+      }
       if (series.defaults.contentTargets) {
         const primary = series.defaults.contentTargets.find((t) => t.role === 'primary');
         if (primary) console.log(`    Type: ${primary.contentType}`);
@@ -288,6 +303,17 @@ export async function runSeriesEditCommand(options: SeriesEditOptions): Promise<
     series.editorialPolicy.notes = options.editorialPolicy;
   }
 
+  if (options.unsetAuthor) {
+    delete series.defaults.defaultAuthor;
+  } else if (options.author) {
+    await assertAuthorExists(options.author);
+    series.defaults.defaultAuthor = options.author;
+  }
+
+  if (options.experience !== undefined) {
+    series.defaults.experienceNotes = options.experience;
+  }
+
   await saveSeries(series);
   console.log(`Updated series "${series.slug}".`);
 }
@@ -354,7 +380,21 @@ function buildDefaultsFromFlags(options: SeriesAddOptions): SeriesDefaults {
     defaults.keywords = parseCommaSeparated(options.keywords);
   }
 
+  if (options.author) {
+    defaults.defaultAuthor = options.author;
+  }
+
+  if (options.experience) {
+    defaults.experienceNotes = options.experience;
+  }
+
   return defaults;
+}
+
+async function validateAuthorFlag(author?: string): Promise<void> {
+  if (author) {
+    await assertAuthorExists(author);
+  }
 }
 
 function buildPolicyFromFlags(options: SeriesAddOptions): SeriesEditorialPolicy {

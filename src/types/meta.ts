@@ -46,6 +46,12 @@ export const metaJsonOutputSchema = z.object({
   relativePath: z.string().min(1),
 });
 
+export const metaJsonEditorialChecklistItemSchema = z.object({
+  id: z.string().min(1),
+  severity: z.enum(['required', 'recommended']),
+  message: z.string().min(1),
+});
+
 export const metaJsonSchema = z.object({
   version: z.literal(1),
   title: z.string().min(1),
@@ -68,6 +74,8 @@ export const metaJsonSchema = z.object({
   generationDir: z.string().min(1),
   publication: z.string().optional(),
   series: z.string().optional(),
+  author: z.string().optional(),
+  editorialChecklist: z.array(metaJsonEditorialChecklistItemSchema).optional(),
   seoCheck: metaJsonSeoCheckSchema.optional(),
 });
 
@@ -76,4 +84,5 @@ export type MetaJsonCoverImage = z.infer<typeof metaJsonCoverImageSchema>;
 export type MetaJsonSection = z.infer<typeof metaJsonSectionSchema>;
 export type MetaJsonImage = z.infer<typeof metaJsonImageSchema>;
 export type MetaJsonOutput = z.infer<typeof metaJsonOutputSchema>;
+export type MetaJsonEditorialChecklistItem = z.infer<typeof metaJsonEditorialChecklistItemSchema>;
 export type MetaJson = z.infer<typeof metaJsonSchema>;

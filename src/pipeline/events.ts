@@ -208,4 +208,5 @@ export interface PipelineRunResult {
   stages: StageViewModel[];
   artifact: PipelineArtifactSummary;
   analytics: PipelineRunAnalytics;
+  editorialChecklistSummary?: string;
 }

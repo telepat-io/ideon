@@ -383,6 +383,7 @@ function makeResolvedInput(_markdownOutputDir: string, _assetOutputDir: string):
     job: null,
     publication: null,
     series: null,
+    author: null,
     config: {
       settings: {
         ...defaultAppSettings,

@@ -7,6 +7,7 @@ import {
   buildTargetLengthDirective,
 } from './writingFramework.js';
 import { buildChannelContentGuideInstruction } from './guideBundles.js';
+import { buildAuthorDirective, type AuthorRunContext } from './authorPolicy.js';
 import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 import { buildSeriesDirective } from './seriesPolicy.js';
 
@@ -37,6 +38,7 @@ export function buildSingleShotContentMessages(options: {
   targetLength: number;
   publication?: Publication | null;
   series?: Series | null;
+  authorContext?: AuthorRunContext | null;
 }): ChatMessage[] {
   const outputShapeConstraint = buildOutputShapeConstraint(options.contentType);
   const articleContext = options.articleReferenceMarkdown
@@ -78,6 +80,7 @@ export function buildSingleShotContentMessages(options: {
         outputShapeConstraint,
         buildEditorialPolicyDirective(options.publication ?? null),
         buildSeriesDirective(options.series ?? null),
+        buildAuthorDirective(options.authorContext ?? null),
       ].filter((part) => part.length > 0).join(' '),
     },
     {

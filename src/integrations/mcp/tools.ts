@@ -8,6 +8,8 @@ const configKeys = [...configSettingKeys, ...configSecretKeys] as const;
 export const writeToolInputSchema = {
   idea: z.string().min(1),
   audience: z.string().min(1).optional(),
+  author: z.string().min(1).optional(),
+  experienceNotes: z.string().min(1).optional(),
   jobPath: z.string().optional(),
   primary: z.string().optional(),
   secondary: z.array(z.string()).optional(),
@@ -132,6 +134,7 @@ export const publicationAddToolInputSchema = {
   audience: z.string().min(1).optional(),
   country: z.string().min(1).optional(),
   language: z.string().min(1).optional(),
+  defaultAuthor: z.string().min(1).optional(),
   tone: z.string().optional(),
   forbiddenTopics: z.array(z.string()).optional(),
   disclosureRequirements: z.array(z.string()).optional(),
@@ -155,6 +158,8 @@ export const publicationEditToolInputSchema = {
   audience: z.string().min(1).optional(),
   country: z.string().min(1).optional(),
   language: z.string().min(1).optional(),
+  defaultAuthor: z.string().min(1).optional(),
+  unsetDefaultAuthor: z.boolean().optional(),
   tone: z.string().optional(),
   forbiddenTopics: z.array(z.string()).optional(),
   disclosureRequirements: z.array(z.string()).optional(),
@@ -184,6 +189,8 @@ export const seriesAddToolInputSchema = {
   country: z.string().min(1).optional(),
   language: z.string().min(1).optional(),
   keywords: z.array(z.string().min(1)).optional(),
+  defaultAuthor: z.string().min(1).optional(),
+  experienceNotes: z.string().optional(),
   tone: z.string().optional(),
   forbiddenTopics: z.array(z.string()).optional(),
   disclosureRequirements: z.array(z.string()).optional(),
@@ -213,6 +220,9 @@ export const seriesEditToolInputSchema = {
   country: z.string().min(1).optional(),
   language: z.string().min(1).optional(),
   keywords: z.array(z.string().min(1)).optional(),
+  defaultAuthor: z.string().min(1).optional(),
+  unsetDefaultAuthor: z.boolean().optional(),
+  experienceNotes: z.string().optional(),
   tone: z.string().optional(),
   forbiddenTopics: z.array(z.string()).optional(),
   disclosureRequirements: z.array(z.string()).optional(),
@@ -228,12 +238,41 @@ export const seriesRemoveToolInputSchema = {
 export const seriesRemoveToolInputZodSchema = z.object(seriesRemoveToolInputSchema);
 export type SeriesRemoveToolInput = z.infer<typeof seriesRemoveToolInputZodSchema>;
 
+// ─── Author tools ────────────────────────────────────────────────────────────
+
+export const authorAddToolInputSchema = {
+  name: z.string().min(1),
+  profile: z.string().optional(),
+};
+export const authorAddToolInputZodSchema = z.object(authorAddToolInputSchema);
+export type AuthorAddToolInput = z.infer<typeof authorAddToolInputZodSchema>;
+
+export const authorListToolInputSchema = {};
+export const authorListToolInputZodSchema = z.object(authorListToolInputSchema);
+export type AuthorListToolInput = z.infer<typeof authorListToolInputZodSchema>;
+
+export const authorEditToolInputSchema = {
+  slug: z.string().min(1),
+  name: z.string().min(1).optional(),
+  profile: z.string().optional(),
+};
+export const authorEditToolInputZodSchema = z.object(authorEditToolInputSchema);
+export type AuthorEditToolInput = z.infer<typeof authorEditToolInputZodSchema>;
+
+export const authorRemoveToolInputSchema = {
+  slug: z.string().min(1),
+};
+export const authorRemoveToolInputZodSchema = z.object(authorRemoveToolInputSchema);
+export type AuthorRemoveToolInput = z.infer<typeof authorRemoveToolInputZodSchema>;
+
 // ─── Queue tools ─────────────────────────────────────────────────────────────
 
 export const queueAddToolInputSchema = {
   idea: z.string().min(1),
   publication: z.string().min(1).optional(),
   series: z.string().min(1).optional(),
+  author: z.string().min(1).optional(),
+  experienceNotes: z.string().min(1).optional(),
   style: z.enum(writingStyleValues).optional(),
   intent: z.enum(contentIntentValues).optional(),
   length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
@@ -499,6 +538,26 @@ export const ideonToolContracts: ToolContract[] = [
   },
   {
     name: 'ideon_series_remove',
+    required: ['slug'],
+    enums: {},
+  },
+  {
+    name: 'ideon_author_add',
+    required: ['name'],
+    enums: {},
+  },
+  {
+    name: 'ideon_author_list',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'ideon_author_edit',
+    required: ['slug'],
+    enums: {},
+  },
+  {
+    name: 'ideon_author_remove',
     required: ['slug'],
     enums: {},
   },

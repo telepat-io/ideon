@@ -65,6 +65,7 @@ const sidebars: SidebarsConfig = {
             'reference/commands/ideon-gads',
             'reference/commands/ideon-gkp',
             'reference/commands/ideon-series',
+            'reference/commands/ideon-author',
             'reference/commands/ideon-article-list',
             'reference/commands/ideon-plan-explore',
             'reference/commands/ideon-plan-expand',

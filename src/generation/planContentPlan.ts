@@ -1,6 +1,8 @@
 import type { AppSettings } from '../config/schema.js';
+import type { Author } from '../types/author.js';
 import type { Publication } from '../types/publication.js';
 import type { Series } from '../types/series.js';
+import { buildAuthorRunContext } from '../llm/prompts/authorPolicy.js';
 import {
   buildContentPlanMessages,
   contentPlanSchema,
@@ -19,6 +21,8 @@ export async function planContentPlan({
   settings,
   publication,
   series,
+  author,
+  experienceNotes,
   openRouter,
   dryRun,
   onLlmMetrics,
@@ -29,6 +33,8 @@ export async function planContentPlan({
   settings: AppSettings;
   publication?: Publication | null;
   series?: Series | null;
+  author?: Author | null;
+  experienceNotes?: string;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onLlmMetrics?: (metrics: LlmCallMetrics) => void;
@@ -58,6 +64,7 @@ export async function planContentPlan({
         .map((target) => target.contentType),
       publication,
       series,
+      authorContext: buildAuthorRunContext(author ?? null, experienceNotes),
     }),
     settings: sharedPlanSettings,
     interactionContext: {

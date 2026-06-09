@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { appSettingsSchema, jobInputSchema } from '../config/schema.js';
+import { authorSchema } from './author.js';
 import { publicationSchema } from './publication.js';
 import { seriesSchema } from './series.js';
 
@@ -14,6 +15,8 @@ export const queueEntrySchema = z.object({
   job: jobInputSchema.nullable().default(null),
   publication: publicationSchema.nullable().default(null),
   series: seriesSchema.nullable().default(null),
+  author: authorSchema.nullable().default(null),
+  experienceNotes: z.string().optional(),
   exportPath: z.string().optional(),
   addedAt: z.string().datetime(),
   startedAt: z.string().datetime().optional(),

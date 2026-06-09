@@ -41,6 +41,8 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--max-links <n>` | None | No | positive integer | Derived from `--length` | Any positive integer | Caps the number of generated links. Does not apply to custom links. Requires `--enrich-links`. |
 | `--publication <slug>` | None | No | string | n/a | Valid publication slug | Publication slug to use for defaults and editorial policy. |
 | `--series <slug>` | None | No | string | n/a | Valid series slug | Content series slug to use for defaults and thematic context. Series overrides publication defaults. |
+| `--author <slug>` | None | No | string | n/a | Valid author slug | Author for voice and expertise. Overrides publication/series default authors. |
+| `--experience <text>` | None | No | string | n/a | Freeform text | Per-run anecdotes or first-hand experience to weave into the draft. Supplements series `experienceNotes`. |
 | `--keywords <keywords>` | None | No | string | n/a | Comma-separated keywords | SEO keywords to target. Supports compound keywords (e.g., "organic marketing, content strategy"). When provided, skips auto-generation and uses these as the definitive keyword set. Merges with series keywords if both are present. |
 | `--from-queue` | None | No | boolean | `false` | `true` or omitted | Dequeue the next pending article from the queue and write it. When used with `--publication`, filters to entries for that publication. |
 

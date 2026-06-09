@@ -30,6 +30,8 @@ export interface BuildMetaJsonInput {
   targetLength: string | null;
   publication?: string;
   series?: string;
+  author?: string;
+  editorialChecklist?: MetaJson['editorialChecklist'];
   seoCheck?: SeoLintResult & {
     ranAt: string;
     seoCheckMode: SeoCheckMode;
@@ -112,6 +114,10 @@ export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
     generationDir,
     ...(input.publication ? { publication: input.publication } : {}),
     ...(input.series ? { series: input.series } : {}),
+    ...(input.author ? { author: input.author } : {}),
+    ...(input.editorialChecklist && input.editorialChecklist.length > 0
+      ? { editorialChecklist: input.editorialChecklist }
+      : {}),
     ...(input.seoCheck ? { seoCheck: toMetaSeoCheck(input.seoCheck) } : {}),
   };
 }

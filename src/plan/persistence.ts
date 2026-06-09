@@ -91,6 +91,7 @@ export function buildQueueEntry(
     job: null,
     publication: null,
     series,
+    author: null,
     addedAt: new Date().toISOString(),
     type: article.type,
     refreshTarget: article.refreshTarget,

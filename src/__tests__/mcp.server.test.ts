@@ -980,6 +980,7 @@ describe('ideon MCP server', () => {
       job: null,
       publication: null,
       series: null,
+      author: null,
     });
     await startIdeonMcpServer();
     const tool = registeredTools.get('ideon_queue_write');
@@ -1001,6 +1002,7 @@ describe('ideon MCP server', () => {
       job: null,
       publication: null,
       series: null,
+      author: null,
     };
     claimNextPendingEntryMock.mockResolvedValue(entry);
     runPipelineShellMock.mockRejectedValue(new Error('write failed'));

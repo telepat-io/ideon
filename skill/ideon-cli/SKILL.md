@@ -104,6 +104,8 @@ Always collect all relevant inputs before running any command. Ask the user for 
 | Length (`--length`) | Yes | Required for non-interactive runs when not supplied via job. `small` / `medium` / `large`. |
 | Publication (`--publication`) | No | Publication slug for defaults and editorial policy. |
 | Series (`--series`) | No | Content series slug for defaults and thematic context. |
+| Author (`--author`) | No | Author slug for voice and expertise. Overrides publication/series default authors. |
+| Experience (`--experience`) | No | Per-run anecdotes or first-hand experience to weave into the draft. |
 | Keywords (`--keywords`) | No | Comma-separated SEO keywords. Supports compound keywords. Merges with series keywords. |
 | Audience (`--audience`) | No | Target audience description injected into editorial policy. |
 | Enrich links (`--enrich-links`) | No | Opt-in web research link enrichment for long-form outputs. |
@@ -538,6 +540,29 @@ ideon series edit ai-deep-dives --unset-publication
 
 # Delete a series
 ideon series remove ai-deep-dives --force
+
+### Authors
+
+```bash
+ideon author add "Alex Chen" --profile "Staff SRE. Writes about Kubernetes and incident response."
+ideon author list
+ideon author list --verbose
+ideon author edit alex-chen --profile "Updated profile text"
+ideon author remove alex-chen --force
+```
+
+Set default authors on publications or series:
+
+```bash
+ideon publication edit tech-blog --author alex-chen
+ideon series edit ai-deep-dives --author alex-chen --experience "Standing anecdotes for this series"
+```
+
+Override per write run:
+
+```bash
+ideon write "How we fixed prod" --author alex-chen --experience "The readiness probe false positive from Q2"
+```
 ```
 
 ### How editorial policy is injected

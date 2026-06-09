@@ -16,7 +16,7 @@ This directory contains reusable concept docs referenced by multiple format and 
 - `bibliography-and-influence-map.md`: source synthesis and thematic mapping
 - `target-length-guidance.md`: size tiers by channel and proportional structure rules
 - `multi-channel-plan-strategy.md`: shared-plan model for primary and secondary outputs
-- `ai-prose-detection-avoidance.md`: reducing AI-detectable linguistic fingerprints (prohibited vocabulary, hedging, formulaic transitions)
+- `natural-prose-quality.md`: polishing draft prose for readability and natural voice (overused vocabulary, hedging, rhythm, transitions)
 
 ## Usage Rule
 

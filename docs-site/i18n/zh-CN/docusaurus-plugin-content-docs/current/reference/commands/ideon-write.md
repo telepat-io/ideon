@@ -41,6 +41,8 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--max-links <n>` | 无 | 否 | 正整数 | 由 `--length` 决定 | 任意正整数 | 限制生成链接数量，不影响自定义链接。需要 `--enrich-links`。 |
 | `--publication <slug>` | 无 | 否 | string | 无 | 有效的 publication slug | 用于获取默认值和编辑策略的出版物 slug。 |
 | `--series <slug>` | 无 | 否 | string | 无 | 有效的 series slug | 用于获取默认值和主题上下文的内容系列 slug。系列会覆盖出版物默认值。 |
+| `--author <slug>` | 无 | 否 | string | 无 | 有效的 author slug | 作者身份与专业背景。覆盖出版物/系列默认作者。 |
+| `--experience <text>` | 无 | 否 | string | 无 | 自由文本 | 本次运行的轶事或第一手经验，补充系列的 `experienceNotes`。 |
 | `--from-queue` | 无 | 否 | boolean | `false` | `true` 或省略 | 从队列中取出下一篇待处理文章并写入。与 `--publication` 一起使用时，按出版物过滤。 |
 
 ## 示例

@@ -13,6 +13,7 @@ import {
   deletePublication,
   publicationExists,
 } from '../../config/publicationStore.js';
+import { assertAuthorExists } from './author.js';
 import {
   deriveSlugFromName,
   type Publication,
@@ -36,6 +37,7 @@ interface PublicationAddOptions {
   disclosureRequirements?: string;
   audienceRestrictions?: string;
   editorialPolicy?: string;
+  author?: string;
 }
 
 interface PublicationListOptions {
@@ -58,6 +60,8 @@ interface PublicationEditOptions {
   disclosureRequirements?: string;
   audienceRestrictions?: string;
   editorialPolicy?: string;
+  author?: string;
+  unsetAuthor?: boolean;
 }
 
 interface PublicationRemoveOptions {
@@ -88,7 +92,7 @@ export async function runPublicationAddCommand(
 
   const hasAnyFlag = options.style || options.intent || options.length || options.type
     || options.audience || options.country || options.language || options.tone || options.forbiddenTopics
-    || options.disclosureRequirements || options.audienceRestrictions || options.editorialPolicy;
+    || options.disclosureRequirements || options.audienceRestrictions || options.editorialPolicy || options.author;
 
   let defaults: PublicationDefaults = {};
   let editorialPolicy: EditorialPolicy = {
@@ -107,6 +111,8 @@ export async function runPublicationAddCommand(
     defaults = prompted.defaults;
     editorialPolicy = prompted.editorialPolicy;
   }
+
+  await validateAuthorFlag(defaults.defaultAuthor);
 
   const publication: Publication = {
     name,
@@ -141,6 +147,7 @@ export async function runPublicationListCommand(options: PublicationListOptions)
       if (pub.defaults.targetLength) console.log(`    Length: ${resolveTargetLengthAlias(pub.defaults.targetLength)}`);
       if (pub.defaults.countryCodes && pub.defaults.countryCodes.length > 0) console.log(`    Countries: ${pub.defaults.countryCodes.join(', ')}`);
       if (pub.defaults.language) console.log(`    Language: ${pub.defaults.language}`);
+      if (pub.defaults.defaultAuthor) console.log(`    Author: ${pub.defaults.defaultAuthor}`);
       if (pub.defaults.contentTargets) {
         const primary = pub.defaults.contentTargets.find((t) => t.role === 'primary');
         if (primary) console.log(`    Type: ${primary.contentType}`);
@@ -258,6 +265,13 @@ export async function runPublicationEditCommand(options: PublicationEditOptions)
     publication.editorialPolicy.notes = options.editorialPolicy;
   }
 
+  if (options.unsetAuthor) {
+    delete publication.defaults.defaultAuthor;
+  } else if (options.author) {
+    await assertAuthorExists(options.author);
+    publication.defaults.defaultAuthor = options.author;
+  }
+
   await savePublication(publication);
   console.log(`Updated publication "${publication.slug}".`);
 }
@@ -320,7 +334,17 @@ function buildDefaultsFromFlags(options: PublicationAddOptions): PublicationDefa
     defaults.language = parseAndValidateLanguage(options.language);
   }
 
+  if (options.author) {
+    defaults.defaultAuthor = options.author;
+  }
+
   return defaults;
+}
+
+async function validateAuthorFlag(author?: string): Promise<void> {
+  if (author) {
+    await assertAuthorExists(author);
+  }
 }
 
 function buildPolicyFromFlags(options: PublicationAddOptions): EditorialPolicy {

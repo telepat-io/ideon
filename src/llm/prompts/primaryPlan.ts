@@ -9,6 +9,7 @@ import {
   buildTargetLengthDirective,
 } from './writingFramework.js';
 import { buildPrimaryPlanGuideInstruction } from './guideBundles.js';
+import { buildAuthorDirective, type AuthorRunContext } from './authorPolicy.js';
 import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 import { buildSeriesDirective } from './seriesPolicy.js';
 
@@ -156,6 +157,7 @@ export function buildPrimaryPlanMessages(
     targetLength: number;
     publication?: Publication | null;
     series?: Series | null;
+    authorContext?: AuthorRunContext | null;
     keywords?: string[];
   },
 ): ChatMessage[] {
@@ -176,6 +178,7 @@ function buildLongFormPlanMessages(
     targetLength: number;
     publication?: Publication | null;
     series?: Series | null;
+    authorContext?: AuthorRunContext | null;
     keywords?: string[];
   },
 ): ChatMessage[] {
@@ -190,6 +193,7 @@ function buildLongFormPlanMessages(
     buildTargetLengthDirective(options.contentType, options.targetLength),
     buildEditorialPolicyDirective(options.publication ?? null),
     buildSeriesDirective(options.series ?? null),
+    buildAuthorDirective(options.authorContext ?? null),
     KEYWORD_PLACEMENT_DIRECTIVE,
     ...(hasProvidedKeywords
       ? [`The following SEO keywords have been provided and will be used for metadata: ${options.keywords!.join(', ')}.`]
@@ -264,6 +268,7 @@ function buildShortFormPlanMessages(
     targetLength: number;
     publication?: Publication | null;
     series?: Series | null;
+    authorContext?: AuthorRunContext | null;
     keywords?: string[];
   },
 ): ChatMessage[] {
@@ -273,6 +278,7 @@ function buildShortFormPlanMessages(
     buildRunContextDirective(options.contentTypes),
     buildEditorialPolicyDirective(options.publication ?? null),
     buildSeriesDirective(options.series ?? null),
+    buildAuthorDirective(options.authorContext ?? null),
     'Return only the requested JSON.',
   ].filter((part) => part.length > 0).join(' ');
 

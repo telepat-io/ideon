@@ -164,6 +164,10 @@ export async function renderPlainPipeline(
     console.log(`  duration_ms: ${result.analytics.summary.totalDurationMs}`);
     console.log(`  retries: ${result.analytics.summary.totalRetries}`);
     console.log(`  cost: ${formatCost(result.analytics.summary.totalCostUsd)}`);
+    if (result.editorialChecklistSummary) {
+      console.log('');
+      console.log(result.editorialChecklistSummary);
+    }
     console.log('  cost_by_stage:');
     for (const stage of result.analytics.stages) {
       console.log(`    ${stage.stageId}: ${formatPipelineStageCost(stage)}`);

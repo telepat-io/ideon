@@ -22,7 +22,13 @@ keywords: [ideon, agents, 命令索引, cli, 参考]
 
 - Path: `/reference/commands/ideon-write`
 - Purpose: 基于想法或作业文件生成主输出与可选次输出。
-- Key flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--no-seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+- Key flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--author`, `--experience`, `--no-interactive`, `--dry-run`, `--no-seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+
+## ideon author
+
+- Path: `/reference/commands/ideon-author`
+- Purpose: 管理作者档案（名称、slug、profile 文本），用于注入写作 prompt 中的声音与专业背景。
+- Key flags: `add --profile`, `list --json`, `edit --name --profile`, `remove --force`。
 
 ## ideon queue
 

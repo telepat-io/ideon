@@ -26,8 +26,10 @@ Ideon veröffentlicht einen ersten Partei Model Context Protocol Server über st
 	- `gkp_get_historical_data`
 	- `gkp_get_forecast_data`
 	- `ideon_preview`
+	- `ideon_author_add`, `ideon_author_list`, `ideon_author_edit`, `ideon_author_remove`
+	- (sowie Veröffentlichungs-, Serien-, Warteschlangen-, Planungs- und Export-Werkzeuge — siehe englische [MCP Servers](/ideon/for-agents/mcp-servers))
 
-SEO-Check läuft als Pipeline-Stufe 4 während `ideon_write` / `ideon_write_resume` — es gibt kein eigenständiges SEO-MCP-Werkzeug. Optionale Parameter: `noSeoCheck`, `seoCheckMode` (`errors-only` | `strict`), `seoCheckMaxTurns` (1–20) auf `ideon_write`; `seoCheck` (Erzwingen), `seoCheckMode`, `seoCheckMaxTurns` auf `ideon_write_resume`. Ergebnisse werden in `meta.json` (`seoCheck`) geschrieben.
+SEO-Check läuft als Pipeline-Stufe 4 während `ideon_write` / `ideon_write_resume` — es gibt kein eigenständiges SEO-MCP-Werkzeug. Optionale Parameter auf `ideon_write`: `author` (Autoren-Slug), `experienceNotes` (Lauf-Anekdoten), `noSeoCheck`, `seoCheckMode` (`errors-only` | `strict`), `seoCheckMaxTurns` (1–20); auf `ideon_write_resume`: `seoCheck` (Erzwingen), `seoCheckMode`, `seoCheckMaxTurns`. Ergebnisse in `meta.json` (`seoCheck`, `author`, `editorialChecklist`). Erfolgreiche Läufe enthalten eine Redaktions-Checklisten-Zusammenfassung in der Tool-Antwort.
 
 ### Vorschau
 

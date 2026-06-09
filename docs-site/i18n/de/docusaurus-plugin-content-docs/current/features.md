@@ -73,6 +73,25 @@ ideon write "Wie RAG-Systeme funktionieren" --series ki-tiefenanalysen --primary
 
 ---
 
+## Autoren und Redaktions-Checkliste
+
+Jedem Entwurf eine echte Stimme geben. **Autoren** sind eigenständige Profile — Name, Slug und freies `profile` (Erfahrung, Qualifikationen, Schreibstil). Bei Auflösung für einen Lauf wird Autorenkontext in alle Schreib-Prompts injiziert.
+
+```bash
+ideon author add "Alex Chen" --profile "Staff SRE. Schreibt über Kubernetes und Incident Response."
+ideon publication edit tech-blog --author alex-chen
+ideon series edit ki-tiefenanalysen --author alex-chen --experience "Stehende Anekdoten für diese Serie"
+ideon write "Wie wir Prod repariert haben" --author alex-chen --experience "Der Readiness-Probe-False-Positive aus Q2" --primary article=1
+```
+
+- **Auflösungskette** — Lauf `--author` → Serie `defaultAuthor` → Veröffentlichung `defaultAuthor`
+- **Erfahrungsnotizen** — Serien-Notizen plus Lauf-`--experience`, bei beiden vorhanden verkettet
+- **Nur gelieferte Erfahrung einweben** — gelieferte Anekdoten dürfen in der ersten Person erscheinen; sonst dritte Person oder `[AUTHOR: …]`-Platzhalter
+- **Draft-first** — keine Bylines oder KI-Offenlegung im Entwurf; Who/How beim Veröffentlichen
+- **Redaktions-Checkliste** — dynamische Pre-Publish-Punkte in `meta.json` und nach jedem Lauf ausgegeben
+
+---
+
 ## Inhaltswarteschlange
 
 Planen Sie Ihre Inhaltspipeline im Voraus mit der **Inhaltswarteschlange**. Fügen Sie Artikel mit vollständigen Parametersnapshots hinzu und schreiben Sie sie dann einzeln, wenn Sie bereit sind.
@@ -143,8 +162,8 @@ Ideons Schreib-Pipeline setzt On-Page-SEO-Best-Practices in jeder Stufe der Inha
 **Während des Schreibens** gestalten drei spezialisierte SEO-Leitfäden jede Sektion:
 
 - **On-Page-Grundlagen** — Überschriftenhierarchie, BLUF-Absätze, Schlüsselerkenntnis-Blöcke und Absatzstruktur, optimiert für menschliche Leser und Such-Crawler
-- **E-E-A-T-Signale** — Erfahrung, Expertise, Autorität und Vertrauenswürdigkeit, eingebettet durch Praktiker-Beobachtungen, konkurrierende Standpunkte und Primärquellen-Zitate
-- **Faktenichte** — Statistiken, Datenpunkte und autoritative Zitate pro Sektion, inspiriert von Princetons Forschung zur Generativen Engine-Optimierung, die bis zu 40% Sichtbarkeitsgewinne in KI-generierten Zusammenfassungen zeigt
+- **E-E-A-T-Signale** — nur gelieferte Autorenerfahrung einweben; konkurrierende Standpunkte und Primärquellen; keine erfundenen Erstperson-Praktiker-Geschichten
+- **Faktendichte** — substanzieller Mehrwert über das Offensichtliche hinaus; Fakten und Zitate nur, wenn sie den Abschnitt wirklich stützen (weiche Längenziele, keine Quoten)
 
 Kein Keyword-Stuffing. Keine SEO-Hacks. Nur diszipliniertes Schreiben, das in traditionellen Suchergebnissen und generativen KI-Zusammenfassungen gleichermaßen performt.
 

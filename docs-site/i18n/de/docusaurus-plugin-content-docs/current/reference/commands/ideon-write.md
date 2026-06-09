@@ -41,6 +41,8 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--max-links <n>` | Kein | Nein | Positive Ganzzahl | Abgeleitet von `--length` | Beliebige positive Ganzzahl | Begrenzt die Anzahl der generierten Links. Gilt nicht für benutzerdefinierte Links. Erfordert `--enrich-links`. |
 | `--publication <slug>` | Kein | Nein | Zeichenfolge | n/a | Gültiger Veröffentlichungs-Slug | Veröffentlichungs-Slug für Standardwerte und redaktionelle Richtlinie. |
 | `--series <slug>` | Kein | Nein | Zeichenfolge | n/a | Gültiger Serien-Slug | Serien-Slug für Standardwerte und thematischen Kontext. Serie überschreibt Veröffentlichungs-Standardwerte. |
+| `--author <slug>` | Kein | Nein | Zeichenfolge | n/a | Gültiger Autoren-Slug | Autor für Stimme und Fachwissen. Überschreibt Standardautoren von Veröffentlichung/Serie. |
+| `--experience <text>` | Kein | Nein | Zeichenfolge | n/a | Freitext | Laufbezogene Anekdoten oder Erfahrungen; ergänzt `experienceNotes` der Serie. |
 | `--from-queue` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Den nächsten ausstehenden Artikel aus der Warteschlange entnehmen und schreiben. Mit `--publication` wird nach Veröffentlichung gefiltert. |
 
 ## Beispiele

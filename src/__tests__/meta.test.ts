@@ -345,6 +345,30 @@ describe('buildMetaJson', () => {
     expect(meta.series).toBe('deep-dives');
   });
 
+  it('includes author and editorial checklist when provided', () => {
+    const meta = buildMetaJson({
+      idea: 'Author idea',
+      generationDir: '/output/gen',
+      contentPlan: baseContentPlan,
+      plan: basePlan,
+      renderedImages: [],
+      outputs: [],
+      generatedAt: '2026-05-08T12:00:00.000Z',
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 'medium',
+      author: 'alex-chen',
+      editorialChecklist: [
+        { id: 'add-byline', severity: 'required', message: 'Add byline' },
+      ],
+    });
+
+    expect(meta.author).toBe('alex-chen');
+    expect(meta.editorialChecklist).toEqual([
+      { id: 'add-byline', severity: 'required', message: 'Add byline' },
+    ]);
+  });
+
   it('omits publication and series when not provided', () => {
     const meta = buildMetaJson({
       idea: 'No pub series',

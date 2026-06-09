@@ -57,13 +57,22 @@ Both transports expose the same tools:
 
 ### Content Generation
 
-- `ideon_write` — Generate content from an idea using the Ideon pipeline. Optional SEO check params: `noSeoCheck`, `seoCheckMode` (`errors-only` | `strict`), `seoCheckMaxTurns` (1–20).
+- `ideon_write` — Generate content from an idea using the Ideon pipeline. Optional author params: `author` (slug), `experienceNotes` (per-run anecdotes). Optional SEO check params: `noSeoCheck`, `seoCheckMode` (`errors-only` | `strict`), `seoCheckMaxTurns` (1–20). Successful runs include an editorial checklist summary in the tool response.
 - `ideon_write_resume` — Resume the last failed or interrupted write session. Optional SEO check params: `seoCheck` (force re-run), `seoCheckMode`, `seoCheckMaxTurns`.
 - `ideon_delete` — Delete generated output and assets by slug
 - `ideon_links` — Run link enrichment for a previously generated article
 - `ideon_export` — Export a generated article as a standalone markdown file
 
-SEO check runs as pipeline stage 4 during `ideon_write` / `ideon_write_resume` — there is no standalone SEO MCP tool. Lint results and editor pass metadata are written to `meta.json` (`seoCheck`).
+SEO check runs as pipeline stage 4 during `ideon_write` / `ideon_write_resume` — there is no standalone SEO MCP tool. Lint results and editor pass metadata are written to `meta.json` (`seoCheck`). Resolved author slug and dynamic `editorialChecklist` items are also written to `meta.json`.
+
+### Authors
+
+- `ideon_author_add` — Create an author profile (`name`, optional `profile`)
+- `ideon_author_list` — List all author profiles
+- `ideon_author_edit` — Update author `name` or `profile` (patch semantics)
+- `ideon_author_remove` — Delete an author by slug
+
+Publication and series tools accept `defaultAuthor`; series tools also accept `experienceNotes`.
 
 ### Configuration
 

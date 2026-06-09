@@ -134,6 +134,19 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
       "relativePath": "content/linkedin-post-1.md"
     }
   ],
+  "author": "alex-chen",
+  "editorialChecklist": [
+    {
+      "id": "add-byline",
+      "severity": "required",
+      "message": "Add a human author byline before publish (Google Who)."
+    },
+    {
+      "id": "add-ai-disclosure",
+      "severity": "required",
+      "message": "Add AI/methodology disclosure before publish (Google How)."
+    }
+  ],
   "generatedAt": "2026-05-09T15:36:15Z",
   "generationDir": "/Users/user/ideon-output/20260509-153022-react-suspense"
 }
@@ -148,6 +161,8 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
 - `sections[]` — Outline: title and description for each section
 - `images[]` — All images (cover + inline) with paths, descriptions, and anchor points
 - `outputs[]` — Generated markdown files with content type mappings
+- `author` — Resolved author slug when an author profile was active for the run (optional)
+- `editorialChecklist[]` — Dynamic pre-publish checklist items (`id`, `severity`, `message`) for human editors
 - `generatedAt` — ISO 8601 timestamp of generation
 - `generationDir` — Full path to output directory (for tooling reference)
 

@@ -154,6 +154,8 @@ Das JSON enthält:
 - `images`: Array aller gerenderten Bilder (Cover und Inline) mit Pfaden, Beschreibungen und Ankerpositionen
 - `outputs`: Array aller Markdown-Ausgabedateien mit Inhaltstypen und Pfaden
 - `seoCheck` (falls vorhanden): Lint-Ergebnis (`passed` folgt `seoCheckMode`), `seoCheckMode`, `warningsRemaining`, vollständiges `issues[]`, Editor-Rundenzahl und Editor-Pass-Kostenzusammenfassung
+- `author` (falls vorhanden): Aufgelöster Autoren-Slug für den Lauf
+- `editorialChecklist`: Dynamische Pre-Publish-Checkliste (Byline, KI-Offenlegung, Autorenzuweisung, Platzhalter, Statistikprüfung, Helpful-Content-Selbstbewertung)
 - `generatedAt`: ISO-Zeitstempel
 - `generationDir`: Absoluter Pfad zum Generierungsverzeichnis
 

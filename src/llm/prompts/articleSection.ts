@@ -12,6 +12,7 @@ import {
   buildOutroGuideInstruction,
   buildSectionGuideInstruction,
 } from './guideBundles.js';
+import { buildAuthorDirective, type AuthorRunContext } from './authorPolicy.js';
 import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 import { buildSeriesDirective } from './seriesPolicy.js';
 
@@ -45,6 +46,7 @@ function buildSystemInstruction(
   contentType: string,
   publication: Publication | null,
   series: Series | null,
+  authorContext: AuthorRunContext | null = null,
   keywords?: string[],
 ): string {
   const guideInstruction = callType === 'intro'
@@ -60,6 +62,7 @@ function buildSystemInstruction(
     buildTargetLengthDirective(contentType, targetLengthWords),
     buildEditorialPolicyDirective(publication),
     buildSeriesDirective(series),
+    buildAuthorDirective(authorContext),
   ].filter((part) => part.length > 0).join(' ');
 }
 
@@ -112,6 +115,7 @@ export function buildIntroMessages(
   introTargetWords: number,
   publication: Publication | null = null,
   series: Series | null = null,
+  authorContext: AuthorRunContext | null = null,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
@@ -123,6 +127,7 @@ export function buildIntroMessages(
     plan.contentType,
     publication,
     series,
+    authorContext,
     plan.keywords,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
@@ -163,6 +168,7 @@ export function buildSectionMessages(
   sectionTargetWords: number,
   publication: Publication | null = null,
   series: Series | null = null,
+  authorContext: AuthorRunContext | null = null,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
@@ -174,6 +180,7 @@ export function buildSectionMessages(
     plan.contentType,
     publication,
     series,
+    authorContext,
     plan.keywords,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
@@ -200,7 +207,7 @@ export function buildSectionMessages(
         '- Open with a 40-to-60-word definition-first paragraph that directly answers the section heading.',
         '- If the section opens with **Key takeaway:**, that labeled line must be at least 40 words (definition-first), matching on-page-essentials.',
         '- Be concrete and specific. Support key claims with statistics, data points, or authoritative citations.',
-        '- Include at least one practical insight that sounds like first-hand practitioner experience.',
+        '- Include practitioner insight only when supported by the author profile or experience notes; otherwise use third-person expert voice or [AUTHOR: add first-hand example here] placeholders.',
         '- Continue naturally from the article draft so far without rehashing prior sections.',
         '- Use short Markdown lists only if they materially improve clarity.',
         ...(keywordTargets.length > 0
@@ -220,6 +227,7 @@ export function buildOutroMessages(
   outroTargetWords: number,
   publication: Publication | null = null,
   series: Series | null = null,
+  authorContext: AuthorRunContext | null = null,
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
@@ -231,6 +239,7 @@ export function buildOutroMessages(
     plan.contentType,
     publication,
     series,
+    authorContext,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = OUTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? OUTRO_PARAGRAPH_COUNTS['medium']!;

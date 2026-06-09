@@ -73,6 +73,32 @@ ideon write "How RAG systems work" --series ai-deep-dives --primary article=1
 
 ---
 
+## Authors and Editorial Checklist
+
+Give every draft a real voice. **Authors** are first-class profiles — name, slug, and a freeform `profile` (experience, credentials, writing style). When resolved for a run, author context is injected into all writing prompts (plan, sections, channel content).
+
+```bash
+# Create an author
+ideon author add "Alex Chen" --profile "Staff SRE. Writes about Kubernetes and incident response."
+
+# Set defaults on publication or series
+ideon publication edit tech-blog --author alex-chen
+ideon series edit ai-deep-dives --author alex-chen --experience "Standing anecdotes for this series"
+
+# Override per run
+ideon write "How we fixed prod" --author alex-chen \
+  --experience "The readiness probe false positive from Q2" \
+  --primary article=1
+```
+
+- **Resolution chain** — run `--author` → series `defaultAuthor` → publication `defaultAuthor`
+- **Experience notes** — series standing notes plus per-run `--experience`, concatenated when both are present
+- **Weave-when-provided** — supplied anecdotes may appear in first person; without them, third-person expert voice or `[AUTHOR: …]` placeholders
+- **Draft-first publishing** — no bylines or AI disclosures in the draft body; humans add Who/How at publish time
+- **Editorial checklist** — dynamic pre-publish items written to `meta.json` and printed after each run (byline, AI disclosure, placeholder cleanup, stat verification)
+
+---
+
 ## Content Queue
 
 Plan your content pipeline ahead of time with the **content queue**. Add articles to a global queue with full parameter snapshots, then write them one at a time when you're ready.
@@ -143,8 +169,8 @@ Ideon's writing pipeline enforces on-page SEO best practices at every stage of c
 **During writing**, three dedicated SEO guides shape every section:
 
 - **On-page essentials** — heading hierarchy, BLUF paragraphs, key takeaway blocks, and paragraph structure optimized for both human readers and search crawlers
-- **E-E-A-T signals** — Experience, Expertise, Authoritativeness, and Trustworthiness embedded through practitioner observations, competing viewpoints, and primary-source citations
-- **Fact density** — statistics, data points, and authoritative citations per section, inspired by Princeton's Generative Engine Optimization research showing up to 40% visibility gains in AI-generated summaries
+- **E-E-A-T signals** — weave supplied author experience only; competing viewpoints and primary-source citations; no invented first-person practitioner stories
+- **Fact density** — substantial value beyond the obvious; facts and citations when they genuinely support the section (soft length-scaled targets, not quotas)
 
 No keyword stuffing. No SEO hacks. Just disciplined writing that happens to perform in both traditional search results and generative AI summaries.
 

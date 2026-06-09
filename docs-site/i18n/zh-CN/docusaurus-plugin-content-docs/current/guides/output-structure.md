@@ -154,6 +154,8 @@ JSON 包含：
 - `images`：所有渲染图片（封面与内嵌）的路径、描述与锚点位置
 - `outputs`：所有 Markdown 输出文件的内容类型与路径
 - `seoCheck`（若存在）：lint 结果（`passed` 遵循 `seoCheckMode`）、`seoCheckMode`、`warningsRemaining`、完整 `issues[]`、编辑器轮次与编辑器 pass 成本摘要
+- `author`（若存在）：本次运行解析到的作者 slug
+- `editorialChecklist`：动态发布前清单（署名、AI 披露、作者分配、占位符、数据核验、有用内容自评）
 - `generatedAt`：ISO 时间戳
 - `generationDir`：生成目录的绝对路径
 

@@ -5,6 +5,7 @@ import {
   buildRunContextDirective,
 } from './writingFramework.js';
 import { buildContentPlanGuideInstruction } from './guideBundles.js';
+import { buildAuthorDirective, type AuthorRunContext } from './authorPolicy.js';
 import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 import { buildSeriesDirective } from './seriesPolicy.js';
 
@@ -52,6 +53,7 @@ export function buildContentPlanMessages(
     secondaryContentTypes: string[];
     publication?: Publication | null;
     series?: Series | null;
+    authorContext?: AuthorRunContext | null;
   },
 ): ChatMessage[] {
   const audienceSeed = options.targetAudienceHint?.trim() || 'A general, non-specific audience.';
@@ -66,6 +68,7 @@ export function buildContentPlanMessages(
     'This run has one explicit primary output and optional secondary outputs that should promote or incite interest in the primary while remaining independently valuable.',
     buildEditorialPolicyDirective(options.publication ?? null),
     buildSeriesDirective(options.series ?? null),
+    buildAuthorDirective(options.authorContext ?? null),
     'Return only the requested JSON.',
   ].filter((part) => part.length > 0).join(' ');
 

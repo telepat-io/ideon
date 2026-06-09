@@ -392,6 +392,7 @@ function makeResolvedInput(_markdownOutputDir: string): ResolvedRunInput {
     job: null,
     publication: null,
     series: null,
+    author: null,
     config: {
       settings: {
         ...defaultAppSettings,

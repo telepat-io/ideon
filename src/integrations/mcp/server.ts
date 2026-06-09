@@ -31,6 +31,9 @@ import {
   type SeriesListToolInput,
   type SeriesEditToolInput,
   type SeriesRemoveToolInput,
+  type AuthorAddToolInput,
+  type AuthorEditToolInput,
+  type AuthorRemoveToolInput,
   type QueueAddToolInput,
   type QueueListToolInput,
   type QueuePeekToolInput,
@@ -62,6 +65,10 @@ import {
   seriesListToolInputZodSchema,
   seriesEditToolInputZodSchema,
   seriesRemoveToolInputZodSchema,
+  authorAddToolInputZodSchema,
+  authorListToolInputZodSchema,
+  authorEditToolInputZodSchema,
+  authorRemoveToolInputZodSchema,
   queueAddToolInputZodSchema,
   queueListToolInputZodSchema,
   queuePeekToolInputZodSchema,
@@ -95,6 +102,13 @@ import {
   seriesExists,
 } from '../../config/seriesStore.js';
 import {
+  saveAuthor,
+  listAuthors,
+  loadAuthor,
+  deleteAuthor,
+  authorExists,
+} from '../../config/authorStore.js';
+import {
   generateQueueId,
   saveQueueEntry,
   listQueueEntries,
@@ -107,6 +121,7 @@ import {
 } from '../../config/queueStore.js';
 import { deriveSlugFromName, type Publication, type PublicationDefaults, type EditorialPolicy } from '../../types/publication.js';
 import { deriveSeriesSlugFromName, type Series, type SeriesDefaults, type SeriesEditorialPolicy } from '../../types/series.js';
+import { deriveAuthorSlugFromName, type Author } from '../../types/author.js';
 import type { QueueEntry } from '../../types/queue.js';
 import type { ExplorePlanInput, ExpandPlanInput } from '../../types/plan.js';
 import { runPlan } from '../../plan/pipeline.js';
@@ -172,6 +187,8 @@ export function registerIdeonTools(server: McpServer): void {
         const resolved = await resolveRunInput({
           idea: input.idea,
           audience: input.audience,
+          author: input.author,
+          experienceNotes: input.experienceNotes,
           jobPath: input.jobPath,
           style: input.style,
           intent: input.intent,
@@ -192,11 +209,15 @@ export function registerIdeonTools(server: McpServer): void {
           maxImages: input.maxImages,
         });
 
+        const checklistNote = run.editorialChecklistSummary
+          ? `\n\n${run.editorialChecklistSummary}`
+          : '';
+
         return {
           content: [
             {
               type: 'text',
-              text: `Generated ${run.artifact.outputCount} output(s). Primary markdown: ${run.artifact.markdownPath}`,
+              text: `Generated ${run.artifact.outputCount} output(s). Primary markdown: ${run.artifact.markdownPath}${checklistNote}`,
             },
           ],
           structuredContent: {
@@ -236,6 +257,10 @@ export function registerIdeonTools(server: McpServer): void {
         const resolved = await resolveRunInput({
           idea: session.idea,
           audience: session.targetAudienceHint ?? undefined,
+          author: session.authorSlug ?? undefined,
+          experienceNotes: session.experienceNotes ?? undefined,
+          publication: session.publicationSlug ?? undefined,
+          series: session.seriesSlug ?? undefined,
         });
         const resumeInput = {
           ...resolved,
@@ -641,6 +666,10 @@ export function registerIdeonTools(server: McpServer): void {
         if (input.audience) defaults.targetAudienceHint = input.audience;
         if (input.country) defaults.countryCodes = normalizeCountryCodes(input.country.split(',').map((c) => c.trim())) ?? undefined;
         if (input.language) defaults.language = normalizeLanguage(input.language) ?? undefined;
+        if (input.defaultAuthor) {
+          await assertMcpAuthorExists(input.defaultAuthor);
+          defaults.defaultAuthor = input.defaultAuthor;
+        }
 
         const editorialPolicy: EditorialPolicy = {
           tone: input.tone ?? '',
@@ -703,6 +732,11 @@ export function registerIdeonTools(server: McpServer): void {
         if (input.disclosureRequirements) publication.editorialPolicy.disclosureRequirements = input.disclosureRequirements;
         if (input.audienceRestrictions) publication.editorialPolicy.audienceRestrictions = input.audienceRestrictions;
         if (input.editorialPolicy) publication.editorialPolicy.notes = input.editorialPolicy;
+        if (input.unsetDefaultAuthor) delete publication.defaults.defaultAuthor;
+        else if (input.defaultAuthor) {
+          await assertMcpAuthorExists(input.defaultAuthor);
+          publication.defaults.defaultAuthor = input.defaultAuthor;
+        }
 
         await savePublication(publication);
         return { content: [{ type: 'text', text: JSON.stringify(publication, null, 2) }] };
@@ -757,6 +791,11 @@ export function registerIdeonTools(server: McpServer): void {
         if (input.country) defaults.countryCodes = normalizeCountryCodes(input.country.split(',').map((c) => c.trim())) ?? undefined;
         if (input.language) defaults.language = normalizeLanguage(input.language) ?? undefined;
         if (input.keywords) defaults.keywords = input.keywords;
+        if (input.defaultAuthor) {
+          await assertMcpAuthorExists(input.defaultAuthor);
+          defaults.defaultAuthor = input.defaultAuthor;
+        }
+        if (input.experienceNotes) defaults.experienceNotes = input.experienceNotes;
 
         const editorialPolicy: SeriesEditorialPolicy = {
           tone: input.tone ?? '',
@@ -832,6 +871,12 @@ export function registerIdeonTools(server: McpServer): void {
         if (input.disclosureRequirements) series.editorialPolicy.disclosureRequirements = input.disclosureRequirements;
         if (input.audienceRestrictions) series.editorialPolicy.audienceRestrictions = input.audienceRestrictions;
         if (input.editorialPolicy) series.editorialPolicy.notes = input.editorialPolicy;
+        if (input.unsetDefaultAuthor) delete series.defaults.defaultAuthor;
+        else if (input.defaultAuthor) {
+          await assertMcpAuthorExists(input.defaultAuthor);
+          series.defaults.defaultAuthor = input.defaultAuthor;
+        }
+        if (input.experienceNotes !== undefined) series.defaults.experienceNotes = input.experienceNotes;
 
         await saveSeries(series);
         return { content: [{ type: 'text', text: JSON.stringify(series, null, 2) }] };
@@ -858,6 +903,89 @@ export function registerIdeonTools(server: McpServer): void {
     },
   );
 
+  // ─── Author tools ───────────────────────────────────────────────────────
+
+  server.registerTool(
+    'ideon_author_add',
+    {
+      title: 'Ideon Author Add',
+      description: 'Create a new author profile with experience, style, and credentials.',
+      inputSchema: authorAddToolInputZodSchema,
+    },
+    async (input: AuthorAddToolInput) => {
+      try {
+        const slug = deriveAuthorSlugFromName(input.name);
+        if (await authorExists(slug)) {
+          throw new ReportedError(`Author "${slug}" already exists. Choose a different name.`);
+        }
+
+        const author: Author = {
+          name: input.name,
+          slug,
+          profile: input.profile ?? '',
+        };
+        await saveAuthor(author);
+        return { content: [{ type: 'text', text: JSON.stringify(author, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'ideon_author_list',
+    {
+      title: 'Ideon Author List',
+      description: 'List all author profiles.',
+      inputSchema: authorListToolInputZodSchema,
+    },
+    async () => {
+      try {
+        const authors = await listAuthors();
+        return { content: [{ type: 'text', text: JSON.stringify(authors, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'ideon_author_edit',
+    {
+      title: 'Ideon Author Edit',
+      description: 'Update fields on an existing author (patch semantics).',
+      inputSchema: authorEditToolInputZodSchema,
+    },
+    async (input: AuthorEditToolInput) => {
+      try {
+        const author = await loadAuthor(input.slug);
+        if (input.name) author.name = input.name;
+        if (input.profile !== undefined) author.profile = input.profile;
+        await saveAuthor(author);
+        return { content: [{ type: 'text', text: JSON.stringify(author, null, 2) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'ideon_author_remove',
+    {
+      title: 'Ideon Author Remove',
+      description: 'Delete an author profile by slug.',
+      inputSchema: authorRemoveToolInputZodSchema,
+    },
+    async (input: AuthorRemoveToolInput) => {
+      try {
+        await deleteAuthor(input.slug);
+        return { content: [{ type: 'text', text: JSON.stringify({ deleted: true, slug: input.slug }) }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
   // ─── Queue tools ────────────────────────────────────────────────────────
 
   server.registerTool(
@@ -874,6 +1002,8 @@ export function registerIdeonTools(server: McpServer): void {
           audience: input.audience,
           publication: input.publication,
           series: input.series,
+          author: input.author,
+          experienceNotes: input.experienceNotes,
           style: input.style,
           intent: input.intent,
           targetLength: input.length,
@@ -891,6 +1021,8 @@ export function registerIdeonTools(server: McpServer): void {
           job: resolved.job,
           publication: resolved.publication,
           series: resolved.series,
+          author: resolved.author,
+          experienceNotes: resolved.experienceNotes,
           exportPath: input.exportPath,
           addedAt: new Date().toISOString(),
           type: 'new',
@@ -1014,6 +1146,8 @@ export function registerIdeonTools(server: McpServer): void {
           job: entry.job,
           publication: entry.publication,
           series: entry.series,
+          author: entry.author,
+          experienceNotes: entry.experienceNotes,
         };
 
         try {
@@ -1507,6 +1641,12 @@ export async function startIdeonMcpServer(): Promise<void> {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
+}
+
+async function assertMcpAuthorExists(slug: string): Promise<void> {
+  if (!(await authorExists(slug))) {
+    throw new ReportedError(`Author "${slug}" not found. Create one with ideon_author_add.`);
+  }
 }
 
 function formatToolError(error: unknown): { content: Array<{ type: 'text'; text: string }>; isError: true } {

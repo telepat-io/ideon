@@ -12,6 +12,8 @@ export interface ResolvedWriteInput {
   job: Awaited<ReturnType<typeof resolveRunInput>>['job'];
   publication: Awaited<ReturnType<typeof resolveRunInput>>['publication'];
   series: Awaited<ReturnType<typeof resolveRunInput>>['series'];
+  author: Awaited<ReturnType<typeof resolveRunInput>>['author'];
+  experienceNotes?: string;
   keywords?: string[];
 }
 
@@ -35,6 +37,8 @@ export async function resolveWriteInput(
       jobPath: options.jobPath,
       publication: options.publication,
       series: options.series,
+      author: options.author,
+      experienceNotes: options.experience,
       style: options.style,
       intent: options.intent,
       targetLength: options.length,
@@ -56,6 +60,8 @@ export async function resolveWriteInput(
         jobPath: options.jobPath,
         publication: options.publication,
         series: options.series,
+        author: options.author,
+        experienceNotes: options.experience,
         style: options.style,
         intent: options.intent,
         targetLength: options.length,

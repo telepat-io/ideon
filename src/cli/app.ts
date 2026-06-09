@@ -41,6 +41,12 @@ import {
   runSeriesRemoveCommand,
 } from './commands/series.js';
 import {
+  runAuthorAddCommand,
+  runAuthorListCommand,
+  runAuthorEditCommand,
+  runAuthorRemoveCommand,
+} from './commands/author.js';
+import {
   runQueueAddCommand,
   runQueueListCommand,
   runQueuePeekCommand,
@@ -302,6 +308,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
     .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
     .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .option('--author <slug>', 'Default author slug for this publication')
     .action(async (name: string | undefined, options: {
       style?: string;
       intent?: string;
@@ -315,6 +322,7 @@ export async function runCli(argv: string[]): Promise<void> {
       disclosureRequirements?: string;
       audienceRestrictions?: string;
       editorialPolicy?: string;
+      author?: string;
     }) => {
       await runPublicationAddCommand({ name, ...options });
     });
@@ -345,6 +353,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
     .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
     .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .option('--author <slug>', 'Default author slug for this publication')
+    .option('--unset-author', 'Remove default author association')
     .action(async (slug: string, options: {
       name?: string;
       style?: string;
@@ -359,6 +369,8 @@ export async function runCli(argv: string[]): Promise<void> {
       disclosureRequirements?: string;
       audienceRestrictions?: string;
       editorialPolicy?: string;
+      author?: string;
+      unsetAuthor?: boolean;
     }) => {
       await runPublicationEditCommand({ slug, ...options });
     });
@@ -395,6 +407,8 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
     .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
     .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .option('--author <slug>', 'Default author slug for this series')
+    .option('--experience <text>', 'Standing anecdotes or first-hand experience for this series')
     .action(async (name: string | undefined, options: {
       topic?: string;
       publication?: string;
@@ -411,6 +425,8 @@ export async function runCli(argv: string[]): Promise<void> {
       disclosureRequirements?: string;
       audienceRestrictions?: string;
       editorialPolicy?: string;
+      author?: string;
+      experience?: string;
     }) => {
       await runSeriesAddCommand({ name, ...options });
     });
@@ -446,6 +462,9 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('--disclosure-requirements <requirements>', 'Comma-separated disclosure requirements')
     .option('--audience-restrictions <restrictions>', 'Comma-separated audience restrictions')
     .option('--editorial-policy <text>', 'Editorial policy notes (freeform text)')
+    .option('--author <slug>', 'Default author slug for this series')
+    .option('--experience <text>', 'Standing anecdotes or first-hand experience for this series')
+    .option('--unset-author', 'Remove default author association')
     .action(async (slug: string, options: {
       name?: string;
       topic?: string;
@@ -464,6 +483,9 @@ export async function runCli(argv: string[]): Promise<void> {
       disclosureRequirements?: string;
       audienceRestrictions?: string;
       editorialPolicy?: string;
+      author?: string;
+      experience?: string;
+      unsetAuthor?: boolean;
     }) => {
       await runSeriesEditCommand({ slug, ...options });
     });
@@ -475,6 +497,47 @@ export async function runCli(argv: string[]): Promise<void> {
     .option('-f, --force', 'Skip the confirmation prompt', false)
     .action(async (slug: string, options: { force: boolean }) => {
       await runSeriesRemoveCommand({ slug, force: options.force });
+    });
+
+  const authorCommand = program
+    .command('author')
+    .description('Manage author profiles for voice, experience, and expertise.');
+
+  authorCommand
+    .command('add')
+    .description('Create a new author profile.')
+    .argument('[name]', 'Author name')
+    .option('--profile <text>', 'Author profile: experience, style, credentials')
+    .action(async (name: string | undefined, options: { profile?: string }) => {
+      await runAuthorAddCommand({ name, ...options });
+    });
+
+  authorCommand
+    .command('list')
+    .description('List all authors.')
+    .option('--json', 'Print machine-readable JSON output', false)
+    .option('--verbose', 'Show author profile details', false)
+    .action(async (options: { json: boolean; verbose: boolean }) => {
+      await runAuthorListCommand(options);
+    });
+
+  authorCommand
+    .command('edit')
+    .description('Edit an existing author.')
+    .argument('<slug>', 'Author slug')
+    .option('--name <name>', 'New author name')
+    .option('--profile <text>', 'Updated author profile')
+    .action(async (slug: string, options: { name?: string; profile?: string }) => {
+      await runAuthorEditCommand({ slug, ...options });
+    });
+
+  authorCommand
+    .command('remove')
+    .description('Delete an author.')
+    .argument('<slug>', 'Author slug')
+    .option('-f, --force', 'Skip the confirmation prompt', false)
+    .action(async (slug: string, options: { force: boolean }) => {
+      await runAuthorRemoveCommand({ slug, force: options.force });
     });
 
   program

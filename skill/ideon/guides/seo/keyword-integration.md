@@ -1,14 +1,14 @@
 # Keyword Integration
 
-Use this guide when the content plan includes SEO keywords. Apply these rules during planning and writing — not as stuffing, but as intentional placement that helps readers and search engines understand topic focus.
+Use this guide when the content plan includes topic keywords. Keywords clarify the primary entity and subtopics for readers — they are not ranking targets to chase. Never choose a topic solely because a keyword looks opportunistic.
 
 ## Rule: Designate One Primary Keyword
-Description: Choose exactly one primary keyword from the plan's keyword set. It anchors the title, meta description, and introduction.
+Description: Choose exactly one primary keyword from the plan's keyword set. It anchors the title, meta description, and introduction as the main topic entity readers need to understand.
 Negative example: Treating all keywords as equal with no primary entity driving the headline.
 Positive example: Primary keyword "container orchestration" in title and intro; secondary keywords "Kubernetes", "pod scheduling" assigned to specific sections.
 
 ## Rule: Place Primary Keyword in Title and Intro
-Description: The primary keyword should appear in the article title (or a close natural variant) and within the first 100 words of the introduction.
+Description: The primary keyword should appear in the article title (or a close natural variant) and within the first 100 words of the introduction so readers immediately know what the piece is about.
 Negative example: Title mentions a generic topic while the primary keyword only appears in section four.
 Positive example: Title leads with the primary entity; intro defines it in the opening paragraph.
 
@@ -31,6 +31,11 @@ Positive example: Using "content strategy" once explicitly and "editorial planni
 Description: Keywords should not be copied verbatim as section titles unless the title is genuinely the best reader-facing heading. Prefer question-shaped or benefit-shaped headings that include the keyword naturally.
 Negative example: H2 titled exactly "organic marketing" with no context.
 Positive example: H2 titled "What Organic Marketing Looks Like in 2025".
+
+## Rule: Never Chase Topics for Keywords Alone
+Description: Write about subjects that serve your audience and author expertise. Keyword lists guide topic clarity and structure — they do not justify covering niches you cannot support with real value.
+Negative example: Planning an article on a trending keyword with no author experience and no original angle.
+Positive example: Choosing keywords that match the author's domain and the reader problem the piece actually solves.
 
 ## Rule: Validate Coverage Before Publishing
 Description: Before finalizing, confirm every plan keyword appears at least once across title, section headings, or section bodies. The primary keyword must appear in title and intro.

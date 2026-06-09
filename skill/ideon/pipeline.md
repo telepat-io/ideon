@@ -89,7 +89,7 @@ This document details the execution flow for all 8 stages of the Ideon content g
 
 **Inputs:** Plan, format/style/intent guides, SEO guides (cached), target length
 
-**Agent:** Using tiered guide bundles (intro / section / outro) with system prompt (guides + plan + quality standards + SEO rules), generate full markdown with sections as outlined. Intro: place `primaryKeyword` in the first 100 words. Sections: open with a 40-60 word BLUF paragraph; use each section's `targetKeywords` when present. Each section must include at least one statistic or citation per on-page essentials and fact density guides. Apply E-E-A-T signals (practitioner observations, authoritative citations, competing viewpoints). After writing, run AI prose detection avoidance pass: scan for prohibited vocabulary, hedging language, and formulaic transitions.
+**Agent:** Using tiered guide bundles (intro / section / outro) with system prompt (guides + plan + quality standards + SEO rules + author context when configured), generate full markdown with sections as outlined. Intro: place `primaryKeyword` in the first 100 words. Sections: open with a 40-60 word BLUF paragraph; use each section's `targetKeywords` when present. Apply E-E-A-T signals (weave supplied author experience only, authoritative citations, competing viewpoints). Add facts and citations only when they substantively support the section. After writing, run natural prose quality pass: scan for overused vocabulary, hedging language, and formulaic transitions.
 
 **Output:** Full markdown + actual word count + token/cost
 

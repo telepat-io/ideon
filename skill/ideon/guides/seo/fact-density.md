@@ -1,33 +1,36 @@
-# Fact Density for Search Visibility
+# Fact Density and Substantial Value
 
-Use this guide to maximize the concentration of verifiable data points, statistics, citations, and direct quotations in your content. Research from Princeton University, IIT Delhi, and Georgia Tech demonstrated that increasing Fact Density can boost visibility in generative engine responses by up to 40%.
+Use this guide to add verifiable substance where it genuinely supports the argument. Google's helpful-content standard asks whether the piece provides original information, analysis, or insight **beyond the obvious** — not whether it hits a statistic quota.
 
-## Rule: Include at Least One Statistic or Data Point Per H2 Section
-Description: Every major section should contain at least one concrete number, percentage, benchmark, or measured outcome. Statistics anchor abstract claims to verifiable reality and give generative engines specific facts to cite.
-Negative example: "Many companies have reported significant improvements after adopting agile methodologies."
-Positive example: "Teams that adopted agile practices reported a 37% reduction in time-to-market and a 22% improvement in employee satisfaction scores, according to a 2024 survey of 1,200 engineering organizations by Atlassian."
+## Rule: Add Facts Only When They Support the Section
+Description: Include statistics, citations, or direct quotations when they strengthen a specific claim. Skip padding numbers into sections that are clear without them.
+Negative example: Dropping a unrelated industry statistic into every H2 section to hit a quota.
+Positive example: Citing a primary-source benchmark only in the section that compares deployment approaches, because the number resolves a trade-off the reader cares about.
 
-## Rule: Include at Least One Authoritative Citation Per H2 Section
-Description: Each section should reference at least one named, verifiable source. Prefer primary sources: research papers, official documentation, government datasets, first-party engineering blogs from recognized organizations.
-Negative example: A 300-word section with zero external references or source attributions.
+## Rule: Cite Primary Sources Over Secondary Ones
+Description: Prefer original research papers, official documentation, government datasets, and first-party announcements. Avoid citing blog posts that cite other blog posts.
+Negative example: A 300-word section with zero external references when it makes empirical claims.
 Positive example: "The React team's own profiling data shows that React Server Components reduced client-side JavaScript bundles by 42% in the Next.js App Router migration (source: React Labs blog post, March 2025)."
 
-## Rule: Include at Least One Direct Quotation Where the Topic Allows
-Description: Direct quotes from recognized experts, original documentation, or primary research add credibility and give generative engines exact text to extract. The Princeton GEO study found quotation addition yields a 22% visibility improvement.
+## Rule: Use Direct Quotations Sparingly and Purposefully
+Description: Direct quotes from recognized experts or primary documentation add credibility when the exact wording matters. Do not quote for decoration.
 Negative example: Paraphrasing an expert's statement in vague terms without attribution.
 Positive example: "As AWS Chief Evangelist Jeff Barr noted in the Lambda launch announcement: 'Our goal is to make it possible for developers to never think about servers again — not even virtual ones.'"
 
-## Rule: Prefer Statistics From the Last Two Years
-Description: Fresh data signals relevance to search engines, which prioritize recent information. If you must use older data, explicitly state the vintage and explain why it remains relevant.
+## Rule: Prefer Recent Data When Timeliness Matters
+Description: Fresh data signals relevance in fast-moving fields. If you must use older data, state the vintage and explain why it still applies.
 Negative example: "According to a 2019 study, 45% of companies use cloud computing." (outdated figure in a fast-moving field)
 Positive example: "According to Flexera's 2025 State of the Cloud Report, 73% of enterprises now run a multi-cloud strategy, up from 64% in 2023."
 
-## Rule: Scale Fact Requirements to Content Length
-Description: Adjust fact density targets proportionally to the article length. A 500-word article cannot carry the same data payload as a 3,000-word pillar page.
-Negative example: A 3,000-word deep dive with only two statistics and no citations across eight sections.
+## Rule: Scale Substance to Content Length
+Description: Longer pieces can carry more evidence; shorter pieces should stay focused. Use these as soft targets, not mandates:
+Negative example: A 3,000-word deep dive with only vague generalities and no verifiable support for major claims.
 Positive example:
-- Small (under 800 words): 1-2 total data points, at least one external citation
-- Medium (800-1,800 words): 3-5 total data points, at least 2-3 citations spread across sections
-- Large (over 1,800 words): 5-8 total data points, at least 4-5 citations with at least one per major section
+- Small (under 800 words): 1-2 concrete data points or citations if the topic warrants them
+- Medium (800-1,800 words): 3-5 substantiated claims with citations spread where they earn their place
+- Large (over 1,800 words): Multiple sections with distinct evidence types (data, primary docs, expert quotes) where each adds non-obvious value
 
-
+## Rule: Never Fabricate Statistics or Sources
+Description: Every number and named source must be verifiable. If you cannot confirm a figure, omit it or mark it as an illustrative estimate with an explicit caveat.
+Negative example: Inventing a survey percentage because the section "needs a stat."
+Positive example: Omitting the number and describing the pattern qualitatively until a human editor supplies a verified source.

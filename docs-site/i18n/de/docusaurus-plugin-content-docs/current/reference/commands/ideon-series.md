@@ -103,6 +103,9 @@ ideon series edit <slug> [--name <name>] [--topic <thema>] [--publication <slug>
 | `--topic <thema>` | Nein | string | Neues Thema. |
 | `--publication <slug>` | Nein | string | Mit anderer Veröffentlichung verknüpfen. |
 | `--unset-publication` | Nein | boolean | Veröffentlichungsverknüpfung entfernen. |
+| `--author <slug>` | Nein | string | Standard-Autoren-Slug für diese Serie. |
+| `--experience <text>` | Nein | string | Stehende Anekdoten oder Erfahrungen für diese Serie. |
+| `--unset-author` | Nein | boolean | Standard-Autorenzuordnung entfernen. |
 
 ---
 

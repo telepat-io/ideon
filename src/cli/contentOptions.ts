@@ -10,6 +10,8 @@ export interface ContentCommandOptions {
   jobPath?: string;
   publication?: string;
   series?: string;
+  author?: string;
+  experience?: string;
   primarySpec?: string;
   secondarySpecs?: string[];
   style?: string;
@@ -33,6 +35,8 @@ export function applyContentOptions(command: Command): Command {
     .option('--keywords <keywords>', 'Comma-separated SEO keywords (e.g. "organic marketing, content strategy, seo")')
     .option('--publication <slug>', 'Publication slug to use for defaults and editorial policy')
     .option('--series <slug>', 'Content series slug to use for defaults and thematic context')
+    .option('--author <slug>', 'Author slug for voice and expertise (overrides publication/series defaults)')
+    .option('--experience <text>', 'Per-run anecdotes or first-hand experience to weave into the draft')
     .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode');
 }
 
@@ -43,6 +47,8 @@ export function parseContentOptions(ideaArg: string | undefined, options: Record
     jobPath: options.job as string | undefined,
     publication: options.publication as string | undefined,
     series: options.series as string | undefined,
+    author: options.author as string | undefined,
+    experience: options.experience as string | undefined,
     primarySpec: options.primary as string | undefined,
     secondarySpecs: options.secondary as string[] | undefined,
     style: options.style as string | undefined,

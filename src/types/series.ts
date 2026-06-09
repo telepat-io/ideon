@@ -39,6 +39,8 @@ export const seriesDefaultsSchema = z.object({
   language: languageCodeSchema.optional(),
   maxImages: z.number().int().positive().optional(),
   maxLinks: z.number().int().positive().optional(),
+  defaultAuthor: z.string().min(1).optional(),
+  experienceNotes: z.string().optional(),
   model: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),
   maxTokens: z.number().int().positive().optional(),

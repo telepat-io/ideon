@@ -1,6 +1,11 @@
 # On-Page SEO Essentials
 
-Use this guide for title tags, meta descriptions, heading structure, and formatting rules that maximize visibility in traditional search results and generative AI citations.
+Use this guide for title tags, meta descriptions, heading structure, and formatting rules that help people-first content perform in traditional search and generative answers. Structure should serve readers first — clear headings, scannable paragraphs, and definition-first section openers make content easier to use and cite.
+
+## Rule: Structure for People-First Readability
+Description: Google's helpful-content guidance rewards pages that leave readers feeling they learned enough to achieve their goal. BLUF paragraphs, short blocks, and entity-rich headings are not SEO tricks — they reduce reader effort and match how quality raters evaluate clarity.
+Negative example: Long introductory throat-clearing before the first useful sentence; headings that tease without describing content.
+Positive example: Each H2 answered in the opening sentence; the reader can skim headings and BLUF openers and still grasp the full argument.
 
 ## Rule: Keep Titles Under 60 Characters
 Description: Search engines truncate titles past ~600px display width. Lead with the primary entity.

@@ -1,6 +1,8 @@
 import type { AppSettings } from '../config/schema.js';
+import type { Author } from '../types/author.js';
 import type { Publication } from '../types/publication.js';
 import type { Series } from '../types/series.js';
+import { buildAuthorRunContext } from '../llm/prompts/authorPolicy.js';
 import { buildIntroMessages, buildOutroMessages, buildSectionMessages } from '../llm/prompts/articleSection.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
@@ -12,6 +14,8 @@ export async function writeArticleSections({
   settings,
   publication,
   series,
+  author,
+  experienceNotes,
   openRouter,
   dryRun,
   onSectionStart,
@@ -22,6 +26,8 @@ export async function writeArticleSections({
   settings: AppSettings;
   publication?: Publication | null;
   series?: Series | null;
+  author?: Author | null;
+  experienceNotes?: string;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
   onSectionStart?: (label: string) => void;
@@ -29,6 +35,7 @@ export async function writeArticleSections({
   onInteraction?: (interaction: LlmInteractionRecord) => void;
 }): Promise<{ intro: string; sections: GeneratedArticleSection[]; outro: string }> {
   const wordBudgets = allocateWordBudgets(settings.targetLength, plan.sections.length);
+  const authorContext = buildAuthorRunContext(author ?? null, experienceNotes);
 
   onSectionStart?.('Writing introduction');
   const intro = dryRun || !openRouter
@@ -43,6 +50,7 @@ export async function writeArticleSections({
           wordBudgets.intro,
           publication ?? null,
           series ?? null,
+          authorContext,
         ),
         settings,
         interactionContext: {
@@ -73,6 +81,7 @@ export async function writeArticleSections({
             wordBudgets.sections[index] ?? wordBudgets.sections[wordBudgets.sections.length - 1] ?? 150,
             publication ?? null,
             series ?? null,
+            authorContext,
           ),
           settings,
           interactionContext: {
@@ -103,6 +112,7 @@ export async function writeArticleSections({
           wordBudgets.outro,
           publication ?? null,
           series ?? null,
+          authorContext,
         ),
         settings,
         interactionContext: {

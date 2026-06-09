@@ -263,6 +263,8 @@ export const jobInputSchema = z.object({
   targetAudience: z.string().min(1).optional(),
   publication: z.string().min(1).optional(),
   series: z.string().min(1).optional(),
+  author: z.string().min(1).optional(),
+  experienceNotes: z.string().min(1).optional(),
   countryCodes: z.array(countryCodeSchema).min(1).optional(),
   language: languageCodeSchema.optional(),
   keywords: z.array(z.string().min(1)).optional(),

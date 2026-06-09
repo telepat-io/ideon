@@ -1,6 +1,8 @@
 import type { AppSettings } from '../config/schema.js';
+import type { Author } from '../types/author.js';
 import type { Publication } from '../types/publication.js';
 import type { Series } from '../types/series.js';
+import { buildAuthorRunContext } from '../llm/prompts/authorPolicy.js';
 import { buildPrimaryPlanMessages, buildPrimaryPlanJsonSchema } from '../llm/prompts/primaryPlan.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import { resolveUniqueSlug } from '../output/filesystem.js';
@@ -18,6 +20,8 @@ export async function planPrimaryContent({
   settings,
   publication,
   series,
+  author,
+  experienceNotes,
   keywords,
   markdownOutputDir,
   openRouter,
@@ -31,6 +35,8 @@ export async function planPrimaryContent({
   settings: AppSettings;
   publication?: Publication | null;
   series?: Series | null;
+  author?: Author | null;
+  experienceNotes?: string;
   keywords?: string[];
   markdownOutputDir: string;
   openRouter: OpenRouterClient | null;
@@ -54,6 +60,7 @@ export async function planPrimaryContent({
           targetLength: settings.targetLength,
           publication,
           series,
+          authorContext: buildAuthorRunContext(author ?? null, experienceNotes),
           keywords: providedKeywords,
         }),
         settings,

@@ -154,6 +154,8 @@ The JSON includes:
 - `images`: array of all rendered images (cover and inline) with paths, descriptions, and anchor positions
 - `outputs`: array of all markdown output files with content types and paths
 - `seoCheck` (when present): lint outcome (`passed` follows `seoCheckMode`), `seoCheckMode`, `warningsRemaining`, full `issues[]`, editor turn count, and editor pass cost summary
+- `author` (when present): resolved author slug for the run
+- `editorialChecklist`: dynamic pre-publish checklist (byline, AI disclosure, author assignment, placeholders, stat verification, helpful-content self-assessment)
 - `generatedAt`: ISO timestamp
 - `generationDir`: absolute path to the generation directory
 

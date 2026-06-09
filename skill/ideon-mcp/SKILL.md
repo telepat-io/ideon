@@ -1,6 +1,6 @@
 ---
 name: ideon-mcp
-description: Use this skill when users need to operate Ideon through its MCP tool surface — generating content, managing config, planning content strategy with Google Keyword Planner data, organizing publications, series, and queues, enriching links, exporting articles, previewing generated content, or deleting outputs — all via MCP tool calls rather than CLI commands. Use this skill whenever the user mentions Ideon MCP tools, is running Ideon inside an MCP client (Claude, Claude Desktop, Gemini, opencode, Cursor, VS Code, ChatGPT, Codex), asks about ideon_write, ideon_config_set, ideon_delete, ideon_links, ideon_export, ideon_preview, ideon_publication_*, ideon_series_*, ideon_queue_*, ideon_plan_*, ideon_article_list, gkp_generate_ideas, gkp_get_historical_data, gkp_get_forecast_data, wants to set up or configure the Ideon MCP server, or needs content generation workflows through the MCP protocol — even if they do not explicitly say "MCP".
+description: Use this skill when users need to operate Ideon through its MCP tool surface — generating content, managing config, planning content strategy with Google Keyword Planner data, organizing publications, series, authors, and queues, enriching links, exporting articles, previewing generated content, or deleting outputs — all via MCP tool calls rather than CLI commands. Use this skill whenever the user mentions Ideon MCP tools, is running Ideon inside an MCP client (Claude, Claude Desktop, Gemini, opencode, Cursor, VS Code, ChatGPT, Codex), asks about ideon_write, ideon_config_set, ideon_delete, ideon_links, ideon_export, ideon_preview, ideon_publication_*, ideon_series_*, ideon_author_*, ideon_queue_*, ideon_plan_*, ideon_article_list, gkp_generate_ideas, gkp_get_historical_data, gkp_get_forecast_data, wants to set up or configure the Ideon MCP server, or needs content generation workflows through the MCP protocol — even if they do not explicitly say "MCP".
 ---
 
 # Ideon MCP Skill
@@ -9,7 +9,7 @@ description: Use this skill when users need to operate Ideon through its MCP too
 
 This skill teaches how to operate Ideon as a content writer platform through its MCP (Model Context Protocol) tool surface — not the CLI.
 
-Ideon exposes 28 MCP tools covering the full content lifecycle: generate content from an idea, resume interrupted runs, enrich links, export articles, manage configuration, create and manage publications and series, queue articles for batch processing, plan content strategy with Google Keyword Planner research, and list generated articles.
+Ideon exposes 32 MCP tools covering the full content lifecycle: generate content from an idea, resume interrupted runs, enrich links, export articles, manage configuration, create and manage publications, series, and authors, queue articles for batch processing, plan content strategy with Google Keyword Planner research, and list generated articles.
 
 Use this skill when working inside any MCP-compatible client. All operations are performed as MCP tool invocations with structured JSON responses.
 
@@ -132,6 +132,8 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 | Length | No | `length` | `small`/`medium`/`large` or positive integer. |
 | Publication | No | `publication` | Publication slug for defaults and editorial policy. |
 | Series | No | `series` | Series slug for defaults and thematic context. |
+| Author | No | `author` | Author slug for voice and expertise. Overrides publication/series defaults. |
+| Experience notes | No | `experienceNotes` | Per-run anecdotes or first-hand experience to weave into the draft. |
 | Keywords | No | `keywords` | Not a direct parameter — use publication/series keywords. |
 | Audience | No | `audience` | Target audience description injected into editorial policy. |
 | Enrich links | No | `enrichLinks` (boolean) | Opt-in link enrichment for long-form outputs. |
@@ -280,6 +282,17 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 | `ideon_series_list` | — | List all series (optional `publication` filter). |
 | `ideon_series_edit` | `slug` | Edit a series (patch semantics). |
 | `ideon_series_remove` | `slug` | Delete a series. |
+
+### Authors
+
+| Tool | Required params | Description |
+| --- | --- | --- |
+| `ideon_author_add` | `name` | Create an author profile (`profile` optional). |
+| `ideon_author_list` | — | List all author profiles. |
+| `ideon_author_edit` | `slug` | Edit author `name` or `profile` (patch semantics). |
+| `ideon_author_remove` | `slug` | Delete an author. |
+
+Publication and series tools accept `defaultAuthor`; series tools also accept `experienceNotes`.
 
 ### Content queue
 

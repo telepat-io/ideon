@@ -44,6 +44,8 @@ export async function runQueueAddCommand(
     job: resolved.job,
     publication: resolved.publication,
     series: resolved.series,
+    author: resolved.author,
+    experienceNotes: resolved.experienceNotes,
     exportPath: options.exportPath,
     addedAt: new Date().toISOString(),
     type: 'new',

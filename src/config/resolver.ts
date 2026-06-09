@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings } from './settingsFile.js';
 import { loadSecrets } from './secretStore.js';
+import { loadAuthor } from './authorStore.js';
 import { loadPublication } from './publicationStore.js';
 import { loadSeries } from './seriesStore.js';
 import {
@@ -16,6 +17,7 @@ import {
   type TargetLength,
 } from './schema.js';
 import { normalizeCountryCodes, normalizeLanguage } from './marketLocale.js';
+import type { Author } from '../types/author.js';
 import type { Publication } from '../types/publication.js';
 import type { Series } from '../types/series.js';
 
@@ -31,6 +33,8 @@ export interface ResolveConfigInput {
   jobPath?: string;
   publication?: string;
   series?: string;
+  author?: string;
+  experienceNotes?: string;
   style?: (typeof writingStyleValues)[number] | string;
   intent?: (typeof contentIntentValues)[number] | string;
   contentTargets?: ContentTargetInput[];
@@ -47,6 +51,8 @@ export interface ResolvedRunInput {
   job: JobInput | null;
   publication: Publication | null;
   series: Series | null;
+  author: Author | null;
+  experienceNotes?: string;
   countryCodes?: string[];
   language?: string;
   keywords?: string[];
@@ -188,6 +194,19 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     ?? normalizeLanguage(seriesDefaults.language)
     ?? normalizeLanguage(pubDefaults.language);
 
+  const authorSlug = normalizeOptionalText(input.author)
+    ?? normalizeOptionalText(job?.author)
+    ?? normalizeOptionalText(seriesDefaults.defaultAuthor)
+    ?? normalizeOptionalText(pubDefaults.defaultAuthor);
+
+  const author = authorSlug ? await loadAuthor(authorSlug) : null;
+
+  const mergedExperienceNotes = mergeExperienceNotes(
+    seriesDefaults.experienceNotes,
+    job?.experienceNotes,
+    input.experienceNotes,
+  );
+
   return {
     config: {
       settings: mergedSettings,
@@ -207,10 +226,22 @@ export async function resolveRunInput(input: ResolveConfigInput): Promise<Resolv
     job,
     publication,
     series,
+    author,
+    experienceNotes: mergedExperienceNotes,
     countryCodes: mergedCountryCodes,
     language: mergedLanguage,
     keywords: mergedKeywords,
   };
+}
+
+function mergeExperienceNotes(
+  ...sources: Array<string | undefined>
+): string | undefined {
+  const parts = sources
+    .map((source) => source?.trim())
+    .filter((source): source is string => Boolean(source && source.length > 0));
+
+  return parts.length > 0 ? parts.join('\n\n') : undefined;
 }
 
 function normalizeOptionalText(value: unknown): string | undefined {

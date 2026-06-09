@@ -14,6 +14,7 @@ import { Limn } from '@telepat/limn';
 import { buildImageSlots, expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
 import { renderMarkdownDocument } from '../output/markdown.js';
+import { buildEditorialChecklist, formatEditorialChecklistSummary } from '../editorial/checklist.js';
 import { buildMetaJson } from '../output/meta.js';
 import {
   buildGenerationDirectoryName,
@@ -213,6 +214,10 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         dryRun,
         outputPaths,
+        authorSlug: input.author?.slug,
+        experienceNotes: input.experienceNotes,
+        publicationSlug: input.publication?.slug,
+        seriesSlug: input.series?.slug,
       },
       workingDir,
     );
@@ -273,6 +278,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         publication: input.publication,
         series: input.series,
+        author: input.author,
+        experienceNotes: input.experienceNotes,
         openRouter,
         dryRun,
         onInteraction(interaction) {
@@ -332,6 +339,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         publication: input.publication,
         series: input.series,
+        author: input.author,
+        experienceNotes: input.experienceNotes,
         keywords: input.keywords,
         markdownOutputDir: writeSession.outputPaths.markdownOutputDir,
         openRouter,
@@ -406,6 +415,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           settings: input.config.settings,
           publication: input.publication,
           series: input.series,
+          author: input.author,
+          experienceNotes: input.experienceNotes,
           openRouter,
           dryRun,
           onInteraction(interaction) {
@@ -647,6 +658,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         settings: input.config.settings,
         publication: input.publication,
         series: input.series,
+        author: input.author,
+        experienceNotes: input.experienceNotes,
         openRouter,
         dryRun,
         onInteraction(interaction) {
@@ -999,6 +1012,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           settings: input.config.settings,
           publication: input.publication,
           series: input.series,
+          author: input.author,
+          experienceNotes: input.experienceNotes,
           openRouter,
           dryRun,
           role: 'secondary',
@@ -1333,6 +1348,14 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     await writeJsonFile(analyticsPath, analytics);
     await writeJsonFile(interactionsPath, interactions);
 
+    const draftText = text ? flattenArticleDraftText(text) : undefined;
+    const editorialChecklist = buildEditorialChecklist({
+      author: input.author,
+      experienceNotes: input.experienceNotes,
+      draftText,
+    });
+    const editorialChecklistSummary = formatEditorialChecklistSummary(editorialChecklist);
+
     const metaJson = buildMetaJson({
       idea: input.idea,
       generationDir,
@@ -1348,6 +1371,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         : null,
       publication: input.publication?.slug,
       series: input.series?.slug,
+      author: input.author?.slug,
+      editorialChecklist,
       seoCheck: seoCheckResult ?? undefined,
     });
     const metaJsonPath = path.join(generationDir, 'meta.json');
@@ -1391,6 +1416,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       stages,
       artifact: completedArtifact,
       analytics,
+      ...(editorialChecklistSummary ? { editorialChecklistSummary } : {}),
     };
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'Unknown pipeline failure';
@@ -1411,6 +1437,18 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
     throw error;
   }
+}
+
+function flattenArticleDraftText(text: {
+  intro: string;
+  sections: Array<{ title: string; body: string }>;
+  outro: string;
+}): string {
+  return [
+    text.intro,
+    ...text.sections.map((section) => `${section.title}\n${section.body}`),
+    text.outro,
+  ].join('\n\n');
 }
 
 function markStageStarted<TKey extends string>(

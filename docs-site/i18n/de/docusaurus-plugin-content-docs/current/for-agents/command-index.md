@@ -22,7 +22,13 @@ keywords: [ideon, agents, command index, cli, reference]
 
 - Pfad: `/reference/commands/ideon-write`
 - Zweck: Generieren Sie primäre und optionale sekundäre Ausgaben aus einer Idee oder Job-Datei.
-- Wichtige Flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--no-seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+- Wichtige Flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--author`, `--experience`, `--no-interactive`, `--dry-run`, `--no-seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+
+## ideon author
+
+- Pfad: `/reference/commands/ideon-author`
+- Zweck: Autorenprofile verwalten (Name, Slug, Profiltext) für Stimme und Fachwissen in Schreib-Prompts.
+- Wichtige Flags: `add --profile`, `list --json`, `edit --name --profile`, `remove --force`.
 
 ## ideon queue
 

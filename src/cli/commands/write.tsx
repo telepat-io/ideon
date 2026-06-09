@@ -202,6 +202,8 @@ async function runWriteFromQueue(options: WriteCommandOptions): Promise<void> {
     job: entry.job,
     publication: entry.publication,
     series: entry.series,
+    author: entry.author,
+    experienceNotes: entry.experienceNotes,
   };
 
   if (options.style || options.intent || options.length) {

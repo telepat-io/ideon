@@ -1,5 +1,6 @@
 import { jest } from '@jest/globals';
 import type { AppSettings, EnvSettings, SecretSettings } from '../config/schema.js';
+import type { Author } from '../types/author.js';
 import type { Publication } from '../types/publication.js';
 import type { Series } from '../types/series.js';
 
@@ -8,6 +9,7 @@ const loadSecretsMock = jest.fn<(options?: { disableKeytar?: boolean }) => Promi
 const readEnvSettingsMock = jest.fn<() => EnvSettings>();
 const loadPublicationMock = jest.fn<(slug: string) => Promise<Publication>>();
 const loadSeriesMock = jest.fn<(slug: string) => Promise<Series>>();
+const loadAuthorMock = jest.fn<(slug: string) => Promise<Author>>();
 
 jest.unstable_mockModule('../config/settingsFile.js', () => ({
   loadSavedSettings: loadSavedSettingsMock,
@@ -27,6 +29,10 @@ jest.unstable_mockModule('../config/publicationStore.js', () => ({
 
 jest.unstable_mockModule('../config/seriesStore.js', () => ({
   loadSeries: loadSeriesMock,
+}));
+
+jest.unstable_mockModule('../config/authorStore.js', () => ({
+  loadAuthor: loadAuthorMock,
 }));
 
 const { resolveRunInput } = await import('../config/resolver.js');
@@ -395,5 +401,110 @@ describe('resolveRunInput with publications', () => {
 
     expect(result.config.settings.style).toBe('playful');
     expect(result.config.settings.intent).toBe('tutorial');
+  });
+});
+
+describe('resolveRunInput author resolution', () => {
+  const baseAuthor: Author = {
+    name: 'Alex Chen',
+    slug: 'alex-chen',
+    profile: 'Platform engineer.',
+  };
+
+  beforeEach(() => {
+    loadSavedSettingsMock.mockResolvedValue(baseSettings);
+    loadSecretsMock.mockResolvedValue(baseSecrets);
+    readEnvSettingsMock.mockReturnValue({});
+    loadAuthorMock.mockResolvedValue(baseAuthor);
+  });
+
+  it('resolves author from CLI override over series and publication defaults', async () => {
+    loadPublicationMock.mockResolvedValue({
+      ...basePublication,
+      defaults: { ...basePublication.defaults, defaultAuthor: 'pub-author' },
+    });
+    loadSeriesMock.mockResolvedValue({
+      name: 'Series',
+      slug: 'test-series',
+      topic: '',
+      defaults: { defaultAuthor: 'series-author' },
+      editorialPolicy: basePublication.editorialPolicy,
+    });
+    loadAuthorMock.mockImplementation(async (slug) => ({
+      name: slug,
+      slug,
+      profile: `Profile for ${slug}`,
+    }));
+
+    const result = await resolveRunInput({
+      idea: 'test',
+      publication: 'tech-blog',
+      series: 'test-series',
+      author: 'alex-chen',
+    });
+
+    expect(loadAuthorMock).toHaveBeenCalledWith('alex-chen');
+    expect(result.author?.slug).toBe('alex-chen');
+  });
+
+  it('falls back to series defaultAuthor then publication defaultAuthor', async () => {
+    loadPublicationMock.mockResolvedValue({
+      ...basePublication,
+      defaults: { ...basePublication.defaults, defaultAuthor: 'pub-author' },
+    });
+    loadSeriesMock.mockResolvedValue({
+      name: 'Series',
+      slug: 'test-series',
+      topic: '',
+      defaults: { defaultAuthor: 'series-author' },
+      editorialPolicy: basePublication.editorialPolicy,
+    });
+    loadAuthorMock.mockImplementation(async (slug) => ({
+      name: slug,
+      slug,
+      profile: '',
+    }));
+
+    const withSeriesDefault = await resolveRunInput({
+      idea: 'test',
+      publication: 'tech-blog',
+      series: 'test-series',
+    });
+    expect(withSeriesDefault.author?.slug).toBe('series-author');
+
+    loadSeriesMock.mockResolvedValue({
+      name: 'Series',
+      slug: 'test-series',
+      topic: '',
+      defaults: {},
+      editorialPolicy: basePublication.editorialPolicy,
+    });
+
+    const withPublicationDefault = await resolveRunInput({
+      idea: 'test',
+      publication: 'tech-blog',
+      series: 'test-series',
+    });
+    expect(withPublicationDefault.author?.slug).toBe('pub-author');
+  });
+
+  it('merges series and run experience notes', async () => {
+    loadPublicationMock.mockResolvedValue(basePublication);
+    loadSeriesMock.mockResolvedValue({
+      name: 'Series',
+      slug: 'test-series',
+      topic: '',
+      defaults: { experienceNotes: 'Series anecdote.' },
+      editorialPolicy: basePublication.editorialPolicy,
+    });
+
+    const result = await resolveRunInput({
+      idea: 'test',
+      publication: 'tech-blog',
+      series: 'test-series',
+      experienceNotes: 'Run-specific anecdote.',
+    });
+
+    expect(result.experienceNotes).toBe('Series anecdote.\n\nRun-specific anecdote.');
   });
 });
