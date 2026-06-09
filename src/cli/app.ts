@@ -5,6 +5,7 @@ import {
   runAgentStatusCommand,
   runAgentUninstallCommand,
 } from './commands/agent.js';
+import { supportedAgentRuntimeValues } from '../integrations/agent/store.js';
 import {
   runConfigGetCommand,
   runConfigListCommand,
@@ -265,19 +266,41 @@ export async function runCli(argv: string[]): Promise<void> {
   agentCommand
     .command('install')
     .description('Install a runtime integration profile (CLI/MCP only).')
-    .argument('<runtime>', 'Runtime id (claude, chatgpt, gemini, generic-mcp)')
+    .argument('<runtime>', `Runtime id (${supportedAgentRuntimeValues.join(', ')})`)
+    .option('--cli-skill', 'Install ideon-cli skill surface (default)')
+    .option('--mcp-skill', 'Install ideon-mcp skill + MCP registration only')
+    .option('--force', 'Replace conflicting Ideon-managed entries', false)
+    .option('--project', 'Write project-scoped config in the current directory', false)
     .option('--dry-run', 'Preview actions without writing state', false)
-    .action(async (runtime: string, options: { dryRun: boolean }) => {
-      await runAgentInstallCommand({ runtime, dryRun: options.dryRun });
+    .action(async (runtime: string, options: {
+      cliSkill: boolean;
+      mcpSkill: boolean;
+      force: boolean;
+      project: boolean;
+      dryRun: boolean;
+    }) => {
+      await runAgentInstallCommand({
+        runtime,
+        cliSkill: options.cliSkill,
+        mcpSkill: options.mcpSkill,
+        force: options.force,
+        project: options.project,
+        dryRun: options.dryRun,
+      });
     });
 
   agentCommand
     .command('uninstall')
     .description('Remove a runtime integration profile.')
-    .argument('<runtime>', 'Runtime id (claude, chatgpt, gemini, generic-mcp)')
+    .argument('<runtime>', `Runtime id (${supportedAgentRuntimeValues.join(', ')})`)
+    .option('--project', 'Remove project-scoped config in the current directory', false)
     .option('--dry-run', 'Preview actions without writing state', false)
-    .action(async (runtime: string, options: { dryRun: boolean }) => {
-      await runAgentUninstallCommand({ runtime, dryRun: options.dryRun });
+    .action(async (runtime: string, options: { project: boolean; dryRun: boolean }) => {
+      await runAgentUninstallCommand({
+        runtime,
+        project: options.project,
+        dryRun: options.dryRun,
+      });
     });
 
   agentCommand

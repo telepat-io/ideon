@@ -36,7 +36,7 @@ describe('agent integration store', () => {
   it('installs a new integration', async () => {
     readFileMock.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
 
-    const result = await installAgentIntegration('claude', STORE_PATH);
+    const result = await installAgentIntegration('claude', undefined, STORE_PATH);
 
     expect(result.runtime).toBe('claude');
     expect(result.installedAt).toBeTruthy();
@@ -69,7 +69,7 @@ describe('agent integration store', () => {
       },
     }));
 
-    const result = await installAgentIntegration('claude', STORE_PATH);
+    const result = await installAgentIntegration('claude', undefined, STORE_PATH);
 
     expect(result.installedAt).toBe('2025-01-01T00:00:00.000Z');
     expect(result.updatedAt).not.toBe('2025-01-01T00:00:00.000Z');
@@ -106,5 +106,23 @@ describe('agent integration store', () => {
     readFileMock.mockRejectedValue(new Error('permission denied'));
 
     await expect(listInstalledAgentIntegrations(STORE_PATH)).rejects.toThrow('permission denied');
+  });
+
+  it('persists integration profile metadata', async () => {
+    readFileMock.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
+    const profile = {
+      cliSkill: true,
+      mcpSkill: false,
+      scope: 'global' as const,
+      managedPaths: ['/tmp/skill'],
+      managedKeys: ['mcpServers.ideon'],
+      toolId: 'ideon' as const,
+      integrationVersion: '0.1.41',
+    };
+
+    await installAgentIntegration('pi', profile, STORE_PATH);
+
+    const written = JSON.parse(writeFileMock.mock.calls[0]![1] as string);
+    expect(written.integrations.pi.profile).toEqual(profile);
   });
 });

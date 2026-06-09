@@ -90,7 +90,7 @@ ideon plan expand my-series --publication my-blog
 Ideon is built for agentic workflows:
 
 - **MCP server** — `ideon mcp serve` exposes tools over stdio for content generation, resume, deletion, config management, and Google Keyword Planner queries. Compatible with Claude Code, ChatGPT, Gemini, and any generic MCP host.
-- **Agent runtime registration** — `ideon agent install <runtime>` registers integration profiles for supported platforms. Check status with `ideon agent status --json`.
+- **Agent runtime integration** — `ideon agent install <runtime>` configures skills and MCP registration for supported hosts (`pi`, `claude`, `cursor`, `codex`, `gemini`, `vscode`, `opencode`, `chatgpt`, `claude-desktop`, `generic-mcp`). Default installs the `ideon-cli` skill; use `--mcp-skill` for MCP + `ideon-mcp`. Check artifacts with `ideon agent status --json`.
 - **Non-interactive mode** — `ideon write --no-interactive ...` removes all prompts for CI and automation.
 - **Machine-readable config** — `ideon config list --json` and `ideon config get <key> --json` for agent inspection.
 - **Skill packages** — Install `skill/ideon-cli/` for lifecycle writing workflows, and `skill/ideon-plan/` for approval-gated content planning and GKP-backed strategist workflows.

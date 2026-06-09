@@ -18,7 +18,9 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "dist",
+    "skill/ideon-cli",
+    "skill/ideon-mcp"
   ],
   "engines": {
     "node": ">=20"

@@ -18,8 +18,8 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon export <generationId> <path>` | Export a generated article as a standalone markdown file with inline links and copied images | `<generationId> <path>` | `--index`, `--overwrite` | no |
 | `ideon preview [markdownPath]` | Start local preview server/UI | none | `--port`, `--no-open`, `--watch` | no |
 | `ideon mcp serve` | Start first-party MCP server over stdio | none | none | MCP tool protocol output |
-| `ideon agent install <runtime>` | Register local runtime integration | `<runtime>` | `--dry-run` | no |
-| `ideon agent uninstall <runtime>` | Remove runtime integration | `<runtime>` | `--dry-run` | no |
+| `ideon agent install <runtime>` | Configure host skills/MCP for a supported agent runtime | `<runtime>` | `--cli-skill`, `--mcp-skill`, `--force`, `--project`, `--dry-run` | no |
+| `ideon agent uninstall <runtime>` | Remove Ideon-managed skill links and MCP entries | `<runtime>` | `--project`, `--dry-run` | no |
 | `ideon agent status` | Show installed runtimes and readiness checks | none | `--json` | yes |
 | `ideon gads login` | Interactive OAuth flow for Google Ads credentials | none | `--force`, `--developer-token`, `--client-id`, `--client-secret`, `--customer-id`, `--login-customer-id` | no |
 | `ideon gads logout` | Clear stored Google Ads credentials | none | `--all` | no |
@@ -136,15 +136,18 @@ Secret keys:
 
 Supported:
 
+- `pi`
 - `claude`
+- `claude-desktop`
 - `chatgpt`
 - `gemini`
-- `generic-mcp`
-
-Explicitly rejected aliases:
-
+- `codex`
 - `cursor`
 - `vscode`
+- `opencode`
+- `generic-mcp`
+
+Install flags: default CLI skill (`--cli-skill`), MCP stack (`--mcp-skill`), `--force`, `--project`, `--dry-run`. See `docs/reference/commands/ideon-agent.md`.
 
 ## Config precedence matrix
 

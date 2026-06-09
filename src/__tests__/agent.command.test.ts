@@ -7,38 +7,85 @@ import {
 } from '../cli/commands/agent.js';
 
 describe('agent commands', () => {
+  const profile = {
+    cliSkill: true,
+    mcpSkill: false,
+    scope: 'global' as const,
+    managedPaths: [],
+    managedKeys: [],
+    toolId: 'ideon' as const,
+    integrationVersion: '0.1.41',
+  };
+
   const installMock = jest.fn(async () => ({
     runtime: 'claude',
     installedAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    profile,
   }));
   const uninstallMock = jest.fn(async () => true);
+  const getInstalledMock = jest.fn<() => Promise<{
+    runtime: string;
+    installedAt: string;
+    updatedAt: string;
+    profile: typeof profile;
+  } | undefined>>(async () => ({
+    runtime: 'claude',
+    installedAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    profile,
+  }));
   const listMock = jest.fn(async () => [
     {
       runtime: 'claude',
       installedAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
+      profile,
     },
   ]);
+  const installRuntimeMock = jest.fn(async () => ({ profile, mutations: [] }));
+  const uninstallRuntimeMock = jest.fn(async () => undefined);
+  const collectRuntimeStatusMock = jest.fn(async () => ({
+    runtime: 'claude',
+    profile,
+    artifacts: [],
+    issues: [],
+    readiness: {},
+  }));
+
+  const baseDeps = {
+    install: installMock as never,
+    uninstall: uninstallMock as never,
+    list: listMock as never,
+    getInstalled: getInstalledMock as never,
+    installRuntime: installRuntimeMock as never,
+    uninstallRuntime: uninstallRuntimeMock as never,
+    collectRuntimeStatus: collectRuntimeStatusMock as never,
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getInstalledMock.mockResolvedValue({
+      runtime: 'claude',
+      installedAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      profile,
+    });
   });
 
   it('installs a supported runtime', async () => {
     const logs: string[] = [];
 
     await runAgentInstallCommand(
-      { runtime: 'claude', dryRun: false },
+      { runtime: 'claude', cliSkill: false, mcpSkill: false, force: false, project: false, dryRun: false },
       {
-        install: installMock as never,
-        uninstall: uninstallMock as never,
-        list: listMock as never,
+        ...baseDeps,
         log: (message) => logs.push(message),
       },
     );
 
-    expect(installMock).toHaveBeenCalledWith('claude');
+    expect(installRuntimeMock).toHaveBeenCalled();
+    expect(installMock).toHaveBeenCalledWith('claude', profile);
     expect(logs).toContain('Installed claude integration.');
   });
 
@@ -46,11 +93,9 @@ describe('agent commands', () => {
     const logs: string[] = [];
 
     await runAgentInstallCommand(
-      { runtime: 'gemini', dryRun: true },
+      { runtime: 'gemini', cliSkill: false, mcpSkill: false, force: false, project: false, dryRun: true },
       {
-        install: installMock as never,
-        uninstall: uninstallMock as never,
-        list: listMock as never,
+        ...baseDeps,
         log: (message) => logs.push(message),
       },
     );
@@ -62,37 +107,33 @@ describe('agent commands', () => {
   it('rejects unsupported runtime names', async () => {
     await expect(
       runAgentInstallCommand(
-        { runtime: 'unknown-runtime', dryRun: false },
-        {
-          install: installMock as never,
-          uninstall: uninstallMock as never,
-          list: listMock as never,
-        },
+        { runtime: 'unknown-runtime', cliSkill: false, mcpSkill: false, force: false, project: false, dryRun: false },
+        baseDeps,
       ),
     ).rejects.toBeInstanceOf(ReportedError);
   });
 
-  it('installs newly supported runtimes', async () => {
-    const logs: string[] = [];
+  it('rejects using cli and mcp skill flags together', async () => {
+    await expect(
+      runAgentInstallCommand(
+        { runtime: 'pi', cliSkill: true, mcpSkill: true, force: false, project: false, dryRun: false },
+        baseDeps,
+      ),
+    ).rejects.toBeInstanceOf(ReportedError);
+  });
 
-    for (const runtime of ['cursor', 'vscode', 'opencode', 'codex', 'claude-desktop']) {
-      logs.length = 0;
-      const runtimeInstallMock = jest.fn(async (rt: string) => ({
-        runtime: rt,
-        installedAt: '2026-01-01T00:00:00.000Z',
-        updatedAt: '2026-01-01T00:00:00.000Z',
-      }));
+  it('installs newly supported runtimes including pi', async () => {
+    for (const runtime of ['cursor', 'vscode', 'opencode', 'codex', 'claude-desktop', 'pi']) {
+      const runtimeInstallMock = jest.fn(async () => ({ profile, mutations: [] }));
       await runAgentInstallCommand(
-        { runtime, dryRun: false },
+        { runtime, cliSkill: false, mcpSkill: false, force: false, project: false, dryRun: false },
         {
-          install: runtimeInstallMock as never,
-          uninstall: uninstallMock as never,
-          list: listMock as never,
-          log: (message) => logs.push(message),
+          ...baseDeps,
+          installRuntime: runtimeInstallMock as never,
+          log: () => {},
         },
       );
-      expect(runtimeInstallMock).toHaveBeenCalledWith(runtime);
-      expect(logs).toContain(`Installed ${runtime} integration.`);
+      expect(runtimeInstallMock).toHaveBeenCalled();
     }
   });
 
@@ -100,66 +141,71 @@ describe('agent commands', () => {
     const logs: string[] = [];
 
     await runAgentUninstallCommand(
-      { runtime: 'claude', dryRun: false },
+      { runtime: 'claude', project: false, dryRun: false },
       {
-        install: installMock as never,
-        uninstall: uninstallMock as never,
-        list: listMock as never,
+        ...baseDeps,
         log: (message) => logs.push(message),
       },
     );
 
+    expect(uninstallRuntimeMock).toHaveBeenCalled();
     expect(uninstallMock).toHaveBeenCalledWith('claude');
     expect(logs).toContain('Uninstalled claude integration.');
   });
 
   it('fails uninstall when runtime is not installed', async () => {
-    const uninstallMissing = jest.fn(async () => false);
+    getInstalledMock.mockResolvedValueOnce(undefined);
 
     await expect(
       runAgentUninstallCommand(
-        { runtime: 'claude', dryRun: false },
-        {
-          install: installMock as never,
-          uninstall: uninstallMissing as never,
-          list: listMock as never,
-        },
+        { runtime: 'claude', project: false, dryRun: false },
+        baseDeps,
       ),
     ).rejects.toBeInstanceOf(ReportedError);
   });
 
-  it('renders status output', async () => {
+  it('renders status output with runtime reports', async () => {
     const logs: string[] = [];
 
     await runAgentStatusCommand(
       { json: false },
       {
-        install: installMock as never,
-        uninstall: uninstallMock as never,
-        list: listMock as never,
+        ...baseDeps,
         now: () => new Date('2026-04-17T00:00:00.000Z'),
         log: (message) => logs.push(message),
       },
     );
 
     expect(logs.some((entry) => entry.includes('Installed runtimes: claude'))).toBe(true);
-    expect(logs.some((entry) => entry.includes('Readiness sync check:'))).toBe(true);
+    expect(logs.some((entry) => entry.includes('Runtime claude:'))).toBe(true);
   });
 
-  it('renders status JSON output', async () => {
+  it('supports uninstall dry-run without touching store', async () => {
+    const logs: string[] = [];
+    await runAgentUninstallCommand(
+      { runtime: 'claude', project: false, dryRun: true },
+      {
+        ...baseDeps,
+        log: (message) => logs.push(message),
+      },
+    );
+    expect(uninstallRuntimeMock).not.toHaveBeenCalled();
+    expect(logs[0]).toContain('[dry-run]');
+  });
+
+  it('renders status JSON output with runtimeReports', async () => {
     const logs: string[] = [];
 
     await runAgentStatusCommand(
       { json: true },
       {
-        install: installMock as never,
-        uninstall: uninstallMock as never,
-        list: listMock as never,
+        ...baseDeps,
         now: () => new Date('2026-04-17T00:00:00.000Z'),
         log: (message) => logs.push(message),
       },
     );
 
-    expect(() => JSON.parse(logs[0] ?? '')).not.toThrow();
+    const parsed = JSON.parse(logs[0] ?? '') as { runtimeReports: unknown[] };
+    expect(Array.isArray(parsed.runtimeReports)).toBe(true);
   });
 });

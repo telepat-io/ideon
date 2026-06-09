@@ -75,5 +75,5 @@ keywords: [ideon, agents, command index, cli, reference]
 ## ideon agent
 
 - Path: `/reference/commands/ideon-agent`
-- Purpose: Manage local runtime integration registrations and readiness checks.
-- Key flags: `install --dry-run`, `uninstall --dry-run`, `status --json`.
+- Purpose: Install Ideon skills and MCP entries into supported agent hosts; verify readiness.
+- Key flags: `install [--cli-skill|--mcp-skill] [--force] [--project] [--dry-run]`, `uninstall [--project] [--dry-run]`, `status --json`.

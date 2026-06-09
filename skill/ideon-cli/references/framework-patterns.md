@@ -96,7 +96,7 @@ For MCP workflows:
 
 ## 9. Anti-patterns to avoid
 
-- Inventing unsupported runtime IDs (for example cursor/vscode).
+- Inventing unsupported runtime IDs (only use values from `ideon agent status` / command catalog).
 - Treating `--primary` count as configurable beyond `1`.
 - Assuming keychain works in CI.
 - Omitting confirmation for destructive delete paths.

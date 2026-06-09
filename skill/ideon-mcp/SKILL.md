@@ -13,7 +13,7 @@ Operate Ideon through 39 MCP tools covering the full content lifecycle: write, r
 - `ideon_delete` and `ideon_queue_remove/clear` always force-delete — verify slug/ID with user first.
 - Plan tools: use `dryRun: true` first; only set `autoSave: true` after user confirms.
 - No post-write export on `ideon_write` — use `ideon_export` separately or `exportPath` on resume/queue.
-- No agent registration tool — configure Ideon as an MCP server in the client config.
+- No agent registration MCP tool — use `ideon agent install <runtime>` from the terminal (or configure MCP manually per host).
 - In containers: set `TELEPAT_DISABLE_KEYTAR=true` and use `ideon_config_set` for secrets.
 
 ## Server setup
@@ -57,6 +57,23 @@ Configure before generating content:
 ```
 
 Secrets show `true`/`false` for availability, never actual values.
+
+### Host-specific MCP paths
+
+Prefer `ideon agent install <runtime> --mcp-skill` to register stdio MCP and install this skill. Manual paths when needed:
+
+| Host | Config file | Key |
+| --- | --- | --- |
+| Pi | `~/.pi/agent/mcp.json` (global) or `.pi/mcp.json` (project) | `mcpServers.ideon` — use with `pi-mcp-adapter` (`pi install npm:pi-mcp-adapter`) |
+| Claude Code | `~/.mcp.json` | `mcpServers.ideon` |
+| Cursor | `~/.cursor/mcp.json` or `.cursor/mcp.json` | `mcpServers.ideon` |
+| VS Code | `.vscode/mcp.json` | `servers.ideon` |
+| Gemini | `~/.gemini/mcp.json` | `mcpServers.ideon` |
+| Codex | `~/.codex/config.toml` | `[mcp_servers.ideon]` |
+| OpenCode | `opencode.json` | `mcp.ideon` |
+| Generic MCP | `~/.config/mcp/mcp.json` | `mcpServers.ideon` |
+
+Pi uses **proxy mode** via pi-mcp-adapter — do not enable direct tool injection for the full 39-tool surface unless the user explicitly accepts the context cost.
 
 ## Inputs to collect from user
 

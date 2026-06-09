@@ -3,13 +3,35 @@ import path from 'node:path';
 import { z } from 'zod';
 import envPaths from 'env-paths';
 
-export const supportedAgentRuntimeValues = ['claude', 'claude-desktop', 'chatgpt', 'gemini', 'codex', 'cursor', 'vscode', 'opencode', 'generic-mcp'] as const;
+export const supportedAgentRuntimeValues = [
+  'claude',
+  'claude-desktop',
+  'chatgpt',
+  'gemini',
+  'codex',
+  'cursor',
+  'vscode',
+  'opencode',
+  'generic-mcp',
+  'pi',
+] as const;
 export type SupportedAgentRuntime = (typeof supportedAgentRuntimeValues)[number];
+
+const integrationProfileSchema = z.object({
+  cliSkill: z.boolean(),
+  mcpSkill: z.boolean(),
+  scope: z.enum(['global', 'project']),
+  managedPaths: z.array(z.string()).default([]),
+  managedKeys: z.array(z.string()).default([]),
+  toolId: z.literal('ideon'),
+  integrationVersion: z.string(),
+});
 
 const integrationEntrySchema = z.object({
   runtime: z.enum(supportedAgentRuntimeValues),
   installedAt: z.string(),
   updatedAt: z.string(),
+  profile: integrationProfileSchema.optional(),
 });
 
 const integrationStoreSchema = z.object({
@@ -18,6 +40,7 @@ const integrationStoreSchema = z.object({
 });
 
 type IntegrationStore = z.infer<typeof integrationStoreSchema>;
+export type IntegrationProfile = z.infer<typeof integrationProfileSchema>;
 
 let _defaultStorePath: string;
 function getDefaultStorePath(): string {
@@ -32,6 +55,7 @@ export interface InstalledAgentIntegration {
   runtime: SupportedAgentRuntime;
   installedAt: string;
   updatedAt: string;
+  profile?: IntegrationProfile;
 }
 
 export async function getAgentIntegrationStorePath(): Promise<string> {
@@ -46,8 +70,18 @@ export async function listInstalledAgentIntegrations(targetStorePath?: string): 
   return entries;
 }
 
+export async function getInstalledAgentIntegration(
+  runtime: SupportedAgentRuntime,
+  targetStorePath?: string,
+): Promise<InstalledAgentIntegration | undefined> {
+  const resolvedPath = targetStorePath ?? getDefaultStorePath();
+  const store = await readStore(resolvedPath);
+  return store.integrations[runtime];
+}
+
 export async function installAgentIntegration(
   runtime: SupportedAgentRuntime,
+  profile?: IntegrationProfile,
   targetStorePath?: string,
 ): Promise<InstalledAgentIntegration> {
   const resolvedPath = targetStorePath ?? getDefaultStorePath();
@@ -59,6 +93,7 @@ export async function installAgentIntegration(
     runtime,
     installedAt: existing?.installedAt ?? nowIso,
     updatedAt: nowIso,
+    profile: profile ?? existing?.profile,
   };
 
   const nextStore: IntegrationStore = {
