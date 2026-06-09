@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.40](https://github.com/telepat-io/ideon/compare/ideon-v0.1.39...ideon-v0.1.40) (2026-06-09)
+
+
+### Features
+
+* add author profiles, editorial checklist, and SEO guide reframes ([9ecd009](https://github.com/telepat-io/ideon/commit/9ecd0092f081bae9daceafb374d03c55d87a8e1a))
+
+
+### Bug Fixes
+
+* repair i18n MCP docs links for Docusaurus locale routing ([62da080](https://github.com/telepat-io/ideon/commit/62da08066e107f71e463b60bf6809ae61a82b0b1))
+
 ## [0.1.39](https://github.com/telepat-io/ideon/compare/ideon-v0.1.38...ideon-v0.1.39) (2026-06-09)
 
 
