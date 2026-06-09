@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## 用法
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>] [--from-queue] [--publication <slug>]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--no-seo-check] [--seo-check-mode <mode>] [--seo-check-max-turns <n>] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>] [--from-queue] [--publication <slug>]
 ```
 
 ## 参数与选项
@@ -32,6 +32,9 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--length <size-or-words>` | 无 | 否 | enum 或整数 | `medium` 别名（`900` 词） | `small`、`medium`、`large` 或正整数 | 按词数控制目标篇幅。别名映射：`small=500`、`medium=900`、`large=1400`。 |
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 禁用所有提示，在缺少必填输入时立即失败。 |
 | `--dry-run` | 无 | 否 | boolean | `false` | `true` 或省略 | 不调用外部提供商 API，仅执行编排流程。 |
+| `--no-seo-check` | 无 | 否 | boolean | `false` | `true` 或省略 | 跳过长文主内容在章节写作后的 SEO lint 与编辑器修订。 |
+| `--seo-check-mode <mode>` | 无 | 否 | enum | `errors-only`（来自设置） | `errors-only`、`strict` | SEO 检查通过模式。`errors-only` 在无 lint 错误时通过；`strict` 要求零问题。 |
+| `--seo-check-max-turns <n>` | 无 | 否 | integer | `10`（来自设置） | `1`–`20` | SEO 检查编辑器智能体的最大轮次。 |
 | `--enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 在 markdown 生成后执行链接增强阶段。 |
 | `--link <expression->url>` | 无 | 否 | 可重复 string | 无 | `"文字->https://..."` | 添加或更新自定义链接。格式：`expression->url`。需要 `--enrich-links`。可重复。自定义链接优先于生成链接。 |
 | `--unlink <expression>` | 无 | 否 | 可重复 string | 无 | 任意 expression 字符串 | 按 expression 删除自定义链接。可重复，需要 `--enrich-links`。 |

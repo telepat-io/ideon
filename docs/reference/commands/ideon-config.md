@@ -74,11 +74,22 @@ Settings keys:
 - `style`
 - `intent`
 - `targetLength`
+- `seoCheckMode`
+- `seoCheckMaxTurns`
 
 `targetLength` value notes:
 
 - Accepts aliases `small`, `medium`, `large` or a positive integer word count.
 - Alias mapping is `small=500`, `medium=900`, `large=1400`.
+
+`seoCheckMode` value notes:
+
+- `errors-only` (default): SEO check stage passes when no lint issues have `severity: error`; warnings are recorded but do not fail the stage or trigger the editor agent.
+- `strict`: stage passes only when zero lint issues remain; any warning triggers the editor agent.
+
+`seoCheckMaxTurns` value notes:
+
+- Positive integer from `1` to `20` (default `10`). Caps editor-agent turns during the SEO check pass.
 
 Secret keys:
 

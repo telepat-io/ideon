@@ -141,6 +141,10 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 | Unlinks | No | `unlink` (array) | Remove custom links by expression. |
 | Job path | No | `jobPath` | Path to a job JSON file. |
 | Dry run | No | `dryRun` (boolean) | Validate without generating. |
+| Skip SEO check | No | `noSeoCheck` (boolean) | Skip post-section SEO lint and editor on `ideon_write`. |
+| SEO check mode | No | `seoCheckMode` | `errors-only` (default) or `strict`. |
+| SEO check max turns | No | `seoCheckMaxTurns` (integer) | Max editor-agent turns (1–20, default 10). |
+| Force SEO re-check | No (resume) | `seoCheck` (boolean) | Re-run SEO lint and editor on `ideon_write_resume`. |
 
 ### Plan explore / expand
 
@@ -395,6 +399,22 @@ With link enrichment:
 
 ```json
 {"tool": "ideon_write_resume", "parameters": {"enrichLinks": true}}
+```
+
+Strict SEO check on write:
+
+```json
+{"tool": "ideon_write", "parameters": {
+  "idea": "How small teams ship docs faster",
+  "primary": "article=1",
+  "seoCheckMode": "strict"
+}}
+```
+
+Re-run SEO check on resume:
+
+```json
+{"tool": "ideon_write_resume", "parameters": {"seoCheck": true, "seoCheckMode": "strict"}}
 ```
 
 ### Enrich links
@@ -916,6 +936,7 @@ Error responses:
 - **`ideon_queue_write` is atomic**: Concurrent calls claim different entries automatically. No manual locking needed.
 - **Plan tools require Google Ads credentials**: `ideon_plan_explore` and `ideon_plan_expand` call the GKP API. If credentials are missing, the tool returns a clear error message explaining which credential is needed.
 - **`autoSave` persists immediately**: When `autoSave` is true on plan tools, results are saved without human review. Use `dryRun` first to validate.
+- **SEO check is pipeline-integrated**: There is no standalone SEO MCP tool. Use `noSeoCheck`, `seoCheckMode`, and `seoCheckMaxTurns` on `ideon_write`; `seoCheck` (force re-run) on `ideon_write_resume`.
 - **Link enrichment is opt-in**: `ideon_write` defaults to no link enrichment. Pass `enrichLinks: true` to enable.
 - **Export requires an existing generation**: `ideon_export` needs a completed generation. Run `ideon_write` first or check `ideon_article_list` for available slugs.
 - **`length` accepts both aliases and integers**: `small`, `medium`, `large` are aliases for 500, 900, 1400 words. Pass an integer for a custom target.

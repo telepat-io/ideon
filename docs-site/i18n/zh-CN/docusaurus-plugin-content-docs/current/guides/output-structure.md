@@ -6,7 +6,7 @@ keywords: [ideon, 文档, cli, 指南, 参考]
 
 # 输出结构
 
-Ideon 每次运行都会写入一个生成目录。每个生成目录包含一个或多个 Markdown 输出、运行定义 `job.json`、单次运行 analytics 文件、运行级模型交互文件以及共享图像资源。
+Ideon 每次运行都会写入一个生成目录。每个生成目录包含一个或多个 Markdown 输出、运行定义 `job.json`、单次运行 analytics 文件、运行级模型交互文件、结构化元数据 sidecar（`meta.json`）以及共享图像资源。
 
 Ideon 还会在 `.ideon/write/`（已加入 gitignore）保存本地写作会话产物，用于 resume。
 
@@ -16,6 +16,7 @@ Ideon 还会在 `.ideon/write/`（已加入 gitignore）保存本地写作会话
 - Asset directory: `/output/assets`
 - Analytics file: `generation.analytics.json` inside each generation directory
 - Model interactions file: `model.interactions.json` inside each generation directory
+- Metadata sidecar: `meta.json` inside each generation directory
 - Article plan file: `plan.md` inside each generation directory (for article-primary runs)
 
 以 `/output` 开头的路径会相对于当前工作目录解析。
@@ -33,6 +34,7 @@ output/
     linkedin-1.md
     job.json
     plan.md
+    meta.json
     generation.analytics.json
     model.interactions.json
     practical-ai-workflows-cover.webp
@@ -85,6 +87,7 @@ JSON 包含：
 - 阶段指标：各阶段耗时、重试与阶段成本
 - 图像提示调用：每个图像提示扩展的耗时/成本与 token 使用（可用时）
 - 图像渲染调用：每次渲染的耗时/成本与输出字节大小
+- SEO 检查调用：每个编辑器智能体循环轮次一条记录，含操作 ID（`seo-check:editor-agent:turn-N`）、耗时/成本、token 使用量及该轮请求的工具名称
 
 要在浏览器中查看生成的 Markdown 与图片嵌入，可运行 `ideon preview`。
 
@@ -96,6 +99,7 @@ JSON 包含：
 
 - 运行封装：`runId`、`runMode`、`dryRun`、`startedAt`、`endedAt`
 - `llmCalls`：每次 OpenRouter 尝试一条记录，含阶段/操作 ID、请求类型、原始序列化请求体、原始响应体、耗时、尝试/重试与最终状态
+- `editorToolCalls`：每次本地 SEO 编辑器工具执行一条记录，含轮次索引、工具名、参数、JSON 结果与耗时（无 LLM 成本）
 - `t2iCalls`：每次图像渲染尝试一条记录，含阶段/操作 ID、原始提示词、解析后的 T2I 输入、耗时、重试与最终状态
 
 该文件用于提示工程与故障分析，因此会有意保留原始 payload。
@@ -134,6 +138,26 @@ JSON 包含：
   "runMode": "fresh"
 }
 ```
+
+## 元数据 Sidecar（`meta.json`）
+
+每次生成都会在生成目录输出结构化 `meta.json` sidecar，将内容级元数据整合为单一机器可读文件。
+
+JSON 包含：
+
+- `version`：模式版本（当前为 `1`）
+- `title`、`slug`、`idea`、`description`：核心内容元数据
+- `subtitle`、`keywords`、`angle`：长文元数据（缺失时为 null）
+- `contentType`、`style`、`intent`、`targetLength`：生成设置
+- `cover`：封面图元数据（`path`、`relativePath`、`description`）或 `null`
+- `sections`：章节标题与描述数组（短文为空）
+- `images`：所有渲染图片（封面与内嵌）的路径、描述与锚点位置
+- `outputs`：所有 Markdown 输出文件的内容类型与路径
+- `seoCheck`（若存在）：lint 结果（`passed` 遵循 `seoCheckMode`）、`seoCheckMode`、`warningsRemaining`、完整 `issues[]`、编辑器轮次与编辑器 pass 成本摘要
+- `generatedAt`：ISO 时间戳
+- `generationDir`：生成目录的绝对路径
+
+`ideon export` 导出时会连同 Markdown 与图片一并复制 `meta.json`。
 
 ## 本地会话产物
 

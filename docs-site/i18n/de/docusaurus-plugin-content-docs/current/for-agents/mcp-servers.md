@@ -27,6 +27,8 @@ Ideon veröffentlicht einen ersten Partei Model Context Protocol Server über st
 	- `gkp_get_forecast_data`
 	- `ideon_preview`
 
+SEO-Check läuft als Pipeline-Stufe 4 während `ideon_write` / `ideon_write_resume` — es gibt kein eigenständiges SEO-MCP-Werkzeug. Optionale Parameter: `noSeoCheck`, `seoCheckMode` (`errors-only` | `strict`), `seoCheckMaxTurns` (1–20) auf `ideon_write`; `seoCheck` (Erzwingen), `seoCheckMode`, `seoCheckMaxTurns` auf `ideon_write_resume`. Ergebnisse werden in `meta.json` (`seoCheck`) geschrieben.
+
 ### Vorschau
 
 - `ideon_preview` — Lokalen Vorschau-Server starten, stoppen oder Status abfragen

@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## Usage
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>] [--from-queue] [--publication <slug>]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--no-seo-check] [--seo-check-mode <mode>] [--seo-check-max-turns <n>] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>] [--from-queue] [--publication <slug>]
 ```
 
 ## Arguments and Options
@@ -32,6 +32,9 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--length <size-or-words>` | None | No | enum or integer | `medium` alias (`900` words) | `small`, `medium`, `large`, or positive integer | Target content length in words. Aliases map to `small=500`, `medium=900`, `large=1400`. |
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Disables all prompts and fails fast when required inputs are missing. |
 | `--dry-run` | None | No | boolean | `false` | `true` or omitted | Runs orchestration without provider API calls. |
+| `--no-seo-check` | None | No | boolean | `false` | `true` or omitted | Skips the SEO lint and editor pass after section writing for long-form primaries. |
+| `--seo-check-mode <mode>` | None | No | enum | `errors-only` (from settings) | `errors-only`, `strict` | SEO check pass mode. `errors-only` passes when no lint errors remain; `strict` requires zero issues. |
+| `--seo-check-max-turns <n>` | None | No | integer | `10` (from settings) | `1`–`20` | Maximum editor-agent turns for the SEO check pass. |
 | `--enrich-links` | None | No | boolean | `false` | `true` or omitted | Runs link enrichment stage after markdown generation. |
 | `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link in the sidecar. Format: `expression->url`. Repeatable. Custom links take precedence over generated ones. |
 | `--unlink <expression>` | None | No | repeatable string | none | Any expression string | Removes a custom link by expression. Repeatable. |
@@ -57,6 +60,14 @@ ideon write "Deep dive into transformer architectures" --primary article=1 --ser
 
 ```bash title="With keywords"
 ideon write "How to build a content strategy" --primary article=1 --keywords "organic marketing, content strategy, seo"
+```
+
+```bash title="Strict SEO check (zero warnings)"
+ideon write "How to build a content strategy" --primary article=1 --seo-check-mode strict
+```
+
+```bash title="Skip SEO check"
+ideon write "How to build a content strategy" --primary article=1 --no-seo-check
 ```
 
 ```bash title="Safety and debugging path"

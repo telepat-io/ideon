@@ -13,7 +13,7 @@ keywords: [ideon, cli, resume, checkpoints, write]
 ## Verwendung
 
 ```bash
-ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
+ideon write resume [--no-interactive] [--seo-check] [--seo-check-mode <mode>] [--seo-check-max-turns <n>] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## Argumente und Optionen
@@ -21,6 +21,9 @@ ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>
 | Flag/Argument | Kurzform | Erforderlich | Typ | Standard | Erlaubte Werte | Beschreibung |
 | --- | --- | --- | --- | --- | --- | --- |
 | `--no-interactive` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Erzwingt klare nicht-interaktive Renderung auch im TTY-Modus. |
+| `--seo-check` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Führt SEO-Lint und Editor-Pass erneut aus, bevor die fortgesetzte Pipeline fortgeführt wird. |
+| `--seo-check-mode <mode>` | Kein | Nein | Enum | `errors-only` (aus Einstellungen) | `errors-only`, `strict` | SEO-Check-Pass-Modus für den erneuten Lauf. |
+| `--seo-check-max-turns <n>` | Kein | Nein | Ganzzahl | `10` (aus Einstellungen) | `1`–`20` | Maximale Editor-Agenten-Runden beim erneuten SEO-Check. |
 | `--enrich-links` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Führt die Link-Anreicherungsstufe während der Fortsetzung aus. |
 | `--link <expression->url>` | Kein | Nein | Wiederholbare Zeichenfolge | Keine | `"text->https://..."` | Fügt einen benutzerdefinierten Link in die Sidecar hinzu oder aktualisiert ihn. |
 | `--unlink <expression>` | Kein | Nein | Wiederholbare Zeichenfolge | Keine | Beliebiger Ausdrucksstring | Entfernt einen benutzerdefinierten Link nach Ausdruck. |

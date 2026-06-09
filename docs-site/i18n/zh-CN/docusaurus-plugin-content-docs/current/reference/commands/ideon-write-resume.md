@@ -13,7 +13,7 @@ keywords: [ideon, cli, resume, 检查点, 写作]
 ## 用法
 
 ```bash
-ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
+ideon write resume [--no-interactive] [--seo-check] [--seo-check-mode <mode>] [--seo-check-max-turns <n>] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## 参数与选项
@@ -21,6 +21,9 @@ ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>
 | 参数/选项 | 简写 | 必填 | 类型 | 默认值 | 允许值 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
 | `--no-interactive` | 无 | 否 | boolean | `false` | `true` 或省略 | 即使在 TTY 中也强制使用纯非交互输出。 |
+| `--seo-check` | 无 | 否 | boolean | `false` | `true` 或省略 | 在继续恢复的流水线之前重新运行 SEO lint 与编辑器修订。 |
+| `--seo-check-mode <mode>` | 无 | 否 | enum | `errors-only`（来自设置） | `errors-only`、`strict` | 重新运行时的 SEO 检查通过模式。 |
+| `--seo-check-max-turns <n>` | 无 | 否 | integer | `10`（来自设置） | `1`–`20` | 重新运行 SEO 检查时编辑器智能体的最大轮次。 |
 | `--enrich-links` | 无 | 否 | boolean | `false` | `true` 或省略 | 在 resume 执行期间启用链接增强阶段。 |
 | `--link <expression->url>` | 无 | 否 | 可重复 string | 无 | `"文字->https://..."` | 添加或更新自定义链接。需要 `--enrich-links`。 |
 | `--unlink <expression>` | 无 | 否 | 可重复 string | 无 | 任意 expression 字符串 | 按 expression 删除自定义链接。需要 `--enrich-links`。 |

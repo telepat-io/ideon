@@ -87,6 +87,7 @@ Das JSON enthält:
 - Stufenmetriken: pro-Stufen-Dauer, Wiederholungen und stufenbezogene Kosten
 - Bildprompt-Aufrufe: pro-Bild-Prompt-Erweiterungs-Zeitmessung/Kosten + Token-Verbrauch (wenn verfügbar)
 - Bildrender-Aufrufe: pro-Bild-Render-Zeitmessung/Kosten + Ausgabe-Byte-Größe
+- SEO-Check-Aufrufe: pro Editor-Agenten-Schleifen-Runde mit Betriebs-ID (`seo-check:editor-agent:turn-N`), Zeitmessung/Kosten, Token-Verbrauch und auf dieser Runde angeforderten Werkzeugnamen
 
 Um generiertes Markdown und Bild-Einbettingen im Browser zu inspizieren, führen Sie `ideon preview` aus.
 
@@ -98,6 +99,7 @@ Das JSON enthält:
 
 - Laufhülle: `runId`, `runMode`, `dryRun`, `startedAt`, `endedAt`
 - `llmCalls`: ein Datensatz pro OpenRouter-Versuch mit Stufen/Betriebs-IDs, Anfragetyp, rohem serialisierten Anfrage-Body, rohem Antwort-Body, Zeitmessung, Versuche/Wiederholungen und Endstatus
+- `editorToolCalls`: ein Datensatz pro lokaler SEO-Editor-Werkzeugausführung mit Rundenindex, Werkzeugname, Argumenten, JSON-Ergebnis und Zeitmessung (keine LLM-Kosten)
 - `t2iCalls`: ein Datensatz pro Bildrender-Versuch mit Stufen/Betriebs-IDs, rohem Prompt, aufgelöstem T2I-Eingabe-Payload, Zeitmessung, Wiederholungen und Endstatus
 
 Dieses Artefakt ist für Prompt-Engineering und Fehleranalyse gedacht, daher bleiben Payloads absichtlich roh.

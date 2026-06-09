@@ -109,6 +109,10 @@ Always collect all relevant inputs before running any command. Ask the user for 
 | Enrich links (`--enrich-links`) | No | Opt-in web research link enrichment for long-form outputs. |
 | Max links (`--max-links`) | No | Cap generated links (defaults: ≤700w→5, ≤1150w→8, >1150w→12). |
 | Max images (`--max-images`) | No | Cap total images (1=cover only, higher=cover+inline). |
+| Skip SEO check (`--no-seo-check`) | No | Skip post-section SEO lint and editor pass on `ideon write`. |
+| SEO check mode (`--seo-check-mode`) | No | `errors-only` (default) or `strict` (zero warnings). |
+| SEO check max turns (`--seo-check-max-turns`) | No | Max editor-agent turns during SEO check (1–20, default 10). |
+| Force SEO re-check (`--seo-check`) | No (resume) | Re-run SEO lint and editor on `ideon write resume`. |
 | Credentials strategy | Yes | Env-based secrets for CI/agents (`TELEPAT_OPENROUTER_KEY`, `TELEPAT_REPLICATE_TOKEN`). |
 | Run mode | Yes | Fresh run vs `ideon write resume` vs `ideon write --from-queue`. |
 
@@ -248,8 +252,17 @@ ideon write "Your idea" \
 # Resume last failed/interrupted run (always --no-interactive)
 ideon write resume --no-interactive
 
+# Strict SEO check on a fresh write
+ideon write "Your idea" --primary article=1 --no-interactive --seo-check-mode strict
+
+# Skip SEO check
+ideon write "Your idea" --primary article=1 --no-interactive --no-seo-check
+
 # Resume with link enrichment
 ideon write resume --no-interactive --enrich-links
+
+# Re-run SEO check on resume (strict mode)
+ideon write resume --no-interactive --seo-check --seo-check-mode strict
 
 # Re-run only link enrichment for a previous article (default: fresh)
 ideon links my-article-slug

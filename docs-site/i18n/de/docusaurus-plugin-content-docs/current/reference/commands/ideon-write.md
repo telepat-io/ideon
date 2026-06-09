@@ -14,7 +14,7 @@ image: /img/logo.svg
 ## Verwendung
 
 ```bash
-ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
+ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--primary <type=1>] [--secondary <type=count> ...] [--style <style>] [--intent <intent>] [--length <size-or-words>] [--no-interactive] [--dry-run] [--no-seo-check] [--seo-check-mode <mode>] [--seo-check-max-turns <n>] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## Argumente und Optionen
@@ -32,6 +32,9 @@ ideon write [idea] [--idea <idea>] [--audience <description>] [--job <path>] [--
 | `--length <size-or-words>` | Kein | Nein | Enum oder Ganzzahl | `medium`-Alias (`900` Wörter) | `small`, `medium`, `large` oder positive Ganzzahl | Ziel-Inhaltslänge in Wörtern. Aliase ordnen `small=500`, `medium=900`, `large=1400` zu. |
 | `--no-interactive` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Deaktiviert alle Eingabeaufforderungen und schlägt schnell fehl, wenn erforderliche Eingaben fehlen. |
 | `--dry-run` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Führt Orchestrierung ohne Anbieter-API-Aufrufe aus. |
+| `--no-seo-check` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Überspringt SEO-Lint und Editor-Pass nach dem Abschnittsschreiben für Langform-Primäre. |
+| `--seo-check-mode <mode>` | Kein | Nein | Enum | `errors-only` (aus Einstellungen) | `errors-only`, `strict` | SEO-Check-Pass-Modus. `errors-only` besteht ohne Lint-Fehler; `strict` erfordert null Probleme. |
+| `--seo-check-max-turns <n>` | Kein | Nein | Ganzzahl | `10` (aus Einstellungen) | `1`–`20` | Maximale Editor-Agenten-Runden für den SEO-Check-Pass. |
 | `--enrich-links` | Kein | Nein | Boolesch | `false` | `true` oder weggelassen | Führt die Link-Anreicherungsstufe nach der Markdown-Generierung aus. |
 | `--link <expression->url>` | Kein | Nein | Wiederholbare Zeichenfolge | Keine | `"text->https://..."` | Fügt einen benutzerdefinierten Link in die Sidecar hinzu oder aktualisiert ihn. Format: `expression->url`. Wiederholbar. Benutzerdefinierte Links haben Vorrang vor generierten. |
 | `--unlink <expression>` | Kein | Nein | Wiederholbare Zeichenfolge | Keine | Beliebiger Ausdrucksstring | Entfernt einen benutzerdefinierten Link nach Ausdruck. Wiederholbar. |

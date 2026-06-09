@@ -27,7 +27,7 @@ Entwickelt für Marketer, Gründer und schlanke Teams, die hochwertige Inhalte i
 - **Stil- und Intent-Steuerung** — 13 Stile × 13 Intents. Jedes Ergebnis teilt eine konsistente Stimme über alle Kanäle hinweg.
 - **Veröffentlichungen und Serien** — Inhalte mit redaktionellen Richtlinien pro Veröffentlichung organisieren und verwandte Artikel unter Serien mit gemeinsamen Themen, Standardwerten und thematischer Prompt-Injektion gruppieren.
 - **Recherchegestützte Links** — Ideon durchsucht das Web und fügt kontextbezogene externe Links ein, wie es ein menschlicher Autor tun würde. Keine manuelle Recherche.
-- **SEO-optimierte Ausgabe** — On-Page-SEO, E-E-A-T-Glaubwürdigkeitssignale und Fakten-Dichte sind in die Schreib-Pipeline integriert. Inhalte, die sowohl in der klassischen Suche als auch in KI-generierten Zusammenfassungen ranken.
+- **SEO-optimierte Ausgabe** — On-Page-SEO, E-E-A-T-Glaubwürdigkeitssignale und Fakten-Dichte sind in die Schreib-Pipeline integriert. Nach dem Abschnittsschreiben läuft standardmäßig die `seo-check`-Stufe mit Lint und bei Bedarf einem chirurgischen Editor-Agenten (Standard `errors-only`; `--seo-check-mode strict` für Null-Warnungen). Inhalte, die sowohl in der klassischen Suche als auch in KI-generierten Zusammenfassungen ranken.
 - **Beliebiges Modell via OpenRouter** — Nutzen Sie Claude, GPT-4 oder jedes unterstützte Modell. Wechseln Sie ohne Änderung Ihres Workflows.
 - **Anleitunggestütztes Schreiben** — Prompt-Komposition basierend auf bewährten Schreibprinzipien, zusammengestellt aus echter Beratungspraxis. Kein generischer KI-Füllstoff.
 - **Code-gesteuerte Effizienz** — Eine deterministische Pipeline übernimmt die Orchestrierung. Sie zahlen Tokens nur für die Textgenerierung.
@@ -62,7 +62,7 @@ Erwartetes Ergebnis:
 
 ## How It Works
 
-Ideon durchläuft eine gestufte Schreib-Pipeline: Planung, Entwurf, Bild-Prompt-Erweiterung, Bildgenerierung, Kanalausgabeerzeugung und optionale Link-Anreicherung.
+Ideon durchläuft eine gestufte Schreib-Pipeline: Planung, Abschnittsentwurf, SEO-Lint und optionaler Editor-Pass, Bild-Prompt-Erweiterung, Bildgenerierung, Kanalausgabeerzeugung und optionale Link-Anreicherung.
 
 Es kombiniert Konfiguration aus Einstellungen, Umgebungsvariablen, Job-Dateien und CLI-Flags und schreibt strukturierte Artefakte für Nachvollziehbarkeit und Wiederverwendung.
 

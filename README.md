@@ -27,7 +27,7 @@ Built for marketers, founders, and lean teams who need to ship high-quality cont
 - **Style and intent control** — 13 styles × 13 intents. Every output shares one consistent voice across every channel.
 - **Publications and series** — Organize content with editorial policies per publication, and group related articles under series with shared topics, defaults, and thematic prompt injection.
 - **Research-backed links** — Ideon browses the web and inserts contextual external links like a human writer would. No manual research.
-- **SEO-optimized output** — On-page SEO, E-E-A-T credibility signals, and fact density baked into the writing pipeline. Content built to rank in both traditional search and AI-generated summaries.
+- **SEO-optimized output** — On-page SEO, E-E-A-T credibility signals, and fact density baked into the writing pipeline. After section drafting, a default-on `seo-check` stage lints placement and runs a surgical editor agent when needed (`errors-only` by default; `--seo-check-mode strict` for zero warnings). Content built to rank in both traditional search and AI-generated summaries.
 - **Any model via OpenRouter** — Plug in Claude, GPT-4, or any supported model. Switch without changing your workflow.
 - **Writing guide-driven** — Prompt composition grounded in proven writing principles compiled from real advice. No generic AI filler.
 - **Code-driven efficiency** — Deterministic pipeline code handles orchestration. You pay for tokens only when drafting prose.
@@ -63,7 +63,7 @@ Expected outcome:
 
 ## How It Works
 
-Ideon runs a staged writing pipeline: planning, drafting, image prompt expansion, image rendering, channel output generation, and optional link enrichment.
+Ideon runs a staged writing pipeline: planning, section drafting, SEO lint and optional editor pass, image prompt expansion, image rendering, channel output generation, and optional link enrichment.
 
 It combines configuration from settings, environment variables, job files, and CLI flags, then writes structured artifacts for traceability and reuse.
 

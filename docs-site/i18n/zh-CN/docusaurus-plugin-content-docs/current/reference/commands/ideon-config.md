@@ -73,11 +73,22 @@ Settings keys:
 - `assetOutputDir`
 - `style`
 - `targetLength`
+- `seoCheckMode`
+- `seoCheckMaxTurns`
 
 `targetLength` 取值说明：
 
 - 支持别名 `small`、`medium`、`large`，也支持正整数词数。
 - 别名映射为 `small=500`、`medium=900`、`large=1400`。
+
+`seoCheckMode` 取值说明：
+
+- `errors-only`（默认）：无 `severity: error` 的 lint 问题时 SEO 检查阶段通过；警告会记录但不会导致阶段失败或触发编辑器智能体。
+- `strict`：仅当 lint 问题为零时通过；任何警告都会触发编辑器智能体。
+
+`seoCheckMaxTurns` 取值说明：
+
+- 正整数 `1`–`20`（默认 `10`）。限制 SEO 检查阶段编辑器智能体的轮次。
 
 Secret keys:
 

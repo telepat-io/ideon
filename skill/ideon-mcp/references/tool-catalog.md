@@ -57,6 +57,9 @@ Generate content from an idea using the Ideon pipeline.
 | `intent` | enum | No | From config | Content intent. See allowed values below. |
 | `length` | enum\|int | No | From config | `small`/`medium`/`large` or positive integer. |
 | `dryRun` | boolean | No | `false` | Validate without generating. |
+| `noSeoCheck` | boolean | No | `false` | Skip SEO lint and editor pass after section writing. |
+| `seoCheckMode` | enum | No | From config | `errors-only` or `strict`. |
+| `seoCheckMaxTurns` | int | No | From config | Max editor-agent turns (1–20, default 10). |
 | `enrichLinks` | boolean | No | `false` | Enable link enrichment for long-form outputs. |
 | `link` | string[] | No | — | Custom link mappings: `"expression->url"`. |
 | `unlink` | string[] | No | — | Remove custom links by expression. |
@@ -84,6 +87,9 @@ Resume the last failed or interrupted Ideon write session.
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `dryRun` | boolean | No | `false` | Validate without generating. |
+| `seoCheck` | boolean | No | `false` | Force re-run of SEO lint and editor pass before continuing. |
+| `seoCheckMode` | enum | No | From config | `errors-only` or `strict`. |
+| `seoCheckMaxTurns` | int | No | From config | Max editor-agent turns (1–20, default 10). |
 | `enrichLinks` | boolean | No | `false` | Enable link enrichment. |
 | `link` | string[] | No | — | Custom link mappings. |
 | `unlink` | string[] | No | — | Remove custom links. |

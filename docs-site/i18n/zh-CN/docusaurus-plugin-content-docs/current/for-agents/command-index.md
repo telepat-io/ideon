@@ -22,7 +22,7 @@ keywords: [ideon, agents, 命令索引, cli, 参考]
 
 - Path: `/reference/commands/ideon-write`
 - Purpose: 基于想法或作业文件生成主输出与可选次输出。
-- Key flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+- Key flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--no-seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
 
 ## ideon queue
 
@@ -34,7 +34,7 @@ keywords: [ideon, agents, 命令索引, cli, 参考]
 
 - Path: `/reference/commands/ideon-write-resume`
 - Purpose: 从检查点恢复上一次失败或中断的写作会话。
-- Key flags: `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`.
+- Key flags: `--no-interactive`, `--seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`.
 
 ## `ideon links <slug>`
 

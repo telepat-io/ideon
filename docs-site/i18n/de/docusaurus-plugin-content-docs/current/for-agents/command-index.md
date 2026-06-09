@@ -22,7 +22,7 @@ keywords: [ideon, agents, command index, cli, reference]
 
 - Pfad: `/reference/commands/ideon-write`
 - Zweck: Generieren Sie primäre und optionale sekundäre Ausgaben aus einer Idee oder Job-Datei.
-- Wichtige Flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
+- Wichtige Flags: `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--no-seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--from-queue`.
 
 ## ideon queue
 
@@ -34,7 +34,7 @@ keywords: [ideon, agents, command index, cli, reference]
 
 - Pfad: `/reference/commands/ideon-write-resume`
 - Zweck: Setzen Sie die letzte fehlgeschlagene oder unterbrochene Schreibsitzung vom Checkpoint-Zustand fort.
-- Wichtige Flags: `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`.
+- Wichtige Flags: `--no-interactive`, `--seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--enrich-links`, `--link`, `--unlink`, `--max-links`.
 
 ## `ideon links <slug>`
 

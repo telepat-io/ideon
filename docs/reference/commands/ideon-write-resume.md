@@ -13,7 +13,7 @@ keywords: [ideon, cli, resume, checkpoints, write]
 ## Usage
 
 ```bash
-ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
+ideon write resume [--no-interactive] [--seo-check] [--seo-check-mode <mode>] [--seo-check-max-turns <n>] [--enrich-links] [--link <expression->url>] [--unlink <expression>] [--max-links <n>]
 ```
 
 ## Arguments and Options
@@ -21,6 +21,9 @@ ideon write resume [--no-interactive] [--enrich-links] [--link <expression->url>
 | Flag/Argument | Shorthand | Required | Type | Default | Allowed Values | Description |
 | --- | --- | --- | --- | --- | --- | --- |
 | `--no-interactive` | None | No | boolean | `false` | `true` or omitted | Forces plain non-interactive rendering even in TTY mode. |
+| `--seo-check` | None | No | boolean | `false` | `true` or omitted | Re-runs the SEO lint and editor pass before continuing the resumed pipeline. |
+| `--seo-check-mode <mode>` | None | No | enum | `errors-only` (from settings) | `errors-only`, `strict` | SEO check pass mode for the re-run. |
+| `--seo-check-max-turns <n>` | None | No | integer | `10` (from settings) | `1`–`20` | Maximum editor-agent turns when re-running SEO check. |
 | `--enrich-links` | None | No | boolean | `false` | `true` or omitted | Runs link enrichment stage during resume. |
 | `--link <expression->url>` | None | No | repeatable string | none | `"text->https://..."` | Adds or updates a custom link in the sidecar. |
 | `--unlink <expression>` | None | No | repeatable string | none | Any expression string | Removes a custom link by expression. |
@@ -42,6 +45,10 @@ ideon write resume && ideon preview --no-open
 
 ```bash title="One-shot agent-safe path"
 ideon write resume --no-interactive
+```
+
+```bash title="Re-run SEO check on resume"
+ideon write resume --no-interactive --seo-check --seo-check-mode strict
 ```
 
 ## Link Enrichment

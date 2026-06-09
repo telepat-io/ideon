@@ -74,11 +74,22 @@ Einstellungsschlüssel:
 - `style`
 - `intent`
 - `targetLength`
+- `seoCheckMode`
+- `seoCheckMaxTurns`
 
 `targetLength`-Wert-Hinweise:
 
 - Akzeptiert Aliase `small`, `medium`, `large` oder eine positive Ganzzahl-Wortanzahl.
 - Alias-Zuordnung ist `small=500`, `medium=900`, `large=1400`.
+
+`seoCheckMode`-Wert-Hinweise:
+
+- `errors-only` (Standard): SEO-Check-Stufe besteht, wenn keine Lint-Probleme mit `severity: error` vorliegen; Warnungen werden protokolliert, schlagen die Stufe aber nicht fehl und lösen den Editor-Agenten nicht aus.
+- `strict`: Stufe besteht nur bei null Lint-Problemen; jede Warnung löst den Editor-Agenten aus.
+
+`seoCheckMaxTurns`-Wert-Hinweise:
+
+- Positive Ganzzahl von `1` bis `20` (Standard `10`). Begrenzt Editor-Agenten-Runden während des SEO-Check-Passes.
 
 Geheimnisschlüssel:
 
