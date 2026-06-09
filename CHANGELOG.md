@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.42](https://github.com/telepat-io/ideon/compare/ideon-v0.1.41...ideon-v0.1.42) (2026-06-09)
+
+
+### Features
+
+* add real agent host installers for all runtimes ([4ae484a](https://github.com/telepat-io/ideon/commit/4ae484ac7d6a6f01dc8e8ca59355d867ec180fd6))
+* extend MCP CLI parity and trim agent skills ([d910819](https://github.com/telepat-io/ideon/commit/d91081934febc6431a9836f2a211855d98ebe062))
+
+
+### Bug Fixes
+
+* improve preview author attribution and cover rendering ([ee77f3e](https://github.com/telepat-io/ideon/commit/ee77f3ebe2c21ec62122a6be18368d355e32f03b))
+
 ## [0.1.41](https://github.com/telepat-io/ideon/compare/ideon-v0.1.40...ideon-v0.1.41) (2026-06-09)
 
 
