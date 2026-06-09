@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.41](https://github.com/telepat-io/ideon/compare/ideon-v0.1.40...ideon-v0.1.41) (2026-06-09)
+
+
+### Features
+
+* add AI search extraction guide and optional FAQ section ([3cc709e](https://github.com/telepat-io/ideon/commit/3cc709eb5876d310ae220ccde1ad66b07a4cabe3))
+
 ## [0.1.40](https://github.com/telepat-io/ideon/compare/ideon-v0.1.39...ideon-v0.1.40) (2026-06-09)
 
 
