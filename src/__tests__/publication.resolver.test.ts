@@ -507,4 +507,17 @@ describe('resolveRunInput author resolution', () => {
 
     expect(result.experienceNotes).toBe('Series anecdote.\n\nRun-specific anecdote.');
   });
+
+  it('throws when an explicit author slug cannot be loaded', async () => {
+    loadAuthorMock.mockRejectedValueOnce(new Error('Author "missing-author" not found.'));
+
+    await expect(resolveRunInput({
+      idea: 'Test idea',
+      author: 'missing-author',
+      style: 'professional',
+      intent: 'tutorial',
+      contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }],
+      targetLength: 'medium',
+    })).rejects.toThrow(/missing-author/);
+  });
 });

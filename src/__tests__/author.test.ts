@@ -123,6 +123,7 @@ describe('author store', () => {
     expect(loaded.name).toBe('Rename Me');
     await expect(loadAuthor('rename-me')).rejects.toThrow(/not found/);
   });
+
 });
 
 describe('buildAuthorRunContext', () => {
@@ -168,5 +169,14 @@ describe('buildAuthorDirective', () => {
     expect(directive).toContain('SRE lead');
     expect(directive).toContain('readiness probe');
     expect(directive).toContain('Do not add author bylines');
+  });
+
+  it('omits experience section when notes are blank', () => {
+    const directive = buildAuthorDirective({
+      author: { name: 'Alex', slug: 'alex', profile: 'Engineer.' },
+      experienceNotes: '   ',
+    });
+
+    expect(directive).not.toContain('Article-specific experience');
   });
 });
