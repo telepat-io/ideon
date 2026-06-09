@@ -1,6 +1,6 @@
 # Ideon MCP Tool Catalog
 
-Complete parameter reference for all 33 Ideon MCP tools.
+Complete parameter reference for all 39 Ideon MCP tools.
 
 ## Tool index
 
@@ -28,19 +28,21 @@ Complete parameter reference for all 33 Ideon MCP tools.
 22. [ideon_author_edit](#ideon_author_edit)
 23. [ideon_author_remove](#ideon_author_remove)
 24. [ideon_queue_add](#ideon_queue_add)
-21. [ideon_queue_list](#ideon_queue_list)
-22. [ideon_queue_peek](#ideon_queue_peek)
-23. [ideon_queue_remove](#ideon_queue_remove)
-24. [ideon_queue_clear](#ideon_queue_clear)
-25. [ideon_queue_write](#ideon_queue_write)
-26. [ideon_plan_explore](#ideon_plan_explore)
-27. [ideon_plan_expand](#ideon_plan_expand)
-28. [gkp_generate_ideas](#gkp_generate_ideas)
-29. [gkp_get_historical_data](#gkp_get_historical_data)
-30. [gkp_get_forecast_data](#gkp_get_forecast_data)
-31. [gads_login](#gads_login)
-32. [gads_login_status](#gads_login_status)
-33. [gads_test](#gads_test)
+25. [ideon_queue_list](#ideon_queue_list)
+26. [ideon_queue_peek](#ideon_queue_peek)
+27. [ideon_queue_remove](#ideon_queue_remove)
+28. [ideon_queue_clear](#ideon_queue_clear)
+29. [ideon_queue_write](#ideon_queue_write)
+30. [ideon_plan_explore](#ideon_plan_explore)
+31. [ideon_plan_expand](#ideon_plan_expand)
+32. [gkp_generate_ideas](#gkp_generate_ideas)
+33. [gkp_get_historical_data](#gkp_get_historical_data)
+34. [gkp_get_forecast_data](#gkp_get_forecast_data)
+35. [gkp_list](#gkp_list)
+36. [gads_login](#gads_login)
+37. [gads_login_status](#gads_login_status)
+38. [gads_test](#gads_test)
+39. [gads_logout](#gads_logout)
 
 ---
 
@@ -57,6 +59,10 @@ Generate content from an idea using the Ideon pipeline.
 | `author` | string | No | — | Author slug (overrides publication/series defaults). |
 | `experienceNotes` | string | No | — | Per-run anecdotes or first-hand experience. |
 | `jobPath` | string | No | — | Path to a job JSON file. |
+| `publication` | string | No | — | Publication slug for defaults and editorial policy. |
+| `series` | string | No | — | Series slug for defaults and thematic context. |
+| `keywords` | string | No | — | Comma-separated SEO keywords (e.g. `"organic marketing, seo"`). |
+| `faqSection` | boolean | No | Intent default | Force FAQ block on (`true`) or off (`false`) after conclusion. |
 | `primary` | string | No | — | Primary target spec: `<content-type=1>`. |
 | `secondary` | string[] | No | — | Secondary target specs: `["<type=count>", ...]`. |
 | `style` | enum | No | From config | Writing style. See allowed values below. |
@@ -101,6 +107,7 @@ Resume the last failed or interrupted Ideon write session.
 | `unlink` | string[] | No | — | Remove custom links. |
 | `maxLinks` | int | No | Auto | Cap generated links. |
 | `maxImages` | int | No | Auto | Cap total images. |
+| `exportPath` | string | No | — | Export the generated article to this directory after writing. |
 
 **Response `structuredContent`:**
 
@@ -112,6 +119,7 @@ Resume the last failed or interrupted Ideon write session.
 | `markdownPath` | string | Primary markdown path. |
 | `markdownPaths` | string[] | All markdown paths. |
 | `generationDir` | string | Generation directory. |
+| `exportPath` | string | Export destination when provided. |
 
 ---
 
@@ -189,7 +197,12 @@ List generated articles in the current workspace.
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| — | — | — | — | No parameters. |
+| `search` | string | No | — | Search by title, keywords, description, or body. |
+| `publication` | string | No | — | Filter by publication slug. |
+| `series` | string | No | — | Filter by series slug. |
+| `contentType` | string | No | — | Filter by content type (e.g. `article`, `x-post`). |
+| `limit` | int | No | `50` | Maximum number of results. |
+| `verbose` | boolean | No | `false` | Include detailed article metadata. |
 
 Returns a JSON array of article objects with slug, title, and metadata.
 
@@ -586,13 +599,25 @@ Claim the next pending queue entry and write it. Deletes the entry on success, r
 | --- | --- | --- | --- | --- |
 | `publication` | string | No | — | Filter by publication slug. |
 | `dryRun` | boolean | No | `false` | Validate without generating. |
+| `noSeoCheck` | boolean | No | `false` | Skip SEO lint and editor pass. |
+| `seoCheckMode` | enum | No | From config | `errors-only` or `strict`. |
+| `seoCheckMaxTurns` | int | No | From config | Max editor-agent turns (1–20). |
 | `enrichLinks` | boolean | No | `false` | Enable link enrichment. |
 | `link` | string[] | No | — | Custom link mappings. |
 | `unlink` | string[] | No | — | Remove custom links. |
 | `maxLinks` | int | No | Auto | Cap generated links. |
 | `maxImages` | int | No | Auto | Cap total images. |
 
-Returns a message indicating the number of outputs generated and the queue entry ID.
+If the queue entry has `exportPath` (set via `ideon_queue_add`), the article is exported after a successful write.
+
+**Response `structuredContent`:**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `queueEntryId` | string | The claimed queue entry ID. |
+| `slug` | string | Generated article slug. |
+| `markdownPath` | string | Primary markdown path. |
+| `exportPath` | string | Export destination from the queue entry, if any. |
 
 ---
 
@@ -661,6 +686,9 @@ Generate keyword ideas from seed keywords, a URL, or a site using Google Ads Key
 | `countryCodes` | string[] | No | All countries | ISO 3166-1 alpha-2 codes (e.g., `["US", "GB"]`). |
 | `language` | string | No | `"en"` | ISO 639-1 code. |
 | `pageSize` | int | No | — | Max results to return. |
+| `publication` | string | No | — | Attach cache context to a publication slug. |
+| `series` | string | No | — | Attach cache context to a series slug. |
+| `refresh` | boolean | No | `false` | Bypass cache and fetch fresh data. |
 
 At least one of `seedKeywords`, `url`, or `site` must be provided. `site` cannot be combined with `seedKeywords` or `url`.
 
@@ -678,6 +706,9 @@ Get historical search volume and competition metrics for a list of keywords.
 | `countryCodes` | string[] | No | All countries | ISO 3166-1 alpha-2 codes. |
 | `language` | string | No | `"en"` | ISO 639-1 code. |
 | `includeAverageCpc` | boolean | No | `true` | Include CPC data. |
+| `publication` | string | No | — | Attach cache context to a publication slug. |
+| `series` | string | No | — | Attach cache context to a series slug. |
+| `refresh` | boolean | No | `false` | Bypass cache and fetch fresh data. |
 
 Returns a JSON array of historical metric objects.
 
@@ -696,8 +727,28 @@ Get projected impressions, clicks, and cost for a set of keywords.
 | `language` | string | No | `"en"` | ISO 639-1 code. |
 | `startDate` | string | No | Today | Forecast start date (`yyyy-MM-dd`). |
 | `endDate` | string | No | 30 days from today | Forecast end date (`yyyy-MM-dd`). |
+| `publication` | string | No | — | Attach cache context to a publication slug. |
+| `series` | string | No | — | Attach cache context to a series slug. |
+| `refresh` | boolean | No | `false` | Bypass cache and fetch fresh data. |
 
 Returns a forecast object with projected impressions, clicks, and cost.
+
+---
+
+### `gkp_list`
+
+List cached GKP query history with optional filters.
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `publication` | string | No | — | Filter by publication slug. |
+| `series` | string | No | — | Filter by series slug. |
+| `search` | string | No | — | Filter by keyword, URL, site, publication, or series text. |
+| `fresh` | boolean | No | `false` | Show only fresh cache entries. |
+| `stale` | boolean | No | `false` | Show only stale cache entries. |
+| `verbose` | boolean | No | `false` | Include full cache entry details. |
+
+Returns a JSON array of cached query summaries.
 
 ---
 
@@ -766,6 +817,25 @@ Checks that all 5 required credentials are set (developerToken, clientId, client
 | `keywordsReturned` | number | Number of keywords returned by the test call. |
 
 Returns `isError: true` with a diagnostic message if credentials are missing or the API call fails.
+
+---
+
+### `gads_logout`
+
+Clear stored Google Ads credentials.
+
+| Parameter | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `all` | boolean | No | `false` | When `true`, clear all six Google Ads secrets; otherwise clear only the refresh token. |
+
+Also resets any in-flight MCP OAuth flow state from `gads_login`.
+
+**Response `structuredContent`:**
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `all` | boolean | Whether all credentials were cleared. |
+| `cleared` | boolean | Always `true` on success. |
 
 ---
 

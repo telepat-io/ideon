@@ -2,7 +2,8 @@ import { cwd } from 'node:process';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import packageJson from '../../../package.json' with { type: 'json' };
-import { resolveRunInput } from '../../config/resolver.js';
+import { resolveRunInput, type ResolvedRunInput } from '../../config/resolver.js';
+import { appSettingsSchema } from '../../config/schema.js';
 import { runPipelineShell } from '../../pipeline/runner.js';
 import { runDeleteCommand } from '../../cli/commands/delete.js';
 import { runLinksCommand } from '../../cli/commands/links.js';
@@ -44,6 +45,9 @@ import {
   type GadsLoginToolInput,
   type GadsLoginStatusToolInput,
   type GadsTestToolInput,
+  type GadsLogoutToolInput,
+  type GkpListToolInput,
+  type ArticleListToolInput,
   type PreviewToolInput,
   configGetToolInputSchema,
   configListToolInputSchema,
@@ -81,6 +85,8 @@ import {
   gadsLoginToolInputZodSchema,
   gadsLoginStatusToolInputZodSchema,
   gadsTestToolInputZodSchema,
+  gadsLogoutToolInputZodSchema,
+  gkpListToolInputZodSchema,
   previewToolInputZodSchema,
 } from './tools.js';
 import { GkpClient } from '../keywordplanner/client.js';
@@ -129,6 +135,8 @@ import { normalizeCountryCodes, normalizeLanguage } from '../../config/marketLoc
 import { loadSavedSettings } from '../../config/settingsFile.js';
 import { OpenRouterClient } from '../../llm/openRouterClient.js';
 import { runArticleListCommand } from '../../cli/commands/article.js';
+import { runGkpListCommand } from '../../cli/commands/gkp.js';
+import { runGadsLogoutCommand } from '../../cli/commands/gads.js';
 import { startGadsLogin, getGadsLoginStatus, resetGadsLoginState } from './oauthFlowManager.js';
 import {
   getManagedPreviewStatus,
@@ -136,10 +144,10 @@ import {
   stopManagedPreview,
 } from '../../server/previewServerManager.js';
 
-let cachedGkpClient: CachedGkpClient | null = null;
+let cachedGkpBaseClient: GkpClient | null = null;
 
-async function getOrCreateCachedGkpClient(): Promise<CachedGkpClient> {
-  if (cachedGkpClient) return cachedGkpClient;
+async function createGkpBaseClient(): Promise<GkpClient> {
+  if (cachedGkpBaseClient) return cachedGkpBaseClient;
 
   const envSettings = readEnvSettings();
   const secrets = await loadSecrets({ disableKeytar: envSettings.disableKeytar });
@@ -157,7 +165,7 @@ async function getOrCreateCachedGkpClient(): Promise<CachedGkpClient> {
     );
   }
 
-  const client = new GkpClient({
+  cachedGkpBaseClient = new GkpClient({
     developerToken: devToken,
     clientId,
     clientSecret,
@@ -165,9 +173,42 @@ async function getOrCreateCachedGkpClient(): Promise<CachedGkpClient> {
     customerId,
     loginCustomerId: loginCustomerId || undefined,
   });
+  return cachedGkpBaseClient;
+}
 
-  cachedGkpClient = new CachedGkpClient({ client });
-  return cachedGkpClient;
+async function createCachedGkpClient(context?: { publication?: string; series?: string }): Promise<CachedGkpClient> {
+  const client = await createGkpBaseClient();
+  return new CachedGkpClient({
+    client,
+    publication: context?.publication,
+    series: context?.series,
+  });
+}
+
+function parseCommaSeparatedKeywords(value: string | undefined): string[] | undefined {
+  if (!value) return undefined;
+  const items = value.split(',').map((item) => item.trim()).filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
+function applyFaqSectionSetting(
+  input: ResolvedRunInput,
+  faqSection?: boolean,
+): ResolvedRunInput {
+  if (faqSection === undefined) {
+    return input;
+  }
+
+  return {
+    ...input,
+    config: {
+      ...input.config,
+      settings: appSettingsSchema.parse({
+        ...input.config.settings,
+        faqSection,
+      }),
+    },
+  };
 }
 
 export function registerIdeonTools(server: McpServer): void {
@@ -184,17 +225,23 @@ export function registerIdeonTools(server: McpServer): void {
           primarySpec: input.primary,
           secondarySpecs: input.secondary,
         });
-        const resolved = await resolveRunInput({
-          idea: input.idea,
-          audience: input.audience,
-          author: input.author,
-          experienceNotes: input.experienceNotes,
-          jobPath: input.jobPath,
-          style: input.style,
-          intent: input.intent,
-          targetLength: input.length,
-          contentTargets: parsedTargets,
-        });
+        const resolved = applyFaqSectionSetting(
+          await resolveRunInput({
+            idea: input.idea,
+            audience: input.audience,
+            author: input.author,
+            experienceNotes: input.experienceNotes,
+            jobPath: input.jobPath,
+            publication: input.publication,
+            series: input.series,
+            keywords: parseCommaSeparatedKeywords(input.keywords),
+            style: input.style,
+            intent: input.intent,
+            targetLength: input.length,
+            contentTargets: parsedTargets,
+          }),
+          input.faqSection,
+        );
         const run = await runPipelineShell(resolved, {
           workingDir: cwd(),
           runMode: 'fresh',
@@ -284,6 +331,13 @@ export function registerIdeonTools(server: McpServer): void {
           maxImages: input.maxImages,
         });
 
+        if (input.exportPath) {
+          await runOutputCommand({
+            generationId: run.artifact.slug,
+            destinationPath: input.exportPath,
+          }, { cwd: cwd(), log: () => {} });
+        }
+
         return {
           content: [
             {
@@ -298,6 +352,7 @@ export function registerIdeonTools(server: McpServer): void {
             markdownPath: run.artifact.markdownPath,
             markdownPaths: run.artifact.markdownPaths,
             generationDir: run.artifact.generationDir,
+            exportPath: input.exportPath,
           },
         };
       } catch (error) {
@@ -565,7 +620,10 @@ export function registerIdeonTools(server: McpServer): void {
     },
     async (input: GkpGenerateIdeasToolInput) => {
       try {
-        const client = await getOrCreateCachedGkpClient();
+        const client = await createCachedGkpClient({
+          publication: input.publication,
+          series: input.series,
+        });
         const result = await client.generateKeywordIdeas({
           seedKeywords: input.seedKeywords,
           url: input.url,
@@ -573,7 +631,7 @@ export function registerIdeonTools(server: McpServer): void {
           countryCodes: input.countryCodes,
           language: input.language,
           pageSize: input.pageSize,
-        });
+        }, { refresh: input.refresh });
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
           structuredContent: result as unknown as Record<string, unknown>,
@@ -593,13 +651,16 @@ export function registerIdeonTools(server: McpServer): void {
     },
     async (input: GkpGetHistoricalDataToolInput) => {
       try {
-        const client = await getOrCreateCachedGkpClient();
+        const client = await createCachedGkpClient({
+          publication: input.publication,
+          series: input.series,
+        });
         const result = await client.getHistoricalMetrics({
           keywords: input.keywords,
           countryCodes: input.countryCodes,
           language: input.language,
           includeAverageCpc: input.includeAverageCpc,
-        });
+        }, { refresh: input.refresh });
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
           structuredContent: result as unknown as Record<string, unknown>,
@@ -619,7 +680,10 @@ export function registerIdeonTools(server: McpServer): void {
     },
     async (input: GkpGetForecastDataToolInput) => {
       try {
-        const client = await getOrCreateCachedGkpClient();
+        const client = await createCachedGkpClient({
+          publication: input.publication,
+          series: input.series,
+        });
         const result = await client.getForecastData({
           keywords: input.keywords,
           keywordMatchType: input.keywordMatchType,
@@ -628,7 +692,7 @@ export function registerIdeonTools(server: McpServer): void {
           language: input.language,
           startDate: input.startDate,
           endDate: input.endDate,
-        });
+        }, { refresh: input.refresh });
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
           structuredContent: result as unknown as Record<string, unknown>,
@@ -1155,6 +1219,9 @@ export function registerIdeonTools(server: McpServer): void {
             workingDir: cwd(),
             runMode: 'fresh',
             dryRun: input.dryRun ?? false,
+            noSeoCheck: input.noSeoCheck ?? false,
+            seoCheckMode: input.seoCheckMode,
+            seoCheckMaxTurns: input.seoCheckMaxTurns,
             enrichLinks: input.enrichLinks ?? false,
             customLinks: input.link,
             unlinks: input.unlink,
@@ -1163,11 +1230,24 @@ export function registerIdeonTools(server: McpServer): void {
           });
           await deleteClaimedEntry(entry.id);
 
+          if (entry.exportPath) {
+            await runOutputCommand({
+              generationId: run.artifact.slug,
+              destinationPath: entry.exportPath,
+            }, { cwd: cwd(), log: () => {} });
+          }
+
           return {
             content: [{
               type: 'text',
               text: `Generated ${run.artifact.outputCount} output(s) from queue entry "${entry.id}". Primary markdown: ${run.artifact.markdownPath}`,
             }],
+            structuredContent: {
+              queueEntryId: entry.id,
+              slug: run.artifact.slug,
+              markdownPath: run.artifact.markdownPath,
+              exportPath: entry.exportPath,
+            },
           };
         } catch (writeError) {
           await revertClaimedEntry(entry);
@@ -1349,11 +1429,19 @@ export function registerIdeonTools(server: McpServer): void {
       description: 'List generated articles in the current workspace.',
       inputSchema: articleListToolInputZodSchema,
     },
-    async () => {
+    async (input: ArticleListToolInput) => {
       try {
         const messages: string[] = [];
         await runArticleListCommand(
-          { json: true, verbose: false },
+          {
+            json: true,
+            verbose: input.verbose ?? false,
+            search: input.search,
+            publication: input.publication,
+            series: input.series,
+            contentType: input.contentType,
+            limit: input.limit,
+          },
           {
             cwd: cwd(),
             log: (message: string) => { messages.push(message); },
@@ -1538,6 +1626,68 @@ export function registerIdeonTools(server: McpServer): void {
         return {
           content: [{ type: 'text', text: message }],
           structuredContent: { status: state.status, message },
+        };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'gkp_list',
+    {
+      title: 'Google Keyword Planner - List Cache',
+      description: 'List cached GKP query history with optional filters.',
+      inputSchema: gkpListToolInputZodSchema,
+    },
+    async (input: GkpListToolInput) => {
+      try {
+        const messages: string[] = [];
+        await runGkpListCommand(
+          {
+            publication: input.publication,
+            series: input.series,
+            search: input.search,
+            fresh: input.fresh ?? false,
+            stale: input.stale ?? false,
+            json: true,
+            verbose: input.verbose ?? false,
+          },
+          {
+            log: (message: string) => { messages.push(message); },
+          },
+        );
+        return { content: [{ type: 'text', text: messages.join('\n') || '[]' }] };
+      } catch (error) {
+        return formatToolError(error);
+      }
+    },
+  );
+
+  server.registerTool(
+    'gads_logout',
+    {
+      title: 'Google Ads Logout',
+      description: 'Clear stored Google Ads credentials. By default clears only the refresh token; pass all=true to clear all credentials.',
+      inputSchema: gadsLogoutToolInputZodSchema,
+    },
+    async (input: GadsLogoutToolInput) => {
+      try {
+        resetGadsLoginState();
+        cachedGkpBaseClient = null;
+        const messages: string[] = [];
+        await runGadsLogoutCommand(
+          { all: input.all },
+          {
+            log: (message: string) => { messages.push(message); },
+            prompt: async () => '',
+            isTTY: false,
+            close: () => {},
+          },
+        );
+        return {
+          content: [{ type: 'text', text: messages.join('\n') }],
+          structuredContent: { all: input.all ?? false, cleared: true },
         };
       } catch (error) {
         return formatToolError(error);

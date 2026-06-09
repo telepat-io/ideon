@@ -39,6 +39,8 @@ Use this matrix to diagnose common failures when using Ideon through its MCP too
 | `gads_login` fails with "All ports in use" | Ports 9876–9879 all occupied | Check for other processes on those ports | Close processes using ports 9876–9879 and retry. |
 | `gads_test` fails with missing credentials | Not all Google Ads credentials are set | Read the missing keys from the error message | Set missing keys via `ideon_config_set` or run `gads_login`. |
 | `gads_test` fails with API error | Credentials set but invalid | Read the error message for specifics | Re-authorize via `gads_login` with `force: true`. |
+| `gads_logout` needed before re-auth | Stale credentials after account change | Call `gads_test` first | Use `gads_logout` (or `all: true`) then `gads_login`. |
+| `gkp_list` returns empty array | No cached queries for filters | Broaden filters or run a GKP query first | Call a `gkp_*` query tool, then `gkp_list`. |
 | `isError: true` with "OpenRouter API key not configured" | Missing OpenRouter key | Call `ideon_config_list` | Set via `ideon_config_set` with key `openRouterApiKey`. |
 | `isError: true` with "Google Ads developer token not configured" | Missing GKP token | Call `ideon_config_list` | Set via `ideon_config_set` with key `googleAdsDeveloperToken`. |
 | `gkp_generate_ideas` returns empty results | No matching keywords | Check seed keywords and country | Try broader seeds, different URL, or `["US"]` country. |

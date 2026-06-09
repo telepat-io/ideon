@@ -11,6 +11,10 @@ export const writeToolInputSchema = {
   author: z.string().min(1).optional(),
   experienceNotes: z.string().min(1).optional(),
   jobPath: z.string().optional(),
+  publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
+  keywords: z.string().min(1).optional(),
+  faqSection: z.boolean().optional(),
   primary: z.string().optional(),
   secondary: z.array(z.string()).optional(),
   style: z.enum(writingStyleValues).optional(),
@@ -39,6 +43,7 @@ export const writeResumeToolInputSchema = {
   unlink: z.array(z.string()).optional(),
   maxLinks: z.coerce.number().int().positive().optional(),
   maxImages: z.coerce.number().int().min(1).optional(),
+  exportPath: z.string().min(1).optional(),
 };
 export const writeResumeToolInputZodSchema = z.object(writeResumeToolInputSchema);
 export type WriteResumeToolInput = z.infer<typeof writeResumeToolInputZodSchema>;
@@ -98,6 +103,9 @@ export const gkpGenerateIdeasToolInputSchema = {
   countryCodes: z.array(z.string().min(1)).optional(),
   language: z.string().min(1).optional(),
   pageSize: z.coerce.number().int().positive().optional(),
+  publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
+  refresh: z.boolean().optional(),
 };
 export const gkpGenerateIdeasToolInputZodSchema = z.object(gkpGenerateIdeasToolInputSchema);
 export type GkpGenerateIdeasToolInput = z.infer<typeof gkpGenerateIdeasToolInputZodSchema>;
@@ -107,6 +115,9 @@ export const gkpGetHistoricalDataToolInputSchema = {
   countryCodes: z.array(z.string().min(1)).optional(),
   language: z.string().min(1).optional(),
   includeAverageCpc: z.boolean().optional(),
+  publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
+  refresh: z.boolean().optional(),
 };
 export const gkpGetHistoricalDataToolInputZodSchema = z.object(gkpGetHistoricalDataToolInputSchema);
 export type GkpGetHistoricalDataToolInput = z.infer<typeof gkpGetHistoricalDataToolInputZodSchema>;
@@ -117,6 +128,9 @@ export const gkpGetForecastDataToolInputSchema = {
   maxCpcBidMicros: z.coerce.number().int().positive().optional(),
   countryCodes: z.array(z.string().min(1)).optional(),
   language: z.string().min(1).optional(),
+  publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
+  refresh: z.boolean().optional(),
   startDate: z.string().min(1).optional(),
   endDate: z.string().min(1).optional(),
 };
@@ -312,6 +326,8 @@ export const queueWriteToolInputSchema = {
   publication: z.string().min(1).optional(),
   dryRun: z.boolean().optional(),
   noSeoCheck: z.boolean().optional(),
+  seoCheckMode: z.enum(['errors-only', 'strict']).optional(),
+  seoCheckMaxTurns: z.coerce.number().int().min(1).max(20).optional(),
   enrichLinks: z.boolean().optional(),
   link: z.array(z.string()).optional(),
   unlink: z.array(z.string()).optional(),
@@ -362,9 +378,27 @@ export type PlanExpandToolInput = z.infer<typeof planExpandToolInputZodSchema>;
 
 // ─── Article tools ───────────────────────────────────────────────────────────
 
-export const articleListToolInputSchema = {};
+export const articleListToolInputSchema = {
+  search: z.string().min(1).optional(),
+  publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
+  contentType: z.string().min(1).optional(),
+  limit: z.coerce.number().int().positive().optional(),
+  verbose: z.boolean().optional(),
+};
 export const articleListToolInputZodSchema = z.object(articleListToolInputSchema);
 export type ArticleListToolInput = z.infer<typeof articleListToolInputZodSchema>;
+
+export const gkpListToolInputSchema = {
+  publication: z.string().min(1).optional(),
+  series: z.string().min(1).optional(),
+  search: z.string().min(1).optional(),
+  fresh: z.boolean().optional(),
+  stale: z.boolean().optional(),
+  verbose: z.boolean().optional(),
+};
+export const gkpListToolInputZodSchema = z.object(gkpListToolInputSchema);
+export type GkpListToolInput = z.infer<typeof gkpListToolInputZodSchema>;
 
 // ─── Preview tools ───────────────────────────────────────────────────────────
 
@@ -396,6 +430,12 @@ export type GadsLoginStatusToolInput = z.infer<typeof gadsLoginStatusToolInputZo
 export const gadsTestToolInputSchema = {};
 export const gadsTestToolInputZodSchema = z.object(gadsTestToolInputSchema);
 export type GadsTestToolInput = z.infer<typeof gadsTestToolInputZodSchema>;
+
+export const gadsLogoutToolInputSchema = {
+  all: z.boolean().optional(),
+};
+export const gadsLogoutToolInputZodSchema = z.object(gadsLogoutToolInputSchema);
+export type GadsLogoutToolInput = z.infer<typeof gadsLogoutToolInputZodSchema>;
 
 export interface ToolContract {
   name: string;
@@ -596,7 +636,9 @@ export const ideonToolContracts: ToolContract[] = [
   {
     name: 'ideon_queue_write',
     required: [],
-    enums: {},
+    enums: {
+      seoCheckMode: ['errors-only', 'strict'],
+    },
   },
   {
     name: 'ideon_plan_explore',
@@ -636,6 +678,16 @@ export const ideonToolContracts: ToolContract[] = [
   },
   {
     name: 'gads_test',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'gkp_list',
+    required: [],
+    enums: {},
+  },
+  {
+    name: 'gads_logout',
     required: [],
     enums: {},
   },

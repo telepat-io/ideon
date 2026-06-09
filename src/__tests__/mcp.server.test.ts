@@ -64,6 +64,8 @@ const revertClaimedEntryMock = jest.fn<(...args: any[]) => Promise<void>>();
 const runPlanMock = jest.fn<(...args: any[]) => Promise<any>>();
 const loadSavedSettingsMock = jest.fn<(...args: any[]) => Promise<any>>();
 const runArticleListCommandMock = jest.fn<(...args: any[]) => Promise<void>>();
+const runGkpListCommandMock = jest.fn<(...args: any[]) => Promise<void>>();
+const runGadsLogoutCommandMock = jest.fn<(...args: any[]) => Promise<void>>();
 
 jest.unstable_mockModule('@modelcontextprotocol/sdk/server/mcp.js', () => ({
   McpServer: MockMcpServer,
@@ -212,6 +214,14 @@ jest.unstable_mockModule('../llm/openRouterClient.js', () => ({
 
 jest.unstable_mockModule('../cli/commands/article.js', () => ({
   runArticleListCommand: runArticleListCommandMock,
+}));
+
+jest.unstable_mockModule('../cli/commands/gkp.js', () => ({
+  runGkpListCommand: runGkpListCommandMock,
+}));
+
+jest.unstable_mockModule('../cli/commands/gads.js', () => ({
+  runGadsLogoutCommand: runGadsLogoutCommandMock,
 }));
 
 const startGadsLoginMock = jest.fn<(...args: any[]) => Promise<any>>();
@@ -390,6 +400,12 @@ describe('ideon MCP server', () => {
 
     // Article list mock
     runArticleListCommandMock.mockResolvedValue(undefined);
+    runGkpListCommandMock.mockImplementation(async (_options, deps) => {
+      deps?.log?.('[{"fingerprint":"fp-1"}]');
+    });
+    runGadsLogoutCommandMock.mockImplementation(async (_options, deps) => {
+      deps?.log?.('Google Ads refresh token cleared.');
+    });
 
     // GAds login mocks
     startGadsLoginMock.mockResolvedValue({
@@ -418,6 +434,8 @@ describe('ideon MCP server', () => {
     expect(registeredTools.has('gkp_generate_ideas')).toBe(true);
     expect(registeredTools.has('gkp_get_historical_data')).toBe(true);
     expect(registeredTools.has('gkp_get_forecast_data')).toBe(true);
+    expect(registeredTools.has('gkp_list')).toBe(true);
+    expect(registeredTools.has('gads_logout')).toBe(true);
   });
 
   it('executes ideon_write tool handler', async () => {
@@ -451,6 +469,34 @@ describe('ideon MCP server', () => {
     });
 
     expect(resolveRunInputMock).toHaveBeenCalledWith(expect.objectContaining({ targetLength: 1200 }));
+  });
+
+  it('passes publication, series, keywords, and faqSection through ideon_write handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_write');
+
+    await tool?.handler({
+      idea: 'My idea',
+      publication: 'tech-blog',
+      series: 'seo-playbooks',
+      keywords: 'content strategy, seo',
+      faqSection: true,
+      dryRun: true,
+    });
+
+    expect(resolveRunInputMock).toHaveBeenCalledWith(expect.objectContaining({
+      publication: 'tech-blog',
+      series: 'seo-playbooks',
+      keywords: ['content strategy', 'seo'],
+    }));
+    expect(runPipelineShellMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        config: expect.objectContaining({
+          settings: expect.objectContaining({ faqSection: true }),
+        }),
+      }),
+      expect.any(Object),
+    );
   });
 
   it('passes intent to resolveRunInput in ideon_write handler', async () => {
@@ -539,6 +585,21 @@ describe('ideon MCP server', () => {
 
     expect(result?.isError).toBe(true);
     expect(result?.content?.[0]?.text).toContain('already completed');
+  });
+
+  it('exports after ideon_write_resume when exportPath is provided', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_write_resume');
+
+    await tool?.handler({ exportPath: '/tmp/export-dir' });
+
+    expect(runOutputCommandMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        generationId: 'slug',
+        destinationPath: '/tmp/export-dir',
+      }),
+      expect.any(Object),
+    );
   });
 
   it('executes ideon_delete and ideon_config_set handlers', async () => {
@@ -726,10 +787,16 @@ describe('ideon MCP server', () => {
     await startIdeonMcpServer();
     const tool = registeredTools.get('gkp_generate_ideas');
 
-    const result = await tool?.handler({ seedKeywords: ['test'] });
+    const result = await tool?.handler({
+      seedKeywords: ['test'],
+      publication: 'tech-blog',
+      series: 'seo-playbooks',
+      refresh: true,
+    });
 
     expect(gkpClientMock.generateKeywordIdeas).toHaveBeenCalledWith(
       expect.objectContaining({ seedKeywords: ['test'] }),
+      { refresh: true },
     );
     expect(result?.structuredContent?.count).toBe(1);
   });
@@ -747,6 +814,7 @@ describe('ideon MCP server', () => {
 
     expect(gkpClientMock.getHistoricalMetrics).toHaveBeenCalledWith(
       expect.objectContaining({ keywords: ['test'] }),
+      { refresh: undefined },
     );
     expect(result?.structuredContent?.count).toBe(1);
   });
@@ -764,6 +832,7 @@ describe('ideon MCP server', () => {
 
     expect(gkpClientMock.getForecastData).toHaveBeenCalledWith(
       expect.objectContaining({ keywords: ['test'] }),
+      { refresh: undefined },
     );
     expect(result?.structuredContent?.count).toBe(1);
   });
@@ -792,7 +861,8 @@ describe('ideon MCP server', () => {
       'ideon_queue_add', 'ideon_queue_list', 'ideon_queue_peek', 'ideon_queue_remove', 'ideon_queue_clear', 'ideon_queue_write',
       'ideon_plan_explore', 'ideon_plan_expand',
       'ideon_article_list',
-      'gads_login', 'gads_login_status', 'gads_test',
+      'gads_login', 'gads_login_status', 'gads_test', 'gads_logout',
+      'gkp_list',
     ];
     for (const name of newTools) {
       expect(registeredTools.has(name)).toBe(true);
@@ -1087,9 +1157,50 @@ describe('ideon MCP server', () => {
     const result = await tool?.handler({ dryRun: true });
 
     expect(claimNextPendingEntryMock).toHaveBeenCalled();
-    expect(runPipelineShellMock).toHaveBeenCalled();
+    expect(runPipelineShellMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ noSeoCheck: false }),
+    );
     expect(deleteClaimedEntryMock).toHaveBeenCalledWith('q1');
     expect(result?.content?.[0]?.text).toContain('Generated');
+  });
+
+  it('passes SEO flags and exports after ideon_queue_write when entry has exportPath', async () => {
+    claimNextPendingEntryMock.mockResolvedValue({
+      id: 'q2',
+      status: 'in-progress',
+      idea: 'queued idea',
+      settings: { contentTargets: [{ contentType: 'article', role: 'primary', count: 1 }] },
+      job: null,
+      publication: null,
+      series: null,
+      author: null,
+      exportPath: '/tmp/export-dir',
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_queue_write');
+
+    await tool?.handler({
+      noSeoCheck: true,
+      seoCheckMode: 'strict',
+      seoCheckMaxTurns: 3,
+    });
+
+    expect(runPipelineShellMock).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        noSeoCheck: true,
+        seoCheckMode: 'strict',
+        seoCheckMaxTurns: 3,
+      }),
+    );
+    expect(runOutputCommandMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        generationId: 'slug',
+        destinationPath: '/tmp/export-dir',
+      }),
+      expect.any(Object),
+    );
   });
 
   it('reverts claimed entry when ideon_queue_write fails', async () => {
@@ -1207,6 +1318,56 @@ describe('ideon MCP server', () => {
 
     expect(runArticleListCommandMock).toHaveBeenCalled();
     expect(result?.content?.[0]?.text).toContain('art-1');
+  });
+
+  it('passes article list filters through ideon_article_list handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_article_list');
+
+    await tool?.handler({
+      search: 'content strategy',
+      publication: 'tech-blog',
+      series: 'seo-playbooks',
+      contentType: 'article',
+      limit: 10,
+      verbose: true,
+    });
+
+    expect(runArticleListCommandMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        json: true,
+        verbose: true,
+        search: 'content strategy',
+        publication: 'tech-blog',
+        series: 'seo-playbooks',
+        contentType: 'article',
+        limit: 10,
+      }),
+      expect.any(Object),
+    );
+  });
+
+  it('executes gkp_list handler', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gkp_list');
+
+    const result = await tool?.handler({
+      publication: 'tech-blog',
+      search: 'content',
+      fresh: true,
+    });
+
+    expect(runGkpListCommandMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        publication: 'tech-blog',
+        search: 'content',
+        fresh: true,
+        stale: false,
+        json: true,
+      }),
+      expect.any(Object),
+    );
+    expect(result?.content?.[0]?.text).toContain('fingerprint');
   });
 
   // ─── GAds login tool tests ─────────────────────────────────────────────
@@ -1426,5 +1587,36 @@ describe('ideon MCP server', () => {
 
     expect(result?.isError).toBe(true);
     expect(result?.content?.[0]?.text).toContain('Missing required Google Ads credentials');
+  });
+
+  it('executes gads_logout handler and clears refresh token by default', async () => {
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_logout');
+
+    const result = await tool?.handler({});
+
+    expect(resetGadsLoginStateMock).toHaveBeenCalled();
+    expect(runGadsLogoutCommandMock).toHaveBeenCalledWith(
+      { all: undefined },
+      expect.objectContaining({ isTTY: false }),
+    );
+    expect(result?.structuredContent).toEqual({ all: false, cleared: true });
+    expect(result?.content?.[0]?.text).toContain('refresh token cleared');
+  });
+
+  it('executes gads_logout handler with all=true', async () => {
+    runGadsLogoutCommandMock.mockImplementation(async (_options, deps) => {
+      deps?.log?.('All Google Ads credentials cleared.');
+    });
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('gads_logout');
+
+    const result = await tool?.handler({ all: true });
+
+    expect(runGadsLogoutCommandMock).toHaveBeenCalledWith(
+      { all: true },
+      expect.any(Object),
+    );
+    expect(result?.structuredContent).toEqual({ all: true, cleared: true });
   });
 });

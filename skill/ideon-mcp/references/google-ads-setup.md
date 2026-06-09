@@ -1,6 +1,6 @@
 # Google Ads Keyword Planner Setup via MCP
 
-This reference covers the prerequisites and credential setup required for the three GKP MCP tools (`gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`) and for the planning tools (`ideon_plan_explore`, `ideon_plan_expand`).
+This reference covers the prerequisites and credential setup required for the GKP MCP tools (`gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`, `gkp_list`), Google Ads auth tools (`gads_login`, `gads_login_status`, `gads_test`, `gads_logout`), and the planning tools (`ideon_plan_explore`, `ideon_plan_expand`).
 
 ## Quick Setup with `gads_login`
 
@@ -59,6 +59,14 @@ This returns `completed` when the refresh token has been saved.
 ```
 
 This makes a test API call to confirm all credentials work.
+
+### Clear credentials
+
+```json
+{"tool": "gads_logout", "parameters": {}}
+```
+
+Clears only the refresh token. Pass `all: true` to clear all six Google Ads secrets (CLI equivalent: `ideon gads logout --all`).
 
 ### Re-authorization
 
@@ -236,7 +244,10 @@ Generates related keyword ideas from seed keywords, a URL, or a site.
   "seedKeywords": ["seo", "marketing"],
   "countryCodes": ["US"],
   "language": "en",
-  "pageSize": 20
+  "pageSize": 20,
+  "publication": "tech-blog",
+  "series": "seo-playbooks",
+  "refresh": true
 }}
 ```
 
@@ -263,5 +274,18 @@ Projects impressions, clicks, and cost for keywords.
   "countryCodes": ["US"],
   "startDate": "2026-07-01",
   "endDate": "2026-07-31"
+}}
+```
+
+### `gkp_list`
+
+Lists cached GKP query history (CLI equivalent: `ideon gkp list`).
+
+```json
+{"tool": "gkp_list", "parameters": {
+  "publication": "tech-blog",
+  "search": "content strategy",
+  "fresh": true,
+  "verbose": true
 }}
 ```

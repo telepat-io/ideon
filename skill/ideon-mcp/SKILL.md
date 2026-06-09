@@ -1,21 +1,22 @@
 ---
 name: ideon-mcp
-description: Use this skill when users need to operate Ideon through its MCP tool surface — generating content, managing config, planning content strategy with Google Keyword Planner data, organizing publications, series, authors, and queues, enriching links, exporting articles, previewing generated content, or deleting outputs — all via MCP tool calls rather than CLI commands. Use this skill whenever the user mentions Ideon MCP tools, is running Ideon inside an MCP client (Claude, Claude Desktop, Gemini, opencode, Cursor, VS Code, ChatGPT, Codex), asks about ideon_write, ideon_config_set, ideon_delete, ideon_links, ideon_export, ideon_preview, ideon_publication_*, ideon_series_*, ideon_author_*, ideon_queue_*, ideon_plan_*, ideon_article_list, gkp_generate_ideas, gkp_get_historical_data, gkp_get_forecast_data, wants to set up or configure the Ideon MCP server, or needs content generation workflows through the MCP protocol — even if they do not explicitly say "MCP".
+description: Use this skill when operating Ideon through its MCP tool surface — generating content, managing config, planning with Google Keyword Planner, organizing publications/series/authors/queues, enriching links, exporting, previewing, or deleting outputs via MCP tool calls. Use inside MCP clients (Claude, Cursor, VS Code, ChatGPT, Codex, etc.). Do not use for CLI/terminal workflows (use ideon-cli skill).
 ---
 
 # Ideon MCP Skill
 
-## What this skill does
+Operate Ideon through 39 MCP tools covering the full content lifecycle: write, resume, plan, queue, export, links, config, publications, series, authors, GKP research, and Google Ads auth. All operations are MCP tool invocations with structured JSON responses.
 
-This skill teaches how to operate Ideon as a content writer platform through its MCP (Model Context Protocol) tool surface — not the CLI.
+## Agent constraints
 
-Ideon exposes 32 MCP tools covering the full content lifecycle: generate content from an idea, resume interrupted runs, enrich links, export articles, manage configuration, create and manage publications, series, and authors, queue articles for batch processing, plan content strategy with Google Keyword Planner research, and list generated articles.
-
-Use this skill when working inside any MCP-compatible client. All operations are performed as MCP tool invocations with structured JSON responses.
+- Always call `ideon_write` with `dryRun: true` first before full generation.
+- `ideon_delete` and `ideon_queue_remove/clear` always force-delete — verify slug/ID with user first.
+- Plan tools: use `dryRun: true` first; only set `autoSave: true` after user confirms.
+- No post-write export on `ideon_write` — use `ideon_export` separately or `exportPath` on resume/queue.
+- No agent registration tool — configure Ideon as an MCP server in the client config.
+- In containers: set `TELEPAT_DISABLE_KEYTAR=true` and use `ideon_config_set` for secrets.
 
 ## Server setup
-
-Ideon offers two MCP transport modes.
 
 ### Stdio transport
 
@@ -30,38 +31,7 @@ Ideon offers two MCP transport modes.
 }
 ```
 
-Stdio is the standard for local process-spawned MCP clients. The server reads from stdin and writes to stdout.
-
 ### Streamable HTTP transport
-
-```json
-{
-  "mcpServers": {
-    "ideon": {
-      "url": "http://127.0.0.1:3001/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_API_KEY"
-      }
-    }
-  }
-}
-```
-
-The HTTP server requires a bearer API key. Start it with:
-
-```json
-{
-  "tool": "ideon_mcp_serve_http",
-  "parameters": {
-    "apiKey": "your-secret-key",
-    "port": "3001",
-    "host": "127.0.0.1",
-    "endpoint": "/mcp"
-  }
-}
-```
-
-Or configure the MCP server entry to call the CLI directly:
 
 ```json
 {
@@ -74,47 +44,19 @@ Or configure the MCP server entry to call the CLI directly:
 }
 ```
 
-The API key can also be set via the `IDEON_MCP_API_KEY` environment variable.
+Or connect to a running server: `http://127.0.0.1:3001/mcp` with `Authorization: Bearer YOUR_API_KEY`. API key also via `IDEON_MCP_API_KEY`.
 
 ### Prerequisites
 
-Before the MCP server can generate content, configure:
-
-1. OpenRouter API key
-2. Replicate API token (for image generation)
-
-Set them via MCP tools:
+Configure before generating content:
 
 ```json
 {"tool": "ideon_config_set", "parameters": {"key": "openRouterApiKey", "value": "sk-..."}}
 {"tool": "ideon_config_set", "parameters": {"key": "replicateApiToken", "value": "r8_..."}}
-```
-
-Verify setup:
-
-```json
 {"tool": "ideon_config_list", "parameters": {}}
 ```
 
-The response includes `settings` and `secrets` sections. Secrets show `true`/`false` for availability, never the actual values.
-
-## When to use this skill
-
-Use this skill when:
-
-- You are running inside an MCP client and need to use Ideon tools.
-- You need to generate multi-channel content from a single idea via MCP.
-- You need to configure Ideon settings or secrets via MCP tools.
-- You need to manage publications, series, or content queues via MCP.
-- You need Google Keyword Planner research or content planning via MCP.
-- You need to enrich, export, or delete generated content via MCP.
-- You need to start or configure the Ideon MCP server.
-
-Do not use this skill when:
-
-- You are using Ideon from the command line (use the `ideon-cli` skill instead).
-- You need a quick explanation of one tool parameter (the tool description is sufficient).
-- You need VS Code or Cursor runtime integration setup (no MCP tool exists for this).
+Secrets show `true`/`false` for availability, never actual values.
 
 ## Inputs to collect from user
 
@@ -134,7 +76,9 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 | Series | No | `series` | Series slug for defaults and thematic context. |
 | Author | No | `author` | Author slug for voice and expertise. Overrides publication/series defaults. |
 | Experience notes | No | `experienceNotes` | Per-run anecdotes or first-hand experience to weave into the draft. |
-| Keywords | No | `keywords` | Not a direct parameter — use publication/series keywords. |
+| Keywords | No | `keywords` | Comma-separated SEO keywords (e.g. `"organic marketing, seo"`). |
+| FAQ section | No | `faqSection` (boolean) | Force FAQ block on (`true`) or off (`false`) after conclusion. |
+| Export path (resume) | No (resume) | `exportPath` | Export the generated article after `ideon_write_resume` completes. |
 | Audience | No | `audience` | Target audience description injected into editorial policy. |
 | Enrich links | No | `enrichLinks` (boolean) | Opt-in link enrichment for long-form outputs. |
 | Max links | No | `maxLinks` (integer) | Cap generated links. |
@@ -185,6 +129,32 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 | Start date | No (forecast) | `startDate` | Forecast start (`yyyy-MM-dd`). |
 | End date | No (forecast) | `endDate` | Forecast end (`yyyy-MM-dd`). |
 | Include CPC | No (historical) | `includeAverageCpc` (boolean) | Include CPC data. |
+| Page size | No (ideas) | `pageSize` (integer) | Max results to return. |
+| Publication (cache) | No | `publication` | Attach cache context to a publication slug. |
+| Series (cache) | No | `series` | Attach cache context to a series slug. |
+| Refresh cache | No | `refresh` (boolean) | Bypass cache and fetch fresh data. |
+
+### GKP cache list
+
+| Input | Required | MCP parameter | Why it matters |
+| --- | --- | --- | --- |
+| Publication | No | `publication` | Filter by publication slug. |
+| Series | No | `series` | Filter by series slug. |
+| Search | No | `search` | Filter by keyword, URL, site, publication, or series text. |
+| Fresh only | No | `fresh` (boolean) | Show only fresh cache entries. |
+| Stale only | No | `stale` (boolean) | Show only stale cache entries. |
+| Verbose | No | `verbose` (boolean) | Include full cache entry details. |
+
+### Article list
+
+| Input | Required | MCP parameter | Why it matters |
+| --- | --- | --- | --- |
+| Search | No | `search` | Search by title, keywords, description, or body. |
+| Publication | No | `publication` | Filter by publication slug. |
+| Series | No | `series` | Filter by series slug. |
+| Content type | No | `contentType` | Filter by content type (e.g. `article`, `x-post`). |
+| Limit | No | `limit` (integer) | Maximum results (default 50). |
+| Verbose | No | `verbose` (boolean) | Include detailed article metadata. |
 
 ### Queue
 
@@ -201,6 +171,21 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 | Country | No | `country` | Comma-separated ISO codes. |
 | Language | No | `language` | ISO 639-1 code. |
 | Export path | No | `exportPath` | Auto-export path for when article is written. |
+
+### Queue write
+
+| Input | Required | MCP parameter | Why it matters |
+| --- | --- | --- | --- |
+| Publication filter | No | `publication` | Dequeue next pending entry for this publication. |
+| Dry run | No | `dryRun` (boolean) | Validate without generating. |
+| Skip SEO check | No | `noSeoCheck` (boolean) | Skip SEO lint and editor pass. |
+| SEO check mode | No | `seoCheckMode` | `errors-only` or `strict`. |
+| SEO check max turns | No | `seoCheckMaxTurns` (integer) | Max editor-agent turns (1–20). |
+| Enrich links | No | `enrichLinks` (boolean) | Enable link enrichment. |
+| Custom links / unlinks | No | `link` / `unlink` (arrays) | Custom link mappings or removals. |
+| Max links / images | No | `maxLinks` / `maxImages` (integers) | Cap generated links or images. |
+
+Post-write export uses `exportPath` stored on the queue entry (from `ideon_queue_add`).
 
 ### Publications
 
@@ -232,107 +217,34 @@ Always collect all relevant inputs before invoking any tool. Ask the user for th
 
 ## Deterministic workflow
 
-1. Discover the user's intent — what operation do they need (write, resume, plan, queue, links, export, delete, config, publications, series, articles)?
-2. **Collect all required inputs** by consulting the [Inputs to collect](#inputs-to-collect-from-user) table. Ask the user for each required value before choosing an operation path.
-3. Verify setup: call `ideon_config_list` and check that required secrets are present.
-4. Choose operation path (see [Operations lifecycle](#operations-lifecycle)).
-5. For content generation, call `ideon_write` with `dryRun: true` first.
-6. Escalate to full generation only after dry run succeeds.
-7. Report: tool called, structured response data, next safe step.
+1. Discover the user's intent — what operation do they need?
+2. **Collect all required inputs** from the [Inputs to collect](#inputs-to-collect-from-user) tables.
+3. Verify setup: call `ideon_config_list` and check required secrets.
+4. For content generation, call `ideon_write` with `dryRun: true` first.
+5. Escalate to full generation only after dry run succeeds.
+6. Report: tool called, structured response data, next safe step.
 
-## Tool reference overview
+## Tool catalog
 
-29 tools organized by domain:
+39 tools across content, config, publications, series, authors, queue, planning, GKP, and GAds auth. See [references/tool-catalog.md](references/tool-catalog.md) for complete parameter schemas and constraints.
 
-### Content generation
+Quick reference:
 
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `ideon_write` | `idea` | Generate content from an idea. |
-| `ideon_write_resume` | — | Resume last failed/interrupted write. |
-| `ideon_export` | `generationId`, `destinationPath` | Export article as standalone markdown. |
-| `ideon_delete` | `slug` | Delete generated output by slug. |
-| `ideon_links` | `slug` | Run link enrichment for an existing article. |
-| `ideon_article_list` | — | List generated articles in current workspace. |
-| `ideon_preview` | `action` | Start, stop, or check status of the local preview server. |
+| Domain | Tools |
+| --- | --- |
+| Content | `ideon_write`, `ideon_write_resume`, `ideon_delete`, `ideon_links`, `ideon_export`, `ideon_article_list`, `ideon_preview` |
+| Config | `ideon_config_list`, `ideon_config_get`, `ideon_config_set`, `ideon_config_unset` |
+| Publications | `ideon_publication_add/list/edit/remove` |
+| Series | `ideon_series_add/list/edit/remove` |
+| Authors | `ideon_author_add/list/edit/remove` |
+| Queue | `ideon_queue_add/list/peek/remove/clear/write` |
+| Planning | `ideon_plan_explore`, `ideon_plan_expand` |
+| GKP | `gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`, `gkp_list` |
+| GAds auth | `gads_login`, `gads_login_status`, `gads_test`, `gads_logout` |
 
-### Configuration
+## Canonical examples
 
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `ideon_config_list` | — | List settings and secret availability. |
-| `ideon_config_get` | `key` | Read a config value or secret flag. |
-| `ideon_config_set` | `key`, `value` | Set a config value or secret. |
-| `ideon_config_unset` | `key` | Reset a setting to default. |
-
-### Publications
-
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `ideon_publication_add` | `name` | Create a publication. |
-| `ideon_publication_list` | — | List all publications. |
-| `ideon_publication_edit` | `slug` | Edit a publication (patch semantics). |
-| `ideon_publication_remove` | `slug` | Delete a publication. |
-
-### Series
-
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `ideon_series_add` | `name` | Create a series. |
-| `ideon_series_list` | — | List all series (optional `publication` filter). |
-| `ideon_series_edit` | `slug` | Edit a series (patch semantics). |
-| `ideon_series_remove` | `slug` | Delete a series. |
-
-### Authors
-
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `ideon_author_add` | `name` | Create an author profile (`profile` optional). |
-| `ideon_author_list` | — | List all author profiles. |
-| `ideon_author_edit` | `slug` | Edit author `name` or `profile` (patch semantics). |
-| `ideon_author_remove` | `slug` | Delete an author. |
-
-Publication and series tools accept `defaultAuthor`; series tools also accept `experienceNotes`.
-
-### Content queue
-
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `ideon_queue_add` | `idea` | Add an article to the queue. |
-| `ideon_queue_list` | — | List queued articles (optional filters). |
-| `ideon_queue_peek` | — | Show next pending entry without consuming. |
-| `ideon_queue_remove` | `id` | Delete a queue entry. |
-| `ideon_queue_clear` | — | Delete all queue entries. |
-| `ideon_queue_write` | — | Claim next pending entry and write it. |
-
-### Content planning
-
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `ideon_plan_explore` | `idea`, `publication` | Research a new content idea with GKP data. |
-| `ideon_plan_expand` | `seriesSlug` | Expand a series with new article ideas. |
-
-### Google Keyword Planner
-
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `gkp_generate_ideas` | — | Generate keyword ideas from seeds/URL/site. |
-| `gkp_get_historical_data` | `keywords` | Get historical search volume and competition. |
-| `gkp_get_forecast_data` | `keywords` | Get projected impressions, clicks, and cost. |
-
-### Google Ads authentication
-
-| Tool | Required params | Description |
-| --- | --- | --- |
-| `gads_login` | `developerToken`, `clientId`, `clientSecret`, `customerId` | Start OAuth flow for Google Ads credentials. |
-| `gads_login_status` | — | Check OAuth flow completion status. |
-| `gads_test` | — | Verify Google Ads credentials with a test API call. |
-
-See [references/tool-catalog.md](references/tool-catalog.md) for complete parameter schemas and constraints.
-
-## Operations lifecycle
-
-### Create content
+### Write
 
 ```json
 {"tool": "ideon_write", "parameters": {
@@ -340,44 +252,12 @@ See [references/tool-catalog.md](references/tool-catalog.md) for complete parame
   "primary": "article=1",
   "style": "technical",
   "intent": "tutorial",
-  "length": "medium"
+  "length": "medium",
+  "dryRun": true
 }}
 ```
 
-With secondary outputs:
-
-```json
-{"tool": "ideon_write", "parameters": {
-  "idea": "How small teams ship docs faster",
-  "primary": "article=1",
-  "secondary": ["x-post=1", "linkedin-post=1"],
-  "style": "technical",
-  "length": "medium"
-}}
-```
-
-With link enrichment:
-
-```json
-{"tool": "ideon_write", "parameters": {
-  "idea": "How small teams ship docs faster",
-  "primary": "article=1",
-  "enrichLinks": true,
-  "maxLinks": 8
-}}
-```
-
-With custom links:
-
-```json
-{"tool": "ideon_write", "parameters": {
-  "idea": "How small teams ship docs faster",
-  "primary": "article=1",
-  "link": ["React->https://react.dev", "OpenRouter->https://openrouter.ai"]
-}}
-```
-
-With publication, series, and audience:
+With publication, series, and enrichment:
 
 ```json
 {"tool": "ideon_write", "parameters": {
@@ -385,334 +265,32 @@ With publication, series, and audience:
   "primary": "article=1",
   "publication": "tech-blog",
   "series": "engineering-practices",
-  "audience": "Senior engineers at early-stage startups",
-  "style": "technical",
-  "intent": "how-to-guide",
-  "length": "large"
+  "enrichLinks": true,
+  "keywords": "documentation, developer experience"
 }}
 ```
 
-Dry run (validate without generating):
+### Resume and export
 
 ```json
-{"tool": "ideon_write", "parameters": {
-  "idea": "How small teams ship docs faster",
-  "primary": "article=1",
-  "dryRun": true
-}}
+{"tool": "ideon_write_resume", "parameters": {"exportPath": "./export-dir"}}
 ```
 
-### Resume interrupted run
-
-```json
-{"tool": "ideon_write_resume", "parameters": {}}
-```
-
-With link enrichment:
-
-```json
-{"tool": "ideon_write_resume", "parameters": {"enrichLinks": true}}
-```
-
-Strict SEO check on write:
-
-```json
-{"tool": "ideon_write", "parameters": {
-  "idea": "How small teams ship docs faster",
-  "primary": "article=1",
-  "seoCheckMode": "strict"
-}}
-```
-
-Re-run SEO check on resume:
-
-```json
-{"tool": "ideon_write_resume", "parameters": {"seoCheck": true, "seoCheckMode": "strict"}}
-```
-
-### Enrich links
-
-Run link enrichment on a previously generated article:
-
-```json
-{"tool": "ideon_links", "parameters": {"slug": "my-article-slug"}}
-```
-
-Append new links into existing sidecar:
-
-```json
-{"tool": "ideon_links", "parameters": {"slug": "my-article-slug", "mode": "append"}}
-```
-
-Add custom link:
-
-```json
-{"tool": "ideon_links", "parameters": {"slug": "my-article-slug", "link": ["OpenRouter->https://openrouter.ai"]}}
-```
-
-Remove a custom link:
-
-```json
-{"tool": "ideon_links", "parameters": {"slug": "my-article-slug", "unlink": ["OpenRouter"]}}
-```
-
-Cap generated links:
-
-```json
-{"tool": "ideon_links", "parameters": {"slug": "my-article-slug", "maxLinks": 5}}
-```
-
-### Export articles
-
-Export by generation ID or slug:
-
-```json
-{"tool": "ideon_export", "parameters": {"generationId": "my-article-slug", "destinationPath": "./export-dir"}}
-```
-
-Export a specific variant when multiple exist:
-
-```json
-{"tool": "ideon_export", "parameters": {"generationId": "my-article-slug", "destinationPath": "./export-dir", "index": 2}}
-```
-
-Overwrite existing export:
-
-```json
-{"tool": "ideon_export", "parameters": {"generationId": "my-article-slug", "destinationPath": "./export-dir", "overwrite": true}}
-```
-
-### Delete outputs
-
-```json
-{"tool": "ideon_delete", "parameters": {"slug": "my-article-slug"}}
-```
-
-### List articles
-
-```json
-{"tool": "ideon_article_list", "parameters": {}}
-```
-
-### Configuration
-
-List all settings:
-
-```json
-{"tool": "ideon_config_list", "parameters": {}}
-```
-
-Read a specific setting:
-
-```json
-{"tool": "ideon_config_get", "parameters": {"key": "model"}}
-```
-
-Set a secret:
-
-```json
-{"tool": "ideon_config_set", "parameters": {"key": "openRouterApiKey", "value": "sk-..."}}
-```
-
-Set a setting:
-
-```json
-{"tool": "ideon_config_set", "parameters": {"key": "model", "value": "anthropic/claude-sonnet-4"}}
-```
-
-Unset a key:
-
-```json
-{"tool": "ideon_config_unset", "parameters": {"key": "model"}}
-```
-
-## Publications and series via MCP
-
-### Create a publication
-
-```json
-{"tool": "ideon_publication_add", "parameters": {
-  "name": "Tech Blog",
-  "style": "technical",
-  "intent": "tutorial",
-  "tone": "authoritative",
-  "forbiddenTopics": ["hype", "speculation"],
-  "disclosureRequirements": ["affiliate links"],
-  "audienceRestrictions": ["no competitor mentions"],
-  "editorialPolicy": "All claims must cite sources."
-}}
-```
-
-### List publications
-
-```json
-{"tool": "ideon_publication_list", "parameters": {}}
-```
-
-### Edit a publication
-
-```json
-{"tool": "ideon_publication_edit", "parameters": {
-  "slug": "tech-blog",
-  "style": "professional",
-  "intent": "how-to-guide"
-}}
-```
-
-### Delete a publication
-
-```json
-{"tool": "ideon_publication_remove", "parameters": {"slug": "tech-blog"}}
-```
-
-### Create a series
-
-```json
-{"tool": "ideon_series_add", "parameters": {
-  "name": "AI Deep Dives",
-  "topic": "Exploring cutting-edge AI technologies",
-  "publication": "tech-blog",
-  "keywords": ["artificial intelligence", "machine learning"]
-}}
-```
-
-### List series
-
-```json
-{"tool": "ideon_series_list", "parameters": {}}
-```
-
-Filtered by publication:
-
-```json
-{"tool": "ideon_series_list", "parameters": {"publication": "tech-blog"}}
-```
-
-### Edit a series
-
-```json
-{"tool": "ideon_series_edit", "parameters": {
-  "slug": "ai-deep-dives",
-  "topic": "New topic description"
-}}
-```
-
-Remove publication association:
-
-```json
-{"tool": "ideon_series_edit", "parameters": {"slug": "ai-deep-dives", "unsetPublication": true}}
-```
-
-### Delete a series
-
-```json
-{"tool": "ideon_series_remove", "parameters": {"slug": "ai-deep-dives"}}
-```
-
-### How editorial policy is injected
-
-When a publication or series is active, Ideon injects into all LLM prompts:
-
-- Publication name, tone, forbidden topics, disclosure requirements, audience restrictions, and notes
-- Series name, topic, and editorial policy (appended after publication policy)
-
-## Content queue via MCP
-
-The content queue is a global list of pending articles. Queue operations are atomic — concurrent writes claim entries safely.
-
-### Add to queue
+### Queue
 
 ```json
 {"tool": "ideon_queue_add", "parameters": {
   "idea": "The future of WebAssembly",
   "publication": "tech-blog",
-  "series": "emerging-tech",
   "style": "technical",
   "intent": "deep-dive-analysis",
-  "length": "large"
+  "length": "large",
+  "exportPath": "./export-dir"
 }}
+{"tool": "ideon_queue_write", "parameters": {"publication": "tech-blog", "enrichLinks": true}}
 ```
 
-### List queued articles
-
-```json
-{"tool": "ideon_queue_list", "parameters": {}}
-```
-
-Filtered by status:
-
-```json
-{"tool": "ideon_queue_list", "parameters": {"status": "pending"}}
-```
-
-Filtered by publication:
-
-```json
-{"tool": "ideon_queue_list", "parameters": {"publication": "tech-blog"}}
-```
-
-### Peek at next entry
-
-```json
-{"tool": "ideon_queue_peek", "parameters": {}}
-```
-
-### Write from queue
-
-Claims the next pending entry and generates content. On success, deletes the entry. On failure, reverts to pending.
-
-```json
-{"tool": "ideon_queue_write", "parameters": {}}
-```
-
-With link enrichment:
-
-```json
-{"tool": "ideon_queue_write", "parameters": {"enrichLinks": true}}
-```
-
-With publication filter:
-
-```json
-{"tool": "ideon_queue_write", "parameters": {"publication": "tech-blog"}}
-```
-
-### Remove queue entries
-
-```json
-{"tool": "ideon_queue_remove", "parameters": {"id": "queue-entry-id"}}
-```
-
-Clear all entries:
-
-```json
-{"tool": "ideon_queue_clear", "parameters": {}}
-```
-
-### Queue entry lifecycle
-
-1. **Enqueue** (`ideon_queue_add`): resolves all parameters and snapshots them into a self-contained entry.
-2. **Claim** (`ideon_queue_write`): atomically renames the entry to in-progress. Concurrent calls skip claimed entries.
-3. **Success**: deletes the entry.
-4. **Failure**: reverts to pending.
-
-## Content planning via MCP
-
-Planning uses Google Keyword Planner research, KOB scoring, intent classification, topic clustering, and article planning. Requires both an OpenRouter API key and Google Ads credentials.
-
-### Explore new topics
-
-```json
-{"tool": "ideon_plan_explore", "parameters": {
-  "idea": "Content strategy for SaaS companies",
-  "publication": "tech-blog",
-  "context": "Target: early-stage B2B SaaS companies",
-  "seriesCount": 3,
-  "articlesPerSeries": 5
-}}
-```
-
-Dry run (research only, no persistence):
+### Plan
 
 ```json
 {"tool": "ideon_plan_explore", "parameters": {
@@ -722,17 +300,7 @@ Dry run (research only, no persistence):
 }}
 ```
 
-Auto-save (persists without human confirmation):
-
-```json
-{"tool": "ideon_plan_explore", "parameters": {
-  "idea": "Content strategy for SaaS companies",
-  "publication": "tech-blog",
-  "autoSave": true
-}}
-```
-
-### Expand existing series
+After user confirms: re-run with `"autoSave": true`.
 
 ```json
 {"tool": "ideon_plan_expand", "parameters": {
@@ -742,256 +310,106 @@ Auto-save (persists without human confirmation):
 }}
 ```
 
-### Planning pipeline
+### Export, links, delete, list
 
-The plan pipeline runs automatically:
-
+```json
+{"tool": "ideon_export", "parameters": {"generationId": "my-article-slug", "destinationPath": "./export-dir", "overwrite": true}}
+{"tool": "ideon_links", "parameters": {"slug": "my-article-slug", "mode": "append", "maxLinks": 5}}
+{"tool": "ideon_delete", "parameters": {"slug": "my-article-slug"}}
+{"tool": "ideon_article_list", "parameters": {"search": "react hooks", "publication": "tech-blog", "limit": 25}}
 ```
-hydrate → seeds → research → score → cluster (explore only) → plan-articles → persist
-```
 
-- **hydrate**: loads publication, series, and output history to build a coverage map
-- **seeds**: generates seed keywords from the content idea or existing series
-- **research**: iterative GKP queries with broadening and low-volume detection
-- **score**: KOB scoring, intent classification, and candidate filtering
-- **cluster**: groups shortlisted keywords into thematic series (explore only)
-- **plan-articles**: plans individual articles with keywords, intent, format, and priority
-- **persist**: saves series, updates keywords, and queues articles (when `autoSave` is true)
+### Publications and series
 
-The response contains the full plan as structured JSON. If `autoSave` is false, ask the user whether to re-run with `autoSave: true` before persisting.
+| Tool | Purpose |
+| --- | --- |
+| `ideon_publication_add` | Create publication with defaults and editorial policy |
+| `ideon_publication_list` | List all publications |
+| `ideon_publication_edit` | Patch publication fields by slug |
+| `ideon_publication_remove` | Delete publication |
+| `ideon_series_add` | Create series with topic and publication |
+| `ideon_series_list` | List series (optional `publication` filter) |
+| `ideon_series_edit` | Patch series fields by slug |
+| `ideon_series_remove` | Delete series |
 
-## Google Ads login via MCP
+Full parameter schemas: [references/tool-catalog.md](references/tool-catalog.md).
 
-The `gkp_*` and `ideon_plan_*` tools require Google Ads credentials. Instead of setting each credential manually with `ideon_config_set`, use `gads_login` for a guided OAuth flow.
+When a publication or series is active, editorial policy is injected into all LLM prompts.
+
+Queue lifecycle: enqueue snapshots settings → `ideon_queue_write` claims atomically → success deletes entry, failure reverts to pending.
+
+## Google Ads and GKP
+
+The `gkp_*` and `ideon_plan_*` tools require Google Ads credentials.
 
 ### Login flow
 
-**Step 1:** Call `gads_login` with all credentials. This saves the non-OAuth credentials immediately and starts a temporary local server for the OAuth callback.
+1. Call `gads_login` with developer token, client ID, client secret, and customer ID.
+2. Instruct user to open the returned auth URL in their browser.
+3. After authorization, call `gads_login_status` (expect `completed`).
+4. Verify with `gads_test`.
+
+Re-authorize with `force: true` if a refresh token already exists. Clear credentials with `gads_logout` (`all: true` for all six).
+
+See [references/google-ads-setup.md](references/google-ads-setup.md) for full setup and troubleshooting.
+
+### GKP queries
 
 ```json
-{"tool": "gads_login", "parameters": {
-  "developerToken": "your-developer-token",
-  "clientId": "your-client-id.apps.googleusercontent.com",
-  "clientSecret": "your-client-secret",
-  "customerId": "123-456-7890"
-}}
+{"tool": "gkp_generate_ideas", "parameters": {"seedKeywords": ["seo", "marketing"], "countryCodes": ["US"], "publication": "tech-blog", "refresh": true}}
+{"tool": "gkp_get_historical_data", "parameters": {"keywords": ["seo"], "countryCodes": ["US"]}}
+{"tool": "gkp_get_forecast_data", "parameters": {"keywords": ["seo"], "keywordMatchType": "EXACT", "startDate": "2026-07-01", "endDate": "2026-07-31"}}
+{"tool": "gkp_list", "parameters": {"publication": "tech-blog", "search": "content strategy", "fresh": true}}
 ```
 
-With optional login customer ID for manager accounts:
-
-```json
-{"tool": "gads_login", "parameters": {
-  "developerToken": "your-developer-token",
-  "clientId": "your-client-id.apps.googleusercontent.com",
-  "clientSecret": "your-client-secret",
-  "customerId": "123-456-7890",
-  "loginCustomerId": "987-654-3210"
-}}
-```
-
-**Step 2:** The tool returns an auth URL. Instruct the user to open it in their browser and complete the Google authorization.
-
-**Step 3:** After the user confirms they authorized, call `gads_login_status` to check completion.
-
-```json
-{"tool": "gads_login_status", "parameters": {}}
-```
-
-Status values:
-- `pending` — OAuth flow in progress, waiting for browser authorization
-- `completed` — Refresh token saved successfully
-- `timed_out` — OAuth flow timed out after 120 seconds
-- `not_started` — No flow has been started
-
-**Step 4:** Verify credentials work with `gads_test`.
-
-```json
-{"tool": "gads_test", "parameters": {}}
-```
-
-### Re-authorization
-
-If a refresh token already exists, `gads_login` returns an error. Pass `force: true` to re-authorize:
-
-```json
-{"tool": "gads_login", "parameters": {
-  "developerToken": "your-developer-token",
-  "clientId": "your-client-id.apps.googleusercontent.com",
-  "clientSecret": "your-client-secret",
-  "customerId": "123-456-7890",
-  "force": true
-}}
-```
-
-## Google Keyword Planner via MCP
-
-Once credentials are configured (via `gads_login` or manual `ideon_config_set` calls), use the three `gkp_*` tools to query keyword data.
-
-### Generate keyword ideas
-
-```json
-{"tool": "gkp_generate_ideas", "parameters": {
-  "seedKeywords": ["seo", "marketing"],
-  "countryCodes": ["US"],
-  "language": "en"
-}}
-```
-
-From a URL:
-
-```json
-{"tool": "gkp_generate_ideas", "parameters": {
-  "url": "https://example.com",
-  "countryCodes": ["US"]
-}}
-```
-
-### Historical metrics
-
-```json
-{"tool": "gkp_get_historical_data", "parameters": {
-  "keywords": ["seo", "marketing"],
-  "countryCodes": ["US"],
-  "language": "en"
-}}
-```
-
-Without CPC:
-
-```json
-{"tool": "gkp_get_historical_data", "parameters": {
-  "keywords": ["seo"],
-  "includeAverageCpc": false
-}}
-```
-
-### Forecast data
-
-```json
-{"tool": "gkp_get_forecast_data", "parameters": {
-  "keywords": ["seo"],
-  "keywordMatchType": "EXACT",
-  "countryCodes": ["US"],
-  "startDate": "2026-07-01",
-  "endDate": "2026-07-31"
-}}
-```
+Planning pipeline: `hydrate → seeds → research → score → cluster (explore only) → plan-articles → persist`. Response is structured JSON; ask user before `autoSave: true`.
 
 ## Argument semantics and constraints
 
-Primary/secondary target specs:
+Target specs: `primary` format `<content-type=count>`, count must be `1`. Allowed content types, styles, intents, and lengths: see [references/tool-catalog.md](references/tool-catalog.md).
 
-- `primary` format: `<content-type=count>`
-- Primary `count` must be exactly `1`.
-- Secondary `count` must be a positive integer.
-- Same content type cannot be both primary and secondary.
-- Duplicate secondary content types are deduped by summing counts.
-
-Allowed content types:
-
-- `article`, `blog-post`, `linkedin-post`, `newsletter`, `press-release`, `reddit-post`, `science-paper`, `x-post`, `x-thread`
-
-Allowed style values:
-
-- `academic`, `analytical`, `authoritative`, `conversational`, `empathetic`, `friendly`, `journalistic`, `minimalist`, `persuasive`, `playful`, `professional`, `storytelling`, `technical`
-
-Allowed intent values:
-
-- `announcement`, `case-study`, `cornerstone`, `counterargument`, `critique-review`, `deep-dive-analysis`, `how-to-guide`, `interview-q-and-a`, `listicle`, `opinion-piece`, `personal-essay`, `roundup-curation`, `tutorial`
-
-Allowed length values:
-
-- `small` (500 words), `medium` (900 words), `large` (1400 words), or a positive integer for a custom word count.
-
-## Configuration precedence and discovery
-
-Precedence (highest to lowest):
-
-1. Tool parameters
-2. Job file settings (`jobPath`)
-3. Environment variables (`IDEON_*`)
-4. Saved settings file
-5. Schema defaults
-
-Secrets precedence:
-
-1. Environment secrets (`TELEPAT_OPENROUTER_KEY`, `TELEPAT_REPLICATE_TOKEN`)
-2. Keychain secrets (disable with `TELEPAT_DISABLE_KEYTAR=true`)
+Config precedence (highest to lowest): tool parameters → job file → `IDEON_*` env → saved settings → schema defaults.
 
 ## Tool response format
-
-All MCP tools return a standard response:
 
 ```json
 {
   "content": [{"type": "text", "text": "Human-readable message"}],
-  "structuredContent": {"key": "value", "...": "..."}
+  "structuredContent": {"key": "value"}
 }
 ```
 
-The `content` field is always present. The `structuredContent` field contains machine-readable data when available.
-
-Error responses:
-
-```json
-{
-  "content": [{"type": "text", "text": "Error message"}],
-  "isError": true
-}
-```
+Errors: `"isError": true` with message in `content`. GKP credential errors include setup instructions.
 
 ## Gotchas and sharp edges
 
-- **No preview tool**: MCP has no equivalent of `ideon preview`. To preview generated content, use `ideon_export` to export markdown, then open it directly.
-- **No agent registration tool**: MCP has no equivalent of `ideon agent install`. Register Ideon as an MCP server in your client's MCP configuration.
-- **Delete always forces**: `ideon_delete` in MCP always deletes without confirmation. Verify the slug before calling.
-- **Queue entries snapshot settings**: Publication and series defaults are frozen into queue entries at enqueue time. Changing defaults later does not affect queued entries.
-- **`ideon_queue_write` is atomic**: Concurrent calls claim different entries automatically. No manual locking needed.
-- **Plan tools require Google Ads credentials**: `ideon_plan_explore` and `ideon_plan_expand` call the GKP API. If credentials are missing, the tool returns a clear error message explaining which credential is needed.
-- **`autoSave` persists immediately**: When `autoSave` is true on plan tools, results are saved without human review. Use `dryRun` first to validate.
-- **SEO check is pipeline-integrated**: There is no standalone SEO MCP tool. Use `noSeoCheck`, `seoCheckMode`, and `seoCheckMaxTurns` on `ideon_write`; `seoCheck` (force re-run) on `ideon_write_resume`.
-- **Link enrichment is opt-in**: `ideon_write` defaults to no link enrichment. Pass `enrichLinks: true` to enable.
-- **Export requires an existing generation**: `ideon_export` needs a completed generation. Run `ideon_write` first or check `ideon_article_list` for available slugs.
-- **`length` accepts both aliases and integers**: `small`, `medium`, `large` are aliases for 500, 900, 1400 words. Pass an integer for a custom target.
+- **Preview differs from CLI**: `ideon_preview` manages server start/stop/status; CLI `ideon preview` opens browser and supports `--watch` — use **`ideon-cli` skill** for watch workflows.
+- **Delete always forces**: verify slug before `ideon_delete`.
+- **Queue entries snapshot settings** at enqueue time — changing defaults later has no effect.
+- **`ideon_queue_write` is atomic** — concurrent calls claim different entries.
+- **Plan tools require Google Ads credentials** — use `dryRun` first, `autoSave` only after user confirms.
+- **Link enrichment is opt-in** on `ideon_write` — pass `enrichLinks: true`.
+- **No post-write export on `ideon_write`** — use `ideon_export` or `exportPath` on resume/queue.
+- **`length` accepts aliases and integers**: `small`/`medium`/`large` or custom word count.
 
 ## Failure handling
 
 | Failure | Action |
 | --- | --- |
-| `isError: true` response | Read the error message — it contains the specific problem and often the fix. |
-| Missing OpenRouter key | Set via `ideon_config_set` with key `openRouterApiKey`. |
-| Missing Replicate token | Set via `ideon_config_set` with key `replicateApiToken`. |
-| Missing Google Ads credentials | Set all required credentials via `ideon_config_set`. See [references/google-ads-setup.md](references/google-ads-setup.md). |
-| No resumable session | Start a fresh `ideon_write` run. |
-| No pending articles in queue | Add articles with `ideon_queue_add` or remove publication filter. |
-| Generation not found for export | Run `ideon_article_list` to find available slugs/IDs. |
-| Export destination exists | Pass `overwrite: true` or choose a different path. |
-| Plan tool timeout | Increase `timeout` parameter (default 600 seconds). |
-| Keychain unavailable in container | Set env var `TELEPAT_DISABLE_KEYTAR=true` and use `ideon_config_set` for secrets. |
-
-## Verification prompts
-
-Should trigger:
-
-1. Set up the Ideon MCP server and configure credentials via `ideon_config_set`.
-2. Generate content with primary and secondary targets using `ideon_write`.
-3. Create a publication and series, then write content assigned to them via MCP.
-4. Queue multiple articles with `ideon_queue_add`, then process with `ideon_queue_write`.
-5. Run `ideon_plan_explore` and present the plan results for user confirmation.
-6. Enrich links for an existing article using `ideon_links`.
-
-Should not trigger:
-
-1. Explain one Ideon flag quickly.
-2. Build a VS Code extension UI.
-3. Run Ideon CLI commands from a terminal.
-4. Discuss product architecture without tool usage.
+| `isError: true` response | Read error message — often includes the fix. |
+| Missing OpenRouter key | `ideon_config_set` with key `openRouterApiKey`. |
+| Missing Replicate token | `ideon_config_set` with key `replicateApiToken`. |
+| Missing Google Ads credentials | Use `gads_login` or see [references/google-ads-setup.md](references/google-ads-setup.md). |
+| No resumable session | Start fresh `ideon_write`. |
+| No pending articles in queue | Add with `ideon_queue_add` or remove publication filter. |
+| Generation not found for export | Run `ideon_article_list` to find slugs/IDs. |
+| Export destination exists | Pass `overwrite: true` or choose different path. |
+| Plan tool timeout | Increase `timeout` (default 600 seconds). |
+| Keychain unavailable | Set `TELEPAT_DISABLE_KEYTAR=true` and use `ideon_config_set`. |
 
 ## Companion references
 
-- See [references/tool-catalog.md](references/tool-catalog.md) for full tool parameter schemas and constraints.
+- See [references/tool-catalog.md](references/tool-catalog.md) for full tool parameter schemas.
 - See [references/troubleshooting.md](references/troubleshooting.md) for detailed failure diagnostics.
-- See [references/google-ads-setup.md](references/google-ads-setup.md) for Google Ads Keyword Planner credential setup.
-
-Base directory for this skill: file:///Users/user/projects/Telepat/.agents/skills/ideon-mcp
-Relative paths in this skill (e.g., references/) are relative to this base directory.
+- See [references/google-ads-setup.md](references/google-ads-setup.md) for Google Ads credential setup.
+- See the **`ideon-cli` skill** for terminal commands and `ideon preview --watch` workflows.

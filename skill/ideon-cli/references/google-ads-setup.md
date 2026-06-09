@@ -44,9 +44,17 @@ ideon gkp historical --keywords seo --language de --no-include-cpc
 # Get forecast projections
 ideon gkp forecast --keywords seo --match-type EXACT --country US
 ideon gkp forecast --keywords seo --max-cpc-bid 5000000 --start-date 2025-01-01 --end-date 2025-01-31
+
+# Attach cache context to a publication/series
+ideon gkp ideas --keywords seo --publication tech-blog --series seo-playbooks
+ideon gkp historical --keywords seo --publication tech-blog --refresh
+
+# List cached query history
+ideon gkp list
+ideon gkp list --publication tech-blog --search "content strategy" --fresh --verbose
 ```
 
-All three subcommands support `--json` for machine-readable output. For full details, see the [ideon gkp command reference](../../../../docs/reference/commands/ideon-gkp.md).
+All subcommands support `--json` for machine-readable output. MCP equivalents: `gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`, and `gkp_list` (see `ideon-mcp` skill). For full details, see the [ideon gkp command reference](../../../../docs/reference/commands/ideon-gkp.md).
 
 ## Prerequisites Checklist
 

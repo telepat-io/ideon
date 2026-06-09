@@ -38,6 +38,8 @@ Use this matrix to diagnose common failures quickly.
 | `gkp ideas` returns no results | No matching keywords for seed/URL | Check seed keywords and try different ones | Try broader keywords or use `--url` instead of `--keywords` |
 | `gkp historical` returns no results | No historical data for keyword/region | Try different keywords or broaden country codes | Use `--json` to see raw response for debugging |
 | `gkp forecast` returns no results | No forecast data for keyword/region | Try different keywords or check match type | Use `--country US` and `--match-type BROAD` for broadest data |
+| `gkp list` returns empty | No cached queries for filters | Run a GKP query first or broaden filters | Try `ideon gkp list --verbose` without filters |
+| Stale GKP cache | Cached data outdated | Check with `ideon gkp list --stale` | Re-run query with `--refresh` |
 | Legacy `xMode` error | Old schema field used in saved/job/CLI targets | Inspect job/settings payload for `xMode` | Replace with explicit `x-post` or `x-thread` content type |
 
 ## Minimal repro commands

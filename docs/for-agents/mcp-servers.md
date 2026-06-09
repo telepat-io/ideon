@@ -57,8 +57,8 @@ Both transports expose the same tools:
 
 ### Content Generation
 
-- `ideon_write` — Generate content from an idea using the Ideon pipeline. Optional author params: `author` (slug), `experienceNotes` (per-run anecdotes). Optional SEO check params: `noSeoCheck`, `seoCheckMode` (`errors-only` | `strict`), `seoCheckMaxTurns` (1–20). Successful runs include an editorial checklist summary in the tool response.
-- `ideon_write_resume` — Resume the last failed or interrupted write session. Optional SEO check params: `seoCheck` (force re-run), `seoCheckMode`, `seoCheckMaxTurns`.
+- `ideon_write` — Generate content from an idea using the Ideon pipeline. Optional context params: `publication`, `series`, `keywords` (comma-separated), `faqSection`. Optional author params: `author` (slug), `experienceNotes` (per-run anecdotes). Optional SEO check params: `noSeoCheck`, `seoCheckMode` (`errors-only` | `strict`), `seoCheckMaxTurns` (1–20). Successful runs include an editorial checklist summary in the tool response.
+- `ideon_write_resume` — Resume the last failed or interrupted write session. Optional SEO check params: `seoCheck` (force re-run), `seoCheckMode`, `seoCheckMaxTurns`. Optional `exportPath` to export after completion.
 - `ideon_delete` — Delete generated output and assets by slug
 - `ideon_links` — Run link enrichment for a previously generated article
 - `ideon_export` — Export a generated article as a standalone markdown file
@@ -102,7 +102,7 @@ Publication and series tools accept `defaultAuthor`; series tools also accept `e
 - `ideon_queue_peek` — Show the next pending queue entry without claiming it
 - `ideon_queue_remove` — Delete a queue entry by ID
 - `ideon_queue_clear` — Delete all queue entries
-- `ideon_queue_write` — Claim the next pending entry and write it; deletes on success, reverts on failure
+- `ideon_queue_write` — Claim the next pending entry and write it; deletes on success, reverts on failure. Supports `noSeoCheck`, `seoCheckMode`, `seoCheckMaxTurns`. Auto-exports when the queue entry has `exportPath`.
 
 ### Research & Planning
 
@@ -111,7 +111,7 @@ Publication and series tools accept `defaultAuthor`; series tools also accept `e
 
 ### Articles
 
-- `ideon_article_list` — List generated articles in the current workspace
+- `ideon_article_list` — List generated articles in the current workspace. Optional filters: `search`, `publication`, `series`, `contentType`, `limit`, `verbose`
 
 ### Preview
 
@@ -136,9 +136,11 @@ Status reflects preview servers started by the current MCP process only. Servers
 
 ### Google Keyword Planner
 
-- `gkp_generate_ideas` — Generate keyword ideas from seed keywords, a URL, or a site
-- `gkp_get_historical_data` — Get historical search volume and competition metrics
-- `gkp_get_forecast_data` — Get projected impressions, clicks, and cost for keywords
+- `gkp_generate_ideas` — Generate keyword ideas from seed keywords, a URL, or a site. Optional cache context: `publication`, `series`, `refresh`
+- `gkp_get_historical_data` — Get historical search volume and competition metrics. Optional cache context: `publication`, `series`, `refresh`
+- `gkp_get_forecast_data` — Get projected impressions, clicks, and cost for keywords. Optional cache context: `publication`, `series`, `refresh`
+- `gkp_list` — List cached GKP query history with optional filters
+- `gads_logout` — Clear Google Ads credentials (`all` to clear everything)
 
 ## Google Keyword Planner Tools
 

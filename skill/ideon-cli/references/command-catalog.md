@@ -11,8 +11,8 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon config get <key>` | Read one config value/secret-presence key | `<key>` | `--json` | yes |
 | `ideon config set <key> <value>` | Set one setting or secret | `<key> <value>` | none | no |
 | `ideon config unset <key>` | Reset setting to default or delete stored secret | `<key>` | none | no |
-| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--audience`, `--publication`, `--series`, `--author`, `--experience`, `--keywords`, `--from-queue` | no |
-| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--export` | no |
+| `ideon write [idea]` | Fresh pipeline run | idea required unless provided via `--idea` or job | `--primary`, `--secondary`, `--job`, `--style`, `--intent`, `--length`, `--no-interactive`, `--dry-run`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--audience`, `--publication`, `--series`, `--author`, `--experience`, `--keywords`, `--faq-section`, `--no-faq-section`, `--no-seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--export`, `--from-queue` | no |
+| `ideon write resume` | Resume latest failed/interrupted run | none | `--no-interactive`, `--enrich-links`, `--link`, `--unlink`, `--max-links`, `--max-images`, `--seo-check`, `--seo-check-mode`, `--seo-check-max-turns`, `--export` | no |
 | `ideon delete <slug>` | Delete generated output by slug | `<slug>` | `--force` | no |
 | `ideon links <slug>` | Run link enrichment for an existing article | `<slug>` | `--mode`, `--link`, `--unlink`, `--max-links` | no |
 | `ideon export <generationId> <path>` | Export a generated article as a standalone markdown file with inline links and copied images | `<generationId> <path>` | `--index`, `--overwrite` | no |
@@ -25,9 +25,10 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon gads logout` | Clear stored Google Ads credentials | none | `--all` | no |
 | `ideon gads status` | Show Google Ads credential status and source | none | `--json` | yes |
 | `ideon gads test` | Verify Google Ads credentials with a test API call | none | none | no |
-| `ideon gkp ideas` | Generate keyword ideas from seeds/URL/site | none* | `--keywords`, `--url`, `--site`, `--country`, `--language`, `--page-size`, `--json` | yes |
-| `ideon gkp historical` | Get historical search volume and competition | `--keywords` | `--country`, `--language`, `--no-include-cpc`, `--json` | yes |
-| `ideon gkp forecast` | Get projected impressions, clicks, and cost | `--keywords` | `--match-type`, `--max-cpc-bid`, `--country`, `--language`, `--start-date`, `--end-date`, `--json` | yes |
+| `ideon gkp ideas` | Generate keyword ideas from seeds/URL/site | none* | `--keywords`, `--url`, `--site`, `--country`, `--language`, `--page-size`, `--publication`, `--series`, `--refresh`, `--json` | yes |
+| `ideon gkp historical` | Get historical search volume and competition | `--keywords` | `--country`, `--language`, `--no-include-cpc`, `--publication`, `--series`, `--refresh`, `--json` | yes |
+| `ideon gkp forecast` | Get projected impressions, clicks, and cost | `--keywords` | `--match-type`, `--max-cpc-bid`, `--country`, `--language`, `--start-date`, `--end-date`, `--publication`, `--series`, `--refresh`, `--json` | yes |
+| `ideon gkp list` | List cached GKP query history | none | `--publication`, `--series`, `--search`, `--fresh`, `--stale`, `--json`, `--verbose` | yes |
 | `ideon publication add [name]` | Create publication with defaults and editorial policy | none | `--style`, `--intent`, `--length`, `--type`, `--audience`, `--author`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |
 | `ideon publication list` | List all publications | none | `--json`, `--verbose` | yes |
 | `ideon publication edit <slug>` | Edit publication fields | `<slug>` | `--name`, `--style`, `--intent`, `--length`, `--type`, `--audience`, `--author`, `--unset-author`, `--tone`, `--forbidden-topics`, `--disclosure-requirements`, `--audience-restrictions`, `--editorial-policy` | no |

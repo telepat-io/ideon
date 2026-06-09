@@ -25,6 +25,8 @@ import {
   planExploreToolInputZodSchema,
   planExpandToolInputZodSchema,
   articleListToolInputZodSchema,
+  gkpListToolInputZodSchema,
+  gadsLogoutToolInputZodSchema,
   previewToolInputZodSchema,
 } from '../integrations/mcp/tools.js';
 
@@ -84,15 +86,37 @@ describe('MCP tool schemas', () => {
     }
   });
 
+  it('validates write tool input with publication, series, keywords, and faqSection', () => {
+    const result = writeToolInputZodSchema.safeParse({
+      idea: 'Test',
+      publication: 'tech-blog',
+      series: 'seo-playbooks',
+      keywords: 'content strategy, seo',
+      faqSection: false,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.publication).toBe('tech-blog');
+      expect(result.data.series).toBe('seo-playbooks');
+      expect(result.data.keywords).toBe('content strategy, seo');
+      expect(result.data.faqSection).toBe(false);
+    }
+  });
+
   it('validates write_resume tool input with optional values', () => {
     const result = writeResumeToolInputZodSchema.safeParse({
       dryRun: true,
       enrichLinks: true,
       link: ['React->https://react.dev'],
       maxLinks: 5,
+      exportPath: '/tmp/export',
     });
 
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.exportPath).toBe('/tmp/export');
+    }
   });
 
   it('validates links tool input with optional parameters', () => {
@@ -152,12 +176,18 @@ describe('GKP tool schemas', () => {
       countryCodes: ['US', 'GB'],
       language: 'en',
       pageSize: 50,
+      publication: 'tech-blog',
+      series: 'seo-playbooks',
+      refresh: true,
     });
 
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.seedKeywords).toEqual(['test', 'keyword']);
       expect(result.data.countryCodes).toEqual(['US', 'GB']);
+      expect(result.data.publication).toBe('tech-blog');
+      expect(result.data.series).toBe('seo-playbooks');
+      expect(result.data.refresh).toBe(true);
     }
   });
 
@@ -217,6 +247,57 @@ describe('GKP tool schemas', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.maxCpcBidMicros).toBe(1500000);
+    }
+  });
+});
+
+describe('Article and auth tool schemas', () => {
+  it('validates article list filters', () => {
+    const result = articleListToolInputZodSchema.safeParse({
+      search: 'content strategy',
+      publication: 'tech-blog',
+      series: 'seo-playbooks',
+      contentType: 'article',
+      limit: 25,
+      verbose: true,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.limit).toBe(25);
+      expect(result.data.verbose).toBe(true);
+    }
+  });
+
+  it('validates gkp_list input', () => {
+    const result = gkpListToolInputZodSchema.safeParse({
+      publication: 'tech-blog',
+      search: 'content',
+      fresh: true,
+      verbose: true,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('validates gads_logout input', () => {
+    const result = gadsLogoutToolInputZodSchema.safeParse({ all: true });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.all).toBe(true);
+    }
+  });
+
+  it('validates queue_write SEO options', () => {
+    const result = queueWriteToolInputZodSchema.safeParse({
+      noSeoCheck: true,
+      seoCheckMode: 'strict',
+      seoCheckMaxTurns: 4,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.seoCheckMaxTurns).toBe(4);
     }
   });
 });
@@ -513,6 +594,7 @@ describe('New MCP tool contracts', () => {
     const contract = ideonToolContracts.find((tool) => tool.name === 'ideon_queue_write');
     expect(contract).toBeDefined();
     expect(contract?.required).toEqual([]);
+    expect(contract?.enums.seoCheckMode).toEqual(['errors-only', 'strict']);
   });
 
   it('includes ideon_plan_explore with idea and publication required', () => {
@@ -539,6 +621,19 @@ describe('New MCP tool contracts', () => {
     expect(contract).toBeDefined();
     expect(contract?.required).toEqual(['action']);
     expect(contract?.enums.action).toEqual(['start', 'stop', 'status']);
+  });
+
+  it('includes gkp_list and gads_logout contracts', () => {
+    expect(ideonToolContracts.find((tool) => tool.name === 'gkp_list')).toEqual({
+      name: 'gkp_list',
+      required: [],
+      enums: {},
+    });
+    expect(ideonToolContracts.find((tool) => tool.name === 'gads_logout')).toEqual({
+      name: 'gads_logout',
+      required: [],
+      enums: {},
+    });
   });
 
   it('includes all 17 new tool contracts', () => {
