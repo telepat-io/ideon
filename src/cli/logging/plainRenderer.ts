@@ -87,6 +87,10 @@ export async function renderPlainPipeline(
   unlinks?: string[],
   maxLinks?: number,
   maxImages?: number,
+  noSeoCheck = false,
+  forceSeoCheck = false,
+  seoCheckMode?: 'errors-only' | 'strict',
+  seoCheckMaxTurns?: number,
 ): Promise<PipelineRunResult> {
   let previousStages = new Map<string, Pick<StageViewModel, 'status' | 'detail' | 'retryCount' | 'lastRetryError'>>();
   let previousItemStatuses = new Map<string, string>();
@@ -102,6 +106,10 @@ export async function renderPlainPipeline(
     const result = await runPipelineShell(input, {
       dryRun,
       enrichLinks,
+      noSeoCheck,
+      seoCheckMode,
+      seoCheckMaxTurns,
+      forceSeoCheck,
       runMode,
       customLinks: links,
       unlinks,

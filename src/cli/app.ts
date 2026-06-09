@@ -570,6 +570,9 @@ export async function runCli(argv: string[]): Promise<void> {
       .description('Generate one primary content output plus optional secondary outputs from a prompt or job file.'),
   )
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
+    .option('--no-seo-check', 'Skip the SEO lint and editor pass after section writing', false)
+    .option('--seo-check-mode <mode>', 'SEO check pass mode: errors-only (default) or strict')
+    .option('--seo-check-max-turns <n>', 'Max agent turns for the SEO editor pass', (v) => Number.parseInt(v, 10))
     .option('--enrich-links', 'Run link enrichment after markdown generation', false)
     .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
     .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
@@ -582,6 +585,9 @@ export async function runCli(argv: string[]): Promise<void> {
       await runWriteCommand({
         ...contentOptions,
         dryRun: options.dryRun as boolean,
+        noSeoCheck: options.noSeoCheck as boolean,
+        seoCheckMode: options.seoCheckMode as 'errors-only' | 'strict' | undefined,
+        seoCheckMaxTurns: options.seoCheckMaxTurns as number | undefined,
         enrichLinks: options.enrichLinks as boolean,
         links: options.link as string[] | undefined,
         unlinks: options.unlink as string[] | undefined,
@@ -595,15 +601,21 @@ export async function runCli(argv: string[]): Promise<void> {
     .command('resume')
     .description('Resume the last failed or interrupted write session.')
     .option('--no-interactive', 'Force plain non-interactive output even in TTY mode', false)
+    .option('--seo-check', 'Re-run the SEO lint and editor pass before continuing', false)
+    .option('--seo-check-mode <mode>', 'SEO check pass mode: errors-only (default) or strict')
+    .option('--seo-check-max-turns <n>', 'Max agent turns for the SEO editor pass', (v) => Number.parseInt(v, 10))
     .option('--enrich-links', 'Run link enrichment after markdown generation', false)
     .option('--link <pair>', 'Custom link "expression->url", repeatable', collectOptionValue)
     .option('--unlink <expression>', 'Remove a custom link by expression, repeatable', collectOptionValue)
     .option('--max-links <n>', 'Max number of generated links', (v) => Number.parseInt(v, 10))
     .option('--max-images <n>', 'Max total images including cover (1=cover only, 2=cover+1 inline, 3=cover+2 inline)', (v) => Number.parseInt(v, 10))
     .option('--export <path>', 'Export the generated article to the given directory after writing')
-    .action(async (options: { noInteractive: boolean; enrichLinks: boolean; link?: string[]; unlink?: string[]; maxLinks?: number; maxImages?: number; export?: string }) => {
+    .action(async (options: { noInteractive: boolean; seoCheck: boolean; seoCheckMode?: 'errors-only' | 'strict'; seoCheckMaxTurns?: number; enrichLinks: boolean; link?: string[]; unlink?: string[]; maxLinks?: number; maxImages?: number; export?: string }) => {
       await runWriteResumeCommand({
         noInteractive: options.noInteractive,
+        forceSeoCheck: options.seoCheck,
+        seoCheckMode: options.seoCheckMode,
+        seoCheckMaxTurns: options.seoCheckMaxTurns,
         enrichLinks: options.enrichLinks,
         links: options.link,
         unlinks: options.unlink,

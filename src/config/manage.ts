@@ -22,6 +22,9 @@ export const configSettingKeys = [
   'intent',
   'targetLength',
   'defaultPublication',
+  'editorModel',
+  'seoCheckMode',
+  'seoCheckMaxTurns',
 ] as const;
 
 export const configSecretKeys = [
@@ -81,6 +84,9 @@ export async function configList(): Promise<ConfigListResult> {
       intent: settings.intent,
       targetLength: settings.targetLength,
       defaultPublication: settings.defaultPublication ?? null,
+      editorModel: settings.editorModel ?? null,
+      seoCheckMode: settings.seoCheckMode,
+      seoCheckMaxTurns: settings.seoCheckMaxTurns,
     },
     secrets: {
       openRouterApiKey: Boolean(secrets.openRouterApiKey),

@@ -6,27 +6,29 @@ keywords: [ideon, documentation, cli, guides, reference]
 
 # Pipeline Stages
 
-Ideon runs a seven-stage pipeline with live status updates and per-stage analytics.
+Ideon runs an eight-stage pipeline with live status updates and per-stage analytics.
 
 ## Stage Flow
 
 ### Writing Pipeline
 
-All write runs follow the same seven stages:
+All write runs follow the same eight stages:
 
 1. **Planning Shared Plan**
 2. **Planning Primary Content**
 3. **Writing Primary Content**
-4. **Expanding Image Prompts**
-5. **Rendering Images**
-6. **Generating Channel Content**
-7. **Enriching Links**
+4. **SEO Check** (lint + optional editor agent pass)
+5. **Expanding Image Prompts**
+6. **Rendering Images**
+7. **Generating Channel Content**
+8. **Enriching Links**
 
 Stage behavior depends on content type:
 
 - Long-form primary (`article`, `blog-post`, `newsletter`, `press-release`, `science-paper`): the plan includes sections and inline images, and stage 3 writes intro, sections, and conclusion.
 - Short-form primary (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`): the plan includes title, description, and angle, and stage 3 generates single-shot primary content.
-- For all primaries, stages 4–5 prepare and render the primary cover image.
+- For long-form primaries, stage 4 runs deterministic SEO lint and, when triggered, a surgical SEO editor agent (default max 10 turns, configurable) that patches plan metadata, section headings, and prose only (`edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro`). Pass mode defaults to `errors-only` (warnings do not fail the stage); use `--seo-check-mode strict` for zero-tolerance. Skip with `--no-seo-check`. Re-run manually with `ideon write resume --seo-check` or MCP `ideon_run_seo_check`.
+- For all primaries, stages 5–6 prepare and render the primary cover image.
 - `links`: runs only when `--enrich-links` is enabled and writes sidecar link metadata for eligible long-form outputs
 
 ## Stage UI Signals
@@ -48,6 +50,7 @@ Item history is rendered with a terminal-adaptive window so long runs stay reada
 ## Updates During Execution
 
 - Section stage reports active section index/title
+- SEO-check stage reports lint issue counts and editor turn usage
 - Image-prompt stage reports current prompt expansion
 - Image-render stage reports current rendering progress
 - Output stage reports secondary per-item generation progress and final generation directory
@@ -69,7 +72,7 @@ Each item shows a spinner while running and prints item analytics as soon as it 
 
 For each generation run, Ideon records:
 
-- Stage duration (ms) for all seven stages
+- Stage duration (ms) for all eight stages
 - Stage retry counts for external API calls
 - Stage cost totals when pricing data is available
 - Per-image prompt expansion call metrics (duration, retries, token usage, cost)
@@ -110,6 +113,21 @@ When a stage fails:
 - Stage orchestration still executes and analytics are emitted.
 - External OpenRouter and Replicate calls are skipped.
 - Output artifacts are still written so directory structure and orchestration can be validated without provider spend.
+
+## SEO Check Stage Behavior
+
+- Runs by default after section writing for long-form primaries.
+- **Deterministic lint** checks title/description length, primary keyword placement, keyword coverage, BLUF openers, and fact-density heuristics.
+- **Pass modes** (`seoCheckMode`, default `errors-only`):
+  - `errors-only`: stage passes when no lint issues have `severity: error`; warnings are recorded but do not trigger the agent or fail the stage.
+  - `strict`: stage passes only when zero lint issues remain; any warning triggers the editor agent.
+- **Agent trigger:** `errors-only` runs the agent only when errors exist; `strict` runs when any issue exists; `force` (`--seo-check` / `ideon_run_seo_check`) always runs the agent path.
+- When triggered and OpenRouter is available, a **surgical SEO editor agent** uses five prose/metadata tools with an inline issue playbook and the full draft plus keyword-integration guide in context.
+- **CLI / config:** `--seo-check-mode <errors-only|strict>`, `--seo-check-max-turns <n>` (1–20, default 10); settings `seoCheckMode` and `seoCheckMaxTurns` in the settings file. MCP `ideon_write`, `ideon_write_resume`, and `ideon_run_seo_check` accept the same optional params.
+- **Tool feedback:** each tool call returns `remainingErrors`, `remainingWarnings`, and `remainingIssues` for mode-aware stop rules.
+- **Failure mode:** unresolved issues are logged, results are recorded in `meta.json` (`seoCheck`), and the pipeline continues.
+- **Skip:** `--no-seo-check` on `ideon write`.
+- **Re-run:** `ideon write resume --seo-check` or MCP `ideon_run_seo_check`.
 
 ## Output Stage Behavior
 

@@ -8,6 +8,8 @@ import { planContentPlan } from '../generation/planContentPlan.js';
 import { planPrimaryContent } from '../generation/planPrimaryContent.js';
 import { writeSingleShotContent } from '../generation/writeSingleShotContent.js';
 import { writeArticleSections } from '../generation/writeSections.js';
+import { runEditor } from '../editor/runEditor.js';
+import { countSeoWarnings, type SeoCheckMode, type SeoLintResult } from '../seo/lint.js';
 import { Limn } from '@telepat/limn';
 import { buildImageSlots, expandImagePrompts, MIN_IMAGE_BYTES, renderExpandedImages } from '../images/renderImages.js';
 import { OpenRouterClient } from '../llm/openRouterClient.js';
@@ -25,6 +27,7 @@ import {
 import { estimateLlmCostUsd, sumKnownCosts, type LlmCallMetrics } from './analytics.js';
 import type {
   CostSource,
+  EditorToolInteractionRecord,
   ImagePromptAnalytics,
   ImageRenderAnalytics,
   LlmInteractionRecord,
@@ -34,6 +37,7 @@ import type {
   PipelineRunInteractions,
   PipelineRunResult,
   PipelineStageAnalytics,
+  SeoCheckAgentTurnAnalytics,
   StageItemViewModel,
   StageViewModel,
   T2IInteractionRecord,
@@ -58,6 +62,10 @@ export interface PipelineRunOptions {
   unlinks?: string[];
   maxLinks?: number;
   maxImages?: number;
+  noSeoCheck?: boolean;
+  forceSeoCheck?: boolean;
+  seoCheckMode?: SeoCheckMode;
+  seoCheckMaxTurns?: number;
 }
 
 export function createInitialStages(): StageViewModel[] {
@@ -79,6 +87,12 @@ export function createInitialStages(): StageViewModel[] {
       title: 'Writing Primary Content',
       status: 'pending',
       detail: 'Waiting for the approved primary plan.',
+    },
+    {
+      id: 'seo-check',
+      title: 'SEO Check',
+      status: 'pending',
+      detail: 'Waiting for section drafts.',
     },
     {
       id: 'image-prompts',
@@ -117,6 +131,10 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   options.onUpdate?.(cloneStages(stages));
   const dryRun = options.dryRun ?? false;
   const shouldEnrichLinks = options.enrichLinks ?? false;
+  const noSeoCheck = options.noSeoCheck ?? false;
+  const forceSeoCheck = options.forceSeoCheck ?? false;
+  const seoCheckMode = options.seoCheckMode ?? input.config.settings.seoCheckMode;
+  const seoCheckMaxTurns = options.seoCheckMaxTurns ?? input.config.settings.seoCheckMaxTurns;
   const runMode = options.runMode ?? 'fresh';
   const workingDir = options.workingDir ?? process.cwd();
   const pipelineCustomLinkRaws = options.customLinks ?? [];
@@ -137,6 +155,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
   const imageRenderCalls: ImageRenderAnalytics[] = [];
   const outputItemCalls: OutputItemAnalytics[] = [];
   const linkEnrichmentCalls: LinkEnrichmentItemAnalytics[] = [];
+  const seoCheckCalls: SeoCheckAgentTurnAnalytics[] = [];
+  const editorToolCalls: EditorToolInteractionRecord[] = [];
   const llmInteractions: LlmInteractionRecord[] = [];
   const t2iInteractions: T2IInteractionRecord[] = [];
   let writeSession: WriteSessionState;
@@ -227,6 +247,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     let imageArtifacts = writeSession.imageArtifacts;
     let linksResult = writeSession.links;
     let primaryMarkdownTemplate: string | null = null;
+    let seoCheckResult: (SeoLintResult & {
+      ranAt: string;
+      seoCheckMode: SeoCheckMode;
+      warningsRemaining: number;
+      editorTurns?: number;
+      skipped?: boolean;
+      editorCostUsd?: number | null;
+      editorCostSource?: CostSource;
+    }) | null = null;
 
     if (contentPlan) {
       markStageCompleted(stageTracking, 'shared-plan');
@@ -339,7 +368,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     const isLongForm = isLongFormPlan(plan);
 
     if (isLongForm) {
-      const longPlan = plan as ArticlePlan;
+      let longPlan = plan as ArticlePlan;
       stages[2] = {
         ...stages[2],
         status: 'running',
@@ -363,13 +392,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           })),
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
         };
-        stages[3] = {
-          ...stages[3],
-          status: 'running',
-          detail: 'Expanding editorial image prompts.',
-        };
-        markStageStarted(stageTracking, 'image-prompts');
-        options.onUpdate?.(cloneStages(stages));
       } else {
         const sectionItemTracking = new Map<string, {
           startedAtMs: number;
@@ -446,14 +468,6 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           summary: `Intro + ${text.sections.length} sections + conclusion`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
         };
-        stages[3] = {
-          ...stages[3],
-          status: 'running',
-          detail: 'Expanding editorial image prompts.',
-        };
-        markStageStarted(stageTracking, 'image-prompts');
-        options.onUpdate?.(cloneStages(stages));
-
         writeSession = await patchWriteSession(
           {
             status: 'running',
@@ -461,6 +475,49 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             failedStage: null,
             errorMessage: null,
             text,
+          },
+          workingDir,
+        );
+      }
+
+      if (text) {
+        const seoStageOutcome = await executeSeoCheckStage({
+          stages,
+          stageTracking,
+          longPlan,
+          text,
+          settings: input.config.settings,
+          openRouter,
+          dryRun,
+          noSeoCheck,
+          forceSeoCheck,
+          seoCheckMode,
+          seoCheckMaxTurns,
+          lastCompletedStage: writeSession.lastCompletedStage,
+          onUpdate: options.onUpdate,
+          onLlmInteraction,
+          recordLlmMetrics: (metrics) => recordLlmMetrics(stageTracking, 'seo-check', metrics),
+          seoCheckCalls,
+          editorToolCalls,
+        });
+        plan = seoStageOutcome.plan;
+        longPlan = seoStageOutcome.plan;
+        text = seoStageOutcome.text;
+        seoCheckResult = seoStageOutcome.seoCheckResult;
+        if (seoStageOutcome.invalidateImages) {
+          imagePrompts = null;
+          imageArtifacts = null;
+        }
+        writeSession = await patchWriteSession(
+          {
+            status: 'running',
+            lastCompletedStage: 'seo-check',
+            failedStage: null,
+            errorMessage: null,
+            plan,
+            text,
+            imagePrompts,
+            imageArtifacts,
           },
           workingDir,
         );
@@ -487,15 +544,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       if (imagePrompts) {
         markStageCompleted(stageTracking, 'image-prompts');
-        stages[3] = {
-          ...stages[3],
+        stages[4] = {
+          ...stages[4],
           status: 'succeeded',
           detail: 'Reused saved image prompts from cached session.',
           summary: `${imagePrompts.length} prompts ready`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
         };
-        stages[4] = {
-          ...stages[4],
+        stages[5] = {
+          ...stages[5],
           status: 'running',
           detail: 'Rendering expanded image prompts.',
         };
@@ -531,8 +588,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             addStageRetries(stageTracking, 'image-prompts', metrics.retries);
           },
           onProgress(detail) {
-            stages[3] = {
-              ...stages[3],
+            stages[4] = {
+              ...stages[4],
               detail,
             };
             options.onUpdate?.(cloneStages(stages));
@@ -540,15 +597,15 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         });
 
         markStageCompleted(stageTracking, 'image-prompts');
-        stages[3] = {
-          ...stages[3],
+        stages[4] = {
+          ...stages[4],
           status: 'succeeded',
           detail: 'Expanded image prompts successfully.',
           summary: `${imagePrompts.length} prompts ready`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
         };
-        stages[4] = {
-          ...stages[4],
+        stages[5] = {
+          ...stages[5],
           status: 'running',
           detail: 'Rendering expanded image prompts.',
         };
@@ -609,8 +666,16 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
       };
 
+      markStageCompleted(stageTracking, 'seo-check');
       stages[3] = {
-        ...stages[3],
+        ...stages[3]!,
+        status: 'succeeded',
+        detail: 'Not applicable for short-form content.',
+        stageAnalytics: snapshotStageAnalytics(stageTracking, 'seo-check'),
+      };
+
+      stages[4] = {
+        ...stages[4],
         status: 'running',
         detail: 'Preparing primary cover image prompt.',
       };
@@ -620,22 +685,22 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       imagePrompts = [buildPrimaryCoverPrompt(plan, contentPlan, primaryTarget.contentType)];
 
       markStageCompleted(stageTracking, 'image-prompts');
-      stages[3] = {
-        ...stages[3],
+      stages[4] = {
+        ...stages[4],
         status: 'succeeded',
         detail: 'Prepared primary cover image prompt.',
         summary: '1 prompt ready',
         stageAnalytics: snapshotStageAnalytics(stageTracking, 'image-prompts'),
       };
 
-      stages[4] = {
-        ...stages[4],
+      stages[5] = {
+        ...stages[5],
         status: 'running',
         detail: 'Rendering primary cover image.',
       };
       markStageStarted(stageTracking, 'images');
-      stages[4] = {
-        ...stages[4],
+      stages[5] = {
+        ...stages[5],
         status: 'running',
         detail: 'Waiting for cover image rendering.',
       };
@@ -674,8 +739,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       const longPlan = plan as ArticlePlan;
       if (imageArtifacts) {
         markStageCompleted(stageTracking, 'images');
-        stages[4] = {
-          ...stages[4],
+        stages[5] = {
+          ...stages[5],
           status: 'succeeded',
           detail: 'Reused previously rendered images from cached session.',
           summary: sharedAssetDir,
@@ -713,8 +778,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             addStageRetries(stageTracking, 'images', metrics.retries);
           },
           onProgress(detail) {
-            stages[4] = {
-              ...stages[4],
+            stages[5] = {
+              ...stages[5],
               status: 'running',
               detail,
             };
@@ -728,8 +793,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         };
 
         markStageCompleted(stageTracking, 'images');
-        stages[4] = {
-          ...stages[4],
+        stages[5] = {
+          ...stages[5],
           status: 'succeeded',
           detail: 'Rendered and stored article images.',
           summary: sharedAssetDir,
@@ -771,8 +836,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
       if (imageArtifacts) {
         markStageCompleted(stageTracking, 'images');
-        stages[4] = {
-          ...stages[4],
+        stages[5] = {
+          ...stages[5],
           status: 'succeeded',
           detail: 'Reused previously rendered primary cover image from cached session.',
           summary: sharedAssetDir,
@@ -806,8 +871,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
             addStageRetries(stageTracking, 'images', metrics.retries);
           },
           onProgress(detail) {
-            stages[4] = {
-              ...stages[4],
+            stages[5] = {
+              ...stages[5],
               status: 'running',
               detail,
             };
@@ -821,8 +886,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         };
 
         markStageCompleted(stageTracking, 'images');
-        stages[4] = {
-          ...stages[4],
+        stages[5] = {
+          ...stages[5],
           status: 'succeeded',
           detail: 'Rendered and stored primary cover image.',
           summary: sharedAssetDir,
@@ -873,8 +938,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
 
     const requestedOutputs = expandRequestedOutputs(secondaryTargets, { fallbackToArticle: false });
 
-    stages[5] = {
-      ...stages[5],
+    stages[6] = {
+      ...stages[6],
       status: 'running',
       detail: requestedOutputs.length > 0
         ? 'Generating secondary channel outputs from primary anchor content.'
@@ -902,10 +967,10 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         costSources: [] as CostSource[],
       };
 
-      stages[5] = {
-        ...stages[5],
+      stages[6] = {
+        ...stages[6],
         detail: `Generating ${formatOutputItemLabel(output.contentType, output.index, output.outputCountForType)}.`,
-        items: (stages[5].items ?? []).map((item) => {
+        items: (stages[6].items ?? []).map((item) => {
           if (item.id !== itemId) {
             return item;
           }
@@ -977,10 +1042,10 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
           costSource: itemCostSource,
         });
 
-        stages[5] = {
-          ...stages[5],
+        stages[6] = {
+          ...stages[6],
           detail: `Completed ${formatOutputItemLabel(output.contentType, output.index, output.outputCountForType)}.`,
-          items: (stages[5].items ?? []).map((item) => {
+          items: (stages[6].items ?? []).map((item) => {
             if (item.id !== itemId) {
               return item;
             }
@@ -1000,9 +1065,9 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         };
         options.onUpdate?.(cloneStages(stages));
       } catch (error) {
-        stages[5] = {
-          ...stages[5],
-          items: (stages[5].items ?? []).map((item) => {
+        stages[6] = {
+          ...stages[6],
+          items: (stages[6].items ?? []).map((item) => {
             if (item.id !== itemId) {
               return item;
             }
@@ -1020,8 +1085,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     }
 
     markStageCompleted(stageTracking, 'output');
-    stages[5] = {
-      ...stages[5],
+    stages[6] = {
+      ...stages[6],
       status: 'succeeded',
       detail: requestedOutputs.length > 0
         ? 'Generated secondary channel content successfully.'
@@ -1032,8 +1097,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
     options.onUpdate?.(cloneStages(stages));
 
     const eligibleOutputsForLinks = generatedOutputs.filter((output) => output.contentType !== 'x-post' && output.contentType !== 'x-thread');
-    stages[6] = {
-      ...stages[6],
+    stages[7] = {
+      ...stages[7],
       status: 'running',
       detail: 'Selecting expressions and resolving source URLs.',
       items: eligibleOutputsForLinks.map((output) => ({
@@ -1066,12 +1131,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         }
 
         markStageCompleted(stageTracking, 'links');
-        stages[6] = {
-          ...stages[6],
+        stages[7] = {
+          ...stages[7],
           status: 'succeeded',
           detail: 'Updated custom links without generating new links.',
           summary: `${eligibleOutputsForLinks.length} files updated`,
-          items: (stages[6].items ?? []).map((stageItem) => ({
+          items: (stages[7].items ?? []).map((stageItem) => ({
             ...stageItem,
             status: 'succeeded',
             detail: 'Saved custom links sidecar.',
@@ -1081,8 +1146,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         options.onUpdate?.(cloneStages(stages));
       } else {
         markStageCompleted(stageTracking, 'links');
-        stages[6] = {
-          ...stages[6],
+        stages[7] = {
+          ...stages[7],
           status: 'succeeded',
           detail: 'Skipped link enrichment (enable with --enrich-links).',
           summary: 'Link enrichment disabled for this run',
@@ -1092,8 +1157,8 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       }
     } else if (eligibleOutputsForLinks.length === 0) {
       markStageCompleted(stageTracking, 'links');
-      stages[6] = {
-        ...stages[6],
+      stages[7] = {
+        ...stages[7],
         status: 'succeeded',
         detail: 'Skipped link enrichment (no eligible outputs).',
         summary: 'No long-form outputs to enrich',
@@ -1121,12 +1186,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       }
 
       markStageCompleted(stageTracking, 'links');
-      stages[6] = {
-        ...stages[6],
+      stages[7] = {
+        ...stages[7],
         status: 'succeeded',
         detail: 'Reused saved link metadata from cached session.',
         summary: `${resumedLinks.reduce((sum, item) => sum + item.links.length, 0)} links`,
-        items: (stages[6].items ?? []).map((item) => ({
+        items: (stages[7].items ?? []).map((item) => ({
           ...item,
           status: 'succeeded',
           detail: 'Reused saved link metadata.',
@@ -1164,10 +1229,10 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         onItemProgress(event) {
           markStageStarted(itemTracking, event.fileId);
 
-          stages[6] = {
-            ...stages[6],
+          stages[7] = {
+            ...stages[7],
             detail: 'Selecting expressions and resolving source URLs.',
-            items: (stages[6].items ?? []).map((item) => {
+            items: (stages[7].items ?? []).map((item) => {
               if (item.id !== event.fileId) {
                 return item;
               }
@@ -1208,12 +1273,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       }
 
       markStageCompleted(stageTracking, 'links');
-      stages[6] = {
-        ...stages[6],
+      stages[7] = {
+        ...stages[7],
         status: 'succeeded',
         detail: 'Resolved links and wrote sidecar metadata files.',
         summary: `${linksResult.reduce((sum, item) => sum + item.links.length, 0)} links`,
-        items: (stages[6].items ?? []).map((stageItem) => {
+        items: (stages[7].items ?? []).map((stageItem) => {
           const fileLinks = linksResult?.find((item) => item.fileId === stageItem.id);
           const analytics = snapshotStageAnalytics(itemTracking, stageItem.id);
           return {
@@ -1251,6 +1316,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       imageRenderCalls,
       outputItemCalls,
       linkEnrichmentCalls,
+      seoCheckCalls,
     });
     const interactions: PipelineRunInteractions = {
       runId,
@@ -1260,6 +1326,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
       endedAt: new Date().toISOString(),
       llmCalls: llmInteractions,
       t2iCalls: t2iInteractions,
+      editorToolCalls,
     };
     const analyticsPath = path.join(generationDir, 'generation.analytics.json');
     const interactionsPath = path.join(generationDir, 'model.interactions.json');
@@ -1281,6 +1348,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         : null,
       publication: input.publication?.slug,
       series: input.series?.slug,
+      seoCheck: seoCheckResult ?? undefined,
     });
     const metaJsonPath = path.join(generationDir, 'meta.json');
     await writeJsonFile(metaJsonPath, metaJson);
@@ -1431,6 +1499,7 @@ function buildRunAnalytics({
   imageRenderCalls,
   outputItemCalls,
   linkEnrichmentCalls,
+  seoCheckCalls,
 }: {
   runId: string;
   runMode: 'fresh' | 'resume';
@@ -1442,9 +1511,10 @@ function buildRunAnalytics({
   imageRenderCalls: ImageRenderAnalytics[];
   outputItemCalls: OutputItemAnalytics[];
   linkEnrichmentCalls: LinkEnrichmentItemAnalytics[];
+  seoCheckCalls: SeoCheckAgentTurnAnalytics[];
 }): PipelineRunAnalytics {
   const runEndedAtMs = Date.now();
-  const orderedStageIds: WriteStageId[] = ['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'];
+  const orderedStageIds: WriteStageId[] = ['shared-plan', 'planning', 'sections', 'seo-check', 'image-prompts', 'images', 'output', 'links'];
   const stages: PipelineStageAnalytics[] = orderedStageIds.map((stageId) => {
     const tracked = stageTracking.get(stageId);
     const startedAtMs = tracked?.startedAtMs ?? runEndedAtMs;
@@ -1481,6 +1551,7 @@ function buildRunAnalytics({
     imageRenderCalls,
     outputItemCalls,
     linkEnrichmentCalls,
+    seoCheckCalls,
   };
 }
 
@@ -1893,11 +1964,185 @@ function buildPlanSummary(plan: PrimaryPlan): string {
   return parts.join(' • ');
 }
 
+async function executeSeoCheckStage({
+  stages,
+  stageTracking,
+  longPlan,
+  text,
+  settings,
+  openRouter,
+  dryRun,
+  noSeoCheck,
+  forceSeoCheck,
+  seoCheckMode,
+  seoCheckMaxTurns,
+  lastCompletedStage,
+  onUpdate,
+  onLlmInteraction,
+  recordLlmMetrics,
+  seoCheckCalls,
+  editorToolCalls,
+}: {
+  stages: StageViewModel[];
+  stageTracking: Map<WriteStageId, { startedAtMs: number; endedAtMs: number | null; retries: number; costs: Array<number | null>; costSources: CostSource[] }>;
+  longPlan: ArticlePlan;
+  text: NonNullable<WriteSessionState['text']>;
+  settings: WriteSessionState['settings'];
+  openRouter: OpenRouterClient | null;
+  dryRun: boolean;
+  noSeoCheck: boolean;
+  forceSeoCheck: boolean;
+  seoCheckMode: SeoCheckMode;
+  seoCheckMaxTurns: number;
+  lastCompletedStage: WriteStageId | null;
+  onUpdate?: (stages: StageViewModel[]) => void;
+  onLlmInteraction: (interaction: LlmInteractionRecord) => void;
+  recordLlmMetrics: (metrics: LlmCallMetrics) => void;
+  seoCheckCalls: SeoCheckAgentTurnAnalytics[];
+  editorToolCalls: EditorToolInteractionRecord[];
+}): Promise<{
+  plan: ArticlePlan;
+  text: NonNullable<WriteSessionState['text']>;
+  seoCheckResult: SeoLintResult & {
+    ranAt: string;
+    seoCheckMode: SeoCheckMode;
+    warningsRemaining: number;
+    editorTurns?: number;
+    skipped?: boolean;
+    editorCostUsd?: number | null;
+    editorCostSource?: CostSource;
+  };
+  invalidateImages: boolean;
+}> {
+  const alreadyCompleted = lastCompletedStage !== null && lastCompletedStage !== 'sections' && !forceSeoCheck;
+  const ranAt = new Date().toISOString();
+
+  stages[3] = {
+    ...stages[3]!,
+    status: 'running',
+    detail: noSeoCheck ? 'Skipping SEO check.' : 'Running SEO lint and editor pass.',
+  };
+  markStageStarted(stageTracking, 'seo-check');
+  onUpdate?.(cloneStages(stages));
+
+  if (noSeoCheck || alreadyCompleted) {
+    markStageCompleted(stageTracking, 'seo-check');
+    stages[3] = {
+      ...stages[3]!,
+      status: 'succeeded',
+      detail: noSeoCheck ? 'Skipped (--no-seo-check).' : 'Reused prior SEO check from cached session.',
+      stageAnalytics: snapshotStageAnalytics(stageTracking, 'seo-check'),
+    };
+    onUpdate?.(cloneStages(stages));
+    return {
+      plan: longPlan,
+      text,
+      seoCheckResult: {
+        ranAt,
+        passed: true,
+        issues: [],
+        seoCheckMode,
+        warningsRemaining: 0,
+        skipped: true,
+      },
+      invalidateImages: false,
+    };
+  }
+
+  const editorResult = await runEditor({
+    plan: longPlan,
+    text,
+    settings,
+    openRouter,
+    dryRun,
+    seoCheckMode,
+    maxTurns: seoCheckMaxTurns,
+    force: forceSeoCheck,
+    onInteraction: onLlmInteraction,
+    onLlmMetrics: recordLlmMetrics,
+    onAgentTurnComplete(event) {
+      const cost = estimateLlmCostUsd(event.metrics.modelId, event.metrics.usage);
+      seoCheckCalls.push({
+        turn: event.turn,
+        operationId: event.operationId,
+        durationMs: event.metrics.durationMs,
+        attempts: event.metrics.attempts,
+        retries: event.metrics.retries,
+        retryBackoffMs: event.metrics.retryBackoffMs,
+        promptTokens: event.metrics.usage.promptTokens,
+        completionTokens: event.metrics.usage.completionTokens,
+        totalTokens: event.metrics.usage.totalTokens,
+        costUsd: cost.usd,
+        costSource: cost.source,
+        modelId: event.metrics.modelId,
+        toolCalls: event.toolCalls,
+      });
+    },
+    onToolExecuted(event) {
+      const endedAtMs = Date.now();
+      editorToolCalls.push({
+        stageId: 'seo-check',
+        operationId: event.operationId,
+        turn: event.turn,
+        toolName: event.toolName,
+        arguments: event.arguments,
+        result: serializeEditorToolResult(event.result),
+        startedAt: new Date(endedAtMs - event.durationMs).toISOString(),
+        endedAt: new Date(endedAtMs).toISOString(),
+        durationMs: event.durationMs,
+      });
+    },
+  });
+
+  const warningsRemaining = countSeoWarnings(editorResult.lint.issues);
+  const seoCheckResult = {
+    ...editorResult.lint,
+    ranAt,
+    seoCheckMode,
+    warningsRemaining,
+    editorTurns: editorResult.turnsUsed,
+    skipped: editorResult.skippedAgent,
+    editorCostUsd: editorResult.editorCostUsd,
+    editorCostSource: editorResult.editorCostSource,
+  };
+
+  markStageCompleted(stageTracking, 'seo-check');
+  const warningsNote = warningsRemaining > 0 && seoCheckMode === 'errors-only'
+    ? ` (${warningsRemaining} warning${warningsRemaining === 1 ? '' : 's'} remain, errors-only pass)`
+    : '';
+  stages[3] = {
+    ...stages[3]!,
+    status: 'succeeded',
+    detail: editorResult.skippedAgent
+      ? `Lint complete (${editorResult.lint.issues.length} issue${editorResult.lint.issues.length === 1 ? '' : 's'}).${warningsNote}`
+      : `Editor pass complete (${editorResult.turnsUsed} turn${editorResult.turnsUsed === 1 ? '' : 's'}).${warningsNote}`,
+    summary: `${editorResult.lint.issues.length} remaining issue${editorResult.lint.issues.length === 1 ? '' : 's'}`,
+    stageAnalytics: snapshotStageAnalytics(stageTracking, 'seo-check'),
+  };
+  onUpdate?.(cloneStages(stages));
+
+  return {
+    plan: editorResult.snapshot.plan,
+    text: editorResult.snapshot.text,
+    seoCheckResult,
+    invalidateImages: editorResult.snapshot.structureChanged || editorResult.snapshot.imagesChanged,
+  };
+}
+
+function serializeEditorToolResult(result: unknown): Record<string, unknown> {
+  if (result && typeof result === 'object' && !Array.isArray(result)) {
+    return result as Record<string, unknown>;
+  }
+
+  return { value: result };
+}
+
 function asWriteStageId(stageId: string): WriteStageId | null {
   if (
     stageId === 'shared-plan' ||
     stageId === 'planning' ||
     stageId === 'sections' ||
+    stageId === 'seo-check' ||
     stageId === 'image-prompts' ||
     stageId === 'images' ||
     stageId === 'output' ||

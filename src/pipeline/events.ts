@@ -48,7 +48,7 @@ export interface PipelineArtifactSummary {
 export interface LlmInteractionRecord {
   stageId: string;
   operationId: string;
-  requestType: 'structured' | 'text' | 'web-search';
+  requestType: 'structured' | 'text' | 'web-search' | 'agent';
   provider: 'openrouter';
   modelId: string;
   startedAt: string;
@@ -89,6 +89,7 @@ export interface PipelineRunInteractions {
   endedAt: string;
   llmCalls: LlmInteractionRecord[];
   t2iCalls: T2IInteractionRecord[];
+  editorToolCalls: EditorToolInteractionRecord[];
 }
 
 export type CostSource = 'provider' | 'estimated' | 'unavailable';
@@ -153,6 +154,34 @@ export interface LinkEnrichmentItemAnalytics {
   costSource: CostSource;
 }
 
+export interface SeoCheckAgentTurnAnalytics {
+  turn: number;
+  operationId: string;
+  durationMs: number;
+  attempts: number;
+  retries: number;
+  retryBackoffMs: number;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  totalTokens: number | null;
+  costUsd: number | null;
+  costSource: CostSource;
+  modelId: string;
+  toolCalls: string[];
+}
+
+export interface EditorToolInteractionRecord {
+  stageId: 'seo-check';
+  operationId: string;
+  turn: number;
+  toolName: string;
+  arguments: Record<string, unknown>;
+  result: Record<string, unknown>;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+}
+
 export interface PipelineAnalyticsSummary {
   totalDurationMs: number;
   totalRetries: number;
@@ -172,6 +201,7 @@ export interface PipelineRunAnalytics {
   imageRenderCalls: ImageRenderAnalytics[];
   outputItemCalls: OutputItemAnalytics[];
   linkEnrichmentCalls: LinkEnrichmentItemAnalytics[];
+  seoCheckCalls: SeoCheckAgentTurnAnalytics[];
 }
 
 export interface PipelineRunResult {

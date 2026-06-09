@@ -153,6 +153,7 @@ describe('renderPlainPipeline', () => {
           imageRenderCalls: [],
           outputItemCalls: [],
           linkEnrichmentCalls: [],
+          seoCheckCalls: [],
         },
       };
     });
@@ -277,6 +278,7 @@ describe('renderPlainPipeline', () => {
           imageRenderCalls: [],
           outputItemCalls: [],
           linkEnrichmentCalls: [],
+          seoCheckCalls: [],
         },
       };
     });

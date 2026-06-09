@@ -25,6 +25,7 @@ const configUnsetMock = jest.fn<(...args: any[]) => Promise<any>>();
 const isConfigKeyMock = jest.fn<(key: string) => boolean>();
 const parsePrimaryAndSecondarySpecsMock = jest.fn();
 const loadWriteSessionMock = jest.fn<(...args: any[]) => Promise<any>>();
+const patchWriteSessionMock = jest.fn<(...args: any[]) => Promise<any>>();
 const loadSecretsMock = jest.fn<(...args: any[]) => Promise<any>>();
 const readEnvSettingsMock = jest.fn<() => any>();
 const gkpClientMock = {
@@ -115,6 +116,7 @@ jest.unstable_mockModule('../cli/commands/writeTargetSpecs.js', () => ({
 
 jest.unstable_mockModule('../pipeline/sessionStore.js', () => ({
   loadWriteSession: loadWriteSessionMock,
+  patchWriteSession: patchWriteSessionMock,
 }));
 
 jest.unstable_mockModule('../config/secretStore.js', () => ({
@@ -190,6 +192,12 @@ jest.unstable_mockModule('../plan/pipeline.js', () => ({
 
 jest.unstable_mockModule('../config/settingsFile.js', () => ({
   loadSavedSettings: loadSavedSettingsMock,
+}));
+
+const runEditorMock = jest.fn<(...args: any[]) => Promise<any>>();
+
+jest.unstable_mockModule('../editor/runEditor.js', () => ({
+  runEditor: runEditorMock,
 }));
 
 jest.unstable_mockModule('../llm/openRouterClient.js', () => ({
@@ -366,6 +374,20 @@ describe('ideon MCP server', () => {
     // Article list mock
     runArticleListCommandMock.mockResolvedValue(undefined);
 
+    runEditorMock.mockResolvedValue({
+      snapshot: {
+        plan: { title: 'SEO Plan' },
+        text: { intro: 'Intro', sections: [], outro: 'Outro' },
+        structureChanged: false,
+        imagesChanged: false,
+      },
+      lint: { passed: true, issues: [] },
+      turnsUsed: 0,
+      skippedAgent: true,
+      maxTurnsReached: false,
+    });
+    patchWriteSessionMock.mockResolvedValue({});
+
     // GAds login mocks
     startGadsLoginMock.mockResolvedValue({
       status: 'pending',
@@ -383,6 +405,7 @@ describe('ideon MCP server', () => {
     expect(connectMock).toHaveBeenCalledTimes(1);
     expect(registeredTools.has('ideon_write')).toBe(true);
     expect(registeredTools.has('ideon_write_resume')).toBe(true);
+    expect(registeredTools.has('ideon_run_seo_check')).toBe(true);
     expect(registeredTools.has('ideon_delete')).toBe(true);
     expect(registeredTools.has('ideon_links')).toBe(true);
     expect(registeredTools.has('ideon_export')).toBe(true);
@@ -483,6 +506,48 @@ describe('ideon MCP server', () => {
 
     expect(result?.isError).toBe(true);
     expect(result?.content?.[0]?.text).toContain('Unsupported config key');
+  });
+
+  it('executes ideon_run_seo_check tool handler', async () => {
+    loadWriteSessionMock.mockResolvedValue({
+      idea: 'seo idea',
+      dryRun: true,
+      settings: { model: 'deepseek/deepseek-v4-pro' },
+      plan: {
+        contentType: 'article',
+        title: 'SEO Article',
+        subtitle: 'Sub',
+        primaryKeyword: 'seo',
+        keywords: ['seo', 'keywords', 'check'],
+        slug: 'seo-article',
+        description: 'Description long enough for meta checks that exceeds one hundred and twenty characters total for validation purposes here.',
+        introBrief: 'Intro',
+        outroBrief: 'Outro',
+        sections: [
+          { title: 'One', description: 'One' },
+          { title: 'Two', description: 'Two' },
+        ],
+        coverImageDescription: 'Cover',
+        inlineImages: [],
+      },
+      text: {
+        intro: 'SEO intro text.',
+        sections: [
+          { title: 'One', body: 'Body one.' },
+          { title: 'Two', body: 'Body two.' },
+        ],
+        outro: 'Outro.',
+      },
+    });
+
+    await startIdeonMcpServer();
+    const tool = registeredTools.get('ideon_run_seo_check');
+    const result = await tool?.handler({});
+
+    expect(runEditorMock).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
+    expect(patchWriteSessionMock).toHaveBeenCalled();
+    expect(result?.isError).toBeFalsy();
+    expect(result?.content?.[0]?.text).toContain('"passed"');
   });
 
   it('returns tool error when resume session is missing', async () => {

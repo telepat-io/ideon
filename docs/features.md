@@ -138,7 +138,9 @@ Ideon browses the web and inserts contextual external links like a human writer 
 
 Ideon's writing pipeline enforces on-page SEO best practices at every stage of content generation — not as an afterthought, but as a baked-in layer of the writing process.
 
-**During planning**, titles are constrained to search-safe lengths and meta descriptions are shaped for click-through impact. **During writing**, three dedicated SEO guides shape every section:
+**During planning**, titles are constrained to search-safe lengths, meta descriptions are shaped for click-through impact, and the planner assigns a `primaryKeyword` plus per-section `targetKeywords` (0–2 each) with parity placement rules for both user-provided and LLM-generated keyword sets. **During writing**, tiered guide bundles (intro / section / outro) and the keyword-integration guide shape placement — primary keyword in the title and intro, section targets in BLUF openers. **After section writing**, a default-on `seo-check` stage runs deterministic lint and, when needed, a five-tool surgical editor agent (`errors-only` pass mode by default; `strict` optional) that fixes prose and metadata without restructuring the article.
+
+**During writing**, three dedicated SEO guides shape every section:
 
 - **On-page essentials** — heading hierarchy, BLUF paragraphs, key takeaway blocks, and paragraph structure optimized for both human readers and search crawlers
 - **E-E-A-T signals** — Experience, Expertise, Authoritativeness, and Trustworthiness embedded through practitioner observations, competing viewpoints, and primary-source citations

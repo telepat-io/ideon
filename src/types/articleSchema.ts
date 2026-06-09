@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const articleSectionPlanSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
+  targetKeywords: z.array(z.string().min(1)).max(2).optional(),
 });
 
 export const inlineImagePlanSchema = z.object({
@@ -18,6 +19,7 @@ export const primaryPlanSchema = z.object({
   coverImageDescription: z.string().min(1),
   subtitle: z.string().min(1).optional(),
   keywords: z.array(z.string().min(1)).min(3).max(8).optional(),
+  primaryKeyword: z.string().min(1).optional(),
   introBrief: z.string().min(1).optional(),
   outroBrief: z.string().min(1).optional(),
   sections: z.array(articleSectionPlanSchema).min(2).max(10).optional(),
@@ -30,6 +32,7 @@ export const longFormPlanSchema = z.object({
   title: z.string().min(1),
   subtitle: z.string().min(1),
   keywords: z.array(z.string().min(1)).min(3).max(8),
+  primaryKeyword: z.string().min(1),
   slug: z.string().min(1),
   description: z.string().min(1),
   introBrief: z.string().min(1),

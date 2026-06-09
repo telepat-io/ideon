@@ -1037,3 +1037,175 @@ describe('OpenRouterClient requestWebSearch', () => {
     });
   });
 });
+
+describe('OpenRouterClient requestAgentLoop', () => {
+  const apiKey = 'test-key';
+  let originalFetch: typeof globalThis.fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    jest.restoreAllMocks();
+  });
+
+  it('accepts null assistant content when tool_calls are present and resends tools each turn', async () => {
+    let callCount = 0;
+    const fetchMock = jest.fn(async () => {
+      callCount += 1;
+      if (callCount === 1) {
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({
+            choices: [{
+              message: {
+                content: null,
+                tool_calls: [{
+                  id: 'call_1',
+                  type: 'function',
+                  function: { name: 'edit_intro', arguments: '{"body":"Updated intro with kubernetes."}' },
+                }],
+              },
+              finish_reason: 'tool_calls',
+            }],
+          }),
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({
+          choices: [{
+            message: { content: 'All issues addressed.' },
+            finish_reason: 'stop',
+          }],
+        }),
+      };
+    }) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    const tools = [{
+      type: 'function' as const,
+      function: { name: 'edit_intro', description: 'Edit intro', parameters: { type: 'object', properties: {} } },
+    }];
+    const onInteraction = jest.fn();
+    const onTurnComplete = jest.fn();
+    const onToolExecuted = jest.fn();
+    const handler = jest.fn(() => ({ ok: true, remainingIssues: 0 }));
+
+    const result = await client.requestAgentLoop({
+      messages: [{ role: 'user', content: 'fix seo' }],
+      tools,
+      toolHandlers: { edit_intro: handler },
+      settings: defaultAppSettings,
+      maxTurns: 3,
+      interactionContext: {
+        stageId: 'seo-check',
+        operationId: 'seo-check:editor-agent',
+      },
+      onInteraction,
+      onTurnComplete,
+      onToolExecuted,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(result.turnsUsed).toBe(2);
+    expect(result.finalContent).toBe('All issues addressed.');
+    expect(onTurnComplete).toHaveBeenCalledWith(expect.objectContaining({
+      turn: 1,
+      operationId: 'seo-check:editor-agent:turn-1',
+      toolCalls: ['edit_intro'],
+    }));
+    expect(onToolExecuted).toHaveBeenCalledWith(expect.objectContaining({
+      turn: 1,
+      operationId: 'seo-check:editor-agent:turn-1:edit_intro',
+      toolName: 'edit_intro',
+    }));
+    expect(onInteraction).toHaveBeenCalledWith(expect.objectContaining({
+      stageId: 'seo-check',
+      operationId: 'seo-check:editor-agent:turn-1',
+      requestType: 'agent',
+    }));
+    expect(onInteraction).toHaveBeenCalledWith(expect.objectContaining({
+      operationId: 'seo-check:editor-agent:turn-2',
+    }));
+
+    for (const [, options] of (fetchMock as unknown as jest.Mock).mock.calls) {
+      const body = JSON.parse((options as { body?: string }).body ?? '{}') as {
+        tools?: unknown[];
+        parallel_tool_calls?: boolean;
+        response_format?: unknown;
+      };
+      expect(body.tools).toEqual(tools);
+      expect(body.parallel_tool_calls).toBe(false);
+      expect(body.response_format).toBeUndefined();
+    }
+  });
+
+  it('records tool execution events when a tool handler is missing', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        choices: [{
+          message: {
+            content: null,
+            tool_calls: [{
+              id: 'call_1',
+              type: 'function',
+              function: { name: 'missing_tool', arguments: '{}' },
+            }],
+          },
+          finish_reason: 'tool_calls',
+        }],
+      }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const onToolExecuted = jest.fn();
+    const client = new OpenRouterClient(apiKey);
+    await client.requestAgentLoop({
+      messages: [{ role: 'user', content: 'fix seo' }],
+      tools: [],
+      toolHandlers: {},
+      settings: defaultAppSettings,
+      maxTurns: 1,
+      interactionContext: {
+        stageId: 'seo-check',
+        operationId: 'seo-check:editor-agent',
+      },
+      onToolExecuted,
+    });
+
+    expect(onToolExecuted).toHaveBeenCalledWith(expect.objectContaining({
+      toolName: 'missing_tool',
+      result: expect.objectContaining({ ok: false }),
+    }));
+  });
+
+  it('stops the agent loop when the assistant message is missing', async () => {
+    const fetchMock = jest.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ choices: [{}] }),
+    })) as unknown as typeof fetch;
+    globalThis.fetch = fetchMock;
+
+    const client = new OpenRouterClient(apiKey);
+    const result = await client.requestAgentLoop({
+      messages: [{ role: 'user', content: 'fix seo' }],
+      tools: [],
+      toolHandlers: {},
+      settings: defaultAppSettings,
+      maxTurns: 3,
+    });
+
+    expect(result.turnsUsed).toBe(1);
+    expect(result.finalContent).toBeNull();
+  });
+});

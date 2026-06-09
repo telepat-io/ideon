@@ -1,6 +1,7 @@
 export interface ArticleSectionPlan {
   title: string;
   description: string;
+  targetKeywords?: string[];
 }
 
 export interface InlineImagePlan {
@@ -30,6 +31,7 @@ export interface PrimaryPlan {
   coverImageDescription: string;
   subtitle?: string;
   keywords?: string[];
+  primaryKeyword?: string;
   introBrief?: string;
   outroBrief?: string;
   sections?: ArticleSectionPlan[];
@@ -40,6 +42,7 @@ export interface PrimaryPlan {
 export type ArticlePlan = PrimaryPlan & {
   subtitle: string;
   keywords: string[];
+  primaryKeyword: string;
   introBrief: string;
   outroBrief: string;
   sections: ArticleSectionPlan[];

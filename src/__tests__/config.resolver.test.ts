@@ -39,6 +39,8 @@ describe('resolveRunInput', () => {
       targetLength: 900,
       planModel: 'deepseek/deepseek-v4-pro',
       planIntentModel: 'deepseek/deepseek-v4-flash',
+      seoCheckMode: 'errors-only',
+      seoCheckMaxTurns: 10,
     });
 
     loadSecretsMock.mockResolvedValue({
@@ -264,6 +266,8 @@ describe('resolveRunInput', () => {
       targetLength: 900,
       planModel: 'deepseek/deepseek-v4-pro',
       planIntentModel: 'deepseek/deepseek-v4-flash',
+      seoCheckMode: 'errors-only',
+      seoCheckMaxTurns: 10,
     });
 
     const result = await resolveRunInput({ idea: 'defaults test' });
@@ -370,6 +374,8 @@ describe('resolveRunInput', () => {
       targetLength: 900,
       planModel: 'deepseek/deepseek-v4-pro',
       planIntentModel: 'deepseek/deepseek-v4-flash',
+      seoCheckMode: 'errors-only',
+      seoCheckMaxTurns: 10,
     });
 
     const result = await resolveRunInput({ idea: 'family only' });

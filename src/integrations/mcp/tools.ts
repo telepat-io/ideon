@@ -15,6 +15,9 @@ export const writeToolInputSchema = {
   intent: z.enum(contentIntentValues).optional(),
   length: z.union([z.enum(targetLengthValues), z.coerce.number().int().positive()]).optional(),
   dryRun: z.boolean().optional(),
+  noSeoCheck: z.boolean().optional(),
+  seoCheckMode: z.enum(['errors-only', 'strict']).optional(),
+  seoCheckMaxTurns: z.coerce.number().int().min(1).max(20).optional(),
   enrichLinks: z.boolean().optional(),
   link: z.array(z.string()).optional(),
   unlink: z.array(z.string()).optional(),
@@ -26,6 +29,9 @@ export type WriteToolInput = z.infer<typeof writeToolInputZodSchema>;
 
 export const writeResumeToolInputSchema = {
   dryRun: z.boolean().optional(),
+  seoCheck: z.boolean().optional(),
+  seoCheckMode: z.enum(['errors-only', 'strict']).optional(),
+  seoCheckMaxTurns: z.coerce.number().int().min(1).max(20).optional(),
   enrichLinks: z.boolean().optional(),
   link: z.array(z.string()).optional(),
   unlink: z.array(z.string()).optional(),
@@ -34,6 +40,14 @@ export const writeResumeToolInputSchema = {
 };
 export const writeResumeToolInputZodSchema = z.object(writeResumeToolInputSchema);
 export type WriteResumeToolInput = z.infer<typeof writeResumeToolInputZodSchema>;
+
+export const runSeoCheckToolInputSchema = {
+  dryRun: z.boolean().optional(),
+  seoCheckMode: z.enum(['errors-only', 'strict']).optional(),
+  seoCheckMaxTurns: z.coerce.number().int().min(1).max(20).optional(),
+};
+export const runSeoCheckToolInputZodSchema = z.object(runSeoCheckToolInputSchema);
+export type RunSeoCheckToolInput = z.infer<typeof runSeoCheckToolInputZodSchema>;
 
 export const deleteToolInputSchema = {
   slug: z.string().min(1),
@@ -266,6 +280,7 @@ export type QueueClearToolInput = z.infer<typeof queueClearToolInputZodSchema>;
 export const queueWriteToolInputSchema = {
   publication: z.string().min(1).optional(),
   dryRun: z.boolean().optional(),
+  noSeoCheck: z.boolean().optional(),
   enrichLinks: z.boolean().optional(),
   link: z.array(z.string()).optional(),
   unlink: z.array(z.string()).optional(),
@@ -365,12 +380,22 @@ export const ideonToolContracts: ToolContract[] = [
       style: [...writingStyleValues],
       intent: [...contentIntentValues],
       length: [...targetLengthValues],
+      seoCheckMode: ['errors-only', 'strict'],
     },
   },
   {
     name: 'ideon_write_resume',
     required: [],
-    enums: {},
+    enums: {
+      seoCheckMode: ['errors-only', 'strict'],
+    },
+  },
+  {
+    name: 'ideon_run_seo_check',
+    required: [],
+    enums: {
+      seoCheckMode: ['errors-only', 'strict'],
+    },
   },
   {
     name: 'ideon_delete',

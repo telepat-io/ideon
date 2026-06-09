@@ -40,6 +40,7 @@ function mockPlan(): ArticlePlan {
     title: 'Practical AI Workflows',
     subtitle: 'How teams ship faster with guardrails',
     keywords: ['ai', 'workflows', 'delivery'],
+    primaryKeyword: 'ai',
     slug: 'practical-ai-workflows',
     contentType: 'article',
     description: 'A guide to practical AI workflow design.',

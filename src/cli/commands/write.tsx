@@ -27,6 +27,9 @@ import {
 interface WriteCommandOptions extends ContentCommandOptions {
   noInteractive: boolean;
   dryRun: boolean;
+  noSeoCheck: boolean;
+  seoCheckMode?: 'errors-only' | 'strict';
+  seoCheckMaxTurns?: number;
   enrichLinks: boolean;
   links?: string[];
   unlinks?: string[];
@@ -44,6 +47,10 @@ function WriteApp({
   input,
   dryRun,
   enrichLinks,
+  noSeoCheck,
+  seoCheckMode,
+  seoCheckMaxTurns,
+  forceSeoCheck,
   runMode,
   links,
   unlinks,
@@ -55,6 +62,10 @@ function WriteApp({
   input: Awaited<ReturnType<typeof resolveRunInput>>;
   dryRun: boolean;
   enrichLinks: boolean;
+  noSeoCheck: boolean;
+  seoCheckMode?: 'errors-only' | 'strict';
+  seoCheckMaxTurns?: number;
+  forceSeoCheck: boolean;
   runMode: WriteRunMode;
   links?: string[];
   unlinks?: string[];
@@ -84,6 +95,10 @@ function WriteApp({
         const runResult = await runPipelineShell(input, {
           dryRun,
           enrichLinks,
+          noSeoCheck,
+          seoCheckMode,
+          seoCheckMaxTurns,
+          forceSeoCheck,
           runMode,
           customLinks: links,
           unlinks,
@@ -126,7 +141,7 @@ function WriteApp({
     return () => {
       mounted = false;
     };
-  }, [dryRun, enrichLinks, input, links, unlinks, maxLinks, maxImages, onError, runMode]);
+  }, [dryRun, enrichLinks, forceSeoCheck, input, links, noSeoCheck, seoCheckMode, seoCheckMaxTurns, onError, runMode, unlinks, maxLinks, maxImages]);
 
   useEffect(() => {
     if (!result && !errorMessage) {
@@ -152,7 +167,7 @@ export async function runWriteCommand(options: WriteCommandOptions): Promise<voi
   }
 
   const input = await resolveWriteInput(options, { noInteractive: options.noInteractive });
-  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive, options.links, options.unlinks, options.maxLinks, options.maxImages, options.exportPath);
+  await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive, options.links, options.unlinks, options.maxLinks, options.maxImages, options.exportPath, undefined, options.noSeoCheck, false, options.seoCheckMode, options.seoCheckMaxTurns);
 }
 
 async function runWriteFromQueue(options: WriteCommandOptions): Promise<void> {
@@ -219,7 +234,7 @@ async function runWriteFromQueue(options: WriteCommandOptions): Promise<void> {
   }
 }
 
-export async function runWriteResumeCommand(options: { noInteractive?: boolean; enrichLinks?: boolean; links?: string[]; unlinks?: string[]; maxLinks?: number; maxImages?: number; exportPath?: string } = {}): Promise<void> {
+export async function runWriteResumeCommand(options: { noInteractive?: boolean; forceSeoCheck?: boolean; seoCheckMode?: 'errors-only' | 'strict'; seoCheckMaxTurns?: number; enrichLinks?: boolean; links?: string[]; unlinks?: string[]; maxLinks?: number; maxImages?: number; exportPath?: string } = {}): Promise<void> {
   const session = await loadWriteSession();
   if (!session) {
     throw new ReportedError('No resumable write session found. Run ideon write <idea> first.');
@@ -241,7 +256,7 @@ export async function runWriteResumeCommand(options: { noInteractive?: boolean; 
       secrets: resolved.config.secrets,
     },
   };
-  await runWritePipeline(input, session.dryRun, options.enrichLinks ?? false, 'resume', options.noInteractive ?? false, options.links, options.unlinks, options.maxLinks, options.maxImages, options.exportPath);
+  await runWritePipeline(input, session.dryRun, options.enrichLinks ?? false, 'resume', options.noInteractive ?? false, options.links, options.unlinks, options.maxLinks, options.maxImages, options.exportPath, undefined, false, options.forceSeoCheck ?? false, options.seoCheckMode, options.seoCheckMaxTurns);
 }
 
 async function runWritePipeline(
@@ -256,6 +271,10 @@ async function runWritePipeline(
   maxImages?: number,
   exportPath?: string,
   queueEntryId?: string,
+  noSeoCheck = false,
+  forceSeoCheck = false,
+  seoCheckMode?: 'errors-only' | 'strict',
+  seoCheckMaxTurns?: number,
 ): Promise<void> {
   let interruptHandled = false;
 
@@ -306,7 +325,7 @@ async function runWritePipeline(
   try {
 
     if (noInteractive || !process.stdout.isTTY) {
-      const result = await renderPlainPipeline(input, dryRun, enrichLinks, runMode, links, unlinks, maxLinks, maxImages);
+      const result = await renderPlainPipeline(input, dryRun, enrichLinks, runMode, links, unlinks, maxLinks, maxImages, noSeoCheck, forceSeoCheck, seoCheckMode, seoCheckMaxTurns);
       if (exportPath) {
         await runOutputCommand({
           generationId: result.artifact.slug,
@@ -324,6 +343,10 @@ async function runWritePipeline(
         input={input}
         dryRun={dryRun}
         enrichLinks={enrichLinks}
+        noSeoCheck={noSeoCheck}
+        seoCheckMode={seoCheckMode}
+        seoCheckMaxTurns={seoCheckMaxTurns}
+        forceSeoCheck={forceSeoCheck}
         runMode={runMode}
         links={links}
         unlinks={unlinks}

@@ -138,7 +138,9 @@ Ideon durchsucht das Web und fügt kontextbezogene externe Links ein, wie ein me
 
 Ideons Schreib-Pipeline setzt On-Page-SEO-Best-Practices in jeder Stufe der Inhaltsgenerierung durch — nicht als Nachgedanke, sondern als eingebauter Schreibprozess.
 
-**Während der Planung** werden Titel aufsuchsichere Längen begrenzt und Meta-Beschreibungen für Klickwirkung gestaltet. **Während des Schreibens** gestalten drei spezialisierte SEO-Leitfäden jede Sektion:
+**Während der Planung** werden Titel auf suchsichere Längen begrenzt, Meta-Beschreibungen für Klickwirkung gestaltet, und der Planer weist `primaryKeyword` sowie pro Abschnitt `targetKeywords` (0–2 je Abschnitt) mit denselben Platzierungsregeln für nutzer- und LLM-generierte Keywords zu. **Beim Schreiben** formen gestufte Guide-Bundles (Intro / Abschnitt / Outro) und der Keyword-Integration-Guide die Platzierung — Primary Keyword in Titel und Intro, Abschnittsziele in BLUF-Eröffnungsparagraphen. **Nach dem Abschnittsschreiben** läuft standardmäßig die `seo-check`-Stufe mit deterministischem Lint und bei Bedarf einem fünf-Tool-chirurgischen Editor-Agenten (Standard-Pass-Modus `errors-only`; `strict` optional), der Prosa und Metadaten ohne Umstrukturierung korrigiert.
+
+**Während des Schreibens** gestalten drei spezialisierte SEO-Leitfäden jede Sektion:
 
 - **On-Page-Grundlagen** — Überschriftenhierarchie, BLUF-Absätze, Schlüsselerkenntnis-Blöcke und Absatzstruktur, optimiert für menschliche Leser und Such-Crawler
 - **E-E-A-T-Signale** — Erfahrung, Expertise, Autorität und Vertrauenswürdigkeit, eingebettet durch Praktiker-Beobachtungen, konkurrierende Standpunkte und Primärquellen-Zitate

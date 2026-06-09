@@ -227,7 +227,13 @@ export const appSettingsSchema = z.object({
   defaultPublication: z.string().optional(),
   planModel: z.string().default('deepseek/deepseek-v4-pro'),
   planIntentModel: z.string().default('deepseek/deepseek-v4-flash'),
+  editorModel: z.string().optional(),
+  seoCheckMode: z.enum(['errors-only', 'strict']).default('errors-only'),
+  seoCheckMaxTurns: z.number().int().min(1).max(20).default(10),
 });
+
+export const seoCheckModeSchema = z.enum(['errors-only', 'strict']);
+export type SeoCheckMode = z.infer<typeof seoCheckModeSchema>;
 
 export const envSettingsSchema = z.object({
   openRouterApiKey: z.string().optional(),

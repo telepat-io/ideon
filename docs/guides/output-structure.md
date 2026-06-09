@@ -87,6 +87,7 @@ The JSON includes:
 - Stage metrics: per-stage duration, retries, and stage-level cost
 - Image prompt calls: per-image prompt expansion timing/cost + token usage (when available)
 - Image render calls: per-image render timing/cost + output byte size
+- SEO check calls: per editor-agent loop turn with operation ID (`seo-check:editor-agent:turn-N`), timing/cost, token usage, and tool names requested on that turn
 
 To inspect generated markdown and image embeds in a browser, run `ideon preview`.
 
@@ -98,6 +99,7 @@ The JSON includes:
 
 - Run envelope: `runId`, `runMode`, `dryRun`, `startedAt`, `endedAt`
 - `llmCalls`: one record per OpenRouter attempt with stage/operation IDs, request type, raw serialized request body, raw response body, timing, attempts/retries, and terminal status
+- `editorToolCalls`: one record per local SEO editor tool execution with turn index, tool name, arguments, JSON result, and timing (no LLM cost)
 - `t2iCalls`: one record per image render attempt with stage/operation IDs, raw prompt, resolved T2I input payload, timing, retries, and terminal status
 
 This artifact is intended for prompt engineering and failure analysis, so payloads are intentionally kept raw.
@@ -151,6 +153,7 @@ The JSON includes:
 - `sections`: array of section titles and descriptions (empty for short-form content)
 - `images`: array of all rendered images (cover and inline) with paths, descriptions, and anchor positions
 - `outputs`: array of all markdown output files with content types and paths
+- `seoCheck` (when present): lint outcome (`passed` follows `seoCheckMode`), `seoCheckMode`, `warningsRemaining`, full `issues[]`, editor turn count, and editor pass cost summary
 - `generatedAt`: ISO timestamp
 - `generationDir`: absolute path to the generation directory
 

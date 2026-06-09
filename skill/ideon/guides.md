@@ -77,21 +77,28 @@ Different stages of the pipeline benefit from different guides:
 - **Load:** General + SEO + Format + Style + Intent guides
 - **Purpose:** Help the agent generate SEO-optimized title, slug, description, and content structure
 - **Key rules:** On-page essentials (title length, meta description, heading hierarchy), content frameworks, target length
-- **When user keywords present:** Load `seo/keyword-integration.md`; instruct planner to place at least one keyword in the title and one in a major H2 heading
+- **When keywords present:** Load `seo/keyword-integration.md`; assign `primaryKeyword` and per-section `targetKeywords` (0-2 each); ensure every keyword appears in title, a section title, or section `targetKeywords`
 
-### Stage 3: Sections
-- **Load:** General + SEO + Format + Style + Intent + References (on-demand)
-- **Purpose:** Help the agent write intro, body sections, and conclusion with strong E-E-A-T signals and fact density
-- **Key rules:** On-page essentials, E-E-A-T signals, fact density, section structure, prose quality, readability, emotional resonance
-- **When user keywords present:** Load `seo/keyword-integration.md`; instruct intro writer to include at least one keyword in the first 100 words; instruct section writer to weave remaining keywords naturally into body prose
+### Stage 3: Sections (tiered bundles)
+- **Intro calls:** `buildIntroGuideInstruction` — core web rules, skimmability, on-page + E-E-A-T, keyword-integration when keywords exist
+- **Section calls:** `buildSectionGuideInstruction` — adds fact-density, prose quality, readability, emotional resonance, keyword-integration when keywords exist
+- **Outro calls:** `buildOutroGuideInstruction` — lighter bundle (no keyword-integration)
+- **Purpose:** Write intro, body sections, and conclusion with strong E-E-A-T signals and fact density
+- **Keyword rules:** Primary keyword in intro first 100 words; section `targetKeywords` in BLUF openers (40-60 words, definition-first)
 - **On-demand references:** Skimmability patterns, content frameworks, AI prose detection avoidance (for post-draft cleanup)
 
-### Stage 4: Image Prompts
+### Stage 4: SEO Check
+- **Load:** Full draft markdown, keyword-integration guide, lint issue list, inline issue playbook (runtime)
+- **Purpose:** Deterministic placement validation; surgical five-tool editor agent when triggered (`errors-only` default; `strict` optional)
+- **Tools:** `edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro` only
+- **Skip / re-run:** `--no-seo-check` on write; `ideon write resume --seo-check` or MCP `ideon_run_seo_check`; override with `--seo-check-mode` / `--seo-check-max-turns`
+
+### Stage 5: Image Prompts
 - **Load:** Format + References (if needed)
 - **Purpose:** Expand and refine image descriptions
 - **Key rules:** Visual storytelling, image-text alignment
 
-### Stage 7: Links
+### Stage 8: Links
 - **Load:** General + Intent
 - **Purpose:** Find and describe contextual external links
 - **Key rules:** Link relevance, anchor text quality, bias toward authoritative sources
@@ -191,7 +198,7 @@ See list of available references below.
 - `seo/on-page-essentials.md` — Title tag, meta description, heading hierarchy, BLUF paragraphs, formatting for search visibility
 - `seo/eeat-signals.md` — Embedding Experience, Expertise, Authoritativeness, and Trustworthiness signals
 - `seo/fact-density.md` — Statistics, citations, quotations requirements per section for generative engine visibility
-- `seo/keyword-integration.md` — Structured keyword targeting (load only when user-provided keywords are present)
+- `seo/keyword-integration.md` — Structured keyword targeting (`primaryKeyword`, per-section `targetKeywords`, placement rules; load when `keywords.length > 0`)
 
 ### Reference Guides (Load On-Demand)
 - `references/headline-writing-systems.md` — How to write compelling headlines

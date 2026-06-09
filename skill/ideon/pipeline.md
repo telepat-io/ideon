@@ -1,6 +1,6 @@
-# Pipeline Orchestration: 7-Stage Workflow
+# Pipeline Orchestration: 8-Stage Workflow
 
-This document details the execution flow for all 7 stages of the Ideon content generation pipeline. Agents should follow this sequence in order; stages are not skippable and must complete before proceeding to the next.
+This document details the execution flow for all 8 stages of the Ideon content generation pipeline. Agents should follow this sequence in order; stages are not skippable and must complete before proceeding to the next.
 
 ## Pipeline Overview
 
@@ -20,22 +20,26 @@ This document details the execution flow for all 7 stages of the Ideon content g
 │  Write long-form content (intro, body sections, conclusion)    │
 └────────────────────────────────────────────────────────────────┘
                               ↓
-┌─ Stage 4: Image Prompts ──────────────────────────────────────┐
+┌─ Stage 4: SEO Check ───────────────────────────────────────────┐
+│  Deterministic lint + optional editor agent (tool loop)         │
+└────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─ Stage 5: Image Prompts ──────────────────────────────────────┐
 │  Expand & refine image descriptions via agent prompt synthesis  │
 └────────────────────────────────────────────────────────────────┘
                               ↓
-┌─ Stage 5: Image Rendering ────────────────────────────────────┐
+┌─ Stage 6: Image Rendering ────────────────────────────────────┐
 │  Render images via Replicate (requires API token)              │
 └────────────────────────────────────────────────────────────────┘
                               ↓
                     ⭐ CHECKPOINT 2 ⭐
            (Content Review + Link Enrichment Decision)
                               ↓
-┌─ Stage 6: Output Generation ──────────────────────────────────┐
+┌─ Stage 7: Output Generation ──────────────────────────────────┐
 │  Generate channel-specific formatted files (markdown)          │
 └────────────────────────────────────────────────────────────────┘
                               ↓
-┌─ Stage 7: Link Enrichment ────────────────────────────────────┐
+┌─ Stage 8: Link Enrichment ──────────────────────────────────────┐
 │  Find and integrate contextual external links                  │
 └────────────────────────────────────────────────────────────────┘
                               ↓
@@ -67,7 +71,7 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 **Inputs:** Idea, cross-channel guidance, format/style/intent guides, SEO guides, length, keywords (optional)
 
-**Agent:** Using system prompt (guides + instructions), generate: title (<60 chars), slug, description (120-160 chars), outline with sections/word counts, keywords (5-10, non-generic, not duplicating heading text). When user-provided keywords are present, skip keyword generation and use the provided set; instruct the planner to place at least one keyword in the title and one in a major H2 heading.
+**Agent:** Using system prompt (guides + instructions), generate: title (<60 chars), slug, description (120-160 chars), outline with sections/word counts, keywords (3-8, non-generic, not duplicating heading text), `primaryKeyword` (chosen from keywords), and per-section `targetKeywords` (0-2 each when keywords exist). Assign `primaryKeyword` to title and intro brief; ensure every keyword appears in title, a section title, or a section's `targetKeywords`; place at least one secondary keyword in a major H2. When user-provided keywords are present, skip keyword generation and use the provided set with the same placement rules.
 
 **Output:** JSON with plan + token/cost estimate
 
@@ -85,7 +89,7 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 **Inputs:** Plan, format/style/intent guides, SEO guides (cached), target length
 
-**Agent:** Using system prompt (guides + plan + quality standards + SEO rules), generate full markdown with sections as outlined. Each section must include at least one statistic or citation per on-page essentials and fact density guides. Apply E-E-A-T signals (practitioner observations, authoritative citations, competing viewpoints). When user-provided keywords are present, include at least one keyword in the first 100 words of the intro and weave remaining keywords naturally into body prose. After writing, run AI prose detection avoidance pass: scan for prohibited vocabulary, hedging language, and formulaic transitions.
+**Agent:** Using tiered guide bundles (intro / section / outro) with system prompt (guides + plan + quality standards + SEO rules), generate full markdown with sections as outlined. Intro: place `primaryKeyword` in the first 100 words. Sections: open with a 40-60 word BLUF paragraph; use each section's `targetKeywords` when present. Each section must include at least one statistic or citation per on-page essentials and fact density guides. Apply E-E-A-T signals (practitioner observations, authoritative citations, competing viewpoints). After writing, run AI prose detection avoidance pass: scan for prohibited vocabulary, hedging language, and formulaic transitions.
 
 **Output:** Full markdown + actual word count + token/cost
 
@@ -97,7 +101,23 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 ---
 
-## Stage 4: Image Prompts
+## Stage 4: SEO Check
+
+**Purpose:** Validate and fix on-page SEO placement after section writing
+
+**Inputs:** Plan (`primaryKeyword`, section `targetKeywords`), intro/section/outro drafts, keyword-integration guide excerpt
+
+**Process:** Run deterministic `lintArticleSeo` with `seoCheckMode` (`errors-only` default | `strict`). Agent runs when errors exist (`errors-only`), any issue exists (`strict`), or `force` is set. Surgical editor uses five tools only: `edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro`. Prompt includes full draft markdown, keyword-integration guide, and inline issue playbook. Max turns from `seoCheckMaxTurns` (default 10).
+
+**Output:** Patched plan/text in session; `seoCheck` block in `meta.json` with `seoCheckMode`, `warningsRemaining`, mode-aware `passed`, and full `issues[]`
+
+**Skip / re-run:** `--no-seo-check` on write; `ideon write resume --seo-check` or MCP `ideon_run_seo_check` to force re-run. Override mode/turns with `--seo-check-mode`, `--seo-check-max-turns`, or MCP params.
+
+**Failure mode:** Warn, record issues in `meta.json`, continue pipeline
+
+---
+
+## Stage 5: Image Prompts
 
 **Purpose:** Expand image descriptions for Replicate generation
 
@@ -113,7 +133,7 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 ---
 
-## Stage 5: Image Rendering
+## Stage 6: Image Rendering
 
 **Purpose:** Render images via Replicate using expanded prompts
 
@@ -131,7 +151,7 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 ---
 
-## Stage 6: Output Generation
+## Stage 7: Output Generation
 
 **Purpose:** Generate channel-specific markdown files for each target format
 
@@ -145,7 +165,7 @@ This document details the execution flow for all 7 stages of the Ideon content g
 
 ---
 
-## Stage 7: Link Enrichment
+## Stage 8: Link Enrichment
 
 **Purpose:** Research and integrate contextual external links
 

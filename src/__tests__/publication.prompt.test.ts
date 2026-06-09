@@ -26,6 +26,7 @@ const testPlan = {
   title: 'Test Plan',
   subtitle: 'Subtitle',
   keywords: ['a', 'b', 'c'],
+  primaryKeyword: 'a',
   slug: 'test-plan',
   contentType: 'article',
   description: 'A test article about testing.',

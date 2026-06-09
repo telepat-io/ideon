@@ -151,6 +151,7 @@ Das JSON enthält:
 - `sections`: Array von Absatztiteln und -beschreibungen (leer für Kurzform-Inhalte)
 - `images`: Array aller gerenderten Bilder (Cover und Inline) mit Pfaden, Beschreibungen und Ankerpositionen
 - `outputs`: Array aller Markdown-Ausgabedateien mit Inhaltstypen und Pfaden
+- `seoCheck` (falls vorhanden): Lint-Ergebnis (`passed` folgt `seoCheckMode`), `seoCheckMode`, `warningsRemaining`, vollständiges `issues[]`, Editor-Rundenzahl und Editor-Pass-Kostenzusammenfassung
 - `generatedAt`: ISO-Zeitstempel
 - `generationDir`: Absoluter Pfad zum Generierungsverzeichnis
 

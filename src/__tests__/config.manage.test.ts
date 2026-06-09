@@ -46,6 +46,8 @@ describe('config manage', () => {
       targetLength: 900,
       planModel: 'deepseek/deepseek-v4-pro',
       planIntentModel: 'deepseek/deepseek-v4-flash',
+      seoCheckMode: 'errors-only',
+      seoCheckMaxTurns: 10,
     });
 
     loadSecretsMock.mockResolvedValue({
@@ -133,6 +135,8 @@ describe('config manage', () => {
       defaultPublication: 'tech-blog',
       planModel: 'deepseek/deepseek-v4-pro',
       planIntentModel: 'deepseek/deepseek-v4-flash',
+      seoCheckMode: 'errors-only',
+      seoCheckMaxTurns: 10,
     });
 
     const result = await configGet('defaultPublication');
@@ -166,6 +170,8 @@ describe('config manage', () => {
       defaultPublication: 'my-pub',
       planModel: 'deepseek/deepseek-v4-pro',
       planIntentModel: 'deepseek/deepseek-v4-flash',
+      seoCheckMode: 'errors-only',
+      seoCheckMaxTurns: 10,
     });
 
     const result = await configList();

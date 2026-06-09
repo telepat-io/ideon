@@ -24,6 +24,13 @@ function deriveSectionCounts(targetLengthWords: number): { min: number; max: num
   };
 }
 
+const KEYWORD_PLACEMENT_DIRECTIVE = [
+  'Assign primaryKeyword from the keywords list.',
+  'Place primaryKeyword in the title and intro brief.',
+  'Assign targetKeywords per section (0 to 2 each); every keyword must appear in the title, a section title, or a section targetKeywords list.',
+  'At least one secondary keyword should appear in a major H2 section heading when natural.',
+].join(' ');
+
 export function buildPrimaryPlanJsonSchema(contentType: string, targetLengthWords: number, providedKeywords?: string[]) {
   if (!isLongFormContentType(contentType)) {
     return buildShortFormPlanJsonSchema();
@@ -41,6 +48,7 @@ function buildLongFormPlanJsonSchema(targetLengthWords: number, providedKeywords
     'contentType',
     'title',
     'subtitle',
+    'primaryKeyword',
     ...(hasProvidedKeywords ? [] : ['keywords']),
     'slug',
     'description',
@@ -51,10 +59,13 @@ function buildLongFormPlanJsonSchema(targetLengthWords: number, providedKeywords
     'inlineImages',
   ];
 
+  const sectionItemRequired = ['title', 'description', 'targetKeywords'];
+
   const properties: Record<string, unknown> = {
     contentType: { type: 'string' },
     title: { type: 'string' },
     subtitle: { type: 'string' },
+    primaryKeyword: { type: 'string' },
     ...(hasProvidedKeywords ? {} : {
       keywords: {
         type: 'array',
@@ -74,10 +85,16 @@ function buildLongFormPlanJsonSchema(targetLengthWords: number, providedKeywords
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['title', 'description'],
+        required: sectionItemRequired,
         properties: {
           title: { type: 'string' },
           description: { type: 'string' },
+          targetKeywords: {
+            type: 'array',
+            minItems: 0,
+            maxItems: 2,
+            items: { type: 'string' },
+          },
         },
       },
     },
@@ -168,12 +185,15 @@ function buildLongFormPlanMessages(
 
   const systemInstruction = [
     'You are a senior editorial strategist. Produce a rigorous content plan for a polished long-form Markdown output.',
-    buildPrimaryPlanGuideInstruction(options.intent, options.contentType),
+    buildPrimaryPlanGuideInstruction(options.intent, options.contentType, options.keywords),
     buildRunContextDirective(options.contentTypes),
     buildTargetLengthDirective(options.contentType, options.targetLength),
     buildEditorialPolicyDirective(options.publication ?? null),
     buildSeriesDirective(options.series ?? null),
-    ...(hasProvidedKeywords ? [`The following SEO keywords have been provided and will be used for metadata: ${options.keywords!.join(', ')}. Structure your plan so at least one keyword appears in the title and at least one keyword appears in a major H2 section heading.`] : []),
+    KEYWORD_PLACEMENT_DIRECTIVE,
+    ...(hasProvidedKeywords
+      ? [`The following SEO keywords have been provided and will be used for metadata: ${options.keywords!.join(', ')}.`]
+      : []),
     'Return only the requested JSON.',
   ].filter((part) => part.length > 0).join(' ');
 
@@ -200,6 +220,7 @@ function buildLongFormPlanMessages(
         `- Plan ${sectionCounts.label} strong sections with distinct focus areas and logical progression (no repetitive section intent).`,
         '- Frame section titles to reflect likely search intent or practical reader questions when appropriate.',
         '- Each section description should name the mechanism, evidence type, or practical action that makes the section useful.',
+        '- Assign primaryKeyword and per-section targetKeywords (0 to 2 each) so every keyword is covered across title, headings, or targetKeywords.',
         '- Sections are primary-only structure and must not be treated as requirements for non-primary channels.',
         `- Include a cover image description and ${imageCounts.min} to ${imageCounts.max} inline image descriptions.`,
         '- Each inline image must specify which section it follows (anchorAfterSection, starting at 1). Choose sections where visual reinforcement adds the most value.',
@@ -217,12 +238,13 @@ function buildLongFormPlanMessages(
         `- contentType: set to "${options.contentType}" exactly`,
         '- title: string',
         '- subtitle: string',
+        '- primaryKeyword: string (must be one of the keywords)',
         keywordRequirement,
         '- slug: string in lowercase kebab-case',
         '- description: string',
         '- introBrief: string',
         '- outroBrief: string',
-        `- sections: array of ${sectionCounts.label} objects, each with title and description strings`,
+        `- sections: array of ${sectionCounts.label} objects, each with title, description, and targetKeywords (array of 0 to 2 strings)`,
         '- coverImageDescription: string',
         `- inlineImages: array of ${imageCounts.min} to ${imageCounts.max} objects, each with a description string and an anchorAfterSection number (starting at 1).`,
         '',
@@ -247,7 +269,7 @@ function buildShortFormPlanMessages(
 ): ChatMessage[] {
   const systemInstruction = [
     'You are a senior content strategist. Produce a concise content plan for a short-form social media post.',
-    buildPrimaryPlanGuideInstruction(options.intent, options.contentType),
+    buildPrimaryPlanGuideInstruction(options.intent, options.contentType, options.keywords),
     buildRunContextDirective(options.contentTypes),
     buildEditorialPolicyDirective(options.publication ?? null),
     buildSeriesDirective(options.series ?? null),

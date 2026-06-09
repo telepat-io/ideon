@@ -26,6 +26,7 @@ export const ideonSkillRegistry: SkillDefinition[] = [
         style: [...writingStyleValues],
         intent: [...contentIntentValues],
         length: [...targetLengthValues],
+        seoCheckMode: ['errors-only', 'strict'],
       },
     },
   },

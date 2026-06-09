@@ -7,7 +7,11 @@ import {
   buildRunContextDirective,
   buildTargetLengthDirective,
 } from './writingFramework.js';
-import { buildArticleSectionGuideInstruction } from './guideBundles.js';
+import {
+  buildIntroGuideInstruction,
+  buildOutroGuideInstruction,
+  buildSectionGuideInstruction,
+} from './guideBundles.js';
 import { buildEditorialPolicyDirective } from './publicationPolicy.js';
 import { buildSeriesDirective } from './seriesPolicy.js';
 
@@ -29,8 +33,11 @@ const OUTRO_PARAGRAPH_COUNTS: Record<string, string> = {
   large: '3 to 5',
 };
 
+type GuideCallType = 'intro' | 'section' | 'outro';
+
 function buildSystemInstruction(
   base: string,
+  callType: GuideCallType,
   style: string,
   intent: string,
   contentTypes: string[],
@@ -38,10 +45,17 @@ function buildSystemInstruction(
   contentType: string,
   publication: Publication | null,
   series: Series | null,
+  keywords?: string[],
 ): string {
+  const guideInstruction = callType === 'intro'
+    ? buildIntroGuideInstruction(style, intent, contentType, keywords)
+    : callType === 'section'
+      ? buildSectionGuideInstruction(style, intent, contentType, keywords)
+      : buildOutroGuideInstruction(style, intent, contentType);
+
   return [
     base,
-    buildArticleSectionGuideInstruction(style, intent, contentType),
+    guideInstruction,
     buildRunContextDirective(contentTypes),
     buildTargetLengthDirective(contentType, targetLengthWords),
     buildEditorialPolicyDirective(publication),
@@ -51,13 +65,19 @@ function buildSystemInstruction(
 
 function sharedPlanContext(plan: ArticlePlan): string {
   const sectionOutline = plan.sections
-    .map((section, index) => `${index + 1}. ${section.title}: ${section.description}`)
+    .map((section, index) => {
+      const targets = section.targetKeywords?.length
+        ? ` [targetKeywords: ${section.targetKeywords.join(', ')}]`
+        : '';
+      return `${index + 1}. ${section.title}: ${section.description}${targets}`;
+    })
     .join('\n');
 
   return [
     `Title: ${plan.title}`,
     `Subtitle: ${plan.subtitle}`,
     `Description: ${plan.description}`,
+    `Primary keyword: ${plan.primaryKeyword}`,
     `Keywords: ${plan.keywords.join(', ')}`,
     'Outline:',
     sectionOutline,
@@ -76,6 +96,13 @@ function sharedDraftContext(articleSoFar: string): string {
   ].join('\n');
 }
 
+function sectionKeywordTargets(plan: ArticlePlan, section: ArticleSectionPlan): string[] {
+  if (section.targetKeywords && section.targetKeywords.length > 0) {
+    return section.targetKeywords;
+  }
+  return plan.keywords.filter((kw) => kw !== plan.primaryKeyword);
+}
+
 export function buildIntroMessages(
   plan: ArticlePlan,
   style: string,
@@ -88,6 +115,7 @@ export function buildIntroMessages(
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial prose for Markdown articles. Return only the prose body with no heading and no code fences.',
+    'intro',
     style,
     intent,
     contentTypes,
@@ -95,6 +123,7 @@ export function buildIntroMessages(
     plan.contentType,
     publication,
     series,
+    plan.keywords,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = INTRO_PARAGRAPH_COUNTS[targetLengthAlias] ?? INTRO_PARAGRAPH_COUNTS['medium']!;
@@ -115,8 +144,8 @@ export function buildIntroMessages(
         `- Target length: about ${introTargetWords} words.`,
         '- Hook the reader quickly.',
         '- Set up the argument and tone for the rest of the article.',
-        ...(plan.keywords && plan.keywords.length > 0
-          ? [`- Include at least one of these SEO keywords naturally within the first 100 words: ${plan.keywords.join(', ')}.`]
+        ...(plan.primaryKeyword
+          ? [`- Include the primary keyword "${plan.primaryKeyword}" naturally within the first 100 words.`]
           : []),
       ].join('\n'),
     },
@@ -137,6 +166,7 @@ export function buildSectionMessages(
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write in-depth Markdown article sections. Return only the prose body for the section, with no heading and no code fences.',
+    'section',
     style,
     intent,
     contentTypes,
@@ -144,9 +174,11 @@ export function buildSectionMessages(
     plan.contentType,
     publication,
     series,
+    plan.keywords,
   );
   const targetLengthAlias = resolveTargetLengthAlias(targetLengthWords);
   const paragraphCount = SECTION_PARAGRAPH_COUNTS[targetLengthAlias] ?? SECTION_PARAGRAPH_COUNTS['medium']!;
+  const keywordTargets = sectionKeywordTargets(plan, section);
 
   return [
     {
@@ -165,12 +197,13 @@ export function buildSectionMessages(
         'Requirements:',
         `- ${paragraphCount} paragraphs.`,
         `- Target length: about ${sectionTargetWords} words.`,
+        '- Open with a 40-to-60-word definition-first paragraph that directly answers the section heading.',
         '- Be concrete and specific. Support key claims with statistics, data points, or authoritative citations.',
         '- Include at least one practical insight that sounds like first-hand practitioner experience.',
         '- Continue naturally from the article draft so far without rehashing prior sections.',
         '- Use short Markdown lists only if they materially improve clarity.',
-        ...(plan.keywords && plan.keywords.length > 0
-          ? [`- Weave these SEO keywords into body prose where they fit the section topic naturally: ${plan.keywords.join(', ')}. Do not force them if they break readability.`]
+        ...(keywordTargets.length > 0
+          ? [`- Weave these SEO keywords into body prose where they fit the section topic naturally: ${keywordTargets.join(', ')}. Do not force them if they break readability.`]
           : []),
       ].join('\n'),
     },
@@ -189,6 +222,7 @@ export function buildOutroMessages(
 ): ChatMessage[] {
   const baseSystemInstruction = buildSystemInstruction(
     'You write polished editorial conclusions for Markdown articles. Return only the prose body with no heading and no code fences.',
+    'outro',
     style,
     intent,
     contentTypes,
@@ -216,6 +250,9 @@ export function buildOutroMessages(
         `- Target length: about ${outroTargetWords} words.`,
         '- Synthesize the main argument.',
         '- End with a strong, thoughtful closing line.',
+        ...(plan.primaryKeyword
+          ? [`- If natural, mention the primary entity "${plan.primaryKeyword}" once without keyword stuffing.`]
+          : []),
       ].join('\n'),
     },
   ];

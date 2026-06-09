@@ -11,8 +11,11 @@ import type {
   MetaJsonImage,
   MetaJsonOutput,
   MetaJsonSection,
+  MetaJsonSeoCheck,
 } from '../types/meta.js';
+import type { SeoCheckMode, SeoLintResult } from '../seo/lint.js';
 import type { ContentPlan } from '../types/contentPlan.js';
+import type { CostSource } from '../pipeline/events.js';
 
 export interface BuildMetaJsonInput {
   idea: string;
@@ -27,6 +30,15 @@ export interface BuildMetaJsonInput {
   targetLength: string | null;
   publication?: string;
   series?: string;
+  seoCheck?: SeoLintResult & {
+    ranAt: string;
+    seoCheckMode: SeoCheckMode;
+    warningsRemaining: number;
+    editorTurns?: number;
+    skipped?: boolean;
+    editorCostUsd?: number | null;
+    editorCostSource?: CostSource;
+  };
 }
 
 export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
@@ -39,6 +51,7 @@ export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
   const description = plan?.description ?? contentPlan?.description ?? '';
   const subtitle = (plan && 'subtitle' in plan ? (plan as ArticlePlan).subtitle : null) ?? null;
   const keywords = (plan && 'keywords' in plan ? (plan as ArticlePlan).keywords : null) ?? [];
+  const primaryKeyword = (plan && 'primaryKeyword' in plan ? (plan as ArticlePlan).primaryKeyword : null) ?? null;
   const contentType = plan?.contentType ?? contentPlan?.primaryContentType ?? 'article';
   const angle = plan?.angle ?? null;
 
@@ -56,6 +69,9 @@ export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
     plan?.sections?.map((section) => ({
       title: section.title,
       description: section.description,
+      ...(section.targetKeywords && section.targetKeywords.length > 0
+        ? { targetKeywords: section.targetKeywords }
+        : {}),
     })) ?? [];
 
   const images: MetaJsonImage[] = input.renderedImages.map((image) => ({
@@ -82,6 +98,7 @@ export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
     description,
     subtitle,
     keywords,
+    primaryKeyword,
     contentType,
     style: input.style,
     intent: input.intent,
@@ -95,5 +112,24 @@ export function buildMetaJson(input: BuildMetaJsonInput): MetaJson {
     generationDir,
     ...(input.publication ? { publication: input.publication } : {}),
     ...(input.series ? { series: input.series } : {}),
+    ...(input.seoCheck ? { seoCheck: toMetaSeoCheck(input.seoCheck) } : {}),
+  };
+}
+
+function toMetaSeoCheck(seoCheck: NonNullable<BuildMetaJsonInput['seoCheck']>): MetaJsonSeoCheck {
+  return {
+    ranAt: seoCheck.ranAt,
+    passed: seoCheck.passed,
+    issues: seoCheck.issues.map((issue) => ({
+      id: issue.id,
+      severity: issue.severity,
+      message: issue.message,
+    })),
+    seoCheckMode: seoCheck.seoCheckMode,
+    warningsRemaining: seoCheck.warningsRemaining,
+    ...(seoCheck.editorTurns !== undefined ? { editorTurns: seoCheck.editorTurns } : {}),
+    ...(seoCheck.skipped !== undefined ? { skipped: seoCheck.skipped } : {}),
+    ...(seoCheck.editorCostUsd !== undefined ? { editorCostUsd: seoCheck.editorCostUsd } : {}),
+    ...(seoCheck.editorCostSource !== undefined ? { editorCostSource: seoCheck.editorCostSource } : {}),
   };
 }

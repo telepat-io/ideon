@@ -8,7 +8,7 @@ function normalizeGuideContent(content: string): string {
   return content.replace(/\r\n/g, '\n').trim();
 }
 
-function readGuideFile(relativePath: string): string {
+export function readGuideFile(relativePath: string): string {
   const cached = guideCache.get(relativePath);
   if (cached) {
     return cached;
@@ -68,12 +68,24 @@ function buildGuideBundle(relativePaths: string[]): string {
   ].join('\n\n');
 }
 
-export function buildPrimaryPlanGuideInstruction(intent: string, contentType: string): string {
+function keywordGuides(keywords?: string[]): string[] {
+  if (!keywords || keywords.length === 0) {
+    return [];
+  }
+  return [seoGuidePath('keyword-integration')];
+}
+
+export function buildPrimaryPlanGuideInstruction(
+  intent: string,
+  contentType: string,
+  keywords?: string[],
+): string {
   const baseGuides = [
     'writing-guide/references/headline-writing-systems.md',
     'writing-guide/references/ideation-and-credibility-systems.md',
     'writing-guide/references/content-frameworks.md',
     seoGuidePath('on-page-essentials'),
+    ...keywordGuides(keywords),
     intentToGuidePath(intent),
     formatToGuidePath(contentType),
   ];
@@ -89,7 +101,35 @@ export function buildPrimaryPlanGuideInstruction(intent: string, contentType: st
   return buildGuideBundle(baseGuides);
 }
 
+/** @deprecated Use buildIntroGuideInstruction, buildSectionGuideInstruction, or buildOutroGuideInstruction */
 export function buildArticleSectionGuideInstruction(style: string, intent: string, contentType: string): string {
+  return buildSectionGuideInstruction(style, intent, contentType);
+}
+
+export function buildIntroGuideInstruction(
+  style: string,
+  intent: string,
+  contentType: string,
+  keywords?: string[],
+): string {
+  return buildGuideBundle([
+    'writing-guide/general/core-web-writing-rules.md',
+    'writing-guide/references/skimmability-patterns.md',
+    seoGuidePath('on-page-essentials'),
+    seoGuidePath('eeat-signals'),
+    ...keywordGuides(keywords),
+    styleToGuidePath(style),
+    intentToGuidePath(intent),
+    formatToGuidePath(contentType),
+  ]);
+}
+
+export function buildSectionGuideInstruction(
+  style: string,
+  intent: string,
+  contentType: string,
+  keywords?: string[],
+): string {
   return buildGuideBundle([
     'writing-guide/general/core-web-writing-rules.md',
     'writing-guide/references/emotional-resonance.md',
@@ -99,6 +139,21 @@ export function buildArticleSectionGuideInstruction(style: string, intent: strin
     seoGuidePath('on-page-essentials'),
     seoGuidePath('eeat-signals'),
     seoGuidePath('fact-density'),
+    ...keywordGuides(keywords),
+    styleToGuidePath(style),
+    intentToGuidePath(intent),
+    formatToGuidePath(contentType),
+  ]);
+}
+
+export function buildOutroGuideInstruction(
+  style: string,
+  intent: string,
+  contentType: string,
+): string {
+  return buildGuideBundle([
+    'writing-guide/general/core-web-writing-rules.md',
+    'writing-guide/references/prose-quality-checks.md',
     styleToGuidePath(style),
     intentToGuidePath(intent),
     formatToGuidePath(contentType),

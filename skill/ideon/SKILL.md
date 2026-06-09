@@ -54,7 +54,8 @@ An agent MUST collect these inputs from the user upfront before proceeding:
 - **Keywords** *(list of strings)* — SEO keywords to target in the content
   - Default: None (auto-generated during planning if not provided)
   - Supports compound keywords: `"organic marketing, content strategy, seo"`
-  - When provided, the planner places at least one keyword in the title and one in a major H2 heading; the intro writer includes at least one keyword in the first 100 words
+  - When provided (or when the planner generates keywords), the planner assigns `primaryKeyword` and per-section `targetKeywords` (0-2 each) with parity placement rules; the intro writer places `primaryKeyword` in the first 100 words; section writers use each section's `targetKeywords` in BLUF openers
+  - After section writing, the default-on `seo-check` stage lints placement and may run a five-tool surgical editor agent (`errors-only` pass by default; `--seo-check-mode strict` for zero warnings; `--seo-check-max-turns` / `seoCheckMaxTurns` for turn limit; `--no-seo-check` to skip; `ideon write resume --seo-check` or MCP `ideon_run_seo_check` to re-run)
   - Keywords can also be defined at the series level and are inherited by all articles in that series
 
 ### System Requirements (agent provides)

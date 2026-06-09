@@ -143,6 +143,7 @@ describe('buildMetaJson', () => {
     coverImageDescription: 'A beautiful cover',
     subtitle: 'The subtitle',
     keywords: ['keyword1', 'keyword2'],
+    primaryKeyword: 'keyword1',
     introBrief: 'Intro brief',
     outroBrief: 'Outro brief',
     sections: [
@@ -360,5 +361,36 @@ describe('buildMetaJson', () => {
 
     expect(meta.publication).toBeUndefined();
     expect(meta.series).toBeUndefined();
+  });
+
+  it('includes seoCheck editor cost summary when provided', () => {
+    const meta = buildMetaJson({
+      idea: 'SEO cost meta',
+      generationDir: '/output/gen',
+      contentPlan: baseContentPlan,
+      plan: basePlan,
+      renderedImages: [],
+      outputs: [],
+      generatedAt: '2026-05-08T12:00:00.000Z',
+      style: 'professional',
+      intent: 'tutorial',
+      targetLength: 'medium',
+      seoCheck: {
+        ranAt: '2026-05-08T12:05:00.000Z',
+        passed: false,
+        issues: [{ id: 'primary-in-intro', severity: 'error', message: 'Missing primary keyword', location: 'intro' }],
+        seoCheckMode: 'errors-only',
+        warningsRemaining: 0,
+        editorTurns: 2,
+        editorCostUsd: 0.0042,
+        editorCostSource: 'estimated',
+      },
+    });
+
+    expect(meta.seoCheck?.seoCheckMode).toBe('errors-only');
+    expect(meta.seoCheck?.warningsRemaining).toBe(0);
+    expect(meta.seoCheck?.editorTurns).toBe(2);
+    expect(meta.seoCheck?.editorCostUsd).toBe(0.0042);
+    expect(meta.seoCheck?.editorCostSource).toBe('estimated');
   });
 });

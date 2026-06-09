@@ -54,6 +54,7 @@ describe('buildFinalSummaryRows', () => {
         imageRenderCalls: [],
         outputItemCalls: [],
         linkEnrichmentCalls: [],
+        seoCheckCalls: [],
       },
     });
 
@@ -122,6 +123,7 @@ describe('buildFinalSummaryRows', () => {
         imageRenderCalls: [],
         outputItemCalls: [],
         linkEnrichmentCalls: [],
+        seoCheckCalls: [],
       },
     });
 

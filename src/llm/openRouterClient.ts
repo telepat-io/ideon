@@ -2,9 +2,65 @@ import type { AppSettings } from '../config/schema.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { LlmInteractionRecord } from '../pipeline/events.js';
 
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+export type ChatMessage =
+  | { role: 'system' | 'user'; content: string }
+  | { role: 'assistant'; content: string | null; tool_calls?: ToolCall[] }
+  | { role: 'tool'; tool_call_id: string; content: string };
+
+export interface OpenRouterToolDefinition {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+export interface AgentTurnCompleteEvent {
+  turn: number;
+  operationId: string;
+  metrics: LlmCallMetrics;
+  toolCalls: string[];
+}
+
+export interface AgentToolExecutedEvent {
+  turn: number;
+  operationId: string;
+  toolName: string;
+  arguments: Record<string, unknown>;
+  result: unknown;
+  durationMs: number;
+}
+
+export interface AgentLoopRequest {
+  messages: ChatMessage[];
+  tools: OpenRouterToolDefinition[];
+  settings: AppSettings;
+  maxTurns?: number;
+  modelId?: string;
+  toolHandlers: Record<string, (args: Record<string, unknown>) => Promise<unknown> | unknown>;
+  reasoning?: OpenRouterReasoningConfig;
+  interactionContext?: OpenRouterInteractionContext;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
+  onTurnComplete?: (event: AgentTurnCompleteEvent) => void;
+  onToolExecuted?: (event: AgentToolExecutedEvent) => void;
+  onMetrics?: (metrics: LlmCallMetrics) => void;
+}
+
+export interface AgentLoopResult {
+  messages: ChatMessage[];
+  turnsUsed: number;
+  finalContent: string | null;
+  maxTurnsReached: boolean;
 }
 
 export interface StructuredRequest<T> {
@@ -52,8 +108,10 @@ export interface OpenRouterInteractionContext {
 
 export interface OpenRouterResponse {
   choices?: Array<{
+    finish_reason?: string | null;
     message?: {
       content?: string | null;
+      tool_calls?: ToolCall[];
       annotations?: Array<{
         type?: string;
         url_citation?: {
@@ -157,6 +215,112 @@ export class OpenRouterClient {
     }
   }
 
+  async requestAgentLoop(request: AgentLoopRequest): Promise<AgentLoopResult> {
+    const maxTurns = Math.max(1, request.maxTurns ?? 10);
+    const messages = [...request.messages];
+    const agentSettings = {
+      ...request.settings,
+      model: request.modelId ?? request.settings.editorModel ?? request.settings.model,
+    };
+    let aggregatedMetrics: LlmCallMetrics | null = null;
+    let turnsUsed = 0;
+    let finalContent: string | null = null;
+
+    const baseOperationId = request.interactionContext?.operationId ?? 'agent';
+    const stageId = request.interactionContext?.stageId ?? 'unknown';
+
+    for (let turn = 0; turn < maxTurns; turn += 1) {
+      turnsUsed = turn + 1;
+      const turnOperationId = `${baseOperationId}:turn-${turnsUsed}`;
+      const completion = await this.sendCompletion({
+        messages,
+        settings: agentSettings,
+        requestType: 'agent',
+        interactionContext: {
+          stageId,
+          operationId: turnOperationId,
+        },
+        onInteraction: request.onInteraction,
+        tools: request.tools,
+        toolChoice: 'auto',
+        parallelToolCalls: false,
+        reasoning: request.reasoning,
+      });
+      aggregatedMetrics = aggregateLlmMetrics(aggregatedMetrics, completion.metrics);
+
+      const choice = completion.response.choices?.[0];
+      const assistantMessage = choice?.message;
+      if (!assistantMessage) {
+        break;
+      }
+
+      const toolCalls = assistantMessage.tool_calls ?? [];
+      request.onTurnComplete?.({
+        turn: turnsUsed,
+        operationId: turnOperationId,
+        metrics: completion.metrics,
+        toolCalls: toolCalls.map((toolCall) => toolCall.function.name),
+      });
+
+      messages.push({
+        role: 'assistant',
+        content: assistantMessage.content ?? null,
+        ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
+      });
+
+      if (toolCalls.length === 0) {
+        finalContent = assistantMessage.content?.trim() || null;
+        break;
+      }
+
+      for (const toolCall of toolCalls) {
+        const handler = request.toolHandlers[toolCall.function.name];
+        let toolResult: unknown;
+        let toolArgs: Record<string, unknown> = {};
+        const toolStartedAtMs = Date.now();
+        if (!handler) {
+          toolResult = { ok: false, error: `Unknown tool: ${toolCall.function.name}` };
+        } else {
+          try {
+            toolArgs = JSON.parse(toolCall.function.arguments) as Record<string, unknown>;
+            toolResult = await handler(toolArgs);
+          } catch (error) {
+            toolResult = {
+              ok: false,
+              error: error instanceof Error ? error.message : 'Tool execution failed',
+            };
+          }
+        }
+
+        request.onToolExecuted?.({
+          turn: turnsUsed,
+          operationId: `${turnOperationId}:${toolCall.function.name}`,
+          toolName: toolCall.function.name,
+          arguments: toolArgs,
+          result: toolResult,
+          durationMs: Date.now() - toolStartedAtMs,
+        });
+
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(toolResult),
+        });
+      }
+    }
+
+    if (aggregatedMetrics) {
+      request.onMetrics?.(aggregatedMetrics);
+    }
+
+    return {
+      messages,
+      turnsUsed,
+      finalContent,
+      maxTurnsReached: turnsUsed >= maxTurns && (messages[messages.length - 1]?.role === 'tool'),
+    };
+  }
+
   async requestWebSearch(request: WebSearchRequest): Promise<{ text: string; firstCitationUrl: string | null; firstCitationTitle: string | null }> {
     const completion = await this.sendCompletion({
       messages: request.messages,
@@ -198,6 +362,9 @@ export class OpenRouterClient {
     requireStructuredOutputs,
     plugins,
     reasoning,
+    tools,
+    toolChoice,
+    parallelToolCalls,
   }: {
     messages: ChatMessage[];
     settings: AppSettings;
@@ -208,6 +375,9 @@ export class OpenRouterClient {
     requireStructuredOutputs?: boolean;
     plugins?: Array<Record<string, unknown>>;
     reasoning?: OpenRouterReasoningConfig;
+    tools?: OpenRouterToolDefinition[];
+    toolChoice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
+    parallelToolCalls?: boolean;
   }): Promise<{ response: OpenRouterResponse; metrics: LlmCallMetrics }> {
     let lastError: Error | null = null;
     const startedAtMs = Date.now();
@@ -252,6 +422,12 @@ export class OpenRouterClient {
 
         if (reasoning) {
           requestBody.reasoning = reasoning;
+        }
+
+        if (tools && tools.length > 0) {
+          requestBody.tools = tools;
+          requestBody.tool_choice = toolChoice ?? 'auto';
+          requestBody.parallel_tool_calls = parallelToolCalls ?? false;
         }
 
         requestBodyRaw = JSON.stringify(requestBody);
@@ -306,7 +482,9 @@ export class OpenRouterClient {
         }
 
         const content = json.choices?.[0]?.message?.content;
-        if (!content && attempt < maxAttempts - 1) {
+        const toolCalls = json.choices?.[0]?.message?.tool_calls;
+        const hasToolCalls = Array.isArray(toolCalls) && toolCalls.length > 0;
+        if (!content && !hasToolCalls && attempt < maxAttempts - 1) {
           const backoff = backoffMs(attempt);
           retries += 1;
           retryBackoffMs += backoff;

@@ -6,7 +6,7 @@ keywords: [ideon, 文档, cli, 指南, 参考]
 
 # 流水线阶段
 
-Ideon 运行一个七阶段流水线，提供实时状态更新与阶段级 analytics。
+Ideon 运行一个八阶段流水线，提供实时状态更新与阶段级 analytics。
 
 阶段执行取决于主内容类型：
 
@@ -17,10 +17,11 @@ Ideon 运行一个七阶段流水线，提供实时状态更新与阶段级 anal
 
 1. Planning Primary Article or Planning Primary Content
 2. Writing Sections or Generating Primary Content
-3. Expanding Image Prompts
-4. Rendering Images
-5. Generating Channel Content
-6. Enriching Links
+3. SEO Check（确定性 lint + 可选五工具手术式编辑器智能体；默认 `errors-only` 通过模式）
+4. Expanding Image Prompts
+5. Rendering Images
+6. Generating Channel Content
+7. Enriching Links
 
 在主内容规划前始终执行：
 
@@ -116,6 +117,20 @@ Analytics 会写入每个生成目录下的 `generation.analytics.json`。
 - 阶段编排仍会执行并产出 analytics。
 - 会跳过外部 OpenRouter 与 Replicate 调用。
 - 仍会写出输出产物，便于在不消耗提供方成本下验证目录结构与编排。
+
+## SEO Check 阶段行为
+
+- 默认在长文主内容的章节写作之后运行。
+- **确定性 lint** 检查标题/描述长度、主关键词布局、关键词覆盖、BLUF 开篇与事实密度启发式。
+- **通过模式**（`seoCheckMode`，默认 `errors-only`）：
+  - `errors-only`：无 `severity: error` 的 lint 问题时阶段通过；警告会记录但不触发智能体。
+  - `strict`：仅当零 lint 问题时通过；任何警告都会触发编辑器智能体。
+- **智能体触发：** `errors-only` 仅在存在错误时运行；`strict` 在任何问题存在时运行；`force`（`--seo-check` / `ideon_run_seo_check`）始终运行智能体路径。
+- 触发且 OpenRouter 可用时，**手术式 SEO 编辑器智能体**使用五个正文/元数据工具，上下文包含完整草稿、关键词整合指南与内联问题手册。
+- **CLI / 配置：** `--seo-check-mode <errors-only|strict>`、`--seo-check-max-turns <n>`（1–20，默认 10）；设置文件中的 `seoCheckMode` 与 `seoCheckMaxTurns`。MCP `ideon_write`、`ideon_write_resume`、`ideon_run_seo_check` 接受相同可选参数。
+- **工具反馈：** 每次工具调用返回 `remainingErrors`、`remainingWarnings`、`remainingIssues`。
+- **跳过：** `ideon write` 使用 `--no-seo-check`。
+- **重新运行：** `ideon write resume --seo-check` 或 MCP `ideon_run_seo_check`。
 
 ## Output 阶段行为
 

@@ -10,7 +10,7 @@ import type { ArticleImagePrompt, ContentItemLinks, GeneratedArticleSection, Pri
 import type { ContentPlan } from '../types/contentPlan.js';
 import type { PipelineArtifactSummary } from './events.js';
 
-const STAGE_IDS = ['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links'] as const;
+const STAGE_IDS = ['shared-plan', 'planning', 'sections', 'seo-check', 'image-prompts', 'images', 'output', 'links'] as const;
 
 const generatedArticleSectionSchema = z.object({
   title: z.string().min(1),

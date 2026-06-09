@@ -26,7 +26,7 @@ describe('pipeline runner', () => {
   it('creates initial stages with expected order and states', () => {
     const stages = createInitialStages();
 
-    expect(stages.map((stage) => stage.id)).toEqual(['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
+    expect(stages.map((stage) => stage.id)).toEqual(['shared-plan', 'planning', 'sections', 'seo-check', 'image-prompts', 'images', 'output', 'links']);
     expect(stages[0]?.status).toBe('running');
     expect(stages.slice(1).every((stage) => stage.status === 'pending')).toBe(true);
   });
@@ -78,7 +78,7 @@ describe('pipeline runner', () => {
       expect(result.artifact.interactionsPath).toContain('model.interactions.json');
       expect(result.artifact.planPath).toContain('plan.md');
       expect(result.analytics.summary.totalDurationMs).toBeGreaterThanOrEqual(0);
-      expect(result.analytics.stages).toHaveLength(7);
+      expect(result.analytics.stages).toHaveLength(8);
       expect(result.analytics.imagePromptCalls.length).toBeGreaterThanOrEqual(2);
       expect(result.analytics.imageRenderCalls.length).toBeGreaterThanOrEqual(2);
 
@@ -101,7 +101,7 @@ describe('pipeline runner', () => {
       expect(interactions.runId.length).toBeGreaterThan(0);
       expect(interactions.llmCalls).toHaveLength(0);
       expect(interactions.t2iCalls.some((call) => call.stageId === 'images' && call.provider === 'limn-dry-run')).toBe(true);
-      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-plan', 'planning', 'sections', 'image-prompts', 'images', 'output', 'links']);
+      expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-plan', 'planning', 'sections', 'seo-check', 'image-prompts', 'images', 'output', 'links']);
       expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);
 
       const terminalUpdate = updates.at(-1);
@@ -117,6 +117,47 @@ describe('pipeline runner', () => {
       expect(linksUpdates.some((stage) => (stage.items ?? []).some((item) => item.status === 'running' && item.detail === 'Dry run: skipped URL resolution.'))).toBe(true);
 
       expect(updates.length).toBeGreaterThanOrEqual(5);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('skips seo-check stage when --no-seo-check is set', async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'ideon-pipeline-no-seo-test-'));
+
+    try {
+      const result = await runPipelineShell(
+        {
+          idea: 'how editorial teams can productionize ai writing',
+          job: null,
+          publication: null,
+          series: null,
+          config: {
+            settings: {
+              ...defaultAppSettings,
+            },
+            secrets: {
+              openRouterApiKey: null,
+              replicateApiToken: null,
+              googleAdsDeveloperToken: null,
+              googleAdsClientId: null,
+              googleAdsClientSecret: null,
+              googleAdsRefreshToken: null,
+              googleAdsCustomerId: null,
+              googleAdsLoginCustomerId: null,
+            },
+          },
+        },
+        {
+          dryRun: true,
+          noSeoCheck: true,
+          workingDir: tempRoot,
+        },
+      );
+
+      const seoStage = result.stages.find((stage) => stage.id === 'seo-check');
+      expect(seoStage?.status).toBe('succeeded');
+      expect(seoStage?.detail).toContain('--no-seo-check');
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
@@ -168,6 +209,7 @@ describe('pipeline runner', () => {
                     title: 'Mock Primary Plan',
                     subtitle: 'A subtitle',
                     keywords: ['keyword1', 'keyword2', 'keyword3'],
+                    primaryKeyword: 'keyword1',
                     slug: 'mock-primary-plan',
                     description: 'A mock primary plan for testing.',
                     introBrief: 'Write an engaging intro.',
@@ -318,6 +360,7 @@ describe('pipeline runner', () => {
                     title: 'Mock Primary Plan',
                     subtitle: 'A subtitle',
                     keywords: ['keyword1', 'keyword2', 'keyword3'],
+                    primaryKeyword: 'keyword1',
                     slug: 'mock-primary-plan',
                     description: 'A mock primary plan for testing.',
                     introBrief: 'Write an engaging intro.',
@@ -947,6 +990,7 @@ describe('pipeline runner', () => {
             title: 'Resume Checkpoint Flow',
             subtitle: 'Persisted plan',
             keywords: ['resume', 'checkpoint', 'pipeline'],
+            primaryKeyword: 'resume',
             slug: 'resume-checkpoint-flow',
             contentType: 'article',
             description: 'Persisted plan for resume testing.',
@@ -1047,6 +1091,7 @@ describe('pipeline runner', () => {
             title: 'Resume With Saved Prompts',
             subtitle: 'Persisted prompt checkpoint',
             keywords: ['resume', 'prompts', 'checkpoint'],
+            primaryKeyword: 'resume',
             slug: 'resume-with-saved-prompts',
             contentType: 'article',
             description: 'Persisted image prompt checkpoint for resume testing.',
@@ -1184,6 +1229,7 @@ describe('pipeline runner', () => {
         title: 'Bad Assets Resume Flow',
         subtitle: 'subtitle',
         keywords: ['test', 'resume', 'assets'],
+        primaryKeyword: 'test',
         slug: 'bad-assets-resume-flow',
         contentType: 'article',
         description: 'desc',
@@ -1358,6 +1404,7 @@ describe('pipeline runner', () => {
             title: 'Completed Session Reuse Flow',
             subtitle: 'Resume should skip heavy stages',
             keywords: ['resume', 'reuse', 'pipeline'],
+            primaryKeyword: 'resume',
             slug: 'completed-session-reuse-flow',
             contentType: 'article',
             description: 'Persisted plan',
