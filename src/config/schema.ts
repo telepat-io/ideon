@@ -230,6 +230,7 @@ export const appSettingsSchema = z.object({
   editorModel: z.string().optional(),
   seoCheckMode: z.enum(['errors-only', 'strict']).default('errors-only'),
   seoCheckMaxTurns: z.number().int().min(1).max(20).default(10),
+  faqSection: z.boolean().optional(),
 });
 
 export const seoCheckModeSchema = z.enum(['errors-only', 'strict']);

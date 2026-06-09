@@ -1,13 +1,16 @@
 import type { AppSettings } from '../config/schema.js';
+import { resolveFaqSectionEnabled } from '../config/faqSection.js';
 import type { Author } from '../types/author.js';
 import type { Publication } from '../types/publication.js';
 import type { Series } from '../types/series.js';
 import { buildAuthorRunContext } from '../llm/prompts/authorPolicy.js';
-import { buildIntroMessages, buildOutroMessages, buildSectionMessages } from '../llm/prompts/articleSection.js';
+import { buildFaqMessages, buildIntroMessages, buildOutroMessages, buildSectionMessages } from '../llm/prompts/articleSection.js';
 import type { OpenRouterClient } from '../llm/openRouterClient.js';
 import type { LlmCallMetrics } from '../pipeline/analytics.js';
 import type { LlmInteractionRecord } from '../pipeline/events.js';
 import type { ArticlePlan, GeneratedArticleSection } from '../types/article.js';
+
+export type SectionWritePhase = 'intro' | 'section' | 'outro' | 'faq';
 
 export async function writeArticleSections({
   plan,
@@ -18,6 +21,7 @@ export async function writeArticleSections({
   experienceNotes,
   openRouter,
   dryRun,
+  existingFaq,
   onSectionStart,
   onLlmMetrics,
   onInteraction,
@@ -30,12 +34,15 @@ export async function writeArticleSections({
   experienceNotes?: string;
   openRouter: OpenRouterClient | null;
   dryRun: boolean;
+  existingFaq?: string;
   onSectionStart?: (label: string) => void;
-  onLlmMetrics?: (phase: 'intro' | 'section' | 'outro', metrics: LlmCallMetrics, sectionIndex?: number) => void;
+  onLlmMetrics?: (phase: SectionWritePhase, metrics: LlmCallMetrics, sectionIndex?: number) => void;
   onInteraction?: (interaction: LlmInteractionRecord) => void;
-}): Promise<{ intro: string; sections: GeneratedArticleSection[]; outro: string }> {
+}): Promise<{ intro: string; sections: GeneratedArticleSection[]; outro: string; faq?: string }> {
   const wordBudgets = allocateWordBudgets(settings.targetLength, plan.sections.length);
   const authorContext = buildAuthorRunContext(author ?? null, experienceNotes);
+  const contentTypes = settings.contentTargets.map((target) => target.contentType);
+  const faqEnabled = resolveFaqSectionEnabled(settings);
 
   onSectionStart?.('Writing introduction');
   const intro = dryRun || !openRouter
@@ -45,7 +52,7 @@ export async function writeArticleSections({
           plan,
           settings.style,
           settings.intent,
-          settings.contentTargets.map((target) => target.contentType),
+          contentTypes,
           settings.targetLength,
           wordBudgets.intro,
           publication ?? null,
@@ -76,7 +83,7 @@ export async function writeArticleSections({
             buildArticleSoFarContext(intro, sections),
             settings.style,
             settings.intent,
-            settings.contentTargets.map((target) => target.contentType),
+            contentTypes,
             settings.targetLength,
             wordBudgets.sections[index] ?? wordBudgets.sections[wordBudgets.sections.length - 1] ?? 150,
             publication ?? null,
@@ -107,7 +114,7 @@ export async function writeArticleSections({
           plan,
           settings.style,
           settings.intent,
-          settings.contentTargets.map((target) => target.contentType),
+          contentTypes,
           settings.targetLength,
           wordBudgets.outro,
           publication ?? null,
@@ -125,10 +132,31 @@ export async function writeArticleSections({
         },
       });
 
+  const normalizedOutro = normalizeGeneratedSection(outro, 'conclusion');
+  let faq: string | undefined = existingFaq?.trim() || undefined;
+
+  if (faqEnabled && !faq) {
+    faq = await writeFaqSection({
+      plan,
+      articleDraft: buildArticleSoFarContext(intro, sections, normalizedOutro),
+      settings,
+      contentTypes,
+      publication: publication ?? null,
+      series: series ?? null,
+      authorContext,
+      openRouter,
+      dryRun,
+      onSectionStart,
+      onLlmMetrics,
+      onInteraction,
+    });
+  }
+
   return {
     intro: normalizeGeneratedSection(intro, 'introduction'),
     sections,
-    outro: normalizeGeneratedSection(outro, 'conclusion'),
+    outro: normalizedOutro,
+    ...(faq ? { faq } : {}),
   };
 }
 
@@ -151,6 +179,141 @@ function dryRunOutro(plan: ArticlePlan): string {
     `Strong articles rarely emerge from a single pass. ${plan.outroBrief}`,
     'What matters is a workflow that can repeatedly transform a promising idea into a piece that is clear, useful, and worth reading.',
   ].join('\n\n');
+}
+
+async function writeFaqSection({
+  plan,
+  articleDraft,
+  settings,
+  contentTypes,
+  publication,
+  series,
+  authorContext,
+  openRouter,
+  dryRun,
+  onSectionStart,
+  onLlmMetrics,
+  onInteraction,
+}: {
+  plan: ArticlePlan;
+  articleDraft: string;
+  settings: AppSettings;
+  contentTypes: string[];
+  publication: Publication | null;
+  series: Series | null;
+  authorContext: ReturnType<typeof buildAuthorRunContext>;
+  openRouter: OpenRouterClient | null;
+  dryRun: boolean;
+  onSectionStart?: (label: string) => void;
+  onLlmMetrics?: (phase: SectionWritePhase, metrics: LlmCallMetrics, sectionIndex?: number) => void;
+  onInteraction?: (interaction: LlmInteractionRecord) => void;
+}): Promise<string> {
+  onSectionStart?.('Writing FAQ');
+
+  if (dryRun || !openRouter) {
+    const faqBody = dryRunFaq(plan);
+    const metrics = buildDryRunLlmMetrics(settings.model);
+    onLlmMetrics?.('faq', metrics);
+    emitDryRunFaqInteraction(onInteraction, plan, faqBody);
+    return normalizeGeneratedFaq(faqBody);
+  }
+
+  const faqBody = await openRouter.requestText({
+    messages: buildFaqMessages(
+      plan,
+      articleDraft,
+      settings.style,
+      settings.intent,
+      contentTypes,
+      settings.targetLength,
+      publication,
+      series,
+      authorContext,
+    ),
+    settings,
+    interactionContext: {
+      stageId: 'sections',
+      operationId: 'sections:faq',
+    },
+    onInteraction,
+    onMetrics(metrics) {
+      onLlmMetrics?.('faq', metrics);
+    },
+  });
+
+  return normalizeGeneratedFaq(faqBody);
+}
+
+function buildDryRunLlmMetrics(modelId: string): LlmCallMetrics {
+  return {
+    durationMs: 0,
+    attempts: 1,
+    retries: 0,
+    retryBackoffMs: 0,
+    modelId,
+    usage: {
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      providerTotalCostUsd: null,
+    },
+  };
+}
+
+function emitDryRunFaqInteraction(
+  onInteraction: ((interaction: LlmInteractionRecord) => void) | undefined,
+  plan: ArticlePlan,
+  responseBody: string,
+): void {
+  if (!onInteraction) {
+    return;
+  }
+
+  const timestamp = new Date().toISOString();
+  onInteraction({
+    stageId: 'sections',
+    operationId: 'sections:faq',
+    requestType: 'text',
+    provider: 'openrouter',
+    modelId: 'dry-run',
+    startedAt: timestamp,
+    endedAt: timestamp,
+    durationMs: 0,
+    attempts: 1,
+    retries: 0,
+    retryBackoffMs: 0,
+    status: 'succeeded',
+    requestBody: JSON.stringify({ dryRun: true, title: plan.title, operation: 'sections:faq' }),
+    responseBody,
+    errorMessage: null,
+  });
+}
+
+function dryRunFaq(plan: ArticlePlan): string {
+  const firstSection = plan.sections[0];
+  const secondSection = plan.sections[1];
+  const lines = [
+    '### What is the main takeaway from this article?',
+    `${plan.title} rewards a deliberate drafting workflow that turns a promising idea into structured, evidence-backed prose.`,
+  ];
+
+  if (firstSection) {
+    lines.push(
+      '',
+      `### ${firstSection.title}`,
+      firstSection.description,
+    );
+  }
+
+  if (secondSection) {
+    lines.push(
+      '',
+      `### ${secondSection.title}`,
+      secondSection.description,
+    );
+  }
+
+  return lines.join('\n');
 }
 
 interface ArticleSectionPlanLike {
@@ -178,12 +341,21 @@ function allocateWordBudgets(totalTargetWords: number, sectionCount: number): { 
   return { intro, sections, outro };
 }
 
-function buildArticleSoFarContext(intro: string, sections: GeneratedArticleSection[]): string {
+function buildArticleSoFarContext(
+  intro: string,
+  sections: GeneratedArticleSection[],
+  outro?: string,
+): string {
   const parts = ['## Introduction', intro.trim()];
 
   for (const section of sections) {
     parts.push(`## ${section.title}`);
     parts.push(section.body.trim());
+  }
+
+  if (outro?.trim()) {
+    parts.push('## Conclusion');
+    parts.push(outro.trim());
   }
 
   return parts.join('\n\n').trim();
@@ -221,4 +393,18 @@ function normalizeGeneratedSection(content: string, label: string): string {
     .trim();
 
   return stripMatchingLeadingHeading(withoutFences, label).trim();
+}
+
+function normalizeGeneratedFaq(content: string): string {
+  const normalized = content.trim();
+  if (!normalized) {
+    throw new Error('The model returned an empty FAQ draft.');
+  }
+
+  const withoutFences = normalized
+    .replace(/^```(?:markdown)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  return stripMatchingLeadingHeading(withoutFences, 'faq').trim();
 }

@@ -1,7 +1,7 @@
 # Content Intent: How-To Guide
 
 ## Purpose
-Use when teaching a repeatable method with context, options, and tradeoffs.
+Use when teaching a repeatable method with context, options, and tradeoffs. When comparing three or more approaches or tools, prefer a Markdown comparison table — see [ai-search-extraction.md](../seo/ai-search-extraction.md).
 
 ## Canonical Structure
 1. Problem and payoff

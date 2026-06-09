@@ -1,4 +1,5 @@
 import {
+  buildFaqGuideInstruction,
   buildIntroGuideInstruction,
   buildOutroGuideInstruction,
   buildPrimaryPlanGuideInstruction,
@@ -11,7 +12,9 @@ describe('guideBundles', () => {
     const withoutKeywords = buildPrimaryPlanGuideInstruction('tutorial', 'article');
 
     expect(withKeywords).toContain('writing-guide/seo/keyword-integration.md');
+    expect(withKeywords).toContain('writing-guide/seo/ai-search-extraction.md');
     expect(withoutKeywords).not.toContain('writing-guide/seo/keyword-integration.md');
+    expect(withoutKeywords).toContain('writing-guide/seo/ai-search-extraction.md');
   });
 
   it('loads tiered section bundles with distinct guide sets', () => {
@@ -20,9 +23,25 @@ describe('guideBundles', () => {
     const outro = buildOutroGuideInstruction('professional', 'tutorial', 'article');
 
     expect(intro).toContain('writing-guide/seo/keyword-integration.md');
+    expect(intro).toContain('writing-guide/seo/ai-search-extraction.md');
     expect(section).toContain('writing-guide/seo/fact-density.md');
+    expect(section).toContain('writing-guide/seo/ai-search-extraction.md');
     expect(section).toContain('writing-guide/seo/keyword-integration.md');
     expect(outro).not.toContain('writing-guide/seo/keyword-integration.md');
     expect(outro).not.toContain('writing-guide/seo/fact-density.md');
+    expect(outro).not.toContain('writing-guide/seo/ai-search-extraction.md');
+  });
+
+  it('loads ai-search-extraction only for long-form primary plan bundles', () => {
+    const longForm = buildPrimaryPlanGuideInstruction('tutorial', 'article');
+    const shortForm = buildPrimaryPlanGuideInstruction('announcement', 'x-post');
+
+    expect(longForm).toContain('writing-guide/seo/ai-search-extraction.md');
+    expect(shortForm).not.toContain('writing-guide/seo/ai-search-extraction.md');
+  });
+
+  it('loads faq guide instruction from ai-search-extraction', () => {
+    const faqGuide = buildFaqGuideInstruction();
+    expect(faqGuide).toContain('writing-guide/seo/ai-search-extraction.md');
   });
 });

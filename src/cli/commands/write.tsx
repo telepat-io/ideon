@@ -28,6 +28,7 @@ interface WriteCommandOptions extends ContentCommandOptions {
   noInteractive: boolean;
   dryRun: boolean;
   noSeoCheck: boolean;
+  faqSection?: boolean;
   seoCheckMode?: 'errors-only' | 'strict';
   seoCheckMaxTurns?: number;
   enrichLinks: boolean;
@@ -166,8 +167,29 @@ export async function runWriteCommand(options: WriteCommandOptions): Promise<voi
     return;
   }
 
-  const input = await resolveWriteInput(options, { noInteractive: options.noInteractive });
+  const resolvedInput = await resolveWriteInput(options, { noInteractive: options.noInteractive });
+  const input = applyFaqSectionSetting(resolvedInput, options.faqSection);
   await runWritePipeline(input, options.dryRun, options.enrichLinks, 'fresh', options.noInteractive, options.links, options.unlinks, options.maxLinks, options.maxImages, options.exportPath, undefined, options.noSeoCheck, false, options.seoCheckMode, options.seoCheckMaxTurns);
+}
+
+function applyFaqSectionSetting(
+  input: Awaited<ReturnType<typeof resolveRunInput>>,
+  faqSection?: boolean,
+): Awaited<ReturnType<typeof resolveRunInput>> {
+  if (faqSection === undefined) {
+    return input;
+  }
+
+  return {
+    ...input,
+    config: {
+      ...input.config,
+      settings: appSettingsSchema.parse({
+        ...input.config.settings,
+        faqSection,
+      }),
+    },
+  };
 }
 
 async function runWriteFromQueue(options: WriteCommandOptions): Promise<void> {

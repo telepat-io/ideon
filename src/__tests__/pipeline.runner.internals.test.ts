@@ -78,6 +78,7 @@ describe('pipeline runner internals', () => {
   it('maps section phase identifiers correctly', () => {
     expect(__testInternals.toSectionItemId('intro')).toBe('sections:intro');
     expect(__testInternals.toSectionItemId('outro')).toBe('sections:outro');
+    expect(__testInternals.toSectionItemId('faq')).toBe('sections:faq');
     expect(__testInternals.toSectionItemId('section', 2)).toBe('sections:section-3');
     expect(__testInternals.toSectionItemId('section')).toBeNull();
   });
@@ -85,6 +86,7 @@ describe('pipeline runner internals', () => {
   it('maps section labels to item ids and rejects unknown labels', () => {
     expect(__testInternals.toSectionItemIdFromLabel('Writing introduction')).toBe('sections:intro');
     expect(__testInternals.toSectionItemIdFromLabel('Writing conclusion')).toBe('sections:outro');
+    expect(__testInternals.toSectionItemIdFromLabel('Writing FAQ')).toBe('sections:faq');
     expect(__testInternals.toSectionItemIdFromLabel('Writing section 2/4: Body')).toBe('sections:section-2');
     expect(__testInternals.toSectionItemIdFromLabel('Random status message')).toBeNull();
   });

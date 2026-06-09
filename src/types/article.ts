@@ -80,6 +80,7 @@ export interface GeneratedArticle {
   intro: string;
   sections: GeneratedArticleSection[];
   outro: string;
+  faq?: string;
   imagePrompts: ArticleImagePrompt[];
   renderedImages: RenderedArticleImage[];
 }

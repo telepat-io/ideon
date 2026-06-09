@@ -85,6 +85,7 @@ export function buildPrimaryPlanGuideInstruction(
     'writing-guide/references/ideation-and-credibility-systems.md',
     'writing-guide/references/content-frameworks.md',
     seoGuidePath('on-page-essentials'),
+    seoGuidePath('ai-search-extraction'),
     ...keywordGuides(keywords),
     intentToGuidePath(intent),
     formatToGuidePath(contentType),
@@ -117,6 +118,7 @@ export function buildIntroGuideInstruction(
     'writing-guide/references/skimmability-patterns.md',
     seoGuidePath('on-page-essentials'),
     seoGuidePath('eeat-signals'),
+    seoGuidePath('ai-search-extraction'),
     ...keywordGuides(keywords),
     styleToGuidePath(style),
     intentToGuidePath(intent),
@@ -139,10 +141,17 @@ export function buildSectionGuideInstruction(
     seoGuidePath('on-page-essentials'),
     seoGuidePath('eeat-signals'),
     seoGuidePath('fact-density'),
+    seoGuidePath('ai-search-extraction'),
     ...keywordGuides(keywords),
     styleToGuidePath(style),
     intentToGuidePath(intent),
     formatToGuidePath(contentType),
+  ]);
+}
+
+export function buildFaqGuideInstruction(): string {
+  return buildGuideBundle([
+    seoGuidePath('ai-search-extraction'),
   ]);
 }
 

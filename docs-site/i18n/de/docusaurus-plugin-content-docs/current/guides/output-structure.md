@@ -68,6 +68,9 @@ Generiertes Markdown enthält:
 - Absatzkörper (H2-Überschriften)
 - Inline-Bild-Einbettungen, an Absatzpositionen verankert
 - Schlussfolgerungsabsatz
+- Optionaler FAQ-Abschnitt (`## FAQ`), wenn FAQ-Generierung für den Lauf aktiviert ist
+
+FAQ-Einträge verwenden `###`-Frageüberschriften mit ein- bis zweisätzigen Direktantworten. Der FAQ-Block erscheint nach `## Conclusion` und nur, wenn die Pipeline FAQ-Inhalt erzeugt hat.
 
 ## Slug-Verhalten
 

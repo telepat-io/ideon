@@ -92,15 +92,19 @@ describe('pipeline runner', () => {
       };
       const interactions = JSON.parse(interactionsRaw) as {
         runId: string;
-        llmCalls: Array<{ stageId: string; requestType: string; status: string }>;
+        llmCalls: Array<{ stageId: string; operationId: string; requestType: string; status: string; modelId: string }>;
         t2iCalls: Array<{ stageId: string; provider: string; status: string }>;
       };
       expect(markdown).toContain('# How Editorial Teams Can Productionize Ai Writing');
       expect(markdown).toContain('## Conclusion');
+      expect(markdown).toContain('## FAQ');
+      expect(markdown).toContain('### What is the main takeaway from this article?');
       expect(markdown).toContain('![How Editorial Teams Can Productionize Ai Writing]');
       expect(analytics.runId.length).toBeGreaterThan(0);
       expect(interactions.runId.length).toBeGreaterThan(0);
-      expect(interactions.llmCalls).toHaveLength(0);
+      expect(interactions.llmCalls).toHaveLength(1);
+      expect(interactions.llmCalls[0]?.operationId).toBe('sections:faq');
+      expect(interactions.llmCalls[0]?.modelId).toBe('dry-run');
       expect(interactions.t2iCalls.some((call) => call.stageId === 'images' && call.provider === 'limn-dry-run')).toBe(true);
       expect(analytics.stages.map((stage) => stage.stageId)).toEqual(['shared-plan', 'planning', 'sections', 'seo-check', 'image-prompts', 'images', 'output', 'links']);
       expect(analytics.stages.every((stage) => stage.durationMs >= 0)).toBe(true);

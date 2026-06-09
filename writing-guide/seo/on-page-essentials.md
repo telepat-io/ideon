@@ -1,6 +1,6 @@
 # On-Page SEO Essentials
 
-Use this guide for title tags, meta descriptions, heading structure, and formatting rules that help people-first content perform in traditional search and generative answers. Structure should serve readers first — clear headings, scannable paragraphs, and definition-first section openers make content easier to use and cite.
+Use this guide for title tags, meta descriptions, heading structure, and formatting rules that help people-first content perform in traditional search and generative answers. Structure should serve readers first — clear headings, scannable paragraphs, and definition-first section openers make content easier to use and cite. For additional extraction rules (question-shaped headings, self-contained paragraphs, tables, FAQ), see [ai-search-extraction.md](ai-search-extraction.md).
 
 ## Rule: Structure for People-First Readability
 Description: Google's helpful-content guidance rewards pages that leave readers feeling they learned enough to achieve their goal. BLUF paragraphs, short blocks, and entity-rich headings are not SEO tricks — they reduce reader effort and match how quality raters evaluate clarity.

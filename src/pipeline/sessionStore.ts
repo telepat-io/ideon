@@ -90,6 +90,7 @@ const writeSessionStateSchema = z.object({
       intro: z.string().min(1),
       sections: z.array(generatedArticleSectionSchema),
       outro: z.string().min(1),
+      faq: z.string().optional(),
     })
     .nullable(),
   imagePrompts: z.array(imagePromptSchema).nullable().default(null),
@@ -141,6 +142,7 @@ export interface WriteSessionState extends WriteSessionStateSchema {
     intro: string;
     sections: GeneratedArticleSection[];
     outro: string;
+    faq?: string;
   } | null;
   imagePrompts: ArticleImagePrompt[] | null;
   imageArtifacts: {

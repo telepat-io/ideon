@@ -2,6 +2,7 @@ import { mkdir, readFile, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { ResolvedRunInput } from '../config/resolver.js';
+import { resolveFaqSectionEnabled } from '../config/faqSection.js';
 import { resolveDefaultMaxLinks, resolveTargetLengthAlias } from '../config/schema.js';
 import { enrichLinks } from '../generation/enrichLinks.js';
 import { planContentPlan } from '../generation/planContentPlan.js';
@@ -382,18 +383,22 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         ...stages[2],
         status: 'running',
         detail: 'Writing introduction.',
-        items: buildSectionItems(longPlan.sections.map((section) => section.title)),
+        items: buildSectionItems(
+          longPlan.sections.map((section) => section.title),
+          resolveFaqSectionEnabled(input.config.settings),
+        ),
       };
       markStageStarted(stageTracking, 'sections');
       options.onUpdate?.(cloneStages(stages));
 
       if (text) {
         markStageCompleted(stageTracking, 'sections');
+        const faqNote = text.faq ? ' + FAQ' : '';
         stages[2] = {
           ...stages[2],
           status: 'succeeded',
           detail: 'Reused saved section drafts from cached session.',
-          summary: `Intro + ${text.sections.length} sections + conclusion`,
+          summary: `Intro + ${text.sections.length} sections + conclusion${faqNote}`,
           items: (stages[2].items ?? []).map((item) => ({
             ...item,
             status: 'succeeded',
@@ -472,11 +477,12 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         }
 
         markStageCompleted(stageTracking, 'sections');
+        const faqNote = text.faq ? ' + FAQ' : '';
         stages[2] = {
           ...stages[2],
           status: 'succeeded',
-          detail: 'Completed intro, sections, and conclusion.',
-          summary: `Intro + ${text.sections.length} sections + conclusion`,
+          detail: text.faq ? 'Completed intro, sections, conclusion, and FAQ.' : 'Completed intro, sections, and conclusion.',
+          summary: `Intro + ${text.sections.length} sections + conclusion${faqNote}`,
           stageAnalytics: snapshotStageAnalytics(stageTracking, 'sections'),
         };
         writeSession = await patchWriteSession(
@@ -835,6 +841,7 @@ export async function runPipelineShell(input: ResolvedRunInput, options: Pipelin
         intro: text.intro,
         sections: text.sections,
         outro: text.outro,
+        ...(text.faq ? { faq: text.faq } : {}),
         imagePrompts: imageArtifacts.imagePrompts,
         renderedImages: imageArtifacts.renderedImages,
       };
@@ -1634,8 +1641,8 @@ function cloneStages(stages: StageViewModel[]): StageViewModel[] {
   }));
 }
 
-function buildSectionItems(sectionTitles: string[]): StageItemViewModel[] {
-  return [
+function buildSectionItems(sectionTitles: string[], includeFaq: boolean): StageItemViewModel[] {
+  const items: StageItemViewModel[] = [
     {
       id: 'sections:intro',
       label: 'Introduction',
@@ -1655,15 +1662,30 @@ function buildSectionItems(sectionTitles: string[]): StageItemViewModel[] {
       detail: 'Waiting to start.',
     },
   ];
+
+  if (includeFaq) {
+    items.push({
+      id: 'sections:faq',
+      label: 'FAQ',
+      status: 'pending',
+      detail: 'Waiting to start.',
+    });
+  }
+
+  return items;
 }
 
-function toSectionItemId(phase: 'intro' | 'section' | 'outro', sectionIndex?: number): string | null {
+function toSectionItemId(phase: 'intro' | 'section' | 'outro' | 'faq', sectionIndex?: number): string | null {
   if (phase === 'intro') {
     return 'sections:intro';
   }
 
   if (phase === 'outro') {
     return 'sections:outro';
+  }
+
+  if (phase === 'faq') {
+    return 'sections:faq';
   }
 
   if (phase === 'section' && typeof sectionIndex === 'number') {
@@ -1680,6 +1702,10 @@ function toSectionItemIdFromLabel(label: string): string | null {
 
   if (label === 'Writing conclusion') {
     return 'sections:outro';
+  }
+
+  if (label === 'Writing FAQ') {
+    return 'sections:faq';
   }
 
   const sectionMatch = /^Writing section (\d+)\/\d+:/.exec(label);

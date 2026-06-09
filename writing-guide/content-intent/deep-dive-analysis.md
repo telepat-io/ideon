@@ -1,7 +1,7 @@
 # Content Intent: Deep-Dive Analysis
 
 ## Purpose
-Use when examining a complex topic with layered evidence and nuanced conclusions.
+Use when examining a complex topic with layered evidence and nuanced conclusions. When evidence sections compare three or more options or metrics, prefer a Markdown comparison table — see [ai-search-extraction.md](../seo/ai-search-extraction.md).
 
 ## Canonical Structure
 1. Question and scope boundary

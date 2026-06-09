@@ -81,3 +81,31 @@ Praktische Implikation:
 
 - Verwenden Sie einen Stil pro Lauf für Kohärenz und variieren Sie dann nur Ziele und Zählungen.
 - Wenn Sie sehr unterschiedliche Stimmen benötigen, teilen Sie diese in separate Läufe auf.
+
+## KI-Suche Extrahierbarkeit
+
+Long-Form-Läufe laden `writing-guide/seo/ai-search-extraction.md` während Planung und Absatzschreiben. Dieser Leitfaden ergänzt bestehende SEO-Regeln um Entwurfs-Extrahierbarkeit:
+
+- Frageförmige H2-Überschriften für informative Abschnitte
+- In sich geschlossene Absätze mit expliziter Entitätsbenennung
+- Vergleichstabellen, wenn ein Abschnitt drei oder mehr Optionen bewertet
+- Anti-Gaming-Regeln: Genauigkeit vor templatisiertem Füllmaterial
+
+### FAQ-Abschnitt
+
+Für informative Absichten auf Long-Form-Primärzielen kann Ideon nach dem Schluss über einen separaten `sections:faq`-LLM-Aufruf einen `## FAQ`-Block anhängen. Standardmäßig aktivierte Absichten:
+
+- `tutorial`
+- `how-to-guide`
+- `cornerstone`
+- `deep-dive-analysis`
+- `case-study`
+- `roundup-curation`
+
+FAQ-Generierung steuern mit:
+
+- `faqSection: true` oder `faqSection: false` in Job-Einstellungen oder gespeicherten Einstellungen
+- `--faq-section` erzwingt FAQ-Generierung
+- `--no-faq-section` überspringt FAQ-Generierung
+
+Wenn nicht gesetzt, verwendet Ideon die absichtsbasierte Standardlogik oben.

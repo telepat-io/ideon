@@ -40,6 +40,18 @@ export function applyContentOptions(command: Command): Command {
     .option('--no-interactive', 'Fail instead of prompting for missing input in TTY mode');
 }
 
+export function resolveFaqSectionCliFlag(options: Record<string, unknown>): boolean | undefined {
+  if (options.faqSection === true) {
+    return true;
+  }
+
+  if (options.noFaqSection === true) {
+    return false;
+  }
+
+  return undefined;
+}
+
 export function parseContentOptions(ideaArg: string | undefined, options: Record<string, unknown>): ContentCommandOptions & { noInteractive: boolean } {
   return {
     idea: (options.idea as string | undefined) ?? ideaArg,

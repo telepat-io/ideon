@@ -49,8 +49,62 @@ describe('writeArticleSections', () => {
     expect(result.intro).toContain('Test Plan is the kind of topic');
     expect(result.sections).toHaveLength(2);
     expect(result.outro).toContain('Strong articles rarely emerge from a single pass.');
+    expect(result.faq).toContain('### What is the main takeaway from this article?');
     expect(onSectionStart).toHaveBeenCalledWith('Writing introduction');
     expect(onSectionStart).toHaveBeenCalledWith('Writing conclusion');
+    expect(onSectionStart).toHaveBeenCalledWith('Writing FAQ');
+  });
+
+  it('uses dry-run FAQ when dryRun=true even if OpenRouter is provided', async () => {
+    const requestText = jest.fn<() => Promise<string>>();
+
+    const result = await writeArticleSections({
+      plan,
+      settings: defaultAppSettings,
+      openRouter: { requestText } as never,
+      dryRun: true,
+    });
+
+    expect(requestText).not.toHaveBeenCalled();
+    expect(result.faq).toContain('### What is the main takeaway from this article?');
+  });
+
+  it('records dry-run FAQ metrics and interaction callbacks', async () => {
+    const onLlmMetrics = jest.fn();
+    const onInteraction = jest.fn();
+
+    await writeArticleSections({
+      plan,
+      settings: defaultAppSettings,
+      openRouter: { requestText: jest.fn() } as never,
+      dryRun: true,
+      onLlmMetrics,
+      onInteraction,
+    });
+
+    expect(onLlmMetrics).toHaveBeenCalledWith('faq', expect.objectContaining({
+      durationMs: 0,
+      modelId: defaultAppSettings.model,
+    }));
+    expect(onInteraction).toHaveBeenCalledWith(expect.objectContaining({
+      operationId: 'sections:faq',
+      modelId: 'dry-run',
+      status: 'succeeded',
+    }));
+  });
+
+  it('skips FAQ generation when faqSection is disabled', async () => {
+    const result = await writeArticleSections({
+      plan,
+      settings: {
+        ...defaultAppSettings,
+        faqSection: false,
+      },
+      openRouter: null,
+      dryRun: false,
+    });
+
+    expect(result.faq).toBeUndefined();
   });
 
   it('uses OpenRouter for intro/sections/outro and normalizes fenced markdown', async () => {
@@ -73,7 +127,7 @@ describe('writeArticleSections', () => {
       onLlmMetrics,
     });
 
-    expect(requestText).toHaveBeenCalledTimes(4);
+    expect(requestText).toHaveBeenCalledTimes(5);
     expect(result.intro).toBe('Generated body');
     expect(result.sections[0]?.body).toBe('Generated body');
     expect(result.sections[1]?.body).toBe('Generated body');
@@ -82,6 +136,7 @@ describe('writeArticleSections', () => {
     expect(onLlmMetrics).toHaveBeenCalledWith('section', llmMetrics, 0);
     expect(onLlmMetrics).toHaveBeenCalledWith('section', llmMetrics, 1);
     expect(onLlmMetrics).toHaveBeenCalledWith('outro', llmMetrics);
+    expect(onLlmMetrics).toHaveBeenCalledWith('faq', llmMetrics);
 
     const firstSectionPrompt = requestText.mock.calls[1]?.[0]?.messages?.[1]?.content;
     const secondSectionPrompt = requestText.mock.calls[2]?.[0]?.messages?.[1]?.content;
@@ -125,6 +180,7 @@ describe('writeArticleSections', () => {
       'Generated section one body',
       '## Section Two\n\nGenerated section two body',
       'Generated outro',
+      '### Sample question?\n\nGenerated FAQ answer.',
     ];
     let index = 0;
 

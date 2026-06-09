@@ -46,6 +46,11 @@ Description: Check for accidental duplicated words and repeated clauses.
 Negative example: "The the main takeaway is..."
 Positive example: "The main takeaway is..."
 
+### Rule: Write Self-Contained Paragraphs
+Description: Name the subject explicitly so each paragraph can stand alone if quoted in isolation. Avoid pronouns whose referent is more than one sentence back. See [ai-search-extraction.md](../seo/ai-search-extraction.md) for full extraction guidance.
+Negative example: "This works well because it reduces overhead."
+Positive example: "Structured data markup helps AI systems map entities to content sections because each field names a relationship explicitly."
+
 ## E-Prime Policy
 
 E-prime style checks are advisory only. Do not force awkward rewrites just to eliminate every to-be verb.

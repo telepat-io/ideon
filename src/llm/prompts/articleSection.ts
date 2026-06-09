@@ -8,6 +8,7 @@ import {
   buildTargetLengthDirective,
 } from './writingFramework.js';
 import {
+  buildFaqGuideInstruction,
   buildIntroGuideInstruction,
   buildOutroGuideInstruction,
   buildSectionGuideInstruction,
@@ -263,6 +264,52 @@ export function buildOutroMessages(
         ...(plan.primaryKeyword
           ? [`- If natural, mention the primary entity "${plan.primaryKeyword}" once without keyword stuffing.`]
           : []),
+      ].join('\n'),
+    },
+  ];
+}
+
+export function buildFaqMessages(
+  plan: ArticlePlan,
+  articleDraft: string,
+  style: string,
+  intent: string,
+  contentTypes: string[],
+  targetLengthWords: number,
+  publication: Publication | null = null,
+  series: Series | null = null,
+  authorContext: AuthorRunContext | null = null,
+): ChatMessage[] {
+  const guideInstruction = buildFaqGuideInstruction();
+
+  return [
+    {
+      role: 'system',
+      content: [
+        'You write a compact FAQ block for Markdown articles. Return only the FAQ body with no top-level heading and no code fences.',
+        'Format each item as a ### question heading followed by a one-to-two-sentence direct answer.',
+        guideInstruction,
+        buildRunContextDirective(contentTypes),
+        buildTargetLengthDirective(plan.contentType, targetLengthWords),
+        buildEditorialPolicyDirective(publication),
+        buildSeriesDirective(series),
+        buildAuthorDirective(authorContext),
+      ].filter((part) => part.length > 0).join(' '),
+    },
+    {
+      role: 'user',
+      content: [
+        sharedPlanContext(plan),
+        '',
+        sharedDraftContext(articleDraft),
+        '',
+        'Write a FAQ block with 4 to 6 questions and answers.',
+        'Requirements:',
+        '- Draw questions from section themes and likely reader follow-ups.',
+        '- Each answer must trace to content already in the article draft — do not introduce new claims.',
+        '- Use ### question headings with direct 1-to-2-sentence answers.',
+        '- Skip questions already fully answered by section headings alone.',
+        '- Do not invent statistics or sources.',
       ].join('\n'),
     },
   ];

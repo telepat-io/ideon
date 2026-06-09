@@ -55,7 +55,7 @@ import {
 } from './commands/queue.js';
 import { runWriteCommand, runWriteResumeCommand } from './commands/write.js';
 import { runArticleListCommand } from './commands/article.js';
-import { applyContentOptions, parseContentOptions, collectOptionValue } from './contentOptions.js';
+import { applyContentOptions, parseContentOptions, collectOptionValue, resolveFaqSectionCliFlag } from './contentOptions.js';
 import { registerPlanCommands } from './commands/plan.js';
 import packageJson from '../../package.json' with { type: 'json' };
 
@@ -634,6 +634,8 @@ export async function runCli(argv: string[]): Promise<void> {
   )
     .option('--dry-run', 'Run the pipeline shell without external API calls', false)
     .option('--no-seo-check', 'Skip the SEO lint and editor pass after section writing', false)
+    .option('--faq-section', 'Generate FAQ block after conclusion (overrides intent default)')
+    .option('--no-faq-section', 'Skip FAQ block generation after conclusion')
     .option('--seo-check-mode <mode>', 'SEO check pass mode: errors-only (default) or strict')
     .option('--seo-check-max-turns <n>', 'Max agent turns for the SEO editor pass', (v) => Number.parseInt(v, 10))
     .option('--enrich-links', 'Run link enrichment after markdown generation', false)
@@ -649,6 +651,7 @@ export async function runCli(argv: string[]): Promise<void> {
         ...contentOptions,
         dryRun: options.dryRun as boolean,
         noSeoCheck: options.noSeoCheck as boolean,
+        faqSection: resolveFaqSectionCliFlag(options),
         seoCheckMode: options.seoCheckMode as 'errors-only' | 'strict' | undefined,
         seoCheckMaxTurns: options.seoCheckMaxTurns as number | undefined,
         enrichLinks: options.enrichLinks as boolean,

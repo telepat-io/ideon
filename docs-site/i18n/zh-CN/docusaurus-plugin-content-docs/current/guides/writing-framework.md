@@ -81,3 +81,31 @@ Ideon 会将“阶段指南 + 运行元数据”组合成提示词：
 
 - 每次运行仅用一种风格以保证一致性，再调整目标类型和数量。
 - 若需要差异很大的语气，请拆分为多次运行。
+
+## AI 搜索可提取性
+
+长文运行会在规划与章节写作阶段加载 `writing-guide/seo/ai-search-extraction.md`。该指南在现有 SEO 规则之上，补充面向草稿的可提取性要求：
+
+- 信息类章节优先使用问句形 H2 标题
+- 段落自洽，并明确命名实体
+- 比较三个及以上选项时使用对比表格
+- 反“优化作弊”规则：准确性优先于模板化填充
+
+### FAQ 章节
+
+对于长文主输出上的信息类意图，Ideon 可在结论后通过独立的 `sections:faq` LLM 调用追加 `## FAQ` 区块。默认开启的意图包括：
+
+- `tutorial`
+- `how-to-guide`
+- `cornerstone`
+- `deep-dive-analysis`
+- `case-study`
+- `roundup-curation`
+
+可通过以下方式控制 FAQ 生成：
+
+- 在 job 设置或已保存设置中使用 `faqSection: true` 或 `faqSection: false`
+- 使用 `--faq-section` 强制生成 FAQ
+- 使用 `--no-faq-section` 跳过 FAQ 生成
+
+未显式设置时，Ideon 会按上述意图默认值决定。

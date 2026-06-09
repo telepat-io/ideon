@@ -68,6 +68,9 @@ Generated Markdown includes:
 - Section bodies (H2 headings)
 - Inline image embeds anchored to section positions
 - Conclusion section
+- Optional FAQ section (`## FAQ`) when FAQ generation is enabled for the run
+
+FAQ items use `###` question headings with one-to-two-sentence direct answers. The FAQ block appears after `## Conclusion` and only when the pipeline generated FAQ content.
 
 ## Slug Behavior
 

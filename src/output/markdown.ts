@@ -49,5 +49,9 @@ export function renderMarkdownDocument(
 
   body.push('## Conclusion', '', article.outro.trim(), '');
 
+  if (article.faq?.trim()) {
+    body.push('## FAQ', '', article.faq.trim(), '');
+  }
+
   return `${frontmatter}\n\n${body.join('\n').trim()}\n`;
 }

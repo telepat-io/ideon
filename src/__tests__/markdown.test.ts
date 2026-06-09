@@ -131,6 +131,24 @@ describe('renderMarkdownDocument', () => {
       expect(markdown).toContain(article.outro);
     });
 
+    it('should append FAQ section when faq content is present', () => {
+      const article = createBasicArticle({
+        faq: '### What is AI?\n\nAI is software that learns patterns from data.',
+      });
+      const markdown = renderMarkdownDocument(article);
+
+      expect(markdown).toContain('## FAQ');
+      expect(markdown).toContain('### What is AI?');
+      expect(markdown.indexOf('## Conclusion')).toBeLessThan(markdown.indexOf('## FAQ'));
+    });
+
+    it('should omit FAQ section when faq content is absent', () => {
+      const article = createBasicArticle();
+      const markdown = renderMarkdownDocument(article);
+
+      expect(markdown).not.toContain('## FAQ');
+    });
+
     it('should trim whitespace from section bodies', () => {
       const article = createBasicArticle({
         sections: [

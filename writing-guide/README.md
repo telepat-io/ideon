@@ -33,7 +33,7 @@ Every guidance rule should use this structure:
 - [`formats/`](formats/README.md): medium-specific playbooks
 - [`content-intent/`](content-intent/README.md): purpose-specific playbooks (what the piece is trying to achieve)
 - [`styles/`](styles/README.md): voice and style playbooks
-- [`seo/`](seo/on-page-essentials.md): search optimization rules for traditional SERPs and generative engine visibility
+- [`seo/`](seo/on-page-essentials.md): search optimization rules for traditional SERPs and generative engine visibility, including [ai-search-extraction](seo/ai-search-extraction.md) for draft-time extractability
 - [`references/`](references/README.md): reusable concept docs used by multiple documents
 
 ## Start Here

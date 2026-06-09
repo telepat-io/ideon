@@ -81,3 +81,31 @@ Practical implication:
 
 - Use one style per run for coherence, then vary only targets and counts.
 - If you need very different voices, split into separate runs.
+
+## AI Search Extraction
+
+Long-form runs load `writing-guide/seo/ai-search-extraction.md` during planning and section writing. This guide complements existing SEO rules with draft-time extractability:
+
+- Question-shaped H2 headings for informational sections
+- Self-contained paragraphs with explicit entity naming
+- Comparison tables when a section evaluates three or more options
+- Anti-gaming rules that prioritize accuracy over templated filler
+
+### FAQ section
+
+For informational intents on long-form primary targets, Ideon can append a `## FAQ` block after the conclusion via a separate `sections:faq` LLM call. Default-on intents:
+
+- `tutorial`
+- `how-to-guide`
+- `cornerstone`
+- `deep-dive-analysis`
+- `case-study`
+- `roundup-curation`
+
+Control FAQ generation with:
+
+- `faqSection: true` or `faqSection: false` in job settings or saved settings
+- `--faq-section` to force FAQ generation
+- `--no-faq-section` to skip FAQ generation
+
+When unset, Ideon uses the intent-based default above.
