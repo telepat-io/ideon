@@ -6,7 +6,7 @@ Concise reference for AI agents working on this codebase.
 
 ## Commits and releases
 
-- Use Conventional Commits: `fix:`, `feat:`, `docs:`, etc.
+- **Conventional Commits required** for every commit: `<type>: <imperative summary>` (e.g. `feat:`, `fix:`, `docs:`, `chore:`, `test:`). Add a short body after a blank line when the why is not obvious from the subject.
 - Only commit if instructed.
 - Run after every code change:
   - `npm run lint`
