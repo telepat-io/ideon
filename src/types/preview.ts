@@ -72,6 +72,11 @@ export interface PreviewSeriesSummary {
   defaults: PreviewSeriesDefaults;
 }
 
+export interface PreviewAuthorSummary {
+  name: string;
+  slug: string;
+}
+
 export interface PreviewLlmInteraction {
   stageId: string;
   operationId: string;

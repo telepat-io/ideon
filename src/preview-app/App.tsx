@@ -3,6 +3,7 @@ import type {
   PreviewArticleContent,
   PreviewArticleListItem,
   PreviewArticleOutput,
+  PreviewAuthorSummary,
   PreviewBootstrapData,
   PreviewPublicationSummary,
   PreviewSeriesSummary,
@@ -10,6 +11,7 @@ import type {
 import {
   loadPreviewArticle,
   loadPreviewArticles,
+  loadPreviewAuthors,
   loadPreviewBootstrap,
   loadPreviewPublications,
   loadPreviewSeries,
@@ -54,6 +56,7 @@ export default function PreviewApp() {
   const [articles, setArticles] = useState<PreviewArticleListItem[]>([]);
   const [publications, setPublications] = useState<PreviewPublicationSummary[]>([]);
   const [seriesList, setSeriesList] = useState<PreviewSeriesSummary[]>([]);
+  const [authors, setAuthors] = useState<PreviewAuthorSummary[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
   const [selectedSlug, setSelectedSlug] = useState('');
@@ -77,6 +80,22 @@ export default function PreviewApp() {
   const publicationNameBySlug = useMemo(() => {
     return new Map(publications.map((publication) => [publication.slug, publication.name]));
   }, [publications]);
+
+  const authorNameBySlug = useMemo(() => {
+    return new Map(authors.map((author) => [author.slug, author.name]));
+  }, [authors]);
+
+  const resolvedAuthor = useMemo(() => {
+    const slug = detail?.metaJson?.author ?? null;
+    if (!slug) {
+      return { name: null, slug: null };
+    }
+
+    return {
+      name: authorNameBySlug.get(slug) ?? null,
+      slug,
+    };
+  }, [authorNameBySlug, detail?.metaJson?.author]);
 
   const groupedOutputs = useMemo(() => {
     return detail ? groupOutputsByType(detail.outputs) : {};
@@ -118,11 +137,12 @@ export default function PreviewApp() {
     setListError(null);
 
     try {
-      const [nextBootstrap, nextArticles, nextPublications, nextSeries] = await Promise.all([
+      const [nextBootstrap, nextArticles, nextPublications, nextSeries, nextAuthors] = await Promise.all([
         loadPreviewBootstrap(),
         loadPreviewArticles(),
         loadPreviewPublications(),
         loadPreviewSeries(),
+        loadPreviewAuthors(),
       ]);
 
       const nextSlug = nextBootstrap.currentSlug || nextArticles[0]?.slug || '';
@@ -131,6 +151,7 @@ export default function PreviewApp() {
       setArticles(nextArticles);
       setPublications(nextPublications);
       setSeriesList(nextSeries);
+      setAuthors(nextAuthors);
       setSelectedSlug(nextSlug);
     } catch (error) {
       setListError(error instanceof Error ? error.message : 'Failed to load preview data.');
@@ -352,6 +373,8 @@ export default function PreviewApp() {
                     metaJson={detail.metaJson}
                     publicationName={resolvedPublication?.name ?? null}
                     publicationSlug={detail.metaJson?.publication ?? null}
+                    authorName={resolvedAuthor.name}
+                    authorSlug={resolvedAuthor.slug}
                   />
                 ) : null}
 

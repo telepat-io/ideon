@@ -10,7 +10,12 @@ import type { FormatPreviewInput } from '../types.js';
 
 export function renderBlogPostPreview(input: FormatPreviewInput): string {
   const meta = input.metaJson;
-  const identity = resolveAuthorIdentity(input.publicationName, input.publicationSlug);
+  const identity = resolveAuthorIdentity(
+    input.publicationName,
+    input.publicationSlug,
+    input.authorName,
+    input.authorSlug,
+  );
   const date = formatPreviewDate(meta?.generatedAt);
   const readTime = estimateReadTime(input.markdownBody);
   const keywords = meta?.keywords ?? [];

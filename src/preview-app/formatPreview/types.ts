@@ -11,6 +11,8 @@ export interface FormatPreviewContext {
   metaJson: MetaJson | null;
   publicationName: string | null;
   publicationSlug: string | null;
+  authorName: string | null;
+  authorSlug: string | null;
 }
 
 export interface FormatPreviewInput extends FormatPreviewContext {

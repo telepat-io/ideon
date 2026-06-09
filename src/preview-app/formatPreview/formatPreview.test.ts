@@ -5,6 +5,7 @@ import {
   resolveAuthorIdentity,
   splitThreadHtml,
   splitThreadSegments,
+  stripDuplicateCoverImageFromHtml,
 } from './shared.js';
 
 const baseMeta: MetaJson = {
@@ -37,6 +38,8 @@ const baseInput = {
   metaJson: baseMeta,
   publicationName: 'Tech Blog',
   publicationSlug: 'tech-blog',
+  authorName: null,
+  authorSlug: null,
 };
 
 describe('supportsSectionOutline', () => {
@@ -63,6 +66,14 @@ describe('resolveAuthorIdentity', () => {
       displayName: 'Content Preview',
       initials: 'CP',
       handle: 'content-preview',
+    });
+  });
+
+  it('prefers author identity over publication identity', () => {
+    expect(resolveAuthorIdentity('Tech Blog', 'tech-blog', 'Alex Chen', 'alex-chen')).toEqual({
+      displayName: 'Alex Chen',
+      initials: 'AC',
+      handle: 'alex-chen',
     });
   });
 });
@@ -95,6 +106,22 @@ describe('splitThreadHtml', () => {
   });
 });
 
+describe('stripDuplicateCoverImageFromHtml', () => {
+  const coverUrl = '/api/generations/gen-1/assets/cover.webp';
+
+  it('removes a paragraph-wrapped cover image', () => {
+    const html = `<h1>Title</h1><p><em>Subtitle</em></p><p><img src="${coverUrl}" alt="Title"></p><p>Intro</p>`;
+    expect(stripDuplicateCoverImageFromHtml(html, coverUrl)).toBe(
+      '<h1>Title</h1><p><em>Subtitle</em></p><p>Intro</p>',
+    );
+  });
+
+  it('leaves inline images with different urls untouched', () => {
+    const html = '<p><img src="/api/generations/gen-1/assets/inline.webp" alt="Chart"></p>';
+    expect(stripDuplicateCoverImageFromHtml(html, coverUrl)).toBe(html);
+  });
+});
+
 describe('renderFormatPreview', () => {
   it('renders article shell with supplementary chrome and body', () => {
     const html = renderFormatPreview({ ...baseInput, contentType: 'article' });
@@ -105,6 +132,40 @@ describe('renderFormatPreview', () => {
     expect(html).toContain('class="fmt-content-body"');
     expect(html).toContain('<h1>Sample Title</h1>');
     expect(html).toContain('Tech Blog');
+  });
+
+  it('renders article byline with author name when provided', () => {
+    const html = renderFormatPreview({
+      ...baseInput,
+      contentType: 'article',
+      authorName: 'Alex Chen',
+      authorSlug: 'alex-chen',
+    });
+
+    expect(html).toContain('By <strong>Alex Chen</strong>');
+    expect(html).not.toContain('By <strong>Tech Blog</strong>');
+  });
+
+  it('renders article cover once when markdown body also embeds the cover image', () => {
+    const coverUrl = '/api/generations/20260328-sample/assets/cover.webp';
+    const html = renderFormatPreview({
+      ...baseInput,
+      contentType: 'article',
+      metaJson: {
+        ...baseMeta,
+        cover: {
+          path: '/tmp/output/sample/cover.webp',
+          relativePath: 'cover.webp',
+          description: 'Cover art',
+        },
+      },
+      htmlBody: `<h1>Sample Title</h1><p><em>Sample subtitle</em></p><p><img src="${coverUrl}" alt="Sample Title"></p><p>Body copy.</p>`,
+      markdownBody: '# Sample Title\n\n_Sample subtitle_\n\n![Sample Title](cover.webp)\n\nBody copy.',
+    });
+
+    expect(html.match(/class="fmt-cover"/g)?.length).toBe(1);
+    expect(html.split(coverUrl).length - 1).toBe(1);
+    expect(html).toContain('<p>Body copy.</p>');
   });
 
   it('renders x-post shell with publication-derived header', () => {

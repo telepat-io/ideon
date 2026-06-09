@@ -13,25 +13,40 @@ export function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
+function buildAuthorIdentity(displayName: string, handleSource: string): AuthorIdentity {
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('') || 'CP';
+
+  const handle = handleSource
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'content-preview';
+
+  return { displayName, initials, handle };
+}
+
 export function resolveAuthorIdentity(
   publicationName: string | null,
   publicationSlug: string | null,
+  authorName: string | null = null,
+  authorSlug: string | null = null,
 ): AuthorIdentity {
+  if (authorName?.trim()) {
+    return buildAuthorIdentity(
+      authorName.trim(),
+      authorSlug?.trim() || authorName.trim(),
+    );
+  }
+
   if (publicationName?.trim()) {
-    const displayName = publicationName.trim();
-    const initials = displayName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || 'CP';
-
-    const handle = (publicationSlug ?? displayName)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'content-preview';
-
-    return { displayName, initials, handle };
+    return buildAuthorIdentity(
+      publicationName.trim(),
+      publicationSlug ?? publicationName.trim(),
+    );
   }
 
   return {
@@ -169,6 +184,34 @@ export function splitThreadHtml(htmlBody: string, markdownBody: string): string[
 
 export function wrapContentBody(htmlBody: string): string {
   return `<div class="fmt-content-body">${htmlBody}</div>`;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function stripDuplicateCoverImageFromHtml(
+  htmlBody: string,
+  coverUrl: string | null,
+): string {
+  if (!coverUrl) {
+    return htmlBody;
+  }
+
+  const escapedUrl = escapeRegExp(coverUrl);
+  const imgPattern = `<img[^>]*\\ssrc=["']${escapedUrl}["'][^>]*>`;
+  const paragraphWrapped = new RegExp(`<p>\\s*${imgPattern}\\s*</p>\\s*`, 'i');
+  const standalone = new RegExp(`${imgPattern}\\s*`, 'i');
+
+  if (paragraphWrapped.test(htmlBody)) {
+    return htmlBody.replace(paragraphWrapped, '');
+  }
+
+  if (standalone.test(htmlBody)) {
+    return htmlBody.replace(standalone, '');
+  }
+
+  return htmlBody;
 }
 
 export function renderKeywordTags(keywords: string[]): string {

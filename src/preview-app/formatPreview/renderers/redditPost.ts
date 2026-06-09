@@ -7,7 +7,12 @@ import {
 import type { FormatPreviewInput } from '../types.js';
 
 export function renderRedditPostPreview(input: FormatPreviewInput): string {
-  const identity = resolveAuthorIdentity(input.publicationName, input.publicationSlug);
+  const identity = resolveAuthorIdentity(
+    input.publicationName,
+    input.publicationSlug,
+    input.authorName,
+    input.authorSlug,
+  );
   const relativeTime = formatRelativeTime(input.metaJson?.generatedAt);
 
   return `<div class="fmt-reddit">

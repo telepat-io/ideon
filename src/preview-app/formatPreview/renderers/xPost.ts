@@ -11,7 +11,12 @@ import {
 import type { FormatPreviewInput } from '../types.js';
 
 export function renderXPostPreview(input: FormatPreviewInput): string {
-  const identity = resolveAuthorIdentity(input.publicationName, input.publicationSlug);
+  const identity = resolveAuthorIdentity(
+    input.publicationName,
+    input.publicationSlug,
+    input.authorName,
+    input.authorSlug,
+  );
   const relativeTime = formatRelativeTime(input.metaJson?.generatedAt);
   const cover = resolveCoverImage(input.metaJson, input.generationId);
   const imageHtml = cover

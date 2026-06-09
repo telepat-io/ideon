@@ -38,7 +38,12 @@ function renderThreadCard(
 }
 
 export function renderXThreadPreview(input: FormatPreviewInput): string {
-  const identity = resolveAuthorIdentity(input.publicationName, input.publicationSlug);
+  const identity = resolveAuthorIdentity(
+    input.publicationName,
+    input.publicationSlug,
+    input.authorName,
+    input.authorSlug,
+  );
   const relativeTime = formatRelativeTime(input.metaJson?.generatedAt);
   const segments = splitThreadHtml(input.htmlBody, input.markdownBody);
   const total = segments.length;

@@ -9,7 +9,12 @@ import type { FormatPreviewInput } from '../types.js';
 
 export function renderSciencePaperPreview(input: FormatPreviewInput): string {
   const meta = input.metaJson;
-  const identity = resolveAuthorIdentity(input.publicationName, input.publicationSlug);
+  const identity = resolveAuthorIdentity(
+    input.publicationName,
+    input.publicationSlug,
+    input.authorName,
+    input.authorSlug,
+  );
   const pub = publicationLabel(input.publicationName, input.publicationSlug, meta);
   const keywords = meta?.keywords ?? [];
   const year = meta?.generatedAt ? new Date(meta.generatedAt).getFullYear() : new Date().getFullYear();

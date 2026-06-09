@@ -20,6 +20,8 @@ export function ContentView({
   metaJson,
   publicationName,
   publicationSlug,
+  authorName,
+  authorSlug,
 }: ContentViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeOutlineId, setActiveOutlineId] = useState('');
@@ -41,10 +43,12 @@ export function ContentView({
       metaJson,
       publicationName,
       publicationSlug,
+      authorName,
+      authorSlug,
     });
 
     return injectHeadingIds(wrapped);
-  }, [generationId, metaJson, output, publicationName, publicationSlug]);
+  }, [authorName, authorSlug, generationId, metaJson, output, publicationName, publicationSlug]);
 
   const outline = useMemo(() => {
     if (!showOutline) {

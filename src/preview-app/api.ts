@@ -1,6 +1,7 @@
 import type {
   PreviewArticleContent,
   PreviewArticleListItem,
+  PreviewAuthorSummary,
   PreviewBootstrapData,
   PreviewPublicationSummary,
   PreviewSeriesSummary,
@@ -45,4 +46,8 @@ export function loadPreviewPublications(): Promise<PreviewPublicationSummary[]> 
 
 export function loadPreviewSeries(): Promise<PreviewSeriesSummary[]> {
   return fetchJson<PreviewSeriesSummary[]>('/api/series');
+}
+
+export function loadPreviewAuthors(): Promise<PreviewAuthorSummary[]> {
+  return fetchJson<PreviewAuthorSummary[]>('/api/authors');
 }

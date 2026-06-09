@@ -133,6 +133,10 @@ function createFetchMock(overrides: Partial<Record<string, () => Promise<Respons
       return { ok: true, status: 200, json: async () => [] } as Response;
     }
 
+    if (url === '/api/authors') {
+      return { ok: true, status: 200, json: async () => [] } as Response;
+    }
+
     if (url === '/api/articles/20260328-roman-forum') {
       return { ok: true, status: 200, json: async () => articleDetailPayload } as Response;
     }
@@ -173,6 +177,7 @@ describe('PreviewApp', () => {
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/publications');
       expect(global.fetch).toHaveBeenCalledWith('/api/series');
+      expect(global.fetch).toHaveBeenCalledWith('/api/authors');
     });
   });
 

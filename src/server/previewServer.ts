@@ -8,12 +8,14 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { marked } from 'marked';
 import { enrichMarkdownWithLinks, loadLinksFromSidecar } from '../output/enrichMarkdownWithLinks.js';
+import { listAuthors } from '../config/authorStore.js';
 import { listPublications } from '../config/publicationStore.js';
 import { listSeries } from '../config/seriesStore.js';
 import { metaJsonSchema, type MetaJson } from '../types/meta.js';
 import type {
   PreviewArticleContent,
   PreviewAnalyticsSummary,
+  PreviewAuthorSummary,
   PreviewBootstrapData,
   PreviewInteractionsPayload,
   PreviewLlmInteraction,
@@ -162,6 +164,20 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       res.status(200).type('application/json').json(summaries);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error listing series';
+      res.status(500).type('application/json').json({ error: message });
+    }
+  });
+
+  app.get('/api/authors', async (_req, res) => {
+    try {
+      const authors = await listAuthors();
+      const summaries: PreviewAuthorSummary[] = authors.map((author) => ({
+        name: author.name,
+        slug: author.slug,
+      }));
+      res.status(200).type('application/json').json(summaries);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error listing authors';
       res.status(500).type('application/json').json({ error: message });
     }
   });

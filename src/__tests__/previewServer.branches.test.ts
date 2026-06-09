@@ -55,6 +55,7 @@ jest.unstable_mockModule('../server/previewHelpers.js', () => ({
 
 const listPublicationsMock = jest.fn<() => Promise<unknown[]>>();
 const listSeriesMock = jest.fn<() => Promise<unknown[]>>();
+const listAuthorsMock = jest.fn<() => Promise<unknown[]>>();
 
 jest.unstable_mockModule('../config/publicationStore.js', () => ({
   listPublications: listPublicationsMock,
@@ -62,6 +63,10 @@ jest.unstable_mockModule('../config/publicationStore.js', () => ({
 
 jest.unstable_mockModule('../config/seriesStore.js', () => ({
   listSeries: listSeriesMock,
+}));
+
+jest.unstable_mockModule('../config/authorStore.js', () => ({
+  listAuthors: listAuthorsMock,
 }));
 
 const { startPreviewServer } = await import('../server/previewServer.js');
@@ -80,6 +85,7 @@ describe('preview server branch coverage', () => {
     writeFileMock.mockResolvedValue(undefined);
     listPublicationsMock.mockResolvedValue([]);
     listSeriesMock.mockResolvedValue([]);
+    listAuthorsMock.mockResolvedValue([]);
     readFileMock.mockImplementation(async (filePath: string) => {
       if (filePath.endsWith('meta.json')) {
         const error = new Error('ENOENT') as NodeJS.ErrnoException;
@@ -314,7 +320,7 @@ describe('preview server branch coverage', () => {
     }
   });
 
-  it('returns publications and series summaries from config stores', async () => {
+  it('returns publications, series, and author summaries from config stores', async () => {
     listPublicationsMock.mockResolvedValueOnce([
       {
         name: 'Tech Blog',
@@ -345,6 +351,13 @@ describe('preview server branch coverage', () => {
         defaults: {},
       },
     ]);
+    listAuthorsMock.mockResolvedValueOnce([
+      {
+        name: 'Alex Chen',
+        slug: 'alex-chen',
+        profile: 'Editorial strategist',
+      },
+    ]);
 
     const server = await startPreviewServer({
       markdownPath: '/tmp/out/article-1.md',
@@ -357,14 +370,19 @@ describe('preview server branch coverage', () => {
     try {
       const publicationsResponse = await fetch(`${server.url}/api/publications`);
       const seriesResponse = await fetch(`${server.url}/api/series`);
+      const authorsResponse = await fetch(`${server.url}/api/authors`);
 
       expect(publicationsResponse.status).toBe(200);
       expect(seriesResponse.status).toBe(200);
+      expect(authorsResponse.status).toBe(200);
       await expect(publicationsResponse.json()).resolves.toEqual([
         expect.objectContaining({ slug: 'tech-blog', name: 'Tech Blog' }),
       ]);
       await expect(seriesResponse.json()).resolves.toEqual([
         expect.objectContaining({ slug: 'seo-fundamentals', name: 'SEO Fundamentals' }),
+      ]);
+      await expect(authorsResponse.json()).resolves.toEqual([
+        expect.objectContaining({ slug: 'alex-chen', name: 'Alex Chen' }),
       ]);
     } finally {
       await server.close();

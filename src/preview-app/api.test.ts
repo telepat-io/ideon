@@ -3,6 +3,7 @@ import {
   loadPreviewArticle,
   loadPreviewArticles,
   loadPreviewBootstrap,
+  loadPreviewAuthors,
   loadPreviewPublications,
   loadPreviewSeries,
 } from './api.js';
@@ -86,6 +87,13 @@ describe('preview api client', () => {
         } as Response;
       }
 
+      if (url === '/api/authors') {
+        return {
+          ok: true,
+          json: async () => [{ name: 'Alex Chen', slug: 'alex-chen' }],
+        } as Response;
+      }
+
       throw new Error(`Unexpected url: ${url}`);
     }) as typeof fetch;
 
@@ -94,6 +102,9 @@ describe('preview api client', () => {
     ]);
     await expect(loadPreviewSeries()).resolves.toEqual([
       expect.objectContaining({ slug: 'seo-fundamentals' }),
+    ]);
+    await expect(loadPreviewAuthors()).resolves.toEqual([
+      expect.objectContaining({ slug: 'alex-chen', name: 'Alex Chen' }),
     ]);
   });
 
