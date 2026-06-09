@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.39](https://github.com/telepat-io/ideon/compare/ideon-v0.1.38...ideon-v0.1.39) (2026-06-09)
+
+
+### Features
+
+* add surgical SEO check editor with strict and errors-only modes ([b559fd6](https://github.com/telepat-io/ideon/commit/b559fd6e825c2a0215f214d73be2449538dc13d5))
+
+
+### Bug Fixes
+
+* align BLUF lint with key takeaway openers and editor hints ([9042a5c](https://github.com/telepat-io/ideon/commit/9042a5c19d2547fe73aea82b54a776940dd8c2b4))
+
 ## [0.1.38](https://github.com/telepat-io/ideon/compare/ideon-v0.1.37...ideon-v0.1.38) (2026-06-06)
 
 
