@@ -27,7 +27,7 @@ Stage behavior depends on content type:
 
 - Long-form primary (`article`, `blog-post`, `newsletter`, `press-release`, `science-paper`): the plan includes sections and inline images, and stage 3 writes intro, sections, and conclusion.
 - Short-form primary (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`): the plan includes title, description, and angle, and stage 3 generates single-shot primary content.
-- For long-form primaries, stage 4 runs deterministic SEO lint and, when triggered, a surgical SEO editor agent (default max 10 turns, configurable) that patches plan metadata, section headings, and prose only (`edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro`). Pass mode defaults to `errors-only` (warnings do not fail the stage); use `--seo-check-mode strict` for zero-tolerance. Skip with `--no-seo-check`. Re-run manually with `ideon write resume --seo-check` or MCP `ideon_run_seo_check`.
+- For long-form primaries, stage 4 runs deterministic SEO lint and, when triggered, a surgical SEO editor agent (default max 10 turns, configurable) that patches plan metadata, section headings, and prose only (`edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro`). Pass mode defaults to `errors-only` (warnings do not fail the stage); use `--seo-check-mode strict` for zero-tolerance. Skip with `--no-seo-check`. Re-run manually with `ideon write resume --seo-check`.
 - For all primaries, stages 5–6 prepare and render the primary cover image.
 - `links`: runs only when `--enrich-links` is enabled and writes sidecar link metadata for eligible long-form outputs
 
@@ -121,13 +121,13 @@ When a stage fails:
 - **Pass modes** (`seoCheckMode`, default `errors-only`):
   - `errors-only`: stage passes when no lint issues have `severity: error`; warnings are recorded but do not trigger the agent or fail the stage.
   - `strict`: stage passes only when zero lint issues remain; any warning triggers the editor agent.
-- **Agent trigger:** `errors-only` runs the agent only when errors exist; `strict` runs when any issue exists; `force` (`--seo-check` / `ideon_run_seo_check`) always runs the agent path.
+- **Agent trigger:** `errors-only` runs the agent only when errors exist; `strict` runs when any issue exists; `force` (`--seo-check`) always runs the agent path.
 - When triggered and OpenRouter is available, a **surgical SEO editor agent** uses five prose/metadata tools with an inline issue playbook and the full draft plus keyword-integration guide in context.
-- **CLI / config:** `--seo-check-mode <errors-only|strict>`, `--seo-check-max-turns <n>` (1–20, default 10); settings `seoCheckMode` and `seoCheckMaxTurns` in the settings file. MCP `ideon_write`, `ideon_write_resume`, and `ideon_run_seo_check` accept the same optional params.
+- **CLI / config:** `--seo-check-mode <errors-only|strict>`, `--seo-check-max-turns <n>` (1–20, default 10); settings `seoCheckMode` and `seoCheckMaxTurns` in the settings file. MCP `ideon_write` and `ideon_write_resume` accept the same optional params.
 - **Tool feedback:** each tool call returns `remainingErrors`, `remainingWarnings`, and `remainingIssues` for mode-aware stop rules.
 - **Failure mode:** unresolved issues are logged, results are recorded in `meta.json` (`seoCheck`), and the pipeline continues.
 - **Skip:** `--no-seo-check` on `ideon write`.
-- **Re-run:** `ideon write resume --seo-check` or MCP `ideon_run_seo_check`.
+- **Re-run:** `ideon write resume --seo-check`.
 
 ## Output Stage Behavior
 

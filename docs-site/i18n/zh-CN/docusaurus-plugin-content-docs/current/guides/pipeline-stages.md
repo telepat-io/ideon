@@ -125,12 +125,12 @@ Analytics 会写入每个生成目录下的 `generation.analytics.json`。
 - **通过模式**（`seoCheckMode`，默认 `errors-only`）：
   - `errors-only`：无 `severity: error` 的 lint 问题时阶段通过；警告会记录但不触发智能体。
   - `strict`：仅当零 lint 问题时通过；任何警告都会触发编辑器智能体。
-- **智能体触发：** `errors-only` 仅在存在错误时运行；`strict` 在任何问题存在时运行；`force`（`--seo-check` / `ideon_run_seo_check`）始终运行智能体路径。
+- **智能体触发：** `errors-only` 仅在存在错误时运行；`strict` 在任何问题存在时运行；`force`（`--seo-check`）始终运行智能体路径。
 - 触发且 OpenRouter 可用时，**手术式 SEO 编辑器智能体**使用五个正文/元数据工具，上下文包含完整草稿、关键词整合指南与内联问题手册。
-- **CLI / 配置：** `--seo-check-mode <errors-only|strict>`、`--seo-check-max-turns <n>`（1–20，默认 10）；设置文件中的 `seoCheckMode` 与 `seoCheckMaxTurns`。MCP `ideon_write`、`ideon_write_resume`、`ideon_run_seo_check` 接受相同可选参数。
+- **CLI / 配置：** `--seo-check-mode <errors-only|strict>`、`--seo-check-max-turns <n>`（1–20，默认 10）；设置文件中的 `seoCheckMode` 与 `seoCheckMaxTurns`。MCP `ideon_write` 和 `ideon_write_resume` 接受相同可选参数。
 - **工具反馈：** 每次工具调用返回 `remainingErrors`、`remainingWarnings`、`remainingIssues`。
 - **跳过：** `ideon write` 使用 `--no-seo-check`。
-- **重新运行：** `ideon write resume --seo-check` 或 MCP `ideon_run_seo_check`。
+- **重新运行：** `ideon write resume --seo-check`。
 
 ## Output 阶段行为
 

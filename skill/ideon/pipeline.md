@@ -111,7 +111,7 @@ This document details the execution flow for all 8 stages of the Ideon content g
 
 **Output:** Patched plan/text in session; `seoCheck` block in `meta.json` with `seoCheckMode`, `warningsRemaining`, mode-aware `passed`, and full `issues[]`
 
-**Skip / re-run:** `--no-seo-check` on write; `ideon write resume --seo-check` or MCP `ideon_run_seo_check` to force re-run. Override mode/turns with `--seo-check-mode`, `--seo-check-max-turns`, or MCP params.
+**Skip / re-run:** `--no-seo-check` on write; `ideon write resume --seo-check` to force re-run. Override mode/turns with `--seo-check-mode`, `--seo-check-max-turns`, or MCP params on `ideon_write` / `ideon_write_resume`.
 
 **Failure mode:** Warn, record issues in `meta.json`, continue pipeline
 

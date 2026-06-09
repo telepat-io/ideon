@@ -91,7 +91,7 @@ Different stages of the pipeline benefit from different guides:
 - **Load:** Full draft markdown, keyword-integration guide, lint issue list, inline issue playbook (runtime)
 - **Purpose:** Deterministic placement validation; surgical five-tool editor agent when triggered (`errors-only` default; `strict` optional)
 - **Tools:** `edit_plan_metadata`, `edit_section_heading`, `edit_intro`, `edit_section_body`, `edit_outro` only
-- **Skip / re-run:** `--no-seo-check` on write; `ideon write resume --seo-check` or MCP `ideon_run_seo_check`; override with `--seo-check-mode` / `--seo-check-max-turns`
+- **Skip / re-run:** `--no-seo-check` on write; `ideon write resume --seo-check`; override with `--seo-check-mode` / `--seo-check-max-turns`
 
 ### Stage 5: Image Prompts
 - **Load:** Format + References (if needed)

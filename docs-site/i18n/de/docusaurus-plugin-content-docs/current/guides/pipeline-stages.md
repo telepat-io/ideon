@@ -25,7 +25,7 @@ Das Stufenverhalten hängt vom Inhaltstyp ab:
 
 - Langform-Primär (`article`, `blog-post`, `newsletter`, `press-release`, `science-paper`): Der Plan umfasst Absätze und Inline-Bilder, und Stufe 3 schreibt Einleitung, Absätze und Schlussfolgerung.
 - Kurzform-Primär (`x-post`, `x-thread`, `linkedin-post`, `reddit-post`): Der Plan umfasst Titel, Beschreibung und Winkel, und Stufe 3 generiert einmalige Primärausgaben.
-- Für Langform-Primäre führt Stufe 4 deterministisches SEO-Linting aus und bei Bedarf einen chirurgischen SEO-Editor-Agenten (standardmäßig max. 10 Runden, konfigurierbar) mit fünf Prosa/Metadaten-Tools. Pass-Modus standardmäßig `errors-only` (Warnungen schlagen die Stufe nicht fehl); `--seo-check-mode strict` für Null-Toleranz. Überspringen mit `--no-seo-check`. Erneut ausführen mit `ideon write resume --seo-check` oder MCP `ideon_run_seo_check`.
+- Für Langform-Primäre führt Stufe 4 deterministisches SEO-Linting aus und bei Bedarf einen chirurgischen SEO-Editor-Agenten (standardmäßig max. 10 Runden, konfigurierbar) mit fünf Prosa/Metadaten-Tools. Pass-Modus standardmäßig `errors-only` (Warnungen schlagen die Stufe nicht fehl); `--seo-check-mode strict` für Null-Toleranz. Überspringen mit `--no-seo-check`. Erneut ausführen mit `ideon write resume --seo-check`.
 - Für alle Primären bereiten Stufen 5–6 das primäre Coverbild vor und rendern es.
 - `links`: Wird nur ausgeführt, wenn `--enrich-links` aktiviert ist, und schreibt Sidecar-Link-Metadaten für berechtigte Langform-Ausgaben
 
@@ -118,13 +118,13 @@ Wenn eine Stufe fehlschlägt:
 - **Pass-Modi** (`seoCheckMode`, Standard `errors-only`):
   - `errors-only`: Stufe besteht, wenn keine Lint-Probleme `severity: error` haben; Warnungen werden erfasst, lösen aber keinen Agenten aus und lassen die Stufe bestehen.
   - `strict`: Stufe besteht nur bei null Lint-Problemen; jede Warnung löst den Editor-Agenten aus.
-- **Agent-Auslöser:** `errors-only` nur bei Fehlern; `strict` bei jedem Problem; `force` (`--seo-check` / `ideon_run_seo_check`) führt immer den Agentenpfad aus.
+- **Agent-Auslöser:** `errors-only` nur bei Fehlern; `strict` bei jedem Problem; `force` (`--seo-check`) führt immer den Agentenpfad aus.
 - Bei Auslösung und verfügbarem OpenRouter nutzt ein **chirurgischer SEO-Editor-Agent** fünf Prosa/Metadaten-Tools mit inline Issue-Playbook sowie vollem Entwurf und Keyword-Integration-Guide im Kontext.
-- **CLI / Config:** `--seo-check-mode <errors-only|strict>`, `--seo-check-max-turns <n>` (1–20, Standard 10); Einstellungen `seoCheckMode` und `seoCheckMaxTurns`. MCP `ideon_write`, `ideon_write_resume` und `ideon_run_seo_check` akzeptieren dieselben optionalen Parameter.
+- **CLI / Config:** `--seo-check-mode <errors-only|strict>`, `--seo-check-max-turns <n>` (1–20, Standard 10); Einstellungen `seoCheckMode` und `seoCheckMaxTurns`. MCP `ideon_write` und `ideon_write_resume` akzeptieren dieselben optionalen Parameter.
 - **Tool-Feedback:** jeder Tool-Aufruf liefert `remainingErrors`, `remainingWarnings` und `remainingIssues`.
 - **Fehlermodus:** ungelöste Probleme werden protokolliert, in `meta.json` (`seoCheck`) gespeichert, Pipeline läuft weiter.
 - **Überspringen:** `--no-seo-check` bei `ideon write`.
-- **Erneut ausführen:** `ideon write resume --seo-check` oder MCP `ideon_run_seo_check`.
+- **Erneut ausführen:** `ideon write resume --seo-check`.
 
 ## Ausgabestufen-Verhalten
 

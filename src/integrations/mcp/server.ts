@@ -10,9 +10,7 @@ import { runOutputCommand } from '../../cli/commands/export.js';
 import { configGet, configList, configSet, configUnset, isConfigKey } from '../../config/manage.js';
 import { parsePrimaryAndSecondarySpecs } from '../../cli/commands/writeTargetSpecs.js';
 import { ReportedError } from '../../cli/reportedError.js';
-import { loadWriteSession, patchWriteSession } from '../../pipeline/sessionStore.js';
-import { runEditor } from '../../editor/runEditor.js';
-import { isLongFormPlan, type ArticlePlan } from '../../types/article.js';
+import { loadWriteSession } from '../../pipeline/sessionStore.js';
 import {
   type ConfigGetToolInput,
   type ConfigListToolInput,
@@ -26,7 +24,6 @@ import {
   type LinksToolInput,
   type WriteResumeToolInput,
   type WriteToolInput,
-  type RunSeoCheckToolInput,
   type PublicationAddToolInput,
   type PublicationEditToolInput,
   type PublicationRemoveToolInput,
@@ -57,7 +54,6 @@ import {
   linksToolInputSchema,
   writeResumeToolInputSchema,
   writeToolInputSchema,
-  runSeoCheckToolInputSchema,
   publicationAddToolInputZodSchema,
   publicationListToolInputZodSchema,
   publicationEditToolInputZodSchema,
@@ -278,73 +274,6 @@ export function registerIdeonTools(server: McpServer): void {
             markdownPaths: run.artifact.markdownPaths,
             generationDir: run.artifact.generationDir,
           },
-        };
-      } catch (error) {
-        return formatToolError(error);
-      }
-    },
-  );
-
-  server.registerTool(
-    'ideon_run_seo_check',
-    {
-      title: 'Ideon Run SEO Check',
-      description: 'Run the SEO lint and editor pass on the active write session plan and section drafts.',
-      inputSchema: runSeoCheckToolInputSchema,
-    },
-    async (input: RunSeoCheckToolInput) => {
-      try {
-        const session = await loadWriteSession(cwd());
-        if (!session) {
-          throw new ReportedError('No active write session found.');
-        }
-        if (!session.plan || !session.text || !isLongFormPlan(session.plan)) {
-          throw new ReportedError('SEO check requires a long-form plan with section drafts in the active session.');
-        }
-
-        const dryRun = input.dryRun ?? session.dryRun;
-        const secrets = await loadSecrets();
-        const openRouter = dryRun || !secrets.openRouterApiKey
-          ? null
-          : new OpenRouterClient(secrets.openRouterApiKey);
-
-        const seoCheckMode = input.seoCheckMode ?? session.settings.seoCheckMode;
-        const seoCheckMaxTurns = input.seoCheckMaxTurns ?? session.settings.seoCheckMaxTurns;
-
-        const editorResult = await runEditor({
-          plan: session.plan as ArticlePlan,
-          text: session.text,
-          settings: session.settings,
-          openRouter,
-          dryRun,
-          seoCheckMode,
-          maxTurns: seoCheckMaxTurns,
-          force: true,
-        });
-
-        await patchWriteSession({
-          plan: editorResult.snapshot.plan,
-          text: editorResult.snapshot.text,
-          ...(editorResult.snapshot.structureChanged || editorResult.snapshot.imagesChanged
-            ? { imagePrompts: null, imageArtifacts: null }
-            : {}),
-        }, cwd());
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                passed: editorResult.lint.passed,
-                seoCheckMode,
-                warningsRemaining: editorResult.lint.issues.filter((issue) => issue.severity === 'warning').length,
-                issues: editorResult.lint.issues,
-                editorTurns: editorResult.turnsUsed,
-                structureChanged: editorResult.snapshot.structureChanged,
-                imagesChanged: editorResult.snapshot.imagesChanged,
-              }, null, 2),
-            },
-          ],
         };
       } catch (error) {
         return formatToolError(error);

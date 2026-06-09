@@ -9,7 +9,7 @@ description: Use this skill when users need to operate Ideon through its MCP too
 
 This skill teaches how to operate Ideon as a content writer platform through its MCP (Model Context Protocol) tool surface — not the CLI.
 
-Ideon exposes 29 MCP tools covering the full content lifecycle: generate content from an idea, resume interrupted runs, enrich links, export articles, manage configuration, create and manage publications and series, queue articles for batch processing, plan content strategy with Google Keyword Planner research, and list generated articles.
+Ideon exposes 28 MCP tools covering the full content lifecycle: generate content from an idea, resume interrupted runs, enrich links, export articles, manage configuration, create and manage publications and series, queue articles for batch processing, plan content strategy with Google Keyword Planner research, and list generated articles.
 
 Use this skill when working inside any MCP-compatible client. All operations are performed as MCP tool invocations with structured JSON responses.
 

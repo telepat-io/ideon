@@ -41,14 +41,6 @@ export const writeResumeToolInputSchema = {
 export const writeResumeToolInputZodSchema = z.object(writeResumeToolInputSchema);
 export type WriteResumeToolInput = z.infer<typeof writeResumeToolInputZodSchema>;
 
-export const runSeoCheckToolInputSchema = {
-  dryRun: z.boolean().optional(),
-  seoCheckMode: z.enum(['errors-only', 'strict']).optional(),
-  seoCheckMaxTurns: z.coerce.number().int().min(1).max(20).optional(),
-};
-export const runSeoCheckToolInputZodSchema = z.object(runSeoCheckToolInputSchema);
-export type RunSeoCheckToolInput = z.infer<typeof runSeoCheckToolInputZodSchema>;
-
 export const deleteToolInputSchema = {
   slug: z.string().min(1),
 };
@@ -385,13 +377,6 @@ export const ideonToolContracts: ToolContract[] = [
   },
   {
     name: 'ideon_write_resume',
-    required: [],
-    enums: {
-      seoCheckMode: ['errors-only', 'strict'],
-    },
-  },
-  {
-    name: 'ideon_run_seo_check',
     required: [],
     enums: {
       seoCheckMode: ['errors-only', 'strict'],
