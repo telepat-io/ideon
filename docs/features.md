@@ -166,11 +166,14 @@ Ideon's writing pipeline enforces on-page SEO best practices at every stage of c
 
 **During planning**, titles are constrained to search-safe lengths, meta descriptions are shaped for click-through impact, and the planner assigns a `primaryKeyword` plus per-section `targetKeywords` (0–2 each) with parity placement rules for both user-provided and LLM-generated keyword sets. **During writing**, tiered guide bundles (intro / section / outro) and the keyword-integration guide shape placement — primary keyword in the title and intro, section targets in BLUF openers. **After section writing**, a default-on `seo-check` stage runs deterministic lint and, when needed, a five-tool surgical editor agent (`errors-only` pass mode by default; `strict` optional) that fixes prose and metadata without restructuring the article.
 
-**During writing**, three dedicated SEO guides shape every section:
+**During writing**, four dedicated SEO guides shape every long-form section:
 
 - **On-page essentials** — heading hierarchy, BLUF paragraphs, key takeaway blocks, and paragraph structure optimized for both human readers and search crawlers
 - **E-E-A-T signals** — weave supplied author experience only; competing viewpoints and primary-source citations; no invented first-person practitioner stories
 - **Fact density** — substantial value beyond the obvious; facts and citations when they genuinely support the section (soft length-scaled targets, not quotas)
+- **AI search extraction** — question-shaped headings for informational sections, self-contained paragraphs, comparison tables for multi-option sections, and anti-gaming rules for generative answer visibility
+
+**Optional FAQ block** — For informational intents on long-form primary targets (`tutorial`, `how-to-guide`, `cornerstone`, `deep-dive-analysis`, `case-study`, `roundup-curation`), Ideon can append a `## FAQ` section after the conclusion via a dedicated `sections:faq` LLM call. Control with `faqSection` in settings or `--faq-section` / `--no-faq-section` on the CLI. Dry-run mode generates placeholder FAQ content without API calls.
 
 No keyword stuffing. No SEO hacks. Just disciplined writing that happens to perform in both traditional search results and generative AI summaries.
 

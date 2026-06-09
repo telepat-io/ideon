@@ -159,11 +159,14 @@ Ideons Schreib-Pipeline setzt On-Page-SEO-Best-Practices in jeder Stufe der Inha
 
 **Während der Planung** werden Titel auf suchsichere Längen begrenzt, Meta-Beschreibungen für Klickwirkung gestaltet, und der Planer weist `primaryKeyword` sowie pro Abschnitt `targetKeywords` (0–2 je Abschnitt) mit denselben Platzierungsregeln für nutzer- und LLM-generierte Keywords zu. **Beim Schreiben** formen gestufte Guide-Bundles (Intro / Abschnitt / Outro) und der Keyword-Integration-Guide die Platzierung — Primary Keyword in Titel und Intro, Abschnittsziele in BLUF-Eröffnungsparagraphen. **Nach dem Abschnittsschreiben** läuft standardmäßig die `seo-check`-Stufe mit deterministischem Lint und bei Bedarf einem fünf-Tool-chirurgischen Editor-Agenten (Standard-Pass-Modus `errors-only`; `strict` optional), der Prosa und Metadaten ohne Umstrukturierung korrigiert.
 
-**Während des Schreibens** gestalten drei spezialisierte SEO-Leitfäden jede Sektion:
+**Während des Schreibens** gestalten vier spezialisierte SEO-Leitfäden jeden Long-Form-Abschnitt:
 
 - **On-Page-Grundlagen** — Überschriftenhierarchie, BLUF-Absätze, Schlüsselerkenntnis-Blöcke und Absatzstruktur, optimiert für menschliche Leser und Such-Crawler
 - **E-E-A-T-Signale** — nur gelieferte Autorenerfahrung einweben; konkurrierende Standpunkte und Primärquellen; keine erfundenen Erstperson-Praktiker-Geschichten
 - **Faktendichte** — substanzieller Mehrwert über das Offensichtliche hinaus; Fakten und Zitate nur, wenn sie den Abschnitt wirklich stützen (weiche Längenziele, keine Quoten)
+- **KI-Suche-Extrahierbarkeit** — frageförmige Überschriften für informative Abschnitte, in sich geschlossene Absätze, Vergleichstabellen bei Mehrfachoptionen und Anti-Gaming-Regeln für Sichtbarkeit in generativen Antworten
+
+**Optionaler FAQ-Block** — Für informative Absichten auf Long-Form-Primärzielen (`tutorial`, `how-to-guide`, `cornerstone`, `deep-dive-analysis`, `case-study`, `roundup-curation`) kann Ideon nach dem Schluss über einen dedizierten `sections:faq`-LLM-Aufruf einen `## FAQ`-Abschnitt anhängen. Steuerung über `faqSection` in den Einstellungen oder `--faq-section` / `--no-faq-section` in der CLI. Im Dry-Run-Modus werden Platzhalter-FAQ-Inhalte ohne API-Aufrufe erzeugt.
 
 Kein Keyword-Stuffing. Keine SEO-Hacks. Nur diszipliniertes Schreiben, das in traditionellen Suchergebnissen und generativen KI-Zusammenfassungen gleichermaßen performt.
 
