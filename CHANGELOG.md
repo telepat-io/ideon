@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.43](https://github.com/telepat-io/ideon/compare/ideon-v0.1.42...ideon-v0.1.43) (2026-06-11)
+
+
+### Features
+
+* support Google Ads OAuth in container and MCP deployments ([2c1db7d](https://github.com/telepat-io/ideon/commit/2c1db7dfeba4db818e1918a4097496d3969d9b17))
+
 ## [0.1.42](https://github.com/telepat-io/ideon/compare/ideon-v0.1.41...ideon-v0.1.42) (2026-06-09)
 
 
