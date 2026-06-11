@@ -1,11 +1,12 @@
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
 import { URL } from 'node:url';
-import { configSet } from '../../config/manage.js';
+import { tryConfigSetSecret } from '../../config/manage.js';
 import { loadSecrets } from '../../config/secretStore.js';
 import { readEnvSettings } from '../../config/env.js';
 import {
   buildAuthUrl,
   exchangeCode,
+  resolveGadsOAuthRedirect,
   startServerOnPort,
 } from '../keywordplanner/oauth.js';
 
@@ -21,6 +22,8 @@ export interface GadsLoginState {
   port: number;
   startedAt: number;
   message?: string;
+  refreshToken?: string;
+  saved?: boolean;
 }
 
 let currentState: GadsLoginState = {
@@ -54,7 +57,7 @@ async function handleCallback(
   clientSecret: string,
   redirectUri: string,
 ): Promise<void> {
-  const url = new URL(req.url ?? '/', `http://localhost`);
+  const url = new URL(req.url ?? '/', 'http://localhost');
 
   if (url.pathname !== redirectPath) {
     res.writeHead(404);
@@ -92,19 +95,22 @@ async function handleCallback(
       { fetch: globalThis.fetch.bind(globalThis) },
     );
 
-    await configSet('googleAdsRefreshToken', refreshToken);
+    const saveResult = await tryConfigSetSecret('googleAdsRefreshToken', refreshToken);
 
     cleanup();
     currentState = {
       ...currentState,
       status: 'completed',
+      saved: saveResult.saved,
+      refreshToken: saveResult.saved ? undefined : refreshToken,
     };
 
+    const savedMessage = saveResult.saved
+      ? 'Google Ads credentials saved. You can close this window and return to your MCP client.'
+      : 'Authorization successful. Persist TELEPAT_GOOGLE_ADS_REFRESH_TOKEN in your environment and restart the toolbox container.';
+
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(
-      '<h1>Authorization successful</h1>' +
-      '<p>Google Ads credentials saved. You can close this window and return to your MCP client.</p>',
-    );
+    res.end(`<h1>Authorization successful</h1><p>${savedMessage}</p>`);
   } catch (exchangeError) {
     cleanup();
     const message = exchangeError instanceof Error ? exchangeError.message : 'Unknown error';
@@ -157,29 +163,43 @@ export async function startGadsLogin(params: GadsLoginStartParams): Promise<Gads
     );
   }
 
-  await configSet('googleAdsDeveloperToken', params.developerToken);
-  await configSet('googleAdsClientId', params.clientId);
-  await configSet('googleAdsClientSecret', params.clientSecret);
-  await configSet('googleAdsCustomerId', params.customerId);
+  await tryConfigSetSecret('googleAdsDeveloperToken', params.developerToken);
+  await tryConfigSetSecret('googleAdsClientId', params.clientId);
+  await tryConfigSetSecret('googleAdsClientSecret', params.clientSecret);
+  await tryConfigSetSecret('googleAdsCustomerId', params.customerId);
   if (params.loginCustomerId) {
-    await configSet('googleAdsLoginCustomerId', params.loginCustomerId);
+    await tryConfigSetSecret('googleAdsLoginCustomerId', params.loginCustomerId);
   }
 
+  const redirectConfig = resolveGadsOAuthRedirect(envSettings.googleAdsRedirectUrl, DEFAULT_REDIRECT_PORT);
+
   let server: Server | null = null;
-  let port = DEFAULT_REDIRECT_PORT;
-  let redirectPath = '/callback';
-  let redirectUri = '';
+  let port = redirectConfig.listenPort;
+  let redirectPath = redirectConfig.redirectPath;
+  let redirectUri = redirectConfig.redirectUri;
 
   for (let attempt = 0; attempt < MAX_PORT_ATTEMPTS; attempt++) {
     try {
-      const result = await startServerOnPort(port, { createHttpServer: createServer });
+      const result = await startServerOnPort(
+        port,
+        { createHttpServer: createServer },
+        { redirectUri, redirectPath },
+      );
       server = result.server;
       redirectPath = result.redirectPath;
       redirectUri = result.redirectUri;
       break;
     } catch (err) {
-      if (err instanceof Error && err.message.startsWith('Port') && err.message.endsWith('is in use.')) {
+      if (
+        !envSettings.googleAdsRedirectUrl &&
+        err instanceof Error &&
+        err.message.startsWith('Port') &&
+        err.message.endsWith('is in use.')
+      ) {
         port++;
+        const nextRedirect = resolveGadsOAuthRedirect(undefined, port);
+        redirectPath = nextRedirect.redirectPath;
+        redirectUri = nextRedirect.redirectUri;
         continue;
       }
       throw err;

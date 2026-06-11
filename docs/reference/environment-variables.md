@@ -20,6 +20,7 @@ keywords: [ideon, documentation, cli, guides, reference]
 - `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` — from one-time OAuth2 authorization flow
 - `TELEPAT_GOOGLE_ADS_CUSTOMER_ID` — Google Ads account number (with billing)
 - `TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID` — Manager (MCC) account number (only if accessing through a manager account)
+- `TELEPAT_IDEON_GADS_REDIRECT_URL` — full public OAuth callback URL (e.g. `http://ideon.localhost:8080/callback` or `https://ideon.telepat.dev/callback`). Must match GCP **Authorized redirect URIs** exactly. When unset, Ideon falls back to Desktop OAuth at `http://localhost:9876/callback`.
 
 For detailed Google Ads setup instructions, see [Google Ads Keyword Planner Setup](../guides/google-ads-keyword-planner.md).
 

@@ -145,10 +145,22 @@ You need a Google Cloud (GCP) project with the Google Ads API enabled.
 
 1. Go to [Credentials](https://console.cloud.google.com/apis/credentials)
 2. Click **+ Create Credentials → OAuth client ID**
-3. Select **Application type: Desktop app**
+3. Select **Application type: Web application** (recommended for reverse-proxy / container deployments) or **Desktop app** (bare-metal local dev)
 4. Give it a name (e.g. "Ideon GKP")
+
+**Web application** (production and Telepat Monad):
+
+| Field | Local dev example | Production example |
+|-------|-------------------|-------------------|
+| Authorized JavaScript origins | `http://ideon.localhost:8080` | `https://ideon.telepat.dev` |
+| Authorized redirect URIs | `http://ideon.localhost:8080/callback` | `https://ideon.telepat.dev/callback` |
+
+Set `TELEPAT_IDEON_GADS_REDIRECT_URL` to the same redirect URI (including `/callback`).
+
+**Desktop app** (local CLI only): no origins/redirect URIs in GCP; Ideon uses `http://localhost:9876/callback` when `TELEPAT_IDEON_GADS_REDIRECT_URL` is unset.
+
 5. Click **Create**
-6. Copy the **Client ID** and **Client Secret** — you will need both
+6. Copy the **Client ID** and **Client Secret**
 
 ---
 
@@ -156,77 +168,42 @@ You need a Google Cloud (GCP) project with the Google Ads API enabled.
 
 This is a **one-time** authorization flow. The refresh token lets Ideon obtain new access tokens automatically.
 
-### Option A: Using the browser (easiest)
+### Option A: MCP `gads_login` (containers, agents, Telepat Monad)
 
-1. Open this URL in your browser, replacing `YOUR_CLIENT_ID`:
-   ```
-   https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:9876&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadwords&access_type=offline&prompt=consent
-   ```
-2. Sign in with the Google account that has access to your Google Ads account
-3. Grant the requested permissions
-4. The browser will redirect to `http://localhost:9876?code=...` — copy the `code` value from the URL
+Use when `TELEPAT_DISABLE_KEYTAR=1` or when driving Ideon from an MCP client:
 
-### Option B: Using the command line (macOS/Linux)
+1. Pre-fill static credentials in env (`TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN`, `CLIENT_ID`, `CLIENT_SECRET`, `CUSTOMER_ID`).
+2. Call MCP **`gads_login`** — response includes `authUrl` in `structuredContent`.
+3. Open `authUrl` in a browser and authorize.
+4. Poll **`gads_login_status`** until `status: completed`.
+5. Read `refreshToken` from `structuredContent` and persist as `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` (when `saved: false`, keychain is disabled).
+6. Call **`gads_test`** to verify.
+
+In Telepat Monad, the agent writes the refresh token to `/telepat/.env` after user confirmation. See the Monad [Google Ads Setup](https://github.com/telepat-ai/monad/blob/main/docs/guides/google-ads-setup.md) guide.
+
+### Option B: CLI `ideon gads login` (interactive desktop)
+
+```bash
+ideon gads login
+```
+
+Opens a browser for OAuth consent and saves credentials to keychain or env.
+
+### Option C: Manual Desktop OAuth (bare-metal fallback)
+
+When `TELEPAT_IDEON_GADS_REDIRECT_URL` is unset, redirect URI is `http://localhost:9876/callback`:
 
 ```bash
 CLIENT_ID="YOUR_CLIENT_ID"
 CLIENT_SECRET="YOUR_CLIENT_SECRET"
-REDIRECT_URI="http://localhost:9876"
+REDIRECT_URI="http://localhost:9876/callback"
 
-# Open auth URL in browser
 open "https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadwords&access_type=offline&prompt=consent"
 
-# Start a temporary HTTP server to catch the redirect
-CODE=$(python3 -c "
-import http.server, urllib.parse, sys
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        print(params['code'][0], end='')
-        self.send_response(200); self.end_headers()
-        self.wfile.write(b'Auth complete! Close this tab.')
-        sys.exit(0)
-    def log_message(self, *a): pass
-http.server.HTTPServer(('', 9876), H).handle_request()
-")
-
-# Exchange for tokens
-curl -s -X POST https://oauth2.googleapis.com/token \
-  -d "client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${CODE}&grant_type=authorization_code&redirect_uri=${REDIRECT_URI}" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['refresh_token'])"
+# Catch redirect on port 9876, exchange code for refresh_token (see ideon gads login implementation)
 ```
 
-### Option C: Using PowerShell (Windows)
-
-```powershell
-$clientId = "YOUR_CLIENT_ID"
-$clientSecret = "YOUR_CLIENT_SECRET"
-$redirectUri = "http://localhost:9876"
-$authUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=$clientId&redirect_uri=$([Uri]::EscapeDataString($redirectUri))&response_type=code&scope=$([Uri]::EscapeDataString('https://www.googleapis.com/auth/adwords'))&access_type=offline&prompt=consent"
-
-$listener = [System.Net.HttpListener]::new()
-$listener.Prefixes.Add("$redirectUri/")
-$listener.Start()
-
-Start-Process $authUrl
-
-$context = $listener.GetContext()
-$rawUrl = $context.Request.RawUrl
-$responseText = "<html><body><h2>Auth complete! You can close this tab.</h2></body></html>"
-$buffer = [System.Text.Encoding]::UTF8.GetBytes($responseText)
-$context.Response.ContentLength64 = $buffer.Length
-$context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
-$context.Response.Close()
-$listener.Stop()
-
-$code = ($rawUrl -split "[?&]" | Where-Object { $_ -like "code=*" }) -replace "^code=", ""
-
-$body = "client_id=$clientId&client_secret=$clientSecret&code=$([Uri]::EscapeDataString($code))&grant_type=authorization_code&redirect_uri=$([Uri]::EscapeDataString($redirectUri))"
-$result = Invoke-RestMethod -Method Post -Uri "https://oauth2.googleapis.com/token" -Body $body -ContentType "application/x-www-form-urlencoded"
-Write-Host "Refresh token: $($result.refresh_token)"
-```
-
-> **⚠️ Save your refresh token immediately.** You cannot retrieve it again. If lost, you must re-run the authorization flow.
+> **⚠️ Save your refresh token immediately.** You cannot retrieve it again. If lost, re-run authorization with `gads_login` or `ideon gads login --force`.
 
 ---
 

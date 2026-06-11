@@ -256,6 +256,7 @@ export const envSettingsSchema = z.object({
   googleAdsRefreshToken: z.string().optional(),
   googleAdsCustomerId: z.string().optional(),
   googleAdsLoginCustomerId: z.string().optional(),
+  googleAdsRedirectUrl: z.string().url().optional(),
 });
 
 export const jobInputSchema = z.object({

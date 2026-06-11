@@ -8,7 +8,7 @@ import {
 } from './schema.js';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings, saveSettings } from './settingsFile.js';
-import { loadSecrets, saveSecrets, type SecretStoreOptions } from './secretStore.js';
+import { isKeytarUnavailableError, loadSecrets, saveSecrets, type SecretStoreOptions } from './secretStore.js';
 
 export const configSettingKeys = [
   'model',
@@ -119,9 +119,37 @@ export async function configGet(key: ConfigKey): Promise<ConfigGetResult> {
   };
 }
 
+export interface ConfigSetSecretResult {
+  saved: boolean;
+  source: 'env' | 'keychain' | 'skipped';
+}
+
+export async function tryConfigSetSecret(key: ConfigSecretKey, rawValue: string): Promise<ConfigSetSecretResult> {
+  const envSettings = readEnvSettings();
+  if (envSettings[key]) {
+    return { saved: true, source: 'env' };
+  }
+
+  try {
+    await saveSecrets({ [key]: normalizeSecretValue(rawValue) }, readSecretStoreOptions());
+    return { saved: true, source: 'keychain' };
+  } catch (error) {
+    if (isKeytarUnavailableError(error)) {
+      return { saved: false, source: 'skipped' };
+    }
+    throw error;
+  }
+}
+
 export async function configSet(key: ConfigKey, rawValue: string): Promise<void> {
   if (isConfigSecretKey(key)) {
-    await saveSecrets({ [key]: normalizeSecretValue(rawValue) }, readSecretStoreOptions());
+    const result = await tryConfigSetSecret(key, rawValue);
+    if (!result.saved && result.source === 'skipped') {
+      throw new Error(
+        `Cannot save ${key} to keychain (TELEPAT_DISABLE_KEYTAR=true). ` +
+        'Set the matching TELEPAT_GOOGLE_ADS_* or TELEPAT_OPENROUTER_KEY / TELEPAT_REPLICATE_TOKEN environment variable instead.',
+      );
+    }
     return;
   }
 

@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-const configSetMock = jest.fn<(...args: any[]) => Promise<void>>();
+const tryConfigSetSecretMock = jest.fn<(...args: any[]) => Promise<{ saved: boolean; source: string }>>();
 const loadSecretsMock = jest.fn<(...args: any[]) => Promise<any>>();
 const readEnvSettingsMock = jest.fn<() => any>();
 
@@ -16,7 +16,7 @@ const exchangeCodeMock = jest.fn<(...args: any[]) => Promise<string>>();
 const startServerOnPortMock = jest.fn<(...args: any[]) => Promise<any>>();
 
 jest.unstable_mockModule('../config/manage.js', () => ({
-  configSet: configSetMock,
+  tryConfigSetSecret: tryConfigSetSecretMock,
 }));
 
 jest.unstable_mockModule('../config/secretStore.js', () => ({
@@ -31,6 +31,11 @@ jest.unstable_mockModule('../integrations/keywordplanner/oauth.js', () => ({
   buildAuthUrl: buildAuthUrlMock,
   exchangeCode: exchangeCodeMock,
   startServerOnPort: startServerOnPortMock,
+  resolveGadsOAuthRedirect: jest.fn((_url: string | undefined, port = 9876) => ({
+    redirectUri: `http://localhost:${port}/callback`,
+    redirectPath: '/callback',
+    listenPort: port,
+  })),
 }));
 
 jest.unstable_mockModule('node:http', () => ({
@@ -61,7 +66,7 @@ describe('oauthFlowManager', () => {
     jest.clearAllMocks();
     resetGadsLoginState();
 
-    configSetMock.mockResolvedValue(undefined);
+    tryConfigSetSecretMock.mockResolvedValue({ saved: true, source: 'keychain' });
     readEnvSettingsMock.mockReturnValue({ disableKeytar: undefined });
     loadSecretsMock.mockResolvedValue(createMockSecrets());
     buildAuthUrlMock.mockReturnValue('https://accounts.google.com/o/oauth2/v2/auth?test=1');
@@ -91,10 +96,10 @@ describe('oauthFlowManager', () => {
     expect(result.status).toBe('pending');
     expect(result.authUrl).toBe('https://accounts.google.com/o/oauth2/v2/auth?test=1');
     expect(result.port).toBe(9876);
-    expect(configSetMock).toHaveBeenCalledWith('googleAdsDeveloperToken', 'dev-token');
-    expect(configSetMock).toHaveBeenCalledWith('googleAdsClientId', 'client-id');
-    expect(configSetMock).toHaveBeenCalledWith('googleAdsClientSecret', 'client-secret');
-    expect(configSetMock).toHaveBeenCalledWith('googleAdsCustomerId', '1234567890');
+    expect(tryConfigSetSecretMock).toHaveBeenCalledWith('googleAdsDeveloperToken', 'dev-token');
+    expect(tryConfigSetSecretMock).toHaveBeenCalledWith('googleAdsClientId', 'client-id');
+    expect(tryConfigSetSecretMock).toHaveBeenCalledWith('googleAdsClientSecret', 'client-secret');
+    expect(tryConfigSetSecretMock).toHaveBeenCalledWith('googleAdsCustomerId', '1234567890');
   });
 
   it('saves loginCustomerId when provided', async () => {
@@ -106,7 +111,7 @@ describe('oauthFlowManager', () => {
       loginCustomerId: '999',
     });
 
-    expect(configSetMock).toHaveBeenCalledWith('googleAdsLoginCustomerId', '999');
+    expect(tryConfigSetSecretMock).toHaveBeenCalledWith('googleAdsLoginCustomerId', '999');
   });
 
   it('reports pending status while flow is active', async () => {
@@ -138,7 +143,7 @@ describe('oauthFlowManager', () => {
     });
 
     expect(result.status).toBe('pending');
-    expect(configSetMock).not.toHaveBeenCalledWith('googleAdsDeveloperToken', 'dev2');
+    expect(tryConfigSetSecretMock).not.toHaveBeenCalledWith('googleAdsDeveloperToken', 'dev2');
   });
 
   it('throws when refresh token exists and force is not set', async () => {
@@ -166,7 +171,7 @@ describe('oauthFlowManager', () => {
     });
 
     expect(result.status).toBe('pending');
-    expect(configSetMock).toHaveBeenCalledWith('googleAdsDeveloperToken', 'dev');
+    expect(tryConfigSetSecretMock).toHaveBeenCalledWith('googleAdsDeveloperToken', 'dev');
   });
 
   it('throws when all ports are in use', async () => {
@@ -245,7 +250,7 @@ describe('oauthFlowManager', () => {
       'http://localhost:9876/callback',
       expect.objectContaining({ fetch: expect.any(Function) }),
     );
-    expect(configSetMock).toHaveBeenCalledWith('googleAdsRefreshToken', 'new-refresh-token');
+    expect(tryConfigSetSecretMock).toHaveBeenCalledWith('googleAdsRefreshToken', 'new-refresh-token');
     expect(getGadsLoginStatus().status).toBe('completed');
     expect(res.writeHead).toHaveBeenCalledWith(200, { 'Content-Type': 'text/html' });
     expect(res.end).toHaveBeenCalledWith(expect.stringContaining('Authorization successful'));
@@ -327,6 +332,30 @@ describe('oauthFlowManager', () => {
     expect(getGadsLoginStatus().status).toBe('timed_out');
     expect(getGadsLoginStatus().message).toContain('invalid_grant');
     expect(res.writeHead).toHaveBeenCalledWith(500, { 'Content-Type': 'text/html' });
+  });
+
+  it('returns refreshToken in completed state when keytar is disabled', async () => {
+    exchangeCodeMock.mockResolvedValue('new-refresh-token');
+    tryConfigSetSecretMock.mockResolvedValue({ saved: false, source: 'skipped' });
+
+    await startGadsLogin({
+      developerToken: 'dev',
+      clientId: 'id',
+      clientSecret: 'secret',
+      customerId: '123',
+    });
+
+    const requestHandler = mockServer.on.mock.calls.find((c: any) => c[0] === 'request')![1] as Function;
+    const req = { url: '/callback?code=test-auth-code' };
+    const res = { writeHead: jest.fn(), end: jest.fn() };
+
+    await requestHandler(req, res);
+    await flushMicrotasks();
+
+    const status = getGadsLoginStatus();
+    expect(status.status).toBe('completed');
+    expect(status.refreshToken).toBe('new-refresh-token');
+    expect(status.saved).toBe(false);
   });
 
   it('throws on non-port-in-use server errors', async () => {

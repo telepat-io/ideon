@@ -1561,8 +1561,7 @@ export function registerIdeonTools(server: McpServer): void {
             {
               type: 'text',
               text:
-                `Google Ads credentials saved. A temporary OAuth server is running on http://localhost:${state.port}.\n\n` +
-                `Open this URL in your browser to authorize:\n${state.authUrl}\n\n` +
+                `Google Ads OAuth flow started. Open this URL in your browser to authorize:\n${state.authUrl}\n\n` +
                 `After authorization, call gads_login_status to confirm completion.`,
             },
           ],
@@ -1613,10 +1612,24 @@ export function registerIdeonTools(server: McpServer): void {
         }
 
         if (state.status === 'completed') {
+          const { refreshToken, saved } = state;
           resetGadsLoginState();
+          const persisted = saved ?? true;
           return {
-            content: [{ type: 'text', text: 'Google Ads OAuth completed successfully. Refresh token saved.' }],
-            structuredContent: { status: state.status },
+            content: [
+              {
+                type: 'text',
+                text: persisted
+                  ? 'Google Ads OAuth completed successfully. Refresh token saved.'
+                  : 'Google Ads OAuth completed. Persist TELEPAT_GOOGLE_ADS_REFRESH_TOKEN in your environment and restart the toolbox container.',
+              },
+            ],
+            structuredContent: {
+              status: state.status,
+              refreshToken: refreshToken ?? undefined,
+              saved: persisted,
+              envVarName: 'TELEPAT_GOOGLE_ADS_REFRESH_TOKEN',
+            },
           };
         }
 

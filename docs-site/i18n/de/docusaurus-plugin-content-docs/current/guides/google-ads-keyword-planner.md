@@ -140,10 +140,22 @@ Sie benötigen ein Google Cloud (GCP)-Projekt mit aktivierter Google Ads API.
 
 1. Gehen Sie zu [Anmeldeinformationen](https://console.cloud.google.com/apis/credentials)
 2. Klicken Sie **+ Anmeldeinformationen erstellen → OAuth-Client-ID**
-3. Wählen Sie **Anwendungstyp: Desktop-App**
+3. Wählen Sie **Anwendungstyp: Webanwendung** (empfohlen für Reverse-Proxy-/Container-Deployments) oder **Desktop-App** (lokale Bare-Metal-Entwicklung)
 4. Geben Sie einen Namen ein (z.B. "Ideon GKP")
+
+**Webanwendung** (Produktion und Telepat Monad):
+
+| Feld | Lokales Dev-Beispiel | Produktionsbeispiel |
+|-------|-------------------|-------------------|
+| Autorisierte JavaScript-Quellen | `http://ideon.localhost:8080` | `https://ideon.telepat.dev` |
+| Autorisierte Weiterleitungs-URIs | `http://ideon.localhost:8080/callback` | `https://ideon.telepat.dev/callback` |
+
+Setzen Sie `TELEPAT_IDEON_GADS_REDIRECT_URL` auf dieselbe Weiterleitungs-URI (einschließlich `/callback`).
+
+**Desktop-App** (nur lokale CLI): keine Ursprünge/Weiterleitungs-URIs in GCP; Ideon verwendet `http://localhost:9876/callback`, wenn `TELEPAT_IDEON_GADS_REDIRECT_URL` nicht gesetzt ist.
+
 5. Klicken Sie **Erstellen**
-6. Kopieren Sie die **Client-ID** und das **Client-Geheimnis** — Sie benötigen beide
+6. Kopieren Sie die **Client-ID** und das **Client-Geheimnis**
 
 ---
 
@@ -151,77 +163,42 @@ Sie benötigen ein Google Cloud (GCP)-Projekt mit aktivierter Google Ads API.
 
 Dies ist ein **einmaliger** Autorisierungsablauf. Das Refresh-Token ermöglicht es Ideon, automatisch neue Zugriffstoken zu erhalten.
 
-### Option A: Über den Browser (am einfachsten)
+### Option A: MCP `gads_login` (Container, Agenten, Telepat Monad)
 
-1. Öffnen Sie diese URL in Ihrem Browser und ersetzen Sie `YOUR_CLIENT_ID`:
-   ```
-   https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:9876&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadwords&access_type=offline&prompt=consent
-   ```
-2. Melden Sie sich mit dem Google-Konto an, das Zugriff auf Ihr Google Ads-Konto hat
-3. Gewähren Sie die angeforderten Berechtigungen
-4. Der Browser leitet zu `http://localhost:9876?code=...` weiter — kopieren Sie den `code`-Wert aus der URL
+Verwenden, wenn `TELEPAT_DISABLE_KEYTAR=1` oder Ideon über einen MCP-Client gesteuert wird:
 
-### Option B: Über die Befehlszeile (macOS/Linux)
+1. Statische Anmeldeinformationen in der Umgebung vorab setzen (`TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN`, `CLIENT_ID`, `CLIENT_SECRET`, `CUSTOMER_ID`).
+2. MCP **`gads_login`** aufrufen — Antwort enthält `authUrl` in `structuredContent`.
+3. `authUrl` im Browser öffnen und autorisieren.
+4. **`gads_login_status`** abfragen, bis `status: completed`.
+5. `refreshToken` aus `structuredContent` lesen und als `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` persistieren (wenn `saved: false`, ist Keychain deaktiviert).
+6. Mit **`gads_test`** verifizieren.
+
+In Telepat Monad schreibt der Agent das Refresh-Token nach Benutzerbestätigung in `/telepat/.env`. Siehe die Monad-[Google Ads Einrichtung](https://github.com/telepat-ai/monad/blob/main/docs/guides/google-ads-setup.md).
+
+### Option B: CLI `ideon gads login` (interaktiver Desktop)
+
+```bash
+ideon gads login
+```
+
+Öffnet einen Browser für OAuth-Einwilligung und speichert Anmeldeinformationen im Keychain oder in der Umgebung.
+
+### Option C: Manuelles Desktop-OAuth (Bare-Metal-Fallback)
+
+Wenn `TELEPAT_IDEON_GADS_REDIRECT_URL` nicht gesetzt ist, ist die Weiterleitungs-URI `http://localhost:9876/callback`:
 
 ```bash
 CLIENT_ID="YOUR_CLIENT_ID"
 CLIENT_SECRET="YOUR_CLIENT_SECRET"
-REDIRECT_URI="http://localhost:9876"
+REDIRECT_URI="http://localhost:9876/callback"
 
-# Auth-URL im Browser öffnen
 open "https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadwords&access_type=offline&prompt=consent"
 
-# Temporären HTTP-Server starten, um die Weiterleitung abzufangen
-CODE=$(python3 -c "
-import http.server, urllib.parse, sys
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        print(params['code'][0], end='')
-        self.send_response(200); self.end_headers()
-        self.wfile.write(b'Auth complete! Close this tab.')
-        sys.exit(0)
-    def log_message(self, *a): pass
-http.server.HTTPServer(('', 9876), H).handle_request()
-")
-
-# Für Token austauschen
-curl -s -X POST https://oauth2.googleapis.com/token \
-  -d "client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${CODE}&grant_type=authorization_code&redirect_uri=${REDIRECT_URI}" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['refresh_token'])"
+# Weiterleitung auf Port 9876 abfangen, Code gegen refresh_token tauschen (siehe ideon gads login Implementierung)
 ```
 
-### Option C: Über PowerShell (Windows)
-
-```powershell
-$clientId = "YOUR_CLIENT_ID"
-$clientSecret = "YOUR_CLIENT_SECRET"
-$redirectUri = "http://localhost:9876"
-$authUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=$clientId&redirect_uri=$([Uri]::EscapeDataString($redirectUri))&response_type=code&scope=$([Uri]::EscapeDataString('https://www.googleapis.com/auth/adwords'))&access_type=offline&prompt=consent"
-
-$listener = [System.Net.HttpListener]::new()
-$listener.Prefixes.Add("$redirectUri/")
-$listener.Start()
-
-Start-Process $authUrl
-
-$context = $listener.GetContext()
-$rawUrl = $context.Request.RawUrl
-$responseText = "<html><body><h2>Auth complete! You can close this tab.</h2></body></html>"
-$buffer = [System.Text.Encoding]::UTF8.GetBytes($responseText)
-$context.Response.ContentLength64 = $buffer.Length
-$context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
-$context.Response.Close()
-$listener.Stop()
-
-$code = ($rawUrl -split "[?&]" | Where-Object { $_ -like "code=*" }) -replace "^code=", ""
-
-$body = "client_id=$clientId&client_secret=$clientSecret&code=$([Uri]::EscapeDataString($code))&grant_type=authorization_code&redirect_uri=$([Uri]::EscapeDataString($redirectUri))"
-$result = Invoke-RestMethod -Method Post -Uri "https://oauth2.googleapis.com/token" -Body $body -ContentType "application/x-www-form-urlencoded"
-Write-Host "Refresh token: $($result.refresh_token)"
-```
-
-> **⚠️ Speichern Sie Ihr Refresh-Token sofort.** Sie können es nicht erneut abrufen. Wenn verloren, müssen Sie den Autorisierungsablauf erneut ausführen.
+> **⚠️ Speichern Sie Ihr Refresh-Token sofort.** Sie können es nicht erneut abrufen. Wenn verloren, erneut mit `gads_login` oder `ideon gads login --force` autorisieren.
 
 ---
 

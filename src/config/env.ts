@@ -47,5 +47,6 @@ export function readEnvSettings(env: NodeJS.ProcessEnv = process.env): EnvSettin
     googleAdsRefreshToken: env.TELEPAT_GOOGLE_ADS_REFRESH_TOKEN,
     googleAdsCustomerId: env.TELEPAT_GOOGLE_ADS_CUSTOMER_ID,
     googleAdsLoginCustomerId: env.TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID,
+    googleAdsRedirectUrl: env.TELEPAT_IDEON_GADS_REDIRECT_URL,
   });
 }

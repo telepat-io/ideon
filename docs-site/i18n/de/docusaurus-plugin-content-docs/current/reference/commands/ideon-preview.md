@@ -60,6 +60,8 @@ Bei Erfolg druckt Ideon die Vorschau-URL, den ausgew Artikel-Pfad und das bereit
 
 Agenten, die den Ideon-MCP-Server verwenden, können den Vorschau-Server mit `ideon_preview` steuern (`action`: `start`, `stop` oder `status`). Siehe [MCP-Server](../../for-agents/mcp-servers.md).
 
+Bei Reverse-Proxy-Deployments (z. B. Telepat Monad) bei `start` `port: 5679` übergeben und Benutzern die öffentliche URL (`TELEPAT_IDEON_PREVIEW_URL`) mitteilen — nicht die interne `http://localhost:<port>` aus MCP `structuredContent`.
+
 ## Versionierung und Veraltungshinweise
 
 - Aktuelles Verhalten gilt für Ideon `0.1.6`.

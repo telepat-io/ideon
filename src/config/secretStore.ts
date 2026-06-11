@@ -179,14 +179,16 @@ export async function loadSecrets(options: SecretStoreOptions = {}): Promise<Sec
 export async function saveSecrets(secrets: Partial<SecretSettings>, options: SecretStoreOptions = {}): Promise<void> {
   if (shouldDisableKeytar(options)) {
     throw new KeytarUnavailableError(
-      'System keychain access is disabled by TELEPAT_DISABLE_KEYTAR=true. Use TELEPAT_OPENROUTER_KEY and TELEPAT_REPLICATE_TOKEN instead.',
+      'System keychain access is disabled by TELEPAT_DISABLE_KEYTAR=true. ' +
+      'Use TELEPAT_OPENROUTER_KEY, TELEPAT_REPLICATE_TOKEN, or TELEPAT_GOOGLE_ADS_* environment variables instead.',
     );
   }
 
   const keytarClient = await getKeytarClient();
   if (!keytarClient) {
     throw new KeytarUnavailableError(
-      `System keychain unavailable while saving credentials (${keytarUnavailableReason ?? 'keytar module failed to load'}). Use TELEPAT_OPENROUTER_KEY and TELEPAT_REPLICATE_TOKEN instead.`,
+      `System keychain unavailable while saving credentials (${keytarUnavailableReason ?? 'keytar module failed to load'}). ` +
+      'Use TELEPAT_OPENROUTER_KEY, TELEPAT_REPLICATE_TOKEN, or TELEPAT_GOOGLE_ADS_* environment variables instead.',
     );
   }
 

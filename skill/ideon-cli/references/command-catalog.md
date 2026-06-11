@@ -18,6 +18,11 @@ This catalog is the deep reference for command surface, argument semantics, cons
 | `ideon export <generationId> <path>` | Export a generated article as a standalone markdown file with inline links and copied images | `<generationId> <path>` | `--index`, `--overwrite` | no |
 | `ideon preview [markdownPath]` | Start local preview server/UI | none | `--port`, `--no-open`, `--watch` | no |
 | `ideon mcp serve` | Start first-party MCP server over stdio | none | none | MCP tool protocol output |
+| `ideon mcp serve-http` | Start MCP server over Streamable HTTP | none | `--api-key`, `--port`, `--host` | MCP tool protocol output |
+| MCP `ideon_preview` | Start/stop/status preview via MCP | `action` | `port`, `markdownPath` | yes (`structuredContent`) |
+| MCP `gads_login` | Start Google Ads OAuth flow | optional cred params | `force` | yes (`authUrl`, `port`) |
+| MCP `gads_login_status` | Poll OAuth flow state | none | none | yes (`status`, `refreshToken`, `saved`) |
+| MCP `gads_test` | Verify Google Ads credentials | none | none | yes |
 | `ideon agent install <runtime>` | Configure host skills/MCP for a supported agent runtime | `<runtime>` | `--cli-skill`, `--mcp-skill`, `--force`, `--project`, `--dry-run` | no |
 | `ideon agent uninstall <runtime>` | Remove Ideon-managed skill links and MCP entries | `<runtime>` | `--project`, `--dry-run` | no |
 | `ideon agent status` | Show installed runtimes and readiness checks | none | `--json` | yes |

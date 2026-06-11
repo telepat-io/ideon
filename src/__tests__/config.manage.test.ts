@@ -5,7 +5,7 @@ const loadSavedSettingsMock = jest.fn<() => Promise<AppSettings>>();
 const saveSettingsMock = jest.fn<(settings: AppSettings) => Promise<void>>();
 const loadSecretsMock = jest.fn<(options?: { disableKeytar?: boolean }) => Promise<SecretSettings>>();
 const saveSecretsMock = jest.fn<(secrets: Partial<SecretSettings>, options?: { disableKeytar?: boolean }) => Promise<void>>();
-const readEnvSettingsMock = jest.fn<() => { disableKeytar?: boolean }>();
+const readEnvSettingsMock = jest.fn<() => Record<string, unknown>>();
 
 jest.unstable_mockModule('../config/settingsFile.js', () => ({
   loadSavedSettings: loadSavedSettingsMock,
@@ -15,6 +15,8 @@ jest.unstable_mockModule('../config/settingsFile.js', () => ({
 jest.unstable_mockModule('../config/secretStore.js', () => ({
   loadSecrets: loadSecretsMock,
   saveSecrets: saveSecretsMock,
+  isKeytarUnavailableError: (error: unknown) =>
+    error instanceof Error && error.name === 'KeytarUnavailableError',
 }));
 
 jest.unstable_mockModule('../config/env.js', () => ({
@@ -27,6 +29,7 @@ const {
   configSet,
   configUnset,
   isConfigKey,
+  tryConfigSetSecret,
 } = await import('../config/manage.js');
 
 describe('config manage', () => {
@@ -109,6 +112,42 @@ describe('config manage', () => {
 
     await configUnset('openRouterApiKey');
     expect(saveSecretsMock).toHaveBeenLastCalledWith({ openRouterApiKey: null }, { disableKeytar: undefined });
+  });
+
+  it('tryConfigSetSecret reports env source when secret is already in env', async () => {
+    readEnvSettingsMock.mockReturnValue({ openRouterApiKey: 'from-env' });
+
+    const result = await tryConfigSetSecret('openRouterApiKey', 'new-token');
+
+    expect(result).toEqual({ saved: true, source: 'env' });
+    expect(saveSecretsMock).not.toHaveBeenCalled();
+  });
+
+  it('tryConfigSetSecret saves to keychain when env is empty', async () => {
+    readEnvSettingsMock.mockReturnValue({});
+
+    const result = await tryConfigSetSecret('openRouterApiKey', 'new-token');
+
+    expect(result).toEqual({ saved: true, source: 'keychain' });
+    expect(saveSecretsMock).toHaveBeenCalledWith({ openRouterApiKey: 'new-token' }, { disableKeytar: undefined });
+  });
+
+  it('tryConfigSetSecret returns skipped when keytar is unavailable', async () => {
+    readEnvSettingsMock.mockReturnValue({});
+    saveSecretsMock.mockRejectedValue(Object.assign(new Error('disabled'), { name: 'KeytarUnavailableError' }));
+
+    const result = await tryConfigSetSecret('openRouterApiKey', 'new-token');
+
+    expect(result).toEqual({ saved: false, source: 'skipped' });
+  });
+
+  it('configSet throws when keytar is unavailable and env is empty', async () => {
+    readEnvSettingsMock.mockReturnValue({});
+    saveSecretsMock.mockRejectedValue(Object.assign(new Error('disabled'), { name: 'KeytarUnavailableError' }));
+
+    await expect(configSet('openRouterApiKey', 'new-token')).rejects.toThrow(
+      'Cannot save openRouterApiKey to keychain (TELEPAT_DISABLE_KEYTAR=true)',
+    );
   });
 
   it('validates known keys', () => {

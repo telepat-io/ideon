@@ -145,8 +145,20 @@ Alle Google Ads-Anmeldeinformationen können alternativ über Umgebungsvariablen
 | `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` | OAuth2-Refresh-Token |
 | `TELEPAT_GOOGLE_ADS_CUSTOMER_ID` | Kunden-ID |
 | `TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Manager-Konto-ID (optional) |
+| `TELEPAT_IDEON_GADS_REDIRECT_URL` | Vollständige öffentliche OAuth-Callback-URL (Web OAuth). Nicht gesetzt → `http://localhost:9876/callback` |
 
 Umgebungsvariablen haben Vorrang vor Keychain-gespeicherten Werten. In CI/CD- oder headless-Umgebungen, in denen keytar nicht verfügbar ist, verwenden Sie Umgebungsvariablen — sie umgehen den Keychain komplett.
+
+## Container- / MCP-Modus
+
+Wenn `TELEPAT_DISABLE_KEYTAR=1` (Telepat Monad, Docker, CI):
+
+- `TELEPAT_GOOGLE_ADS_*`-Umgebungsvariablen vorab setzen; nicht auf Keychain-Speicherung durch `gads login` verlassen.
+- MCP **`gads_login`** und **`gads_login_status`** statt interaktivem CLI-Login verwenden.
+- Bei OAuth-Abschluss gibt MCP `refreshToken` mit `saved: false` zurück — extern als `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` persistieren.
+- Mit MCP **`gads_test`** verifizieren.
+
+Setzen Sie `TELEPAT_IDEON_GADS_REDIRECT_URL` für Web OAuth hinter einem Reverse Proxy. Siehe [MCP-Server](../../for-agents/mcp-servers.md).
 
 ## Speicherverhalten
 

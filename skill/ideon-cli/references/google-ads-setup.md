@@ -2,9 +2,9 @@
 
 This reference covers the prerequisites and credential setup required for the three `gkp_*` MCP tools (`gkp_generate_ideas`, `gkp_get_historical_data`, `gkp_get_forecast_data`).
 
-## Quick Setup with `gads login`
+## Quick Setup
 
-The fastest way to configure Google Ads credentials:
+**Desktop (interactive):**
 
 ```bash
 ideon gads login                    # Interactive OAuth flow
@@ -12,7 +12,13 @@ ideon gads status                   # Check which credentials are set
 ideon gads test                     # Verify credentials work
 ```
 
-The `gads login` command walks you through each credential interactively, saves them progressively, and runs the OAuth browser flow to obtain a refresh token.
+**Containers / Telepat Monad (MCP):**
+
+1. Pre-fill `TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN`, `CLIENT_ID`, `CLIENT_SECRET`, `CUSTOMER_ID` in `.env`.
+2. Set `TELEPAT_IDEON_GADS_REDIRECT_URL` (Web OAuth, e.g. `http://ideon.localhost:8080/callback`).
+3. Call MCP `gads_login` → user opens `authUrl` → poll `gads_login_status`.
+4. Write `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` from `refreshToken` when `saved: false`.
+5. Call MCP `gads_test`.
 
 **Commands:**
 

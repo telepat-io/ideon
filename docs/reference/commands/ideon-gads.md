@@ -145,8 +145,20 @@ All Google Ads credentials can alternatively be set via environment variables:
 | `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` | OAuth2 refresh token |
 | `TELEPAT_GOOGLE_ADS_CUSTOMER_ID` | Customer ID |
 | `TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Manager account ID (optional) |
+| `TELEPAT_IDEON_GADS_REDIRECT_URL` | Full public OAuth callback URL (Web OAuth). Unset → `http://localhost:9876/callback` |
 
 Environment variables take precedence over keychain-stored values. In CI/CD or headless environments where keytar is unavailable, use environment variables — they bypass keychain entirely.
+
+## Container / MCP mode
+
+When `TELEPAT_DISABLE_KEYTAR=1` (Telepat Monad, Docker, CI):
+
+- Pre-fill `TELEPAT_GOOGLE_ADS_*` env vars; do not rely on `gads login` keychain saves.
+- Use MCP **`gads_login`** and **`gads_login_status`** instead of interactive CLI login.
+- On OAuth completion, MCP returns `refreshToken` with `saved: false` — persist as `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` externally.
+- Verify with MCP **`gads_test`**.
+
+Set `TELEPAT_IDEON_GADS_REDIRECT_URL` for Web OAuth behind a reverse proxy. See [MCP Servers](../../for-agents/mcp-servers.md).
 
 ## Storage Behavior
 

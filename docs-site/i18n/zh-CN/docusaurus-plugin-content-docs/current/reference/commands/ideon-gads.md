@@ -145,8 +145,20 @@ ideon gads test
 | `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` | OAuth2 刷新令牌 |
 | `TELEPAT_GOOGLE_ADS_CUSTOMER_ID` | 客户 ID |
 | `TELEPAT_GOOGLE_ADS_LOGIN_CUSTOMER_ID` | 管理员帐户 ID（可选） |
+| `TELEPAT_IDEON_GADS_REDIRECT_URL` | 完整的公开 OAuth 回调 URL（Web OAuth）。未设置时 → `http://localhost:9876/callback` |
 
 环境变量优先于系统钥匙串中存储的值。在 CI/CD 或无 keytar 的无头环境中，请使用环境变量——它们完全绕过钥匙串。
+
+## 容器 / MCP 模式
+
+当 `TELEPAT_DISABLE_KEYTAR=1`（Telepat Monad、Docker、CI）时：
+
+- 预先填写 `TELEPAT_GOOGLE_ADS_*` 环境变量；不要依赖 `gads login` 的钥匙串保存。
+- 使用 MCP **`gads_login`** 和 **`gads_login_status`**，而非交互式 CLI 登录。
+- OAuth 完成后，MCP 返回 `refreshToken` 且 `saved: false` — 需在外部持久化为 `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN`。
+- 使用 MCP **`gads_test`** 验证。
+
+在反向代理后使用 Web OAuth 时，设置 `TELEPAT_IDEON_GADS_REDIRECT_URL`。参见 [MCP 服务器](../../for-agents/mcp-servers.md)。
 
 ## 存储行为
 

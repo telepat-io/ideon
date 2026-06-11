@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse, type Server } 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { URL } from 'node:url';
+import { readEnvSettings } from '../../config/env.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -153,12 +154,41 @@ export function waitForCode(
   });
 }
 
+export interface GadsOAuthRedirectConfig {
+  redirectUri: string;
+  redirectPath: string;
+  listenPort: number;
+}
+
+export function resolveGadsOAuthRedirect(
+  configuredRedirectUrl: string | undefined,
+  listenPort: number = DEFAULT_REDIRECT_PORT,
+): GadsOAuthRedirectConfig {
+  const trimmed = configuredRedirectUrl?.trim();
+  if (trimmed) {
+    const url = new URL(trimmed);
+    const redirectPath = url.pathname && url.pathname !== '/' ? url.pathname : '/callback';
+    return {
+      redirectUri: trimmed,
+      redirectPath,
+      listenPort,
+    };
+  }
+
+  return {
+    redirectUri: `http://localhost:${listenPort}/callback`,
+    redirectPath: '/callback',
+    listenPort,
+  };
+}
+
 export async function startServerOnPort(
   port: number,
   deps: Pick<OAuthFlowDependencies, 'createHttpServer'>,
+  redirect?: Pick<GadsOAuthRedirectConfig, 'redirectUri' | 'redirectPath'>,
 ): Promise<{ server: Server; redirectPath: string; redirectUri: string }> {
-  const redirectPath = '/callback';
-  const redirectUri = `http://localhost:${port}${redirectPath}`;
+  const redirectPath = redirect?.redirectPath ?? '/callback';
+  const redirectUri = redirect?.redirectUri ?? `http://localhost:${port}${redirectPath}`;
 
   const server = deps.createHttpServer();
 
@@ -182,21 +212,36 @@ export async function startOAuthFlow(
 ): Promise<OAuthFlowResult> {
   const deps = { ...defaultDependencies, ...dependencies };
 
+  const envSettings = readEnvSettings();
+  const redirectConfig = resolveGadsOAuthRedirect(envSettings.googleAdsRedirectUrl, DEFAULT_REDIRECT_PORT);
+
   let server: Server | null = null;
-  let port = DEFAULT_REDIRECT_PORT;
-  let redirectPath = '/callback';
-  let redirectUri = '';
+  let port = redirectConfig.listenPort;
+  let redirectPath = redirectConfig.redirectPath;
+  let redirectUri = redirectConfig.redirectUri;
 
   for (let attempt = 0; attempt < MAX_PORT_ATTEMPTS; attempt++) {
     try {
-      const result = await startServerOnPort(port, deps);
+      const result = await startServerOnPort(
+        port,
+        deps,
+        { redirectUri, redirectPath },
+      );
       server = result.server;
       redirectPath = result.redirectPath;
       redirectUri = result.redirectUri;
       break;
     } catch (err) {
-      if (err instanceof Error && err.message.startsWith('Port') && err.message.endsWith('is in use.')) {
+      if (
+        !envSettings.googleAdsRedirectUrl &&
+        err instanceof Error &&
+        err.message.startsWith('Port') &&
+        err.message.endsWith('is in use.')
+      ) {
         port++;
+        const nextRedirect = resolveGadsOAuthRedirect(undefined, port);
+        redirectPath = nextRedirect.redirectPath;
+        redirectUri = nextRedirect.redirectUri;
         continue;
       }
       throw err;

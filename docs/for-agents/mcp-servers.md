@@ -120,19 +120,36 @@ Publication and series tools accept `defaultAuthor`; series tools also accept `e
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `action` | enum | Yes | — | `start`, `stop`, or `status` |
-| `port` | integer | No | `4173` | TCP port for the preview server (start only) |
+| `port` | integer | No | `4173` | TCP port for the preview server (start only). In Telepat Monad, pass `5679` behind Caddy. |
 | `markdownPath` | string | No | Newest generated markdown | Specific markdown file to preview (start only) |
 
 Example calls:
 
 ```json
 {"tool": "ideon_preview", "parameters": {"action": "start"}}
-{"tool": "ideon_preview", "parameters": {"action": "start", "port": 4173}}
+{"tool": "ideon_preview", "parameters": {"action": "start", "port": 5679}}
 {"tool": "ideon_preview", "parameters": {"action": "status"}}
 {"tool": "ideon_preview", "parameters": {"action": "stop"}}
 ```
 
+`structuredContent.url` is always `http://localhost:<port>`. Harnesses behind a reverse proxy should translate to a public URL (e.g. `TELEPAT_IDEON_PREVIEW_URL` in Monad).
+
 Status reflects preview servers started by the current MCP process only. Servers started separately via `ideon preview` are not tracked.
+
+### Google Ads OAuth
+
+- `gads_login` — Start OAuth flow for Google Ads API access. Saves static credentials when possible; returns `authUrl` and `port` in `structuredContent`.
+- `gads_login_status` — Poll OAuth state: `not_started`, `pending`, `completed`, or `timed_out`. On `completed`, returns `refreshToken`, `saved`, and `envVarName` (`TELEPAT_GOOGLE_ADS_REFRESH_TOKEN`).
+- `gads_test` — Verify configured credentials with a test API call.
+- `gads_logout` — Clear Google Ads credentials (`all` to clear everything).
+
+**Container persistence contract** (`TELEPAT_DISABLE_KEYTAR=1`):
+
+- Static credentials should be pre-set via `TELEPAT_GOOGLE_ADS_*` env vars.
+- `gads_login` skips keychain `configSet` for credentials already in env.
+- On OAuth completion, `saved: false` and `refreshToken` is returned for external persistence (e.g. agent writes `.env`).
+
+Set `TELEPAT_IDEON_GADS_REDIRECT_URL` to the public callback URL (Web OAuth). Fallback: `http://localhost:9876/callback` (Desktop OAuth).
 
 ### Google Keyword Planner
 
@@ -140,7 +157,6 @@ Status reflects preview servers started by the current MCP process only. Servers
 - `gkp_get_historical_data` — Get historical search volume and competition metrics. Optional cache context: `publication`, `series`, `refresh`
 - `gkp_get_forecast_data` — Get projected impressions, clicks, and cost for keywords. Optional cache context: `publication`, `series`, `refresh`
 - `gkp_list` — List cached GKP query history with optional filters
-- `gads_logout` — Clear Google Ads credentials (`all` to clear everything)
 
 ## Google Keyword Planner Tools
 

@@ -1523,13 +1523,24 @@ describe('ideon MCP server', () => {
   });
 
   it('executes gads_login_status handler for completed', async () => {
-    getGadsLoginStatusMock.mockReturnValue({ status: 'completed', authUrl: '', port: 0, startedAt: 0 });
+    getGadsLoginStatusMock.mockReturnValue({
+      status: 'completed',
+      authUrl: '',
+      port: 0,
+      startedAt: 0,
+      refreshToken: 'new-refresh-token',
+      saved: false,
+      envVarName: 'TELEPAT_GOOGLE_ADS_REFRESH_TOKEN',
+    });
     await startIdeonMcpServer();
     const tool = registeredTools.get('gads_login_status');
 
     const result = await tool?.handler({});
 
     expect(result?.structuredContent?.status).toBe('completed');
+    expect(result?.structuredContent?.refreshToken).toBe('new-refresh-token');
+    expect(result?.structuredContent?.saved).toBe(false);
+    expect(result?.structuredContent?.envVarName).toBe('TELEPAT_GOOGLE_ADS_REFRESH_TOKEN');
     expect(result?.content?.[0]?.text).toContain('completed');
     expect(resetGadsLoginStateMock).toHaveBeenCalled();
   });

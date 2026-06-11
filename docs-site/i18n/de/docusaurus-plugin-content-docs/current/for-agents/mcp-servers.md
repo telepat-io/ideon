@@ -38,10 +38,27 @@ SEO-Check läuft als Pipeline-Stufe 4 während `ideon_write` / `ideon_write_resu
 | Parameter | Typ | Erforderlich | Standard | Beschreibung |
 | --- | --- | --- | --- | --- |
 | `action` | Enum | Ja | — | `start`, `stop` oder `status` |
-| `port` | Ganzzahl | Nein | `4173` | Port des Vorschau-Servers (nur bei `start`) |
+| `port` | Ganzzahl | Nein | `4173` | Port des Vorschau-Servers (nur bei `start`). In Telepat Monad `5679` hinter Caddy übergeben. |
 | `markdownPath` | Zeichenkette | Nein | Neuestes generiertes Markdown | Bestimmte Markdown-Datei für die Vorschau (nur bei `start`) |
 
+`structuredContent.url` ist immer `http://localhost:<port>`. Umgebungen hinter einem Reverse Proxy sollten auf eine öffentliche URL übersetzen (z. B. `TELEPAT_IDEON_PREVIEW_URL` in Monad).
+
 Der Status gilt nur für Vorschau-Server, die vom aktuellen MCP-Prozess gestartet wurden. Separat über `ideon preview` gestartete Server werden nicht erfasst.
+
+### Google Ads OAuth
+
+- `gads_login` — OAuth-Ablauf für Google Ads API-Zugriff starten. Speichert statische Anmeldeinformationen wenn möglich; gibt `authUrl` und `port` in `structuredContent` zurück.
+- `gads_login_status` — OAuth-Status abfragen: `not_started`, `pending`, `completed` oder `timed_out`. Bei `completed` werden `refreshToken`, `saved` und `envVarName` (`TELEPAT_GOOGLE_ADS_REFRESH_TOKEN`) zurückgegeben.
+- `gads_test` — Konfigurierte Anmeldeinformationen mit einem Test-API-Aufruf verifizieren.
+- `gads_logout` — Google Ads-Anmeldeinformationen löschen (`all` löscht alles).
+
+**Container-Persistenzvertrag** (`TELEPAT_DISABLE_KEYTAR=1`):
+
+- Statische Anmeldeinformationen sollten über `TELEPAT_GOOGLE_ADS_*`-Umgebungsvariablen vorab gesetzt werden.
+- `gads_login` überspringt Keychain-`configSet` für bereits in der Umgebung gesetzte Anmeldeinformationen.
+- Bei OAuth-Abschluss: `saved: false` und `refreshToken` wird für externe Persistenz zurückgegeben (z. B. Agent schreibt `.env`).
+
+Setzen Sie `TELEPAT_IDEON_GADS_REDIRECT_URL` auf die öffentliche Callback-URL (Web OAuth). Fallback: `http://localhost:9876/callback` (Desktop OAuth).
 
 ## Google Keyword Planner-Werkzeuge
 

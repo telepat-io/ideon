@@ -56,6 +56,12 @@ ideon preview --watch --no-open
 - [`ideon delete <slug>`](./ideon-delete.md)
 - [Local Preview Guide](../../guides/local-preview.md)
 
+## MCP 等效操作
+
+使用 Ideon MCP 服务器的代理可通过 `ideon_preview`（`action`：`start`、`stop` 或 `status`）控制预览服务器。参见 [MCP 服务器](../../for-agents/mcp-servers.md)。
+
+在反向代理部署（如 Telepat Monad）中，启动时传入 `port: 5679`，并向用户提供公开 URL（`TELEPAT_IDEON_PREVIEW_URL`）——而非 MCP `structuredContent` 中的内部 `http://localhost:<port>`。
+
 ## 版本与弃用说明
 
 - 当前行为适用于 Ideon `0.1.6`。

@@ -138,10 +138,22 @@ ideon gkp ideas --keywords seo --json
 
 1. 前往 [凭据](https://console.cloud.google.com/apis/credentials)
 2. 点击 **+ 创建凭据 → OAuth 客户端 ID**
-3. 选择 **应用类型：桌面应用**
+3. 选择 **应用类型：Web 应用**（推荐用于反向代理/容器部署）或 **桌面应用**（裸机本地开发）
 4. 给它一个名称（例如"Ideon GKP"）
+
+**Web 应用**（生产环境和 Telepat Monad）：
+
+| 字段 | 本地开发示例 | 生产示例 |
+|-------|-------------------|-------------------|
+| 已获授权的 JavaScript 来源 | `http://ideon.localhost:8080` | `https://ideon.telepat.dev` |
+| 已获授权的重定向 URI | `http://ideon.localhost:8080/callback` | `https://ideon.telepat.dev/callback` |
+
+将 `TELEPAT_IDEON_GADS_REDIRECT_URL` 设为相同的重定向 URI（包含 `/callback`）。
+
+**桌面应用**（仅本地 CLI）：GCP 中无需来源/重定向 URI；未设置 `TELEPAT_IDEON_GADS_REDIRECT_URL` 时，Ideon 使用 `http://localhost:9876/callback`。
+
 5. 点击 **创建**
-6. 复制 **客户端 ID** 和 **客户端密钥** — 你两个都需要
+6. 复制 **客户端 ID** 和 **客户端密钥**
 
 ---
 
@@ -149,77 +161,42 @@ ideon gkp ideas --keywords seo --json
 
 这是一个 **一次性** 的授权流程。刷新令牌让 Ideon 能够自动获取新的访问令牌。
 
-### 选项 A：使用浏览器（最简单）
+### 选项 A：MCP `gads_login`（容器、代理、Telepat Monad）
 
-1. 在浏览器中打开此 URL，替换 `YOUR_CLIENT_ID`：
-   ```
-   https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:9876&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadwords&access_type=offline&prompt=consent
-   ```
-2. 使用有权访问你的 Google Ads 账号的 Google 账号登录
-3. 授予请求的权限
-4. 浏览器将重定向到 `http://localhost:9876?code=...` — 从 URL 中复制 `code` 值
+在 `TELEPAT_DISABLE_KEYTAR=1` 或通过 MCP 客户端驱动 Ideon 时使用：
 
-### 选项 B：使用命令行（macOS/Linux）
+1. 在 env 中预先填写静态凭据（`TELEPAT_GOOGLE_ADS_DEVELOPER_TOKEN`、`CLIENT_ID`、`CLIENT_SECRET`、`CUSTOMER_ID`）。
+2. 调用 MCP **`gads_login`** — 响应在 `structuredContent` 中包含 `authUrl`。
+3. 在浏览器中打开 `authUrl` 并授权。
+4. 轮询 **`gads_login_status`** 直到 `status: completed`。
+5. 从 `structuredContent` 读取 `refreshToken` 并持久化为 `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN`（当 `saved: false` 时，钥匙串已禁用）。
+6. 调用 **`gads_test`** 验证。
+
+在 Telepat Monad 中，代理在用户确认后将刷新令牌写入 `/telepat/.env`。参见 Monad [Google Ads 设置](https://github.com/telepat-ai/monad/blob/main/docs/guides/google-ads-setup.md) 指南。
+
+### 选项 B：CLI `ideon gads login`（交互式桌面）
+
+```bash
+ideon gads login
+```
+
+打开浏览器进行 OAuth 同意，并将凭据保存到钥匙串或 env。
+
+### 选项 C：手动桌面 OAuth（裸机回退）
+
+未设置 `TELEPAT_IDEON_GADS_REDIRECT_URL` 时，重定向 URI 为 `http://localhost:9876/callback`：
 
 ```bash
 CLIENT_ID="YOUR_CLIENT_ID"
 CLIENT_SECRET="YOUR_CLIENT_SECRET"
-REDIRECT_URI="http://localhost:9876"
+REDIRECT_URI="http://localhost:9876/callback"
 
-# 在浏览器中打开授权 URL
 open "https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fadwords&access_type=offline&prompt=consent"
 
-# 启动临时 HTTP 服务器捕获重定向
-CODE=$(python3 -c "
-import http.server, urllib.parse, sys
-class H(http.server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        print(params['code'][0], end='')
-        self.send_response(200); self.end_headers()
-        self.wfile.write(b'Auth complete! Close this tab.')
-        sys.exit(0)
-    def log_message(self, *a): pass
-http.server.HTTPServer(('', 9876), H).handle_request()
-")
-
-# 交换令牌
-curl -s -X POST https://oauth2.googleapis.com/token \
-  -d "client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&code=${CODE}&grant_type=authorization_code&redirect_uri=${REDIRECT_URI}" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['refresh_token'])"
+# 在端口 9876 捕获重定向，用 code 交换 refresh_token（参见 ideon gads login 实现）
 ```
 
-### 选项 C：使用 PowerShell（Windows）
-
-```powershell
-$clientId = "YOUR_CLIENT_ID"
-$clientSecret = "YOUR_CLIENT_SECRET"
-$redirectUri = "http://localhost:9876"
-$authUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=$clientId&redirect_uri=$([Uri]::EscapeDataString($redirectUri))&response_type=code&scope=$([Uri]::EscapeDataString('https://www.googleapis.com/auth/adwords'))&access_type=offline&prompt=consent"
-
-$listener = [System.Net.HttpListener]::new()
-$listener.Prefixes.Add("$redirectUri/")
-$listener.Start()
-
-Start-Process $authUrl
-
-$context = $listener.GetContext()
-$rawUrl = $context.Request.RawUrl
-$responseText = "<html><body><h2>Auth complete! You can close this tab.</h2></body></html>"
-$buffer = [System.Text.Encoding]::UTF8.GetBytes($responseText)
-$context.Response.ContentLength64 = $buffer.Length
-$context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
-$context.Response.Close()
-$listener.Stop()
-
-$code = ($rawUrl -split "[?&]" | Where-Object { $_ -like "code=*" }) -replace "^code=", ""
-
-$body = "client_id=$clientId&client_secret=$clientSecret&code=$([Uri]::EscapeDataString($code))&grant_type=authorization_code&redirect_uri=$([Uri]::EscapeDataString($redirectUri))"
-$result = Invoke-RestMethod -Method Post -Uri "https://oauth2.googleapis.com/token" -Body $body -ContentType "application/x-www-form-urlencoded"
-Write-Host "Refresh token: $($result.refresh_token)"
-```
-
-> **⚠️ 立即保存你的刷新令牌。** 你无法再次获取它。如果丢失，你必须重新运行授权流程。
+> **⚠️ 立即保存你的刷新令牌。** 你无法再次获取它。如果丢失，使用 `gads_login` 或 `ideon gads login --force` 重新授权。
 
 ---
 

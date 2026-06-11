@@ -10,7 +10,10 @@ Operate Ideon as a content writer platform from the terminal: one idea to multi-
 ## Agent constraints
 
 - Always pass `--no-interactive` on write, resume, queue, and plan commands — without it, commands hang waiting for stdin.
-- Never invoke `ideon settings` or `ideon gads login` — both require interactive user input.
+- Never invoke `ideon settings` — requires interactive user input.
+- **Telepat Monad / MCP contexts:** use MCP `gads_login` / `gads_login_status` / `gads_test` — never SSH `ideon gads login`. After OAuth, persist `refreshToken` as `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` in `.env` when `saved: false`.
+- **Bare-metal desktop:** `ideon gads login` is fine for interactive OAuth; agents without MCP should not call it non-interactively.
+- Use MCP `ideon_preview` with `port: 5679` in Monad; give users `TELEPAT_IDEON_PREVIEW_URL`, not internal `localhost` URLs.
 - Always use `--force` on `ideon delete` and `ideon queue remove/clear` after explicit user confirmation.
 - Run dry-run or read-only commands before full generation.
 - In containers/CI: set `TELEPAT_DISABLE_KEYTAR=true` and inject secrets via env vars.

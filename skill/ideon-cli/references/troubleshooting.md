@@ -31,7 +31,10 @@ Use this matrix to diagnose common failures quickly.
 | Preview cannot find markdown | No generated outputs or wrong path | Check markdown path and output directory | Run write command first or pass explicit `.md` path |
 | Unsupported runtime for `ideon agent` | Runtime outside supported set | Check runtime id | Use a supported id: `pi`, `claude`, `claude-desktop`, `chatgpt`, `gemini`, `codex`, `cursor`, `vscode`, `opencode`, or `generic-mcp` |
 | Unsupported config key | Invalid key in config get/set/unset | Compare key to supported key list | Use keys from command catalog |
-| GKP credential not configured | Google Ads credential missing | Run `ideon gads status` or `ideon config list --json` | Set via `ideon gads login` (interactive) or `ideon config set googleAds<Name> <value>` |
+| GKP credential not configured | Google Ads credential missing | Run `ideon gads status` or `ideon config list --json` | Set via env vars, `ideon gads login` (desktop), or MCP `gads_login` (containers) |
+| OAuth redirect URI mismatch | GCP redirect URI ≠ `TELEPAT_IDEON_GADS_REDIRECT_URL` | Compare GCP Authorized redirect URIs with env (include `/callback`) | Fix GCP registration or env value to match exactly |
+| Keychain / configSet error in container | `TELEPAT_DISABLE_KEYTAR=1` | Check env and MCP `gads_login_status.saved` | Use MCP `refreshToken` + write `TELEPAT_GOOGLE_ADS_REFRESH_TOKEN` to `.env` |
+| Port 9876 in use (Desktop OAuth) | Another process on callback port | Check `lsof -i :9876` | Stop conflicting process or set `TELEPAT_IDEON_GADS_REDIRECT_URL` for Web OAuth |
 | `DEVELOPER_TOKEN_NOT_APPROVED` | Developer token in test mode | Check token status at ads.google.com/aw/apicenter | Apply for Basic access and wait for Google approval |
 | `USER_PERMISSION_DENIED` | Missing login-customer-id or OAuth access | Run `ideon gads status` to verify all credentials | Set `googleAdsLoginCustomerId` to manager account ID if using sub-account |
 | `invalid_grant` | Refresh token expired | Run `ideon gads test` to verify, then `ideon gads login --force` to re-authorize | Obtain new refresh token via `ideon gads login --force` |
