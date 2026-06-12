@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.44](https://github.com/telepat-io/ideon/compare/ideon-v0.1.43...ideon-v0.1.44) (2026-06-12)
+
+
+### Features
+
+* add Hermes Agent runtime support for ideon agent install ([055b952](https://github.com/telepat-io/ideon/commit/055b952baf85ba0ac5e6abff1835a7d272a49284))
+
 ## [Unreleased]
 
 ### Features
