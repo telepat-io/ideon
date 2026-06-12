@@ -48,6 +48,7 @@ ideon agent status [--json]
 | `cursor` | Symlink → `~/.cursor/skills/` | MCP in `~/.cursor/mcp.json` + `ideon-mcp`-Skill | |
 | `vscode` | Symlink → `~/.copilot/skills/` (oder `.github/skills/`) | MCP in `.vscode/mcp.json` unter `servers.ideon` | VS Code nutzt `servers`-Schlüssel |
 | `opencode` | Symlink ins OpenCode-Skill-Verzeichnis | MCP unter `mcp.ideon` in `opencode.json` | |
+| `hermes` | Symlink `ideon-cli` → `$HERMES_HOME/skills/` | MCP in `$HERMES_HOME/config.yaml` unter `mcp_servers.ideon` + `ideon-mcp`-Skill | Nur global; respektiert `HERMES_HOME`; nach MCP-Install `/reload-mcp` ausführen |
 | `generic-mcp` | *(keins)* | Merge `ideon` in `~/.config/mcp/mcp.json` | Host-agnostischer MCP-Fallback |
 
 ### MCP-Servereintrag (stdio)

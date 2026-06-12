@@ -59,7 +59,7 @@ ideon agent install claude --project      # project-scoped .claude/skills/
 ideon agent status --json                 # verify artifacts and readiness
 ```
 
-Supported runtimes: `pi`, `claude`, `claude-desktop`, `chatgpt`, `gemini`, `codex`, `cursor`, `vscode`, `opencode`, `generic-mcp`. Default mode installs `ideon-cli`; `--mcp-skill` is mutually exclusive and registers stdio MCP (`ideon mcp serve`). Use `--force` to replace conflicting Ideon-managed entries only.
+Supported runtimes: `pi`, `claude`, `claude-desktop`, `chatgpt`, `gemini`, `codex`, `cursor`, `vscode`, `opencode`, `hermes`, `generic-mcp`. Default mode installs `ideon-cli`; `--mcp-skill` is mutually exclusive and registers stdio MCP (`ideon mcp serve`). Use `--force` to replace conflicting Ideon-managed entries only.
 
 ## Inputs to collect from user
 

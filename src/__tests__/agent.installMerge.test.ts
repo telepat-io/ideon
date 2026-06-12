@@ -1,10 +1,13 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { parse as parseYaml } from 'yaml';
 import {
+  mergeHermesMcpServersEntry,
   mergeMcpServersEntry,
   mergeOwnedJsonEntry,
   mergeMarkerSection,
+  removeHermesMcpServersEntry,
   removeMcpServersEntry,
 } from '../integrations/agent/installMerge.js';
 
@@ -53,6 +56,51 @@ describe('installMerge', () => {
     expect(removed).toBe(true);
     const raw = JSON.parse(await readFile(target, 'utf8')) as { mcpServers?: Record<string, unknown> };
     expect(raw.mcpServers?.ideon).toBeUndefined();
+  });
+
+  it('merges mcp_servers.ideon in Hermes config.yaml idempotently', async () => {
+    const target = path.join(tempDir, 'config.yaml');
+    const entry = { command: 'ideon', args: ['mcp', 'serve'] };
+
+    const first = await mergeHermesMcpServersEntry(target, entry, { force: false, dryRun: false });
+    const second = await mergeHermesMcpServersEntry(target, entry, { force: false, dryRun: false });
+
+    expect(first.changed).toBe(true);
+    expect(second.changed).toBe(false);
+
+    const raw = parseYaml(await readFile(target, 'utf8')) as { mcp_servers: Record<string, unknown> };
+    expect(raw.mcp_servers.ideon).toEqual(entry);
+  });
+
+  it('skips conflicting Hermes MCP entries unless forced', async () => {
+    const target = path.join(tempDir, 'config.yaml');
+    await mergeHermesMcpServersEntry(target, { command: 'other' }, { force: false, dryRun: false });
+
+    const skipped = await mergeHermesMcpServersEntry(
+      target,
+      { command: 'ideon', args: ['mcp', 'serve'] },
+      { force: false, dryRun: false },
+    );
+    expect(skipped.skipped).toBe(true);
+
+    const forced = await mergeHermesMcpServersEntry(
+      target,
+      { command: 'ideon', args: ['mcp', 'serve'] },
+      { force: true, dryRun: false },
+    );
+    expect(forced.changed).toBe(true);
+
+    const raw = parseYaml(await readFile(target, 'utf8')) as { mcp_servers: Record<string, unknown> };
+    expect(raw.mcp_servers.ideon).toEqual({ command: 'ideon', args: ['mcp', 'serve'] });
+  });
+
+  it('removes managed Hermes MCP server entry', async () => {
+    const target = path.join(tempDir, 'config.yaml');
+    await mergeHermesMcpServersEntry(target, { command: 'ideon', args: ['mcp', 'serve'] }, { force: false, dryRun: false });
+    const removed = await removeHermesMcpServersEntry(target, { dryRun: false });
+    expect(removed).toBe(true);
+    const raw = parseYaml(await readFile(target, 'utf8')) as { mcp_servers?: Record<string, unknown> };
+    expect(raw.mcp_servers?.ideon).toBeUndefined();
   });
 
   it('writes marker sections', async () => {

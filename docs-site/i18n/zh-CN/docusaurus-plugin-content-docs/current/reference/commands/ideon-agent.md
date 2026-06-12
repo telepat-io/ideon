@@ -48,6 +48,7 @@ ideon agent status [--json]
 | `cursor` | 符号链接 `ideon-cli` → `~/.cursor/skills/`（或项目 `.cursor/skills/`） | `~/.cursor/mcp.json` 中的 MCP + `ideon-mcp` 技能 | |
 | `vscode` | 符号链接 `ideon-cli` → `~/.copilot/skills/`（或项目 `.github/skills/`） | `.vscode/mcp.json` 中 `servers.ideon` + `ideon-mcp` 技能 | VS Code 使用 `servers` 键 |
 | `opencode` | 符号链接 `ideon-cli` → OpenCode 技能目录 | `opencode.json` 中 `mcp.ideon` + `ideon-mcp` 技能 | |
+| `hermes` | 符号链接 `ideon-cli` → `$HERMES_HOME/skills/` | `$HERMES_HOME/config.yaml` 中 `mcp_servers.ideon` + `ideon-mcp` 技能 | 仅全局；遵循 `HERMES_HOME`；MCP 安装后运行 `/reload-mcp` |
 | `generic-mcp` | *(无)* | 合并 `ideon` 到 `~/.config/mcp/mcp.json` | 通用 MCP 回退 |
 
 ### MCP 服务器条目（stdio）

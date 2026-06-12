@@ -113,6 +113,16 @@ describe('agent commands', () => {
     ).rejects.toBeInstanceOf(ReportedError);
   });
 
+  it('rejects --project for hermes install', async () => {
+    await expect(
+      runAgentInstallCommand(
+        { runtime: 'hermes', cliSkill: false, mcpSkill: false, force: false, project: true, dryRun: false },
+        baseDeps,
+      ),
+    ).rejects.toBeInstanceOf(ReportedError);
+    expect(installRuntimeMock).not.toHaveBeenCalled();
+  });
+
   it('rejects using cli and mcp skill flags together', async () => {
     await expect(
       runAgentInstallCommand(
@@ -123,7 +133,7 @@ describe('agent commands', () => {
   });
 
   it('installs newly supported runtimes including pi', async () => {
-    for (const runtime of ['cursor', 'vscode', 'opencode', 'codex', 'claude-desktop', 'pi']) {
+    for (const runtime of ['cursor', 'vscode', 'opencode', 'codex', 'claude-desktop', 'hermes', 'pi']) {
       const runtimeInstallMock = jest.fn(async () => ({ profile, mutations: [] }));
       await runAgentInstallCommand(
         { runtime, cliSkill: false, mcpSkill: false, force: false, project: false, dryRun: false },

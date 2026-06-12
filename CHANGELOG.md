@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* add Hermes Agent runtime support for `ideon agent install`
+
 ## [0.1.43](https://github.com/telepat-io/ideon/compare/ideon-v0.1.42...ideon-v0.1.43) (2026-06-11)
 
 

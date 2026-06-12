@@ -29,7 +29,7 @@ Use this matrix to diagnose common failures quickly.
 | Could not find article by slug | Slug typo or wrong output directory | Check slug and output dir config/env overrides | Use correct slug and run `ideon preview` to identify latest outputs |
 | Invalid port for preview | Out-of-range or non-numeric port | Inspect `--port` value | Use `1..65535` (default `4173`) |
 | Preview cannot find markdown | No generated outputs or wrong path | Check markdown path and output directory | Run write command first or pass explicit `.md` path |
-| Unsupported runtime for `ideon agent` | Runtime outside supported set | Check runtime id | Use a supported id: `pi`, `claude`, `claude-desktop`, `chatgpt`, `gemini`, `codex`, `cursor`, `vscode`, `opencode`, or `generic-mcp` |
+| Unsupported runtime for `ideon agent` | Runtime outside supported set | Check runtime id | Use a supported id: `pi`, `claude`, `claude-desktop`, `chatgpt`, `gemini`, `codex`, `cursor`, `vscode`, `opencode`, `hermes`, or `generic-mcp` |
 | Unsupported config key | Invalid key in config get/set/unset | Compare key to supported key list | Use keys from command catalog |
 | GKP credential not configured | Google Ads credential missing | Run `ideon gads status` or `ideon config list --json` | Set via env vars, `ideon gads login` (desktop), or MCP `gads_login` (containers) |
 | OAuth redirect URI mismatch | GCP redirect URI ≠ `TELEPAT_IDEON_GADS_REDIRECT_URL` | Compare GCP Authorized redirect URIs with env (include `/callback`) | Fix GCP registration or env value to match exactly |

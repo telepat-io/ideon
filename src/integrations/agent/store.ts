@@ -13,6 +13,7 @@ export const supportedAgentRuntimeValues = [
   'vscode',
   'opencode',
   'generic-mcp',
+  'hermes',
   'pi',
 ] as const;
 export type SupportedAgentRuntime = (typeof supportedAgentRuntimeValues)[number];

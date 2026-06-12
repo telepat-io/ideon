@@ -87,6 +87,7 @@ export async function runAgentInstallCommand(
 ): Promise<void> {
   const deps = { ...defaultDependencies, ...dependencies };
   const runtime = parseRuntime(options.runtime);
+  assertHermesGlobalScope(runtime, options.project);
   const skillMode = resolveSkillMode(options, runtime);
 
   if (options.dryRun) {
@@ -119,6 +120,7 @@ export async function runAgentUninstallCommand(
 ): Promise<void> {
   const deps = { ...defaultDependencies, ...dependencies };
   const runtime = parseRuntime(options.runtime);
+  assertHermesGlobalScope(runtime, options.project);
 
   if (options.dryRun) {
     deps.log(`[dry-run] Would uninstall agent integration for runtime: ${runtime}`);
@@ -227,6 +229,12 @@ function resolveSkillMode(
   }
 
   return { cliSkill: true, mcpSkill: false };
+}
+
+function assertHermesGlobalScope(runtime: SupportedAgentRuntime, project: boolean): void {
+  if (runtime === 'hermes' && project) {
+    throw new ReportedError('Hermes integration is global-only; omit --project.');
+  }
 }
 
 function parseRuntime(rawRuntime: string): SupportedAgentRuntime {

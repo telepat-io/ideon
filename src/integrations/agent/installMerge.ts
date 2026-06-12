@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 export const IDEON_MANAGED_SERVER_KEY = 'ideon';
 export const IDEON_TOOL_ID = 'ideon';
@@ -335,6 +336,70 @@ export async function mergeCodexTomlSection(
     await writeFile(targetPath, merged.endsWith('\n') ? merged : `${merged}\n`, 'utf8');
   }
   return { changed: true, skipped: false };
+}
+
+export async function readYamlObject(targetPath: string): Promise<Record<string, unknown>> {
+  try {
+    const raw = await readFile(targetPath, 'utf8');
+    const parsed = parseYaml(raw) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+    return {};
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return {};
+    }
+    throw error;
+  }
+}
+
+export async function writeYamlObject(targetPath: string, value: Record<string, unknown>, dryRun: boolean): Promise<void> {
+  if (dryRun) {
+    return;
+  }
+  await mkdir(path.dirname(targetPath), { recursive: true });
+  await writeFile(targetPath, `${stringifyYaml(value)}\n`, 'utf8');
+}
+
+export async function mergeHermesMcpServersEntry(
+  targetPath: string,
+  serverEntry: Record<string, unknown>,
+  options: { force: boolean; dryRun: boolean },
+): Promise<JsonMergeResult> {
+  const doc = await readYamlObject(targetPath);
+  const servers = (doc.mcp_servers && typeof doc.mcp_servers === 'object' && !Array.isArray(doc.mcp_servers)
+    ? doc.mcp_servers
+    : {}) as Record<string, unknown>;
+
+  const mergeResult = mergeOwnedJsonEntry(servers, IDEON_MANAGED_SERVER_KEY, serverEntry, options.force);
+  if (mergeResult.changed) {
+    doc.mcp_servers = servers;
+    await writeYamlObject(targetPath, doc, options.dryRun);
+  }
+
+  return mergeResult;
+}
+
+export async function removeHermesMcpServersEntry(
+  targetPath: string,
+  options: { dryRun: boolean },
+): Promise<boolean> {
+  const doc = await readYamlObject(targetPath);
+  const servers = doc.mcp_servers;
+  if (!servers || typeof servers !== 'object' || Array.isArray(servers)) {
+    return false;
+  }
+
+  const record = servers as Record<string, unknown>;
+  if (!(IDEON_MANAGED_SERVER_KEY in record)) {
+    return false;
+  }
+
+  delete record[IDEON_MANAGED_SERVER_KEY];
+  doc.mcp_servers = record;
+  await writeYamlObject(targetPath, doc, options.dryRun);
+  return true;
 }
 
 export async function removeCodexTomlSection(targetPath: string, options: { dryRun: boolean }): Promise<boolean> {

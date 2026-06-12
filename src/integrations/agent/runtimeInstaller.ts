@@ -6,12 +6,14 @@ import envPaths from 'env-paths';
 import { readIdeonPackageVersion, resolveIdeonSkillDir } from './packageRoot.js';
 import {
   mergeCodexTomlSection,
+  mergeHermesMcpServersEntry,
   mergeMarkerSection,
   mergeMcpServersEntry,
   mergeOpenCodeMcpEntry,
   mergeStringArrayEntry,
   mergeVsCodeMcpServer,
   removeCodexTomlSection,
+  removeHermesMcpServersEntry,
   removeMarkerSection,
   removeMcpServersEntry,
   removeOpenCodeMcpEntry,
@@ -49,6 +51,18 @@ export interface RuntimeInstaller {
 
 function scopeRoot(options: Pick<AgentInstallOptions, 'project' | 'cwd' | 'homeDir'>): string {
   return options.project ? options.cwd : options.homeDir;
+}
+
+const HERMES_PROJECT_SCOPE_ERROR = 'Hermes integration is global-only; omit --project.';
+
+function resolveHermesHome(homeDir: string): string {
+  return process.env.HERMES_HOME ?? path.join(homeDir, '.hermes');
+}
+
+function assertHermesGlobalScope(project: boolean): void {
+  if (project) {
+    throw new Error(HERMES_PROJECT_SCOPE_ERROR);
+  }
 }
 
 function buildProfile(
@@ -708,6 +722,93 @@ const chatgptInstaller: RuntimeInstaller = {
   },
 };
 
+const hermesInstaller: RuntimeInstaller = {
+  async install(options) {
+    assertHermesGlobalScope(options.project);
+
+    const mutations: InstallMutation[] = [];
+    const hermesHome = resolveHermesHome(options.homeDir);
+    const skillsBase = path.join(hermesHome, 'skills');
+    const configPath = path.join(hermesHome, 'config.yaml');
+    const managedPaths: string[] = [];
+    const managedKeys: string[] = [];
+
+    if (options.cliSkill) {
+      const target = path.join(skillsBase, 'ideon-cli');
+      await installCliSkill(target, options, mutations);
+      managedPaths.push(target);
+    }
+    if (options.mcpSkill) {
+      const target = path.join(skillsBase, 'ideon-mcp');
+      await installMcpSkill(target, options, mutations);
+      const merge = await mergeHermesMcpServersEntry(configPath, stdioMcpServerEntry(), {
+        force: options.force,
+        dryRun: options.dryRun,
+      });
+      if (merge.skipped) {
+        pushMutation(mutations, { action: 'skip', path: configPath, detail: merge.reason ?? 'Skipped Hermes MCP merge.' }, options);
+      } else if (merge.changed) {
+        pushMutation(mutations, {
+          action: 'update',
+          path: configPath,
+          detail: `Registered mcp_servers.${IDEON_MANAGED_SERVER_KEY} in ${configPath}`,
+        }, options);
+      }
+      managedPaths.push(target, configPath);
+      managedKeys.push(`mcp_servers.${IDEON_MANAGED_SERVER_KEY}`);
+      options.log('Hermes setup: Run `/reload-mcp` in Hermes (or restart) to load the Ideon MCP server.');
+    }
+
+    return { profile: buildProfile(options, managedPaths, managedKeys), mutations };
+  },
+  async uninstall(options) {
+    assertHermesGlobalScope(options.project);
+
+    const hermesHome = resolveHermesHome(options.homeDir);
+    const configPath = path.join(hermesHome, 'config.yaml');
+    if (!options.dryRun) {
+      await removeSkillLink(path.join(hermesHome, 'skills', 'ideon-cli'), options);
+      await removeSkillLink(path.join(hermesHome, 'skills', 'ideon-mcp'), options);
+      await removeHermesMcpServersEntry(configPath, options);
+    }
+  },
+  async collectStatus({ homeDir, profile }) {
+    const hermesHome = resolveHermesHome(homeDir);
+    const cliPath = path.join(hermesHome, 'skills', 'ideon-cli');
+    const mcpSkillPath = path.join(hermesHome, 'skills', 'ideon-mcp');
+    const configPath = path.join(hermesHome, 'config.yaml');
+
+    let hermesBinaryOnPath = false;
+    try {
+      await execFileAsync('hermes', ['--version'], { timeout: 5_000 });
+      hermesBinaryOnPath = true;
+    } catch {
+      hermesBinaryOnPath = false;
+    }
+
+    return {
+      runtime: 'hermes',
+      profile,
+      artifacts: [
+        { path: cliPath, expected: 'ideon-cli skill', status: (await pathExists(cliPath)) ? 'ok' : 'missing' },
+        { path: mcpSkillPath, expected: 'ideon-mcp skill', status: (await pathExists(mcpSkillPath)) ? 'ok' : 'missing' },
+        { path: configPath, expected: 'mcp_servers.ideon', status: (await pathExists(configPath)) ? 'ok' : 'missing' },
+      ],
+      issues: hermesBinaryOnPath ? [] : [{
+        code: 'hermes-missing',
+        message: 'hermes binary not found on PATH',
+        fixHint: 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash',
+      }],
+      readiness: {
+        hermesBinaryOnPath,
+        cliSkillLinked: await pathExists(cliPath),
+        mcpSkillLinked: await pathExists(mcpSkillPath),
+        mcpConfigured: await pathExists(configPath),
+      },
+    };
+  },
+};
+
 const claudeDesktopInstaller: RuntimeInstaller = {
   async install(options) {
     const mutations: InstallMutation[] = [];
@@ -774,6 +875,7 @@ const INSTALLERS: Record<SupportedAgentRuntime, RuntimeInstaller> = {
   vscode: vscodeInstaller,
   opencode: opencodeInstaller,
   'generic-mcp': genericMcpInstaller,
+  hermes: hermesInstaller,
   pi: piInstaller,
 };
 

@@ -21,7 +21,7 @@ ideon mcp serve
 - Transport: stdio
 - Bestimmte Verwendung: lokal prozessgestartete MCP-Clients
 - Integrationsgeltungsbereich: CLI/MCP-Laufzeiten
-- Unterstützte Laufzeiten: claude, claude-desktop, chatgpt, gemini, codex, cursor, vscode, opencode, generic-mcp
+- Unterstützte Laufzeiten: claude, claude-desktop, chatgpt, gemini, codex, cursor, vscode, opencode, hermes, generic-mcp
 
 ## Verfügbare Werkzeuge
 

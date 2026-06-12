@@ -150,6 +150,7 @@ Supported:
 - `cursor`
 - `vscode`
 - `opencode`
+- `hermes`
 - `generic-mcp`
 
 Install flags: default CLI skill (`--cli-skill`), MCP stack (`--mcp-skill`), `--force`, `--project`, `--dry-run`. See `docs/reference/commands/ideon-agent.md`.
