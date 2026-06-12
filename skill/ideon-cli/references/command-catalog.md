@@ -197,10 +197,10 @@ Config and state:
 
 Output artifacts:
 
-- Markdown outputs: `*.md`
-- Link sidecars: `*.links.json` (if enrichment enabled)
-- Analytics sidecars: `*.analytics.json`
-- Asset files under configured asset output directory
+- Default root: `~/.ideon/output/<YYYYMMDD-HHmmss-slug>/` (flat generation directory per run)
+- Per run: `*.md`, `meta.json`, `job.json`, `plan.md` (article-primary), `generation.analytics.json`, `model.interactions.json`, images
+- Link sidecars: `<markdown-basename>.links.json` beside each enriched markdown file (v2: `customLinks` + `links`)
+- Full layout, `meta.json` schema, and export rules: [output-structure.md](output-structure.md)
 
 ## Scenario command paths
 

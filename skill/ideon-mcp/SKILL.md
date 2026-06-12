@@ -241,6 +241,16 @@ Post-write export uses `exportPath` stored on the queue entry (from `ideon_queue
 5. Escalate to full generation only after dry run succeeds.
 6. Report: tool called, structured response data, next safe step.
 
+## After a successful write
+
+1. Read `structuredContent.generationDir` and `markdownPath` from `ideon_write` or `ideon_write_resume`.
+2. Open `<generationDir>/meta.json` for full metadata (`outputs[]`, `images[]`, `editorialChecklist`, `seoCheck`).
+3. Read primary markdown at `markdownPath` (or the first entry in `meta.json` `outputs[]`).
+4. Call `ideon_export` when publish-ready markdown with inlined links is needed (`ideon_write` does not auto-export).
+5. Use `ideon_article_list` to discover older runs by slug, publication, or search.
+
+Full artifact schemas and directory layout: [references/output-structure.md](references/output-structure.md).
+
 ## Tool catalog
 
 39 tools across content, config, publications, series, authors, queue, planning, GKP, and GAds auth. See [references/tool-catalog.md](references/tool-catalog.md) for complete parameter schemas and constraints.
@@ -426,6 +436,7 @@ Errors: `"isError": true` with message in `content`. GKP credential errors inclu
 
 ## Companion references
 
+- See [references/output-structure.md](references/output-structure.md) for generation directory layout, `meta.json`, link sidecars, and export behavior.
 - See [references/tool-catalog.md](references/tool-catalog.md) for full tool parameter schemas.
 - See [references/troubleshooting.md](references/troubleshooting.md) for detailed failure diagnostics.
 - See [references/google-ads-setup.md](references/google-ads-setup.md) for Google Ads credential setup.

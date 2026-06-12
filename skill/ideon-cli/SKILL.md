@@ -188,6 +188,16 @@ Always collect all relevant inputs before running any command. Ask the user for 
 6. Escalate to full workflow only after verification succeeds.
 7. Report: command run, artifacts/paths touched, exit/result, next safe step.
 
+## After a successful write
+
+1. List or locate the generation: `ideon article list` or `ideon article list --json`.
+2. Read `<generationDir>/meta.json` for title, slug, all `outputs[]`, images, `editorialChecklist`, and `seoCheck`.
+3. Open primary markdown (usually `article-1.md` in that directory).
+4. Preview with `ideon preview --no-open` if the user wants a browser view.
+5. Export with `ideon export <slug> <dest-dir>` when publish-ready markdown with inlined links is needed.
+
+Full artifact schemas and directory layout: [references/output-structure.md](references/output-structure.md).
+
 ## Canonical examples
 
 ### Write
@@ -368,6 +378,7 @@ Config precedence (highest to lowest): CLI args → job file → `IDEON_*` env �
 ## Companion references
 
 - See the **`ideon-mcp` skill** for MCP tool schemas and JSON examples.
+- See [references/output-structure.md](references/output-structure.md) for generation directory layout, `meta.json`, link sidecars, and export behavior.
 - See [references/command-catalog.md](references/command-catalog.md) for full command/argument matrix.
 - See [references/troubleshooting.md](references/troubleshooting.md) for detailed failure diagnostics.
 - See [references/google-ads-setup.md](references/google-ads-setup.md) for Google Ads credential setup.

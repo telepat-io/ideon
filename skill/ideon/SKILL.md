@@ -95,28 +95,21 @@ An agent executing this skill follows this sequence:
 
 ## Output Structure
 
-The skill generates the following files in a user-configured output directory:
+Each run writes a **flat** generation directory (default `~/.ideon/output/<timestamp>-<slug>/`):
 
 ```
 <output-dir>/<timestamp>-<slug>/
-  ├─ session.json                    # Cached state (for future resumability)
-  ├─ meta.json                       # Generation metadata (title, slug, keywords, timing, outputs)
-  ├─ content/
-  │  ├─ article-1.md                 # Primary format + frontmatter
-  │  ├─ newsletter-1.md              # Secondary format (if chosen)
-  │  ├─ x-thread-1.md                # Secondary format (if chosen)
-  │  └─ [... one file per target format ...]
-  ├─ assets/images/
-  │  ├─ cover.webp                   # Cover image
-  │  ├─ inline-1.webp, inline-2.webp # Inline images
-  │  └─ [... one file per generated image ...]
-  └─ artifacts/
-    ├─ article-1.links.json         # Link enrichment v2 (customLinks + discovered links)
-    ├─ newsletter-1.links.json      # Link enrichment v2 for secondary formats
-     └─ [... one file per content file ...]
+  ├─ article-1.md                    # Primary format + frontmatter
+  ├─ article-1.links.json            # Link sidecar (v2) when enrichment ran
+  ├─ meta.json                       # Generation metadata (title, slug, outputs, checklist)
+  ├─ job.json, plan.md, generation.analytics.json
+  ├─ cover-1.png, inline-*.png       # Images (relative paths from markdown)
+  └─ [... secondary .md + .links.json per target format ...]
 ```
 
-  See [output-spec.md](output-spec.md) for detailed structure of session.json, meta.json, links.json v2, and markdown frontmatter.
+Resume state lives in `~/.ideon/sessions/<project-hash>/state.json`, not in the generation directory.
+
+See [output-spec.md](output-spec.md) for `meta.json`, links.json v2, and markdown frontmatter. CLI/MCP agent reference: [skill/ideon-cli/references/output-structure.md](../ideon-cli/references/output-structure.md).
 
 ## API Requirements
 

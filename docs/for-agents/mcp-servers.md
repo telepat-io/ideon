@@ -65,6 +65,8 @@ Both transports expose the same tools:
 
 SEO check runs as pipeline stage 4 during `ideon_write` / `ideon_write_resume` — there is no standalone SEO MCP tool. Lint results and editor pass metadata are written to `meta.json` (`seoCheck`). Resolved author slug and dynamic `editorialChecklist` items are also written to `meta.json`.
 
+For generation directory layout, `meta.json` fields, link sidecars, and post-write navigation, see [Output Structure](../guides/output-structure.md). Agent skill copies live in the repo under `skill/ideon-mcp/references/output-structure.md` and `skill/ideon-cli/references/output-structure.md`.
+
 ### Authors
 
 - `ideon_author_add` — Create an author profile (`name`, optional `profile`)

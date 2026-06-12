@@ -1,48 +1,46 @@
 # Output Specification: File Formats & Directory Structure
 
-This document defines the exact structure of all files output by the Ideon skill, including session state, metadata, markdown content, link enrichment, and generated images.
+> **Runtime layout:** Ideon CLI/MCP write a **flat** generation directory (markdown, sidecars, and images in one folder). Resume session state lives in the OS config dir, not inside the generation folder.
+>
+> **Canonical references:** [docs/guides/output-structure.md](../../docs/guides/output-structure.md) · [skill/ideon-cli/references/output-structure.md](../ideon-cli/references/output-structure.md) · [skill/ideon-mcp/references/output-structure.md](../ideon-mcp/references/output-structure.md)
+
+This document defines file formats for Ideon output: metadata, markdown content, link enrichment, and generated images.
 
 ---
 
 ## Output Directory Structure
 
+Default root: `~/.ideon/output` (override via `IDEON_HOME` or `markdownOutputDir` setting).
+
 ```
 <output-base-dir>/<YYYYMMDD-HHmmss-slug>/
 │
-├─ session.json                        # Full cached session state (for resumability)
+├─ article-1.md                        # Primary format (with frontmatter)
+├─ article-1.links.json                # Link sidecar (v2) beside enriched markdown
+├─ blog-1.md                           # Secondary format (if chosen)
+├─ newsletter-1.md                     # Additional format (if chosen)
 ├─ meta.json                           # Generation metadata (authoritative runtime format)
-│
-├─ content/                            # Generated content files
-│  ├─ article-1.md                     # Primary format (with frontmatter)
-│  ├─ blog-post-1.md                   # Secondary format (if chosen)
-│  ├─ newsletter-1.md                  # Additional format (if chosen)
-│  └─ [one .md file per target format]
-│
-├─ assets/
-│  └─ images/
-│     ├─ cover.webp                    # Cover image (top of content)
-│     ├─ inline-1.webp                 # First inline image
-│     ├─ inline-2.webp                 # Second inline image
-│     └─ [one .webp per rendered image]
-│
-└─ artifacts/
-   ├─ article-1.links.json             # Link enrichment for article-1.md (v2 format with customLinks)
-   ├─ blog-post-1.links.json           # Link enrichment for blog-post-1.md
-   └─ [one .links.json per content file]
+├─ job.json                            # Resolved run definition
+├─ plan.md                             # Article plan (article-primary runs)
+├─ generation.analytics.json           # Per-run analytics
+├─ model.interactions.json             # Raw LLM/T2I interaction log
+├─ cover-1.png                         # Cover image (format varies by model)
+├─ inline-1-2.png                      # Inline images
+└─ [one .md and optional .links.json per target format]
 ```
 
 **Example full path:**
 ```
-/Users/user/ideon-output/20260509-153022-react-suspense/
+/Users/you/.ideon/output/20260509-153022-react-suspense/
 ```
 
 ---
 
-## File Format: session.json
+## Write session state (resume)
 
-**Purpose:** Store complete session state for future resumability. Not user-facing (for agents/system only).
+**Purpose:** Store complete session state for `ideon write resume`. Not user-facing (for agents/system only).
 
-**Location:** `<output-dir>/session.json`
+**Location:** `~/.ideon/sessions/<project-hash>/state.json` (OS config directory, keyed by project path — not inside the generation directory)
 
 **Key Content:**
 - User inputs (immutable record of choices)
@@ -84,8 +82,8 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
   "targetLength": "large",
   "angle": "practical_patterns",
   "cover": {
-    "path": "/full/path/to/assets/images/cover.webp",
-    "relativePath": "assets/images/cover.webp",
+    "path": "/full/path/to/20260509-153022-react-suspense/cover-1.png",
+    "relativePath": "cover-1.png",
     "description": "React Suspense architecture diagram"
   },
   "sections": [
@@ -106,16 +104,16 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
     {
       "id": "cover",
       "kind": "cover",
-      "path": "/full/path/to/assets/images/cover.webp",
-      "relativePath": "assets/images/cover.webp",
+      "path": "/full/path/to/20260509-153022-react-suspense/cover-1.png",
+      "relativePath": "cover-1.png",
       "description": "React Suspense architecture diagram",
       "anchorAfterSection": null
     },
     {
       "id": "inline-1",
       "kind": "inline",
-      "path": "/full/path/to/assets/images/inline-1.webp",
-      "relativePath": "assets/images/inline-1.webp",
+      "path": "/full/path/to/20260509-153022-react-suspense/inline-1-2.png",
+      "relativePath": "inline-1-2.png",
       "description": "Data fetching flow with async boundaries",
       "anchorAfterSection": 1
     }
@@ -124,14 +122,14 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
     {
       "fileId": "article-1",
       "contentType": "article",
-      "path": "/full/path/to/content/article-1.md",
-      "relativePath": "content/article-1.md"
+      "path": "/full/path/to/20260509-153022-react-suspense/article-1.md",
+      "relativePath": "article-1.md"
     },
     {
       "fileId": "linkedin-post-1",
       "contentType": "linkedin-post",
-      "path": "/full/path/to/content/linkedin-post-1.md",
-      "relativePath": "content/linkedin-post-1.md"
+      "path": "/full/path/to/20260509-153022-react-suspense/linkedin-post-1.md",
+      "relativePath": "linkedin-post-1.md"
     }
   ],
   "author": "alex-chen",
@@ -148,7 +146,7 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
     }
   ],
   "generatedAt": "2026-05-09T15:36:15Z",
-  "generationDir": "/Users/user/ideon-output/20260509-153022-react-suspense"
+  "generationDir": "/Users/you/.ideon/output/20260509-153022-react-suspense"
 }
 ```
 
@@ -166,9 +164,9 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
 - `generatedAt` — ISO 8601 timestamp of generation
 - `generationDir` — Full path to output directory (for tooling reference)
 
-**Difference from session.json:**
-- **meta.json**: User-facing metadata designed for external tools and display
-- **session.json**: System-facing cached state designed for resumability and cost tracking
+**Difference from write session state:**
+- **meta.json**: User-facing metadata designed for external tools and display (inside each generation directory)
+- **Write session state**: System-facing cached state in `~/.ideon/sessions/<project-hash>/state.json` for resumability and cost tracking
 
 ---
 
@@ -176,7 +174,7 @@ See [pipeline.md](pipeline.md) for detailed session structure and how agents use
 
 **Purpose:** Formatted content ready for publishing. Each file represents one output format.
 
-**Location:** `<output-dir>/content/<format>-<number>.md`
+**Location:** `<output-dir>/<format>-<number>.md` (flat, same directory as `meta.json`)
 
 **Examples:**
 - `article-1.md` — Article format
@@ -205,11 +203,11 @@ keywords:
   - JavaScript
 images:
   - id: cover
-    path: ../assets/images/cover.webp
+    path: cover-1.png
     caption: "React Suspense architecture overview"
     anchorAfterSection: 0
   - id: inline-1
-    path: ../assets/images/inline-1.webp
+    path: inline-1-2.png
     caption: "Data fetching flow with async boundaries"
     anchorAfterSection: 1
 generated_at: 2026-05-09T15:36:15Z
@@ -243,7 +241,7 @@ React Suspense is a powerful API for managing asynchronous operations in React a
 
 **Content structure:**
 - Full markdown with headings, lists, bold/italics
-- Images: `![caption](../assets/images/xxx.webp)` with relative paths
+- Images: `![caption](cover-1.png)` with relative paths from the markdown file
 - External links: `[text](https://url)` (auto-inserted by link enrichment stage)
 - Sections follow content plan outline from meta.json
 
@@ -253,7 +251,7 @@ React Suspense is a powerful API for managing asynchronous operations in React a
 
 **Purpose:** Metadata about external links for each content file. Supports both auto-discovered links and custom user-provided links.
 
-**Location:** `<output-dir>/artifacts/<format>-<number>.links.json`
+**Location:** `<output-dir>/<format>-<number>.links.json` (beside the matching markdown file)
 
 **Structure (v2 format with custom links support):**
 
@@ -343,19 +341,19 @@ Learn the [React Suspense API documentation](https://react.dev/reference/react/S
 
 **Purpose:** Embedded images generated via Replicate (Stage 5).
 
-**Location:** `<output-dir>/assets/images/`
+**Location:** Same generation directory as markdown (or shared `assetOutputDir` when configured)
 
 **Format & Specifications:**
-- **Format:** WebP (lossless quality, smaller than PNG)
-- **Resolution:** 1024×1024 (standard; alternatives in [replicate.md](replicate.md))
+- **Format:** Model-dependent (PNG/WebP per T2I model; see [replicate.md](replicate.md))
+- **Resolution:** Model-dependent (1024×1024 common)
 - **Naming convention:**
-  - `cover.webp` — Cover image (first image, top of content)
-  - `inline-1.webp`, `inline-2.webp`, ... — Inline images (distributed through content)
+  - `cover-1.png` (or similar) — Cover image
+  - `inline-1-2.png`, ... — Inline images (distributed through content)
 
 **Metadata (stored in markdown frontmatter):**
 - Image ID, kind (cover vs. inline), caption
 - Anchor point (after which section should appear)
-- Generation model, duration, cost (in session.json)
+- Generation model, duration, cost (in write session state / analytics)
 
 **Image characteristics:**
 - All images follow consistent style (defined in Stage 4 prompt engineering)
@@ -368,7 +366,7 @@ Learn the [React Suspense API documentation](https://react.dev/reference/react/S
 
 Before finalizing output, agent should verify:
 
-- [ ] `session.json` is valid JSON ✓
+- [ ] Write session state is valid when resuming (see `~/.ideon/sessions/<project-hash>/state.json`) ✓
 - [ ] `meta.json` contains all required fields (version, title, slug, idea, description, keywords, contentType, style, intent, outputs, generatedAt) ✓
 - [ ] Title is under 60 characters (search display safety) ✓
 - [ ] Description is 120-160 characters (meta description effectiveness) ✓
@@ -376,8 +374,8 @@ Before finalizing output, agent should verify:
 - [ ] All markdown files have complete YAML frontmatter ✓
 - [ ] Each H2 section contains at least one statistic, citation, or data point (for long-form) ✓
 - [ ] No prohibited AI vocabulary present (delve, realm, leverage, etc.) ✓
-- [ ] All image paths in markdown are relative & correct (e.g., `../assets/images/cover.webp`) ✓
-- [ ] All WebP images exist in `assets/images/` ✓
+- [ ] All image paths in markdown are relative & correct (e.g., `cover-1.png`) ✓
+- [ ] All image files exist in the generation directory (or linked asset dir) ✓
 - [ ] All `.links.json` files follow v2 format with both customLinks and links arrays ✓
 - [ ] No duplicate URLs in customLinks + links combined ✓
 - [ ] All `.links.json` files reference valid markdown files ✓
@@ -401,28 +399,27 @@ Before user sees final output:
 
 ```
 20260509-153022-react-suspense/
-├─ session.json                 (1.2 MB)
 ├─ meta.json                    (12 KB)
-├─ content/
-│  ├─ article-1.md             (14 KB, 1347 words)
-│  └─ linkedin-post-1.md       (3 KB, 280 words)
-├─ assets/
-│  └─ images/
-│     ├─ cover.webp            (156 KB)
-│     ├─ inline-1.webp         (142 KB)
-│     └─ inline-2.webp         (138 KB)
-└─ artifacts/
-   ├─ article-1.links.json     (3 KB, v2 format with customLinks)
-   └─ linkedin-post-1.links.json (2 KB, v2 format with customLinks)
+├─ job.json
+├─ plan.md
+├─ generation.analytics.json
+├─ article-1.md                 (14 KB, 1347 words)
+├─ article-1.links.json         (3 KB, v2 format with customLinks)
+├─ linkedin-post-1.md           (3 KB, 280 words)
+├─ linkedin-post-1.links.json   (2 KB, v2 format with customLinks)
+├─ cover-1.png                  (156 KB)
+├─ inline-1-2.png               (142 KB)
+└─ inline-2-3.png               (138 KB)
 
-Total: 10 files, ~1.5 MB, ready for publication
+Total: 11 files, ready for publication
+(Resume state: ~/.ideon/sessions/<project-hash>/state.json)
 ```
 
 ---
 
 ## References
 
-- **Session structure:** See [pipeline.md](pipeline.md) for detailed session.json schema
+- **Session structure:** See [pipeline.md](pipeline.md) for write-session state and resumability
 - **Custom link workflow:** See [pipeline.md](pipeline.md) Stage 7 (Links Enrichment) and [checkpoints.md](checkpoints.md) Checkpoint 2 for user interaction points
 - **Image generation:** See [replicate.md](replicate.md) for model options and specifications
 - **Writing generation:** Agent tracks token/cost estimation during planning, sections, image-prompt expansion, and links stages

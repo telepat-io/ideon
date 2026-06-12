@@ -90,6 +90,8 @@ Generate content from an idea using the Ideon pipeline.
 | `generationDir` | string | Path to generation directory. |
 | `analyticsPath` | string | Path to analytics sidecar. |
 
+Open `<generationDir>/meta.json` for the full artifact index (`outputs[]`, `images[]`, `editorialChecklist`, `seoCheck`). See [output-structure.md](output-structure.md).
+
 ---
 
 ### `ideon_write_resume`
@@ -120,6 +122,8 @@ Resume the last failed or interrupted Ideon write session.
 | `markdownPaths` | string[] | All markdown paths. |
 | `generationDir` | string | Generation directory. |
 | `exportPath` | string | Export destination when provided. |
+
+Full on-disk layout and `meta.json` fields: [output-structure.md](output-structure.md).
 
 ---
 
@@ -202,9 +206,24 @@ List generated articles in the current workspace.
 | `series` | string | No | — | Filter by series slug. |
 | `contentType` | string | No | — | Filter by content type (e.g. `article`, `x-post`). |
 | `limit` | int | No | `50` | Maximum number of results. |
-| `verbose` | boolean | No | `false` | Include detailed article metadata. |
+| `verbose` | boolean | No | `false` | CLI only: richer text table. MCP always returns JSON. |
 
-Returns a JSON array of article objects with slug, title, and metadata.
+**Response:** JSON array in the tool `content` text field. Each element:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `slug` | string | Article slug |
+| `title` | string | From H1 or `meta.json` |
+| `description` | string | From `meta.json` |
+| `keywords` | string[] | From `meta.json` |
+| `contentType` | string | Primary content type |
+| `publication` | string | Publication slug (optional) |
+| `series` | string | Series slug (optional) |
+| `idea` | string | Original idea |
+| `generationDir` | string | Absolute path to generation directory |
+| `mtime` | string | ISO timestamp of primary markdown |
+
+Use `generationDir` + `meta.json` for full output metadata. See [output-structure.md](output-structure.md).
 
 ---
 
