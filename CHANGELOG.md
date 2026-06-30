@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.45](https://github.com/telepat-io/ideon/compare/ideon-v0.1.44...ideon-v0.1.45) (2026-06-30)
+
+
+### Bug Fixes
+
+* **config:** merge env vars into config list and get ([9d0e813](https://github.com/telepat-io/ideon/commit/9d0e8137b13ec0f10d84b2dde571e03edd07279a))
+
 ## [0.1.44](https://github.com/telepat-io/ideon/compare/ideon-v0.1.43...ideon-v0.1.44) (2026-06-12)
 
 
