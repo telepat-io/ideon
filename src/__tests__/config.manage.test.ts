@@ -29,6 +29,7 @@ const {
   configSet,
   configUnset,
   isConfigKey,
+  mergeSecretsWithEnv,
   tryConfigSetSecret,
 } = await import('../config/manage.js');
 
@@ -76,6 +77,113 @@ describe('config manage', () => {
     expect(result.settings['t2i.replicateModelId']).toBe('black-forest-labs/flux-schnell');
     expect(result.secrets.openRouterApiKey).toBe(true);
     expect(result.secrets.replicateApiToken).toBe(false);
+  });
+
+  it('lists secret availability from env when keychain is empty', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: null,
+      replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
+    });
+    readEnvSettingsMock.mockReturnValue({
+      openRouterApiKey: 'env-openrouter',
+      replicateApiToken: 'env-replicate',
+      googleAdsDeveloperToken: 'env-dev-token',
+      googleAdsClientId: 'env-client-id',
+      googleAdsClientSecret: 'env-client-secret',
+      googleAdsRefreshToken: 'env-refresh',
+      googleAdsCustomerId: 'env-customer',
+      googleAdsLoginCustomerId: 'env-login-customer',
+    });
+
+    const result = await configList();
+
+    expect(result.secrets).toEqual({
+      openRouterApiKey: true,
+      replicateApiToken: true,
+      googleAdsDeveloperToken: true,
+      googleAdsClientId: true,
+      googleAdsClientSecret: true,
+      googleAdsRefreshToken: true,
+      googleAdsCustomerId: true,
+      googleAdsLoginCustomerId: true,
+    });
+  });
+
+  it('prefers env over keychain for secret availability', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: 'keychain-openrouter',
+      replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
+    });
+    readEnvSettingsMock.mockReturnValue({
+      replicateApiToken: 'env-replicate',
+    });
+
+    const result = await configList();
+
+    expect(result.secrets.openRouterApiKey).toBe(true);
+    expect(result.secrets.replicateApiToken).toBe(true);
+  });
+
+  it('gets secret availability from env when keychain is empty', async () => {
+    loadSecretsMock.mockResolvedValue({
+      openRouterApiKey: null,
+      replicateApiToken: null,
+      googleAdsDeveloperToken: null,
+      googleAdsClientId: null,
+      googleAdsClientSecret: null,
+      googleAdsRefreshToken: null,
+      googleAdsCustomerId: null,
+      googleAdsLoginCustomerId: null,
+    });
+    readEnvSettingsMock.mockReturnValue({
+      googleAdsRefreshToken: 'env-refresh',
+    });
+
+    const result = await configGet('googleAdsRefreshToken');
+
+    expect(result.isSecret).toBe(true);
+    expect(result.value).toBe(true);
+  });
+
+  it('mergeSecretsWithEnv mirrors resolver precedence', () => {
+    const merged = mergeSecretsWithEnv(
+      {
+        openRouterApiKey: 'env-openrouter',
+        replicateApiToken: undefined,
+        googleAdsDeveloperToken: undefined,
+        googleAdsClientId: undefined,
+        googleAdsClientSecret: undefined,
+        googleAdsRefreshToken: 'env-refresh',
+        googleAdsCustomerId: undefined,
+        googleAdsLoginCustomerId: undefined,
+      },
+      {
+        openRouterApiKey: 'keychain-openrouter',
+        replicateApiToken: 'keychain-replicate',
+        googleAdsDeveloperToken: null,
+        googleAdsClientId: null,
+        googleAdsClientSecret: null,
+        googleAdsRefreshToken: null,
+        googleAdsCustomerId: null,
+        googleAdsLoginCustomerId: null,
+      },
+    );
+
+    expect(merged.openRouterApiKey).toBe('env-openrouter');
+    expect(merged.replicateApiToken).toBe('keychain-replicate');
+    expect(merged.googleAdsRefreshToken).toBe('env-refresh');
   });
 
   it('gets a scalar setting', async () => {

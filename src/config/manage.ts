@@ -5,6 +5,8 @@ import {
   targetLengthValues,
   writingStyleValues,
   type AppSettings,
+  type EnvSettings,
+  type SecretSettings,
 } from './schema.js';
 import { readEnvSettings } from './env.js';
 import { loadSavedSettings, saveSettings } from './settingsFile.js';
@@ -65,11 +67,52 @@ export function isConfigKey(key: string): key is ConfigKey {
   return isConfigSettingKey(key) || isConfigSecretKey(key);
 }
 
+export function mergeSecretsWithEnv(
+  envSettings: Pick<
+    EnvSettings,
+    | 'openRouterApiKey'
+    | 'replicateApiToken'
+    | 'googleAdsDeveloperToken'
+    | 'googleAdsClientId'
+    | 'googleAdsClientSecret'
+    | 'googleAdsRefreshToken'
+    | 'googleAdsCustomerId'
+    | 'googleAdsLoginCustomerId'
+  >,
+  storedSecrets: SecretSettings,
+): SecretSettings {
+  return {
+    openRouterApiKey: envSettings.openRouterApiKey ?? storedSecrets.openRouterApiKey,
+    replicateApiToken: envSettings.replicateApiToken ?? storedSecrets.replicateApiToken,
+    googleAdsDeveloperToken: envSettings.googleAdsDeveloperToken ?? storedSecrets.googleAdsDeveloperToken,
+    googleAdsClientId: envSettings.googleAdsClientId ?? storedSecrets.googleAdsClientId,
+    googleAdsClientSecret: envSettings.googleAdsClientSecret ?? storedSecrets.googleAdsClientSecret,
+    googleAdsRefreshToken: envSettings.googleAdsRefreshToken ?? storedSecrets.googleAdsRefreshToken,
+    googleAdsCustomerId: envSettings.googleAdsCustomerId ?? storedSecrets.googleAdsCustomerId,
+    googleAdsLoginCustomerId: envSettings.googleAdsLoginCustomerId ?? storedSecrets.googleAdsLoginCustomerId,
+  };
+}
+
+function secretAvailabilityFlags(secrets: SecretSettings): Record<ConfigSecretKey, boolean> {
+  return {
+    openRouterApiKey: Boolean(secrets.openRouterApiKey),
+    replicateApiToken: Boolean(secrets.replicateApiToken),
+    googleAdsDeveloperToken: Boolean(secrets.googleAdsDeveloperToken),
+    googleAdsClientId: Boolean(secrets.googleAdsClientId),
+    googleAdsClientSecret: Boolean(secrets.googleAdsClientSecret),
+    googleAdsRefreshToken: Boolean(secrets.googleAdsRefreshToken),
+    googleAdsCustomerId: Boolean(secrets.googleAdsCustomerId),
+    googleAdsLoginCustomerId: Boolean(secrets.googleAdsLoginCustomerId),
+  };
+}
+
 export async function configList(): Promise<ConfigListResult> {
-  const [settings, secrets] = await Promise.all([
+  const envSettings = readEnvSettings();
+  const [settings, storedSecrets] = await Promise.all([
     loadSavedSettings(),
     loadSecrets(readSecretStoreOptions()),
   ]);
+  const secrets = mergeSecretsWithEnv(envSettings, storedSecrets);
 
   return {
     settings: {
@@ -88,22 +131,15 @@ export async function configList(): Promise<ConfigListResult> {
       seoCheckMode: settings.seoCheckMode,
       seoCheckMaxTurns: settings.seoCheckMaxTurns,
     },
-    secrets: {
-      openRouterApiKey: Boolean(secrets.openRouterApiKey),
-      replicateApiToken: Boolean(secrets.replicateApiToken),
-      googleAdsDeveloperToken: Boolean(secrets.googleAdsDeveloperToken),
-      googleAdsClientId: Boolean(secrets.googleAdsClientId),
-      googleAdsClientSecret: Boolean(secrets.googleAdsClientSecret),
-      googleAdsRefreshToken: Boolean(secrets.googleAdsRefreshToken),
-      googleAdsCustomerId: Boolean(secrets.googleAdsCustomerId),
-      googleAdsLoginCustomerId: Boolean(secrets.googleAdsLoginCustomerId),
-    },
+    secrets: secretAvailabilityFlags(secrets),
   };
 }
 
 export async function configGet(key: ConfigKey): Promise<ConfigGetResult> {
   if (isConfigSecretKey(key)) {
-    const secrets = await loadSecrets(readSecretStoreOptions());
+    const envSettings = readEnvSettings();
+    const storedSecrets = await loadSecrets(readSecretStoreOptions());
+    const secrets = mergeSecretsWithEnv(envSettings, storedSecrets);
     return {
       key,
       value: Boolean(secrets[key]),
